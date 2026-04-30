@@ -1,0 +1,350 @@
+import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.tada.app", category: "API")
+
+actor ClaudeAPIClient {
+    private let apiKey: String
+    private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
+    private let model = "claude-sonnet-4-6"
+
+    init(apiKey: String) {
+        self.apiKey = apiKey
+    }
+
+    func sendMessage(
+        systemPrompt: String,
+        userMessage: String,
+        maxTokens: Int = 2048
+    ) async throws -> String {
+        var request = URLRequest(url: baseURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": systemPrompt,
+            "messages": [
+                ["role": "user", "content": userMessage]
+            ]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = errorBody["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw ClaudeAPIError.apiError(message)
+            }
+            throw ClaudeAPIError.httpError(httpResponse.statusCode)
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let firstContent = content.first,
+              let text = firstContent["text"] as? String else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        return text
+    }
+
+    func sendStructuredMessage<T: Decodable>(
+        systemPrompt: String,
+        userMessage: String,
+        responseType: T.Type,
+        maxTokens: Int = 2048
+    ) async throws -> T {
+        // Use tool_use for guaranteed structured output
+        var request = URLRequest(url: baseURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+
+        // Define the tool schema based on the response type name
+        let toolSchema = getToolSchema(for: String(describing: responseType))
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": systemPrompt,
+            "tools": [toolSchema],
+            "tool_choice": ["type": "tool", "name": toolSchema["name"] as Any],
+            "messages": [
+                ["role": "user", "content": userMessage]
+            ]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        // Check for API errors in the response body (works for any status code)
+        if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let errorType = errorBody["type"] as? String, errorType == "error",
+           let error = errorBody["error"] as? [String: Any],
+           let message = error["message"] as? String {
+            throw ClaudeAPIError.apiError(message)
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = errorBody["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw ClaudeAPIError.apiError(message)
+            }
+            throw ClaudeAPIError.httpError(httpResponse.statusCode)
+        }
+
+        // Parse tool use response
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            logger.error("Could not parse API response as JSON")
+            if let rawString = String(data: data, encoding: .utf8) {
+                logger.error("Raw response: \(rawString)")
+            }
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        guard let content = json["content"] as? [[String: Any]] else {
+            // Check if this is actually an error response
+            if let errorType = json["type"] as? String, errorType == "error",
+               let error = json["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw ClaudeAPIError.apiError(message)
+            }
+            logger.error("No content in response: \(String(describing: json))")
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        guard let toolUse = content.first(where: { $0["type"] as? String == "tool_use" }) else {
+            // Check if there's a text response instead (error message)
+            if let textContent = content.first(where: { $0["type"] as? String == "text" }),
+               let text = textContent["text"] as? String {
+                logger.error("Got text instead of tool_use: \(text)")
+            }
+            logger.error("No tool_use in content: \(String(describing: content))")
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        guard let input = toolUse["input"] else {
+            logger.error("No input in tool_use: \(String(describing: toolUse))")
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        let inputData = try JSONSerialization.data(withJSONObject: input)
+
+        do {
+            return try JSONDecoder().decode(T.self, from: inputData)
+        } catch {
+            logger.error("Failed to decode input: \(error)")
+            if let inputStr = String(data: inputData, encoding: .utf8) {
+                logger.error("Input JSON: \(inputStr)")
+            }
+            throw ClaudeAPIError.jsonParsingError(error)
+        }
+    }
+
+    private func getToolSchema(for typeName: String) -> [String: Any] {
+        switch typeName {
+        case "ActionSchema":
+            return [
+                "name": "generate_action_ui",
+                "description": "Generate a UI schema for user interaction. IMPORTANT: field type must be exactly one of: text, number, multiSelect, singleSelect, yesNo, date, textarea, drawing, slider. For yes/no questions use yesNo not radio.",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "type": ["type": "string", "enum": ["form"]],
+                        "title": ["type": "string", "description": "Clear question or prompt for the user"],
+                        "description": ["type": "string", "description": "Optional helpful context"],
+                        "submitLabel": ["type": "string", "description": "Button label like Continue, Submit, Next"],
+                        "requiresExternalAction": [
+                            "type": "boolean",
+                            "description": "True if this step requires real-world action outside the app (making calls, sending emails, adding to calendar, traveling). False for in-app data entry only."
+                        ],
+                        "fields": [
+                            "type": "array",
+                            "maxItems": 1,
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "id": ["type": "string", "description": "Unique field identifier"],
+                                    "type": [
+                                        "type": "string",
+                                        "enum": ["text", "number", "multiSelect", "singleSelect", "yesNo", "date", "textarea", "drawing", "slider", "itemTable"],
+                                        "description": "Field type. Use yesNo for yes/no questions, singleSelect for picking one option, multiSelect for multiple options, textarea for long text, drawing for sketches, slider for numeric ranges, itemTable for tables with custom columns (define columns via options: each option is a column with id, label, and description for type - use 'currency' for amounts or 'select:Choice1,Choice2' for dropdowns)"
+                                    ],
+                                    "label": ["type": "string", "description": "Field label shown to user"],
+                                    "placeholder": ["type": "string", "description": "Placeholder text"],
+                                    "required": ["type": "boolean", "default": true],
+                                    "options": [
+                                        "type": "array",
+                                        "description": "Required for singleSelect and multiSelect. Each option needs id and label.",
+                                        "items": [
+                                            "type": "object",
+                                            "properties": [
+                                                "id": ["type": "string"],
+                                                "label": ["type": "string"],
+                                                "description": ["type": "string"]
+                                            ],
+                                            "required": ["id", "label"]
+                                        ]
+                                    ],
+                                    "validation": [
+                                        "type": "object",
+                                        "description": "For slider: set minValue and maxValue",
+                                        "properties": [
+                                            "minValue": ["type": "number"],
+                                            "maxValue": ["type": "number"]
+                                        ]
+                                    ],
+                                    "defaultValue": [
+                                        "type": "string",
+                                        "description": "Pre-filled value for text/textarea fields based on previous responses"
+                                    ],
+                                    "prefillRows": [
+                                        "type": "array",
+                                        "description": "Pre-filled rows for itemTable based on previous responses. Each row is an object with column id keys.",
+                                        "items": ["type": "object"]
+                                    ]
+                                ],
+                                "required": ["id", "type", "label"]
+                            ]
+                        ]
+                    ],
+                    "required": ["type", "title", "submitLabel", "requiresExternalAction", "fields"]
+                ]
+            ]
+        case "TaskPlan":
+            return [
+                "name": "create_task_plan",
+                "description": "Create a structured task plan",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "title": ["type": "string"],
+                        "description": ["type": "string"],
+                        "subTasks": [
+                            "type": "array",
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "title": ["type": "string"],
+                                    "description": ["type": "string"],
+                                    "requiresExternalAction": [
+                                        "type": "boolean",
+                                        "description": "True if step requires real-world action outside app (calls, emails, calendar, travel). False for in-app data entry."
+                                    ]
+                                ],
+                                "required": ["title", "description", "requiresExternalAction"]
+                            ]
+                        ]
+                    ],
+                    "required": ["title", "description", "subTasks"]
+                ]
+            ]
+        case "PlanRevision":
+            return [
+                "name": "revise_plan",
+                "description": "Decide whether to revise the plan",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "revised": ["type": "boolean"],
+                        "reason": ["type": "string"],
+                        "subTasks": [
+                            "type": "array",
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "title": ["type": "string"],
+                                    "description": ["type": "string"],
+                                    "requiresExternalAction": [
+                                        "type": "boolean",
+                                        "description": "True if step requires real-world action outside app (calls, emails, calendar, travel). False for in-app data entry."
+                                    ]
+                                ],
+                                "required": ["title", "description", "requiresExternalAction"]
+                            ]
+                        ]
+                    ],
+                    "required": ["revised"]
+                ]
+            ]
+        case "MicroStepsResponse":
+            return [
+                "name": "break_down_step",
+                "description": "Break down an overwhelming step into smaller micro-steps",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "microSteps": [
+                            "type": "array",
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "title": ["type": "string"],
+                                    "description": ["type": "string"],
+                                    "requiresExternalAction": [
+                                        "type": "boolean",
+                                        "description": "True if step requires real-world action outside app (calls, emails, calendar, travel). False for in-app data entry."
+                                    ]
+                                ],
+                                "required": ["title", "description", "requiresExternalAction"]
+                            ]
+                        ]
+                    ],
+                    "required": ["microSteps"]
+                ]
+            ]
+        default:
+            return [
+                "name": "generate_response",
+                "description": "Generate structured response",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [:],
+                    "required": []
+                ]
+            ]
+        }
+    }
+}
+
+enum ClaudeAPIError: LocalizedError {
+    case invalidResponse
+    case httpError(Int)
+    case apiError(String)
+    case jsonParsingError(Error)
+    case missingAPIKey
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            return "Invalid response from AI service"
+        case .httpError(let code):
+            return "Connection error (HTTP \(code))"
+        case .apiError(let message):
+            // Show the actual API error message directly - it's usually clear
+            return message
+        case .jsonParsingError:
+            return "Failed to understand AI response. Please try again."
+        case .missingAPIKey:
+            return "API key not configured. Go to Settings to add your Claude API key."
+        }
+    }
+}
