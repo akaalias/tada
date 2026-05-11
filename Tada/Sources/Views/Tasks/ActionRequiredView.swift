@@ -7,8 +7,8 @@ struct ExecutionPlanData {
 
 struct InformationRequiredView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TodoTask> { $0.status == "active" })
-    private var activeTasks: [TodoTask]
+    @Query private var allTasks: [TodoTask]
+    private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @State private var showingExecutionPlanSheet = false
     @State private var executionPlanData: ExecutionPlanData?
 
@@ -97,8 +97,8 @@ struct InformationRequiredView: View {
 
 struct ActionRequiredView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TodoTask> { $0.status == "active" })
-    private var activeTasks: [TodoTask]
+    @Query private var allTasks: [TodoTask]
+    private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @State private var focusedTaskId: UUID?
 
     var body: some View {
@@ -818,7 +818,7 @@ struct ActionCard: View {
         } else {
             // Execution phase: evaluate if plan needs revision after each step
             addProgressMessage("Step completed")
-            let remainingSteps = task.sortedSubTasks.filter({ $0.phase == "execution" && $0.isPending })
+            let remainingSteps = task.sortedSubTasks.filter({ $0.phase == TaskPhase.execution && $0.isPending })
 
             if remainingSteps.count > 1 {
                 // Always ask the planner if revision is needed based on new info
@@ -1051,7 +1051,7 @@ struct ActionCard: View {
                             title: microStep.title,
                             description: microStep.description,
                             order: 0, // Will renumber below
-                            phase: "execution",
+                            phase: .execution,
                             requiresExternalAction: microStep.requiresExternalAction ?? false
                         )
                         task.addSubTask(newSubTask)
@@ -1179,7 +1179,7 @@ struct ActionCard: View {
                                 description: subTaskPlan.description,
                                 order: maxCompletedOrder + 1 + index
                             )
-                            subTask.phase = "execution"
+                            subTask.phase = .execution
                             subTask.requiresExternalAction = subTaskPlan.requiresExternalAction ?? false
                             if index == 0 {
                                 subTask.markCurrent()
@@ -1229,7 +1229,7 @@ struct ActionCard: View {
     private func planWithAI() {
         guard let apiKey = APIKeyManager.getAPIKey() else { return }
 
-        task.planningStatus = "planningDiscovery"
+        task.planningStatus = .planningDiscovery
         try? modelContext.save()
 
         Task {
@@ -1258,13 +1258,13 @@ struct ActionCard: View {
                         modelContext.insert(subTask)
                     }
 
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                 }
             } catch {
                 print("Failed to generate discovery questions: \(error)")
                 await MainActor.run {
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                 }
             }
@@ -1274,7 +1274,7 @@ struct ActionCard: View {
     private func transitionToExecutionPhase() {
         guard let apiKey = APIKeyManager.getAPIKey() else { return }
 
-        task.planningStatus = "planningExecution"
+        task.planningStatus = PlanningStatus.planningExecution
         submissionState = .revising
         addProgressMessage("Creating your action plan...")
         try? modelContext.save()
@@ -1322,7 +1322,7 @@ struct ActionCard: View {
                             title: subTaskPlan.title,
                             description: subTaskPlan.description,
                             order: startOrder + index,
-                            phase: "execution",
+                            phase: .execution,
                             requiresExternalAction: subTaskPlan.requiresExternalAction ?? false
                         )
                         if index == 0 {
@@ -1332,7 +1332,7 @@ struct ActionCard: View {
                         modelContext.insert(subTask)
                     }
 
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                     KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
 
@@ -1345,7 +1345,7 @@ struct ActionCard: View {
             } catch {
                 print("Failed to create execution plan: \(error)")
                 await MainActor.run {
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     addProgressMessage("Error creating plan")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         resetForNextAction()

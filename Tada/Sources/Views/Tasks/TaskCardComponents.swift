@@ -48,7 +48,7 @@ struct TaskHeaderView: View {
     }
 
     private var phaseLabel: String {
-        if task.status == "completed" {
+        if task.status == TaskStatus.completed {
             return "Completed:"
         } else if task.isPlanningDiscovery {
             return "Planning Discovery:"
@@ -66,7 +66,7 @@ struct TaskHeaderView: View {
     }
 
     private var isCompleted: Bool {
-        task.status == "completed"
+        task.status == TaskStatus.completed
     }
 
     var body: some View {
@@ -134,9 +134,9 @@ struct SubTaskRowView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: subTask.isCompleted ? "checkmark.circle.fill" :
-                    (subTask.status == "skipped" ? "arrow.right.circle" : "circle"))
+                    (subTask.status == SubTaskStatus.skipped ? "arrow.right.circle" : "circle"))
                 .foregroundColor(subTask.isCompleted ? phaseColor :
-                    (subTask.status == "skipped" ? .orange : phaseColor.opacity(0.4)))
+                    (subTask.status == SubTaskStatus.skipped ? .orange : phaseColor.opacity(0.4)))
                 .font(.system(size: Theme.circleSize))
                 .padding(.top, 2)
 

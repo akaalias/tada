@@ -8,55 +8,55 @@ final class SubTask {
     var title: String
     var subTaskDescription: String
     var order: Int
-    var status: String // "pending", "current", "completed", "skipped"
-    var phase: String // "discovery", "execution"
+    var status: SubTaskStatus = SubTaskStatus.pending
+    var phase: TaskPhase = TaskPhase.discovery
     var actionType: String?
     var actionSchemaData: Data?
     var actionResponseData: Data?
     var completedAt: Date?
     var requiresExternalAction: Bool = false
 
-    init(title: String, description: String = "", order: Int = 0, phase: String = "discovery", requiresExternalAction: Bool = false) {
+    init(title: String, description: String = "", order: Int = 0, phase: TaskPhase = .discovery, requiresExternalAction: Bool = false) {
         self.id = UUID()
         self.title = title
         self.subTaskDescription = description
         self.order = order
-        self.status = "pending"
+        self.status = SubTaskStatus.pending
         self.phase = phase
         self.requiresExternalAction = requiresExternalAction
     }
 
     var isDiscoveryPhase: Bool {
-        phase == "discovery"
+        phase == .discovery
     }
 
     var isExecutionPhase: Bool {
-        phase == "execution"
+        phase == .execution
     }
 
     var isPending: Bool {
-        status == "pending"
+        status == .pending
     }
 
     var isCurrent: Bool {
-        status == "current"
+        status == .current
     }
 
     var isCompleted: Bool {
-        status == "completed"
+        status.isCompleted
     }
 
     func markCompleted() {
-        status = "completed"
+        status = SubTaskStatus.completed
         completedAt = Date()
     }
 
     func markCurrent() {
-        status = "current"
+        status = SubTaskStatus.current
     }
 
     func skip() {
-        status = "skipped"
+        status = SubTaskStatus.skipped
     }
 
     var effectiveRequiresExternalAction: Bool {

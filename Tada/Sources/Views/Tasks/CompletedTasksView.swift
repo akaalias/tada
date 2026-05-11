@@ -3,8 +3,8 @@ import SwiftData
 
 struct CompletedTasksView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TodoTask> { $0.status == "completed" }, sort: \TodoTask.completedAt, order: .reverse)
-    private var completedTasks: [TodoTask]
+    @Query(sort: \TodoTask.completedAt, order: .reverse) private var allTasks: [TodoTask]
+    private var completedTasks: [TodoTask] { allTasks.filter { $0.status == .completed } }
 
     var body: some View {
         Group {
@@ -62,7 +62,7 @@ struct CompletedTasksView: View {
     }
 
     private func reopenTask(_ task: TodoTask) {
-        task.status = "active"
+        task.status = .active
         task.completedAt = nil
         try? modelContext.save()
     }

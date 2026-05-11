@@ -6,9 +6,9 @@ final class TodoTask {
     @Attribute(.unique) var id: UUID
     var title: String
     var taskDescription: String
-    var status: String = "active" // "active", "completed", "archived"
-    var phase: String = "discovery" // "discovery", "execution"
-    var planningStatus: String = "idle" // "idle", "planningDiscovery", "planningExecution"
+    var status: TaskStatus = TaskStatus.active
+    var phase: TaskPhase = TaskPhase.discovery
+    var planningStatus: PlanningStatus = PlanningStatus.idle
     var createdAt: Date
     var completedAt: Date?
     var originalInput: String
@@ -21,43 +21,43 @@ final class TodoTask {
         self.id = UUID()
         self.title = title
         self.taskDescription = ""
-        self.status = "active"
-        self.phase = "discovery"
-        self.planningStatus = "idle"
+        self.status = TaskStatus.active
+        self.phase = TaskPhase.discovery
+        self.planningStatus = PlanningStatus.idle
         self.createdAt = Date()
         self.originalInput = originalInput ?? title
     }
 
     var isPlanning: Bool {
-        planningStatus != "idle"
+        planningStatus.isPlanning
     }
 
     var isPlanningDiscovery: Bool {
-        planningStatus == "planningDiscovery"
+        planningStatus == .planningDiscovery
     }
 
     var isPlanningExecution: Bool {
-        planningStatus == "planningExecution"
+        planningStatus == .planningExecution
     }
 
     var isDiscoveryPhase: Bool {
-        phase == "discovery"
+        phase == .discovery
     }
 
     var isExecutionPhase: Bool {
-        phase == "execution"
+        phase == .execution
     }
 
     func transitionToExecution() {
-        phase = "execution"
+        phase = .execution
     }
 
     var isActive: Bool {
-        status == "active"
+        status == .active
     }
 
     var isCompleted: Bool {
-        status == "completed"
+        status.isCompleted
     }
 
     var sortedSubTasks: [SubTask] {
@@ -65,11 +65,11 @@ final class TodoTask {
     }
 
     var discoverySubTasks: [SubTask] {
-        sortedSubTasks.filter { $0.phase == "discovery" }
+        sortedSubTasks.filter { $0.phase == .discovery }
     }
 
     var executionSubTasks: [SubTask] {
-        sortedSubTasks.filter { $0.phase == "execution" }
+        sortedSubTasks.filter { $0.phase == .execution }
     }
 
     var currentPhaseSubTasks: [SubTask] {
@@ -78,19 +78,19 @@ final class TodoTask {
 
     var currentSubTask: SubTask? {
         // Only look at subtasks in the current phase
-        currentPhaseSubTasks.first { $0.status == "current" || $0.status == "pending" }
+        currentPhaseSubTasks.first { $0.status == .current || $0.status == .pending }
     }
 
     var progress: Double {
         // Progress based on current phase subtasks
         let phaseTasks = currentPhaseSubTasks
         guard !phaseTasks.isEmpty else { return 0 }
-        let completed = phaseTasks.filter { $0.status == "completed" }.count
+        let completed = phaseTasks.filter { $0.status.isCompleted }.count
         return Double(completed) / Double(phaseTasks.count)
     }
 
     func markCompleted() {
-        status = "completed"
+        status = TaskStatus.completed
         completedAt = Date()
     }
 

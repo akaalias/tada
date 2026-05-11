@@ -3,8 +3,8 @@ import SwiftData
 
 struct AllTasksView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<TodoTask> { $0.status == "active" }, sort: \TodoTask.createdAt, order: .reverse)
-    private var tasks: [TodoTask]
+    @Query(sort: \TodoTask.createdAt, order: .reverse) private var allTasks: [TodoTask]
+    private var tasks: [TodoTask] { allTasks.filter { $0.status == .active } }
 
     @State private var selectedTask: TodoTask?
 
@@ -116,8 +116,8 @@ struct AllTasksView: View {
         for subTask in task.subTasks {
             modelContext.delete(subTask)
         }
-        task.phase = "discovery"
-        task.planningStatus = "planningDiscovery"
+        task.phase = .discovery
+        task.planningStatus = PlanningStatus.planningDiscovery
         try? modelContext.save()
 
         // Regenerate discovery
@@ -144,14 +144,14 @@ struct AllTasksView: View {
                         modelContext.insert(subTask)
                     }
 
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                     KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan discovery: \(error)")
                 await MainActor.run {
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                 }
             }
@@ -165,7 +165,7 @@ struct AllTasksView: View {
         for subTask in task.executionSubTasks {
             modelContext.delete(subTask)
         }
-        task.planningStatus = "planningExecution"
+        task.planningStatus = PlanningStatus.planningExecution
         try? modelContext.save()
 
         // Gather discovery answers
@@ -207,7 +207,7 @@ struct AllTasksView: View {
                             title: subTaskPlan.title,
                             description: subTaskPlan.description,
                             order: startOrder + index,
-                            phase: "execution",
+                            phase: .execution,
                             requiresExternalAction: subTaskPlan.requiresExternalAction ?? false
                         )
                         if index == 0 {
@@ -217,14 +217,14 @@ struct AllTasksView: View {
                         modelContext.insert(subTask)
                     }
 
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                     KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan execution: \(error)")
                 await MainActor.run {
-                    task.planningStatus = "idle"
+                    task.planningStatus = .idle
                     try? modelContext.save()
                 }
             }

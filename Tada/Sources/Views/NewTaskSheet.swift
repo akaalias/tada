@@ -88,7 +88,7 @@ struct NewTaskSheet: View {
         let task = TodoTask(title: trimmedInput, originalInput: trimmedInput)
 
         if APIKeyManager.hasAPIKey {
-            task.planningStatus = "planningDiscovery"
+            task.planningStatus = PlanningStatus.planningDiscovery
         }
 
         modelContext.insert(task)
@@ -121,14 +121,14 @@ struct NewTaskSheet: View {
                             modelContext.insert(subTask)
                         }
 
-                        task.planningStatus = "idle"
+                        task.planningStatus = PlanningStatus.idle
                         try? modelContext.save()
                         // Refresh the wiki entry now that the planner has rewritten the title/description.
                         KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                     }
                 } catch {
                     await MainActor.run {
-                        task.planningStatus = "idle"
+                        task.planningStatus = PlanningStatus.idle
                         try? modelContext.save()
                     }
                 }

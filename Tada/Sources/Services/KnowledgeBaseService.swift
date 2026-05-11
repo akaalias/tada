@@ -291,7 +291,7 @@ final class KnowledgeBaseService: ObservableObject {
     private struct SubtaskSnapshot {
         let id: UUID
         let order: Int
-        let phase: String
+        let phase: TaskPhase
         let title: String
         let description: String
         let response: String
@@ -709,7 +709,7 @@ final class KnowledgeBaseService: ObservableObject {
         originalInput: String,
         createdAt: Date,
         completedAt: Date?,
-        status: String,
+        status: TaskStatus,
         folder: URL
     ) {
         let fm = FileManager.default

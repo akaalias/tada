@@ -78,8 +78,8 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct Sidebar: View {
     @Binding var selection: SidebarItem
-    @Query(filter: #Predicate<TodoTask> { $0.status == "active" })
-    private var activeTasks: [TodoTask]
+    @Query private var allTasks: [TodoTask]
+    private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @ObservedObject private var kb = KnowledgeBaseService.shared
 
     private var mainItems: [SidebarItem] {
