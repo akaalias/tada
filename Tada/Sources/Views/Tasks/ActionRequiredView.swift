@@ -262,34 +262,21 @@ struct ActionCard: View {
     @Environment(\.modelContext) private var modelContext
     let task: TodoTask
     var defaultExpanded: Bool = true
+    @State private var viewModel: ActionCardViewModel
     @State private var showingSubTaskSheet = false
-    @State private var actionSchema: ActionSchema?
-    @State private var actionResponse = ActionResponse()
-    @State private var isLoadingSchema = false
-    @State private var schemaError: String?
-    @State private var submissionState: SubmissionState = .idle
-    @State private var progressLog: [String] = []
-    @State private var showingBlockerSelection = false
-    @State private var selectedBlocker: BlockerType?
-    @State private var pendingSubTask: SubTask?
-    @State private var showingNudgeInput = false
 
-    private var phaseColor: Color {
-        task.isDiscoveryPhase ? .orange : .blue
-    }
-
-    private var isTransitioningToExecution: Bool {
-        task.isDiscoveryPhase &&
-        !task.discoverySubTasks.isEmpty &&
-        task.discoverySubTasks.allSatisfy({ $0.isCompleted }) &&
-        task.executionSubTasks.isEmpty
+    init(task: TodoTask, defaultExpanded: Bool = true) {
+        self.task = task
+        self.defaultExpanded = defaultExpanded
+        self._viewModel = State(initialValue: ActionCardViewModel(task: task))
     }
 
     var body: some View {
-        TaskCard(task: task, defaultExpanded: defaultExpanded) {
+        @Bindable var vm = viewModel
+        return TaskCard(task: task, defaultExpanded: defaultExpanded) {
             Divider()
 
-            if submissionState != .idle || isLoadingSchema {
+            if viewModel.submissionState != .idle || viewModel.isLoadingSchema {
                 submissionProgressView
             } else if task.isPlanning {
                 planningInProgressView
@@ -297,45 +284,47 @@ struct ActionCard: View {
                 dynamicActionView(for: subTask)
             } else if task.subTasks.isEmpty {
                 noSubTasksView
-            } else if isTransitioningToExecution {
+            } else if viewModel.isTransitioningToExecution {
                 transitioningView
             } else {
                 allCompletedView
             }
         }
+        .task {
+            if viewModel.modelContext == nil {
+                viewModel.modelContext = modelContext
+            }
+        }
         .sheet(isPresented: $showingSubTaskSheet) {
             AddSubTasksSheet(task: task)
         }
-        .sheet(isPresented: $showingBlockerSelection) {
+        .sheet(isPresented: $vm.showingBlockerSelection) {
             BlockerSelectionView(
-                subTaskTitle: pendingSubTask?.title ?? "",
+                subTaskTitle: viewModel.pendingSubTask?.title ?? "",
                 onSelect: { blocker in
-                    handleBlockerSelection(blocker)
+                    viewModel.handleBlockerSelection(blocker)
                 },
                 onCancel: {
-                    showingBlockerSelection = false
-                    pendingSubTask = nil
+                    viewModel.showingBlockerSelection = false
+                    viewModel.pendingSubTask = nil
                 }
             )
         }
-        .sheet(isPresented: $showingNudgeInput) {
+        .sheet(isPresented: $vm.showingNudgeInput) {
             NudgeInputView(
                 initialText: task.memory,
                 onSave: { text in
-                    task.memory = text
-                    try? modelContext.save()
-                    showingNudgeInput = false
+                    viewModel.saveMemory(text)
+                    viewModel.showingNudgeInput = false
                 },
                 onCancel: {
-                    showingNudgeInput = false
+                    viewModel.showingNudgeInput = false
                 }
             )
         }
         .onChange(of: task.currentSubTask?.id) { oldId, newId in
             if oldId != newId {
-                actionSchema = nil
-                actionResponse = ActionResponse()
-                schemaError = nil
+                viewModel.clearSchemaForNewSubTask()
             }
         }
     }
@@ -343,7 +332,7 @@ struct ActionCard: View {
     private var submissionProgressView: some View {
         VStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(Array(progressLog.enumerated()), id: \.offset) { index, message in
+                ForEach(Array(viewModel.progressLog.enumerated()), id: \.offset) { index, message in
                     HStack(spacing: 12) {
                         if index == 0 {
                             ProgressView()
@@ -351,7 +340,7 @@ struct ActionCard: View {
                         } else {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: Theme.circleSize))
-                                .foregroundColor(phaseColor)
+                                .foregroundColor(viewModel.phaseColor)
                         }
                         Text(message)
                             .font(.system(size: Theme.fontSize))
@@ -364,33 +353,24 @@ struct ActionCard: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.easeInOut(duration: 0.3), value: progressLog.count)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.progressLog.count)
         }
         .frame(maxWidth: .infinity)
         .padding(24)
     }
 
-    private func addProgressMessage(_ message: String) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            progressLog.insert(message, at: 0)
-        }
-    }
-
-    private func clearProgressLog() {
-        progressLog.removeAll()
-    }
-
     @ViewBuilder
     private func dynamicActionView(for subTask: SubTask) -> some View {
+        @Bindable var vm = viewModel
         VStack(alignment: .leading, spacing: 16) {
             // Sub-task sub-header
             HStack(spacing: 10) {
                 if task.isDiscoveryPhase {
-                    Text("Question \(currentIndex + 1) of \(task.subTasks.count)")
+                    Text("Question \(viewModel.currentIndex + 1) of \(task.subTasks.count)")
                         .font(.system(size: Theme.fontSize, weight: .medium))
                         .foregroundColor(.orange)
                 } else {
-                    Text("Step \(currentIndex + 1) of \(task.subTasks.count)")
+                    Text("Step \(viewModel.currentIndex + 1) of \(task.subTasks.count)")
                         .font(.system(size: Theme.fontSize, weight: .medium))
                         .foregroundColor(.blue)
                 }
@@ -398,7 +378,7 @@ struct ActionCard: View {
                 Text(subTask.title)
                     .font(.system(size: Theme.fontSize, weight: .semibold))
 
-                if !task.isDiscoveryPhase && (subTask.effectiveRequiresExternalAction || actionSchema?.requiresExternalAction == true) {
+                if !task.isDiscoveryPhase && (subTask.effectiveRequiresExternalAction || viewModel.actionSchema?.requiresExternalAction == true) {
                     Text("Outside Work")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.white)
@@ -410,9 +390,9 @@ struct ActionCard: View {
 
                 Spacer()
 
-                if APIKeyManager.hasAPIKey && !isLoadingSchema {
+                if APIKeyManager.hasAPIKey && !viewModel.isLoadingSchema {
                     Button {
-                        regenerateActionUI(for: subTask)
+                        viewModel.regenerateActionUI(for: subTask)
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 14))
@@ -423,7 +403,7 @@ struct ActionCard: View {
             }
 
             // Outside work alert
-            if !task.isDiscoveryPhase && (subTask.effectiveRequiresExternalAction || actionSchema?.requiresExternalAction == true) {
+            if !task.isDiscoveryPhase && (subTask.effectiveRequiresExternalAction || viewModel.actionSchema?.requiresExternalAction == true) {
                 Text("This step requires action outside the app. It might feel uncomfortable, but completing it will move you closer to your goal.")
                     .font(.system(size: Theme.fontSize))
                     .foregroundColor(.white)
@@ -434,7 +414,7 @@ struct ActionCard: View {
             }
 
             // Action UI section
-            if isLoadingSchema {
+            if viewModel.isLoadingSchema {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -443,20 +423,20 @@ struct ActionCard: View {
                         .foregroundColor(.secondary)
                     Text(subTask.title)
                         .font(.system(size: Theme.fontSize, weight: .bold))
-                        .foregroundColor(phaseColor)
+                        .foregroundColor(viewModel.phaseColor)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 16)
-            } else if let schema = actionSchema {
-                ActionUIRenderer(schema: schema, response: $actionResponse, isDiscovery: task.isDiscoveryPhase, showTitle: false) {
-                    completeSubTaskWithResponse(subTask)
+            } else if let schema = viewModel.actionSchema {
+                ActionUIRenderer(schema: schema, response: $vm.actionResponse, isDiscovery: task.isDiscoveryPhase, showTitle: false) {
+                    viewModel.completeSubTaskWithResponse(subTask)
                 } onHelp: {
-                    pendingSubTask = subTask
-                    showingBlockerSelection = true
+                    viewModel.pendingSubTask = subTask
+                    viewModel.showingBlockerSelection = true
                 } onChangeFieldType: { newType, options in
-                    changeFieldType(to: newType, options: options, for: subTask)
+                    viewModel.changeFieldType(to: newType, options: options, for: subTask)
                 }
-            } else if let error = schemaError {
+            } else if let error = viewModel.schemaError {
                 VStack(alignment: .leading, spacing: 14) {
                     if !subTask.subTaskDescription.isEmpty {
                         Text(subTask.subTaskDescription)
@@ -470,14 +450,14 @@ struct ActionCard: View {
 
                     HStack {
                         Button("Skip") {
-                            skipSubTask(subTask)
+                            viewModel.skipSubTask(subTask)
                         }
                         .buttonStyle(.bordered)
 
                         Spacer()
 
                         Button("Mark Complete") {
-                            completeSubTask(subTask)
+                            viewModel.completeSubTask(subTask)
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -496,7 +476,7 @@ struct ActionCard: View {
                     HStack {
                         if APIKeyManager.hasAPIKey {
                             Button("Generate Action UI") {
-                                loadOrGenerateActionUI(for: subTask)
+                                viewModel.loadOrGenerateActionUI(for: subTask)
                             }
                             .buttonStyle(.bordered)
                         }
@@ -504,12 +484,12 @@ struct ActionCard: View {
                         Spacer()
 
                         Button("Skip") {
-                            skipSubTask(subTask)
+                            viewModel.skipSubTask(subTask)
                         }
                         .buttonStyle(.bordered)
 
                         Button("Mark Complete") {
-                            completeSubTask(subTask)
+                            viewModel.completeSubTask(subTask)
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -518,8 +498,8 @@ struct ActionCard: View {
                 .background(Color(.controlBackgroundColor))
                 .cornerRadius(8)
                 .task(id: subTask.id) {
-                    if APIKeyManager.hasAPIKey && actionSchema == nil && !isLoadingSchema {
-                        loadOrGenerateActionUI(for: subTask)
+                    if APIKeyManager.hasAPIKey && viewModel.actionSchema == nil && !viewModel.isLoadingSchema {
+                        viewModel.loadOrGenerateActionUI(for: subTask)
                     }
                 }
             }
@@ -538,7 +518,7 @@ struct ActionCard: View {
 
                 if APIKeyManager.hasAPIKey {
                     Button("Plan with AI") {
-                        planWithAI()
+                        viewModel.planWithAI()
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -570,19 +550,19 @@ struct ActionCard: View {
         HStack {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: Theme.circleSize))
-                .foregroundColor(phaseColor)
+                .foregroundColor(viewModel.phaseColor)
             if task.isDiscoveryPhase && task.executionSubTasks.isEmpty {
                 Text("All questions answered!")
                 Spacer()
                 Button("Create Execution Plan") {
-                    transitionToExecutionPhase()
+                    viewModel.transitionToExecutionPhase()
                 }
                 .buttonStyle(.borderedProminent)
             } else {
                 Text("All steps completed!")
                 Spacer()
                 Button("Mark Task Complete") {
-                    completeTask()
+                    viewModel.completeTask()
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -612,778 +592,10 @@ struct ActionCard: View {
         .background(Color(.controlBackgroundColor))
         .cornerRadius(8)
         .onAppear {
-            // Auto-trigger transition if we're in this state
-            transitionToExecutionPhase()
+            viewModel.transitionToExecutionPhase()
         }
     }
 
-    private var currentIndex: Int {
-        task.sortedSubTasks.firstIndex(where: { $0.id == task.currentSubTask?.id }) ?? 0
-    }
-
-    private func loadOrGenerateActionUI(for subTask: SubTask) {
-        // First check if we have a cached schema
-        if let cachedData = subTask.actionSchemaData,
-           let cachedSchema = try? JSONDecoder().decode(ActionSchema.self, from: cachedData) {
-            self.actionSchema = cachedSchema
-            self.isLoadingSchema = false
-            return
-        }
-
-        // No cache - generate new schema
-        generateActionUI(for: subTask)
-    }
-
-    private func regenerateActionUI(for subTask: SubTask) {
-        // Clear cached schema and response
-        subTask.actionSchemaData = nil
-        actionSchema = nil
-        actionResponse = ActionResponse()
-        try? modelContext.save()
-
-        // Generate fresh
-        generateActionUI(for: subTask)
-    }
-
-    private func changeFieldType(to newType: ActionField.FieldType, options: [FieldOption]?, for subTask: SubTask) {
-        // Extract current data to convert to new format
-        var defaultValue: String? = nil
-        var prefillRows: [[String: String]]? = nil
-
-        // Try to extract text data from current response
-        let currentText = actionResponse.values.compactMap { _, value -> String? in
-            switch value {
-            case .string(let s):
-                // Skip image data
-                if s.hasPrefix("data:image") { return nil }
-                return s.isEmpty ? nil : s
-            case .number(let n): return String(format: "%.0f", n)
-            case .stringArray(let arr): return arr.joined(separator: "\n")
-            default: return nil
-            }
-        }.joined(separator: "\n")
-
-        // Convert data based on target type
-        if newType == .textarea || newType == .text {
-            if !currentText.isEmpty {
-                // Parse table format "Item - €50; Item2 - €30" into lines
-                if currentText.contains("; ") {
-                    let items = currentText
-                        .replacingOccurrences(of: " (Total: €", with: "\n\nTotal: €")
-                        .replacingOccurrences(of: " (Total: $", with: "\n\nTotal: $")
-                        .replacingOccurrences(of: ")", with: "")
-                        .components(separatedBy: "; ")
-                        .joined(separator: "\n")
-                    defaultValue = items
-                } else {
-                    defaultValue = currentText
-                }
-            }
-        } else if newType == .itemTable {
-            // Parse text into rows for table
-            if !currentText.isEmpty {
-                let lines = currentText.components(separatedBy: "\n").filter { !$0.isEmpty }
-                prefillRows = lines.map { ["item": $0] }
-            }
-        }
-
-        // Create a new schema with the specified field type
-        let newField = ActionField(
-            id: "field_\(newType.rawValue)",
-            type: newType,
-            label: "",
-            placeholder: newType == .textarea ? "Enter your response here..." : nil,
-            options: options,
-            defaultValue: defaultValue,
-            prefillRows: prefillRows
-        )
-
-        let newSchema = ActionSchema(
-            type: .form,
-            title: actionSchema?.title ?? subTask.title,
-            description: actionSchema?.description ?? subTask.subTaskDescription,
-            fields: [newField],
-            submitLabel: "Save",
-            requiresExternalAction: subTask.effectiveRequiresExternalAction
-        )
-
-        // Clear response and update schema
-        actionResponse = ActionResponse()
-        actionSchema = newSchema
-
-        // Cache the new schema
-        if let schemaData = try? JSONEncoder().encode(newSchema) {
-            subTask.actionSchemaData = schemaData
-            try? modelContext.save()
-        }
-    }
-
-    private func generateActionUI(for subTask: SubTask) {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
-
-        // Clear any previous progress log and start fresh
-        clearProgressLog()
-        addProgressMessage("Creating a custom UI for \(subTask.title)")
-        isLoadingSchema = true
-        schemaError = nil
-
-        // Gather previous responses from completed sub-tasks
-        let previousResponses = gatherPreviousResponses()
-
-        Task {
-            do {
-                let executive = ExecutiveAIService(apiKey: apiKey)
-                let schema = try await executive.generateActionUI(
-                    subTask: subTask.title,
-                    subTaskDescription: subTask.subTaskDescription,
-                    taskContext: task.title,
-                    previousResponses: previousResponses,
-                    taskMemory: task.memory
-                )
-
-                await MainActor.run {
-                    self.actionSchema = schema
-                    self.isLoadingSchema = false
-                    clearProgressLog()
-
-                    // Cache the schema for future use
-                    if let schemaData = try? JSONEncoder().encode(schema) {
-                        subTask.actionSchemaData = schemaData
-                        try? modelContext.save()
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    self.schemaError = error.localizedDescription
-                    self.isLoadingSchema = false
-                    clearProgressLog()
-                }
-            }
-        }
-    }
-
-    private func completeSubTaskWithResponse(_ subTask: SubTask) {
-        // Check if this is an outside work step with a "No" answer
-        if subTask.effectiveRequiresExternalAction || actionSchema?.requiresExternalAction == true {
-            // Look for a yesNo field with a "No" response
-            for (_, value) in actionResponse.values {
-                if case .boolean(let answered) = value, answered == false {
-                    // User said "No" - show blocker selection instead of completing
-                    pendingSubTask = subTask
-                    showingBlockerSelection = true
-                    return
-                }
-            }
-        }
-
-        proceedWithCompletion(subTask)
-    }
-
-    private func proceedWithCompletion(_ subTask: SubTask) {
-        // Start progress log
-        clearProgressLog()
-        submissionState = .saving
-        addProgressMessage("Saving your response...")
-
-        // Save response
-        if let responseData = try? JSONEncoder().encode(actionResponse) {
-            subTask.actionResponseData = responseData
-        }
-
-        subTask.markCompleted()
-        try? modelContext.save()
-        KnowledgeBaseService.shared.handleSubtaskCompleted(subTask)
-
-        // Check if we're in discovery or execution phase
-        if task.isDiscoveryPhase {
-            // Discovery phase: no revision, just move to next question
-            let remainingQuestions = task.sortedSubTasks.filter { $0.isPending }
-
-            if remainingQuestions.isEmpty {
-                // All discovery questions answered - transition to execution!
-                addProgressMessage("All questions answered")
-                transitionToExecutionPhase()
-            } else {
-                // More questions to ask
-                addProgressMessage("Moving to next question...")
-                if let next = remainingQuestions.first {
-                    next.markCurrent()
-                }
-                try? modelContext.save()
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    resetForNextAction()
-                }
-            }
-        } else {
-            // Execution phase: evaluate if plan needs revision after each step
-            addProgressMessage("Step completed")
-            let remainingSteps = task.sortedSubTasks.filter({ $0.phase == TaskPhase.execution && $0.isPending })
-
-            if remainingSteps.count > 1 {
-                // Always ask the planner if revision is needed based on new info
-                addProgressMessage("Reviewing plan...")
-                revisePlanIfNeeded(remainingSteps: remainingSteps)
-            } else if let next = remainingSteps.first {
-                next.markCurrent()
-                addProgressMessage("Moving to next step...")
-                try? modelContext.save()
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    resetForNextAction()
-                }
-            } else {
-                // All execution steps done - auto-complete the task
-                addProgressMessage("All steps completed!")
-                addProgressMessage("Task complete!")
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    task.markCompleted()
-                    try? modelContext.save()
-                    KnowledgeBaseService.shared.handleTaskCompleted(task)
-                    resetForNextAction()
-                }
-            }
-        }
-    }
-
-    private func handleBlockerSelection(_ blocker: BlockerType) {
-        showingBlockerSelection = false
-
-        guard let currentSubTask = pendingSubTask else { return }
-
-        // Set state to show progress view
-        clearProgressLog()
-        submissionState = .saving
-
-        switch blocker {
-        case .needsBreakingDown:
-            addProgressMessage("Splitting this into separate steps...")
-            breakDownOverwhelmingStep(currentSubTask)
-
-        case .overwhelming:
-            addProgressMessage("Let's break this into smaller steps...")
-            breakDownOverwhelmingStep(currentSubTask)
-
-        case .doesntMakeSense:
-            addProgressMessage("Removing this step...")
-            deleteSubTask(currentSubTask)
-
-        case .remember:
-            pendingSubTask = nil
-            submissionState = .idle
-            showingNudgeInput = true
-
-        case .needInfo:
-            addProgressMessage("What information do you need?")
-            pendingSubTask = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                resetForNextAction()
-            }
-
-        case .badTiming:
-            addProgressMessage("No problem, we'll come back to this later")
-            pendingSubTask = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                resetForNextAction()
-            }
-
-        case .anxious:
-            addProgressMessage("That's okay - let's think about what's making this feel hard")
-            pendingSubTask = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                resetForNextAction()
-            }
-        }
-    }
-
-    private func deleteSubTask(_ subTask: SubTask) {
-        // Capture context for learning before deleting
-        let badStepTitle = subTask.title
-        let taskContext = task.title
-
-        // Build discovery context
-        let discoveryContext = task.discoverySubTasks
-            .filter { $0.isCompleted }
-            .map { ds -> String in
-                var responseStr = "(no response)"
-                if let data = ds.actionResponseData,
-                   let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
-                }
-                return "Q: \(ds.title)\nA: \(responseStr)"
-            }
-            .joined(separator: "\n\n")
-
-        // Build execution progress
-        let executionSteps = task.executionSubTasks
-        let completedSteps = executionSteps.filter { $0.isCompleted }.map { "- [DONE] \($0.title)" }
-        let currentStep = ["- [BAD STEP] \(badStepTitle)"]
-        let remainingStepsList = executionSteps.filter { $0.isPending && $0.id != subTask.id }.map { "- [TODO] \($0.title)" }
-        let executionProgress = (completedSteps + currentStep + remainingStepsList).joined(separator: "\n")
-
-        // Generate learning in background
-        if let apiKey = APIKeyManager.getAPIKey() {
-            Task {
-                do {
-                    let planner = PlannerAIService(apiKey: apiKey)
-                    let lesson = try await planner.generateLearning(
-                        badStepTitle: badStepTitle,
-                        taskContext: taskContext,
-                        discoveryContext: discoveryContext.isEmpty ? "No discovery" : discoveryContext,
-                        executionProgress: executionProgress
-                    )
-
-                    let learning = PlanningLearning(
-                        taskContext: taskContext,
-                        badStepTitle: badStepTitle,
-                        lesson: lesson
-                    )
-                    PlanningMemoryService.shared.saveLearning(learning)
-                } catch {
-                    print("Failed to generate learning: \(error)")
-                }
-            }
-        }
-
-        // Find the next step before deleting
-        let remainingSteps = task.executionSubTasks.filter { $0.id != subTask.id && $0.isPending }
-
-        // Delete the subtask
-        modelContext.delete(subTask)
-
-        // Renumber remaining steps
-        let remainingExecutionSteps = task.executionSubTasks.filter { $0.id != subTask.id }
-        let discoveryCount = task.discoverySubTasks.count
-        for (index, step) in remainingExecutionSteps.sorted(by: { $0.order < $1.order }).enumerated() {
-            step.order = discoveryCount + index
-        }
-
-        // Mark next step as current
-        if let next = remainingSteps.first {
-            next.markCurrent()
-            addProgressMessage("Moving to next step...")
-        }
-
-        try? modelContext.save()
-        pendingSubTask = nil
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            resetForNextAction()
-        }
-    }
-
-    private func breakDownOverwhelmingStep(_ subTask: SubTask) {
-        guard let apiKey = APIKeyManager.getAPIKey() else {
-            addProgressMessage("Unable to generate steps")
-            pendingSubTask = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                resetForNextAction()
-            }
-            return
-        }
-
-        // Build discovery context
-        let discoveryContext = task.discoverySubTasks
-            .filter { $0.isCompleted }
-            .map { discoverySubTask -> String in
-                var responseStr = "(no response recorded)"
-                if let data = discoverySubTask.actionResponseData,
-                   let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
-                }
-                return "Q: \(discoverySubTask.title)\nA: \(responseStr)"
-            }
-            .joined(separator: "\n\n")
-
-        // Build execution progress
-        let executionSteps = task.executionSubTasks
-        let completedSteps = executionSteps.filter { $0.isCompleted }.map { "- [DONE] \($0.title)" }
-        let currentStep = executionSteps.filter { $0.isCurrent }.map { "- [CURRENT - OVERWHELMING] \($0.title)" }
-        let remainingSteps = executionSteps.filter { $0.isPending && !$0.isCurrent }.map { "- [TODO] \($0.title)" }
-        let executionProgress = (completedSteps + currentStep + remainingSteps).joined(separator: "\n")
-
-        Task {
-            do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let microSteps = try await planner.breakDownStep(
-                    stepTitle: subTask.title,
-                    stepDescription: subTask.subTaskDescription,
-                    taskContext: task.title,
-                    discoveryContext: discoveryContext.isEmpty ? "No discovery questions were asked" : discoveryContext,
-                    executionProgress: executionProgress.isEmpty ? "This is the first step" : executionProgress
-                )
-
-                await MainActor.run {
-                    addProgressMessage("Created \(microSteps.count) smaller steps")
-
-                    // Get the position of the overwhelming step in execution subtasks
-                    let executionSteps = task.executionSubTasks
-                    let position = executionSteps.firstIndex(where: { $0.id == subTask.id }) ?? 0
-
-                    // Build new execution order: [steps before] + [micro-steps] + [steps after]
-                    let stepsBefore = Array(executionSteps.prefix(position))
-                    let stepsAfter = Array(executionSteps.dropFirst(position + 1))
-
-                    // Delete the overwhelming step
-                    modelContext.delete(subTask)
-
-                    // Create micro-step SubTask objects
-                    var newMicroSteps: [SubTask] = []
-                    for microStep in microSteps {
-                        let newSubTask = SubTask(
-                            title: microStep.title,
-                            description: microStep.description,
-                            order: 0, // Will renumber below
-                            phase: .execution,
-                            requiresExternalAction: microStep.requiresExternalAction ?? false
-                        )
-                        task.addSubTask(newSubTask)
-                        modelContext.insert(newSubTask)
-                        newMicroSteps.append(newSubTask)
-                    }
-
-                    // Renumber all execution steps in correct order
-                    let discoveryCount = task.discoverySubTasks.count
-                    let newExecutionOrder = stepsBefore + newMicroSteps + stepsAfter
-                    for (index, step) in newExecutionOrder.enumerated() {
-                        step.order = discoveryCount + index
-                        // Don't change status of existing steps - only new micro-steps need status set
-                    }
-
-                    // Mark first micro-step as current
-                    if let firstMicroStep = newMicroSteps.first {
-                        firstMicroStep.markCurrent()
-                    }
-
-                    try? modelContext.save()
-                    pendingSubTask = nil
-
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        resetForNextAction()
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    addProgressMessage("Couldn't break down step: \(error.localizedDescription)")
-                    pendingSubTask = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        resetForNextAction()
-                    }
-                }
-            }
-        }
-    }
-
-    private func completeSubTask(_ subTask: SubTask) {
-        subTask.markCompleted()
-
-        // Activate next pending sub-task
-        if let next = task.sortedSubTasks.first(where: { $0.isPending }) {
-            next.markCurrent()
-        }
-
-        // Reset UI state for next sub-task
-        actionSchema = nil
-        actionResponse = ActionResponse()
-
-        try? modelContext.save()
-        KnowledgeBaseService.shared.handleSubtaskCompleted(subTask)
-    }
-
-    private func resetForNextAction() {
-        submissionState = .idle
-        actionSchema = nil
-        actionResponse = ActionResponse()
-        // Start loading next schema immediately to prevent flicker
-        if let currentSubTask = task.sortedSubTasks.first(where: { $0.isCurrent }),
-           APIKeyManager.hasAPIKey {
-            loadOrGenerateActionUI(for: currentSubTask)
-        }
-    }
-
-    private func skipSubTask(_ subTask: SubTask) {
-        subTask.skip()
-
-        if let next = task.sortedSubTasks.first(where: { $0.isPending }) {
-            next.markCurrent()
-        }
-
-        actionSchema = nil
-        actionResponse = ActionResponse()
-
-        try? modelContext.save()
-    }
-
-    private func revisePlanIfNeeded(remainingSteps: [SubTask]) {
-        guard let apiKey = APIKeyManager.getAPIKey() else {
-            moveToNextStep(remainingSteps)
-            return
-        }
-
-        Task {
-            do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let previousResponses = gatherPreviousResponses()
-
-                let completedInfo = previousResponses.map { dict -> CompletedSubTaskInfo in
-                    let title = dict["subTask"] ?? ""
-                    let response = dict.filter { $0.key != "subTask" }
-                        .map { "\($0.key): \($0.value)" }
-                        .joined(separator: ", ")
-                    return CompletedSubTaskInfo(title: title, response: response)
-                }
-
-                let remainingTitles = remainingSteps.map { $0.title }
-
-                let revision = try await planner.revisePlan(
-                    originalTask: task.title,
-                    completedSubTasks: completedInfo,
-                    remainingSubTasks: remainingTitles,
-                    latestResponse: [:]
-                )
-
-                await MainActor.run {
-                    if revision.revised, let newSubTasks = revision.subTasks {
-                        addProgressMessage("Updating plan based on your input...")
-
-                        // Remove old remaining steps
-                        for step in remainingSteps {
-                            modelContext.delete(step)
-                        }
-
-                        // Add new steps after the last completed task
-                        let maxCompletedOrder = task.sortedSubTasks
-                            .filter { $0.isCompleted }
-                            .map { $0.order }
-                            .max() ?? 0
-                        for (index, subTaskPlan) in newSubTasks.prefix(7).enumerated() {
-                            let subTask = SubTask(
-                                title: subTaskPlan.title,
-                                description: subTaskPlan.description,
-                                order: maxCompletedOrder + 1 + index
-                            )
-                            subTask.phase = .execution
-                            subTask.requiresExternalAction = subTaskPlan.requiresExternalAction ?? false
-                            if index == 0 {
-                                subTask.markCurrent()
-                            }
-                            task.addSubTask(subTask)
-                            modelContext.insert(subTask)
-                        }
-
-                        try? modelContext.save()
-                        addProgressMessage("Plan updated!")
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                            resetForNextAction()
-                        }
-                    } else {
-                        // No revision needed, continue normally
-                        moveToNextStep(remainingSteps)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    addProgressMessage("Continuing with current plan...")
-                    moveToNextStep(remainingSteps)
-                }
-            }
-        }
-    }
-
-    private func moveToNextStep(_ remainingSteps: [SubTask]) {
-        if let next = remainingSteps.first {
-            next.markCurrent()
-            addProgressMessage("Moving to next step...")
-            try? modelContext.save()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                resetForNextAction()
-            }
-        }
-    }
-
-    private func completeTask() {
-        task.markCompleted()
-        try? modelContext.save()
-        KnowledgeBaseService.shared.handleTaskCompleted(task)
-    }
-
-    private func planWithAI() {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
-
-        task.planningStatus = .planningDiscovery
-        try? modelContext.save()
-
-        Task {
-            do {
-                let planner = PlannerAIService(apiKey: apiKey)
-
-                // Start with discovery phase - generate clarifying questions
-                let plan = try await planner.generateDiscoveryQuestions(for: task.originalInput)
-
-                await MainActor.run {
-                    task.title = plan.title
-                    task.taskDescription = plan.description
-
-                    // Cap at 7 discovery questions
-                    let cappedSubTasks = Array(plan.subTasks.prefix(7))
-                    for (index, subTaskPlan) in cappedSubTasks.enumerated() {
-                        let subTask = SubTask(
-                            title: subTaskPlan.title,
-                            description: subTaskPlan.description,
-                            order: index
-                        )
-                        if index == 0 {
-                            subTask.markCurrent()
-                        }
-                        task.addSubTask(subTask)
-                        modelContext.insert(subTask)
-                    }
-
-                    task.planningStatus = .idle
-                    try? modelContext.save()
-                }
-            } catch {
-                print("Failed to generate discovery questions: \(error)")
-                await MainActor.run {
-                    task.planningStatus = .idle
-                    try? modelContext.save()
-                }
-            }
-        }
-    }
-
-    private func transitionToExecutionPhase() {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
-
-        task.planningStatus = PlanningStatus.planningExecution
-        submissionState = .revising
-        addProgressMessage("Creating your action plan...")
-        try? modelContext.save()
-
-        // Gather all discovery answers
-        let discoveryAnswers = task.sortedSubTasks
-            .filter { $0.isCompleted }
-            .map { subTask -> CompletedSubTaskInfo in
-                var responseStr = ""
-                if let data = subTask.actionResponseData,
-                   let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
-                }
-                return CompletedSubTaskInfo(title: subTask.title, response: responseStr)
-            }
-
-        Task {
-            do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let executionPlan = try await planner.createExecutionPlan(
-                    originalTask: task.originalInput,
-                    discoveryAnswers: discoveryAnswers
-                )
-
-                await MainActor.run {
-                    addProgressMessage("Plan created with \(executionPlan.subTasks.count) steps")
-
-                    // Keep discovery subtasks, update title/description based on discovery answers
-                    task.transitionToExecution()
-                    task.title = executionPlan.title
-                    task.taskDescription = executionPlan.description
-
-                    // Add execution steps (with order starting after discovery tasks)
-                    let startOrder = task.subTasks.count
-                    for (index, subTaskPlan) in executionPlan.subTasks.enumerated() {
-                        let subTask = SubTask(
-                            title: subTaskPlan.title,
-                            description: subTaskPlan.description,
-                            order: startOrder + index,
-                            phase: .execution,
-                            requiresExternalAction: subTaskPlan.requiresExternalAction ?? false
-                        )
-                        if index == 0 {
-                            subTask.markCurrent()
-                        }
-                        task.addSubTask(subTask)
-                        modelContext.insert(subTask)
-                    }
-
-                    task.planningStatus = .idle
-                    try? modelContext.save()
-                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
-
-                    // Post notification to show execution plan sheet from parent view
-                    let planData = ExecutionPlanData(taskId: task.id)
-                    submissionState = .idle
-                    clearProgressLog()
-                    NotificationCenter.default.post(name: .showExecutionPlanSheet, object: planData)
-                }
-            } catch {
-                print("Failed to create execution plan: \(error)")
-                await MainActor.run {
-                    task.planningStatus = .idle
-                    addProgressMessage("Error creating plan")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        resetForNextAction()
-                    }
-                }
-            }
-        }
-    }
-
-    private func gatherPreviousResponses() -> [[String: String]] {
-        var responses: [[String: String]] = []
-
-        for subTask in task.sortedSubTasks where subTask.isCompleted {
-            var responseDict: [String: String] = ["subTask": subTask.title]
-
-            if let responseData = subTask.actionResponseData,
-               let actionResponse = try? JSONDecoder().decode(ActionResponse.self, from: responseData) {
-                for (key, value) in actionResponse.values {
-                    switch value {
-                    case .string(let s):
-                        responseDict[key] = s
-                    case .number(let n):
-                        responseDict[key] = String(n)
-                    case .boolean(let b):
-                        responseDict[key] = b ? "Yes" : "No"
-                    case .date(let d):
-                        responseDict[key] = d.formatted(date: .abbreviated, time: .omitted)
-                    case .stringArray(let arr):
-                        responseDict[key] = arr.joined(separator: ", ")
-                    }
-                }
-            }
-
-            responses.append(responseDict)
-        }
-
-        return responses
-    }
 }
 
 struct BlockerSelectionView: View {
