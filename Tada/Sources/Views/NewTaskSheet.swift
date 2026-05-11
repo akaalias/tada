@@ -93,6 +93,7 @@ struct NewTaskSheet: View {
 
         modelContext.insert(task)
         try? modelContext.save()
+        KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
         dismiss()
 
         // Plan in background if API key available
@@ -122,6 +123,8 @@ struct NewTaskSheet: View {
 
                         task.planningStatus = "idle"
                         try? modelContext.save()
+                        // Refresh the wiki entry now that the planner has rewritten the title/description.
+                        KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                     }
                 } catch {
                     await MainActor.run {

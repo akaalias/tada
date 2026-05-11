@@ -1424,6 +1424,32 @@ struct ItemTableRenderer: View {
             summary += " (Total: €\(Int(totalAmount)))"
         }
         response[field.id] = .string(summary.isEmpty ? "No items" : summary)
+
+        // Also persist a structured representation so the wiki renderer can show a real markdown
+        // table and the AI can format numbers properly.
+        let columnPayloads: [[String: String]] = columns.map { col in
+            var dict: [String: String] = ["id": col.id, "label": col.label]
+            switch col.type {
+            case .text: dict["type"] = "text"
+            case .currency: dict["type"] = "currency"
+            case .category: dict["type"] = "category"
+            case .select: dict["type"] = "select"
+            }
+            return dict
+        }
+        let rowPayloads: [[String: String]] = filledRows.map { $0.values }
+        let payload: [String: Any] = [
+            "columns": columnPayloads,
+            "rows": rowPayloads,
+            "total": hasCurrencyColumn ? Int(totalAmount) : 0,
+            "hasCurrency": hasCurrencyColumn
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           let json = String(data: data, encoding: .utf8) {
+            response[field.id + "_table"] = .string("__tada_table__\(json)")
+        } else {
+            response[field.id + "_table"] = nil
+        }
     }
 }
 
@@ -1549,6 +1575,7 @@ struct DrawingCanvasRenderer: View {
     @State private var showingTextInput = false
     @State private var newAnnotationText = ""
     @State private var tapLocation: CGPoint = .zero
+    @State private var canvasSize: CGSize = CGSize(width: 800, height: 400)
 
     struct TextAnnotation: Identifiable {
         let id = UUID()
@@ -1674,6 +1701,14 @@ struct DrawingCanvasRenderer: View {
                 }
             }
             .frame(height: 400)
+            .clipped()
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { canvasSize = proxy.size }
+                        .onChange(of: proxy.size) { _, newSize in canvasSize = newSize }
+                }
+            )
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
@@ -1915,6 +1950,43 @@ struct DrawingCanvasRenderer: View {
 
         // Save text description so AI can read the labels
         response[field.id] = .string(description)
+
+        // Snapshot the canvas as PNG so the wiki can embed the image and the AI can see it.
+        if !elements.isEmpty || !textAnnotations.isEmpty {
+            if let dataURL = renderCanvasPNG() {
+                response[field.id + "_image"] = .string(dataURL)
+            }
+        } else {
+            response[field.id + "_image"] = nil
+        }
+    }
+
+    @MainActor
+    private func renderCanvasPNG() -> String? {
+        // Use the actual size the user was drawing on so element coordinates line up perfectly,
+        // and clip so anything pulled past the edges (e.g. dragged labels) isn't captured.
+        let width = max(canvasSize.width, 100)
+        let height = max(canvasSize.height, 100)
+
+        let snapshot = DrawingCanvasSnapshot(
+            elements: elements,
+            textAnnotations: textAnnotations,
+            drawElement: { element, context in
+                self.drawElement(element, in: &context)
+            }
+        )
+        .frame(width: width, height: height)
+        .clipped()
+
+        let renderer = ImageRenderer(content: snapshot)
+        renderer.scale = 2.0
+        guard let nsImage = renderer.nsImage,
+              let tiff = nsImage.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiff),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+        return "data:image/png;base64,\(pngData.base64EncodedString())"
     }
 }
 
@@ -1946,7 +2018,7 @@ struct DrawingCanvasSnapshot: View {
                     .position(annotation.position)
             }
         }
-        .frame(width: 600, height: 400)
+        .clipped()
     }
 }
 

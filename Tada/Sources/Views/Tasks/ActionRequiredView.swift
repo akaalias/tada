@@ -792,6 +792,7 @@ struct ActionCard: View {
 
         subTask.markCompleted()
         try? modelContext.save()
+        KnowledgeBaseService.shared.handleSubtaskCompleted(subTask)
 
         // Check if we're in discovery or execution phase
         if task.isDiscoveryPhase {
@@ -839,6 +840,7 @@ struct ActionCard: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                     task.markCompleted()
                     try? modelContext.save()
+                    KnowledgeBaseService.shared.handleTaskCompleted(task)
                     resetForNextAction()
                 }
             }
@@ -1102,6 +1104,7 @@ struct ActionCard: View {
         actionResponse = ActionResponse()
 
         try? modelContext.save()
+        KnowledgeBaseService.shared.handleSubtaskCompleted(subTask)
     }
 
     private func resetForNextAction() {
@@ -1220,6 +1223,7 @@ struct ActionCard: View {
     private func completeTask() {
         task.markCompleted()
         try? modelContext.save()
+        KnowledgeBaseService.shared.handleTaskCompleted(task)
     }
 
     private func planWithAI() {
@@ -1330,6 +1334,7 @@ struct ActionCard: View {
 
                     task.planningStatus = "idle"
                     try? modelContext.save()
+                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
 
                     // Post notification to show execution plan sheet from parent view
                     let planData = ExecutionPlanData(taskId: task.id)

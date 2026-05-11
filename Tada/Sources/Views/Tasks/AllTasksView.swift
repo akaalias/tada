@@ -51,6 +51,7 @@ struct AllTasksView: View {
                     let allExecutionDone = task.executionSubTasks.allSatisfy { $0.isCompleted }
                     if allExecutionDone {
                         task.markCompleted()
+                        KnowledgeBaseService.shared.handleTaskCompleted(task)
                     }
                 }
             }
@@ -93,6 +94,7 @@ struct AllTasksView: View {
     private func completeTask(_ task: TodoTask) {
         task.markCompleted()
         try? modelContext.save()
+        KnowledgeBaseService.shared.handleTaskCompleted(task)
     }
 
     private func deleteTask(_ task: TodoTask) {
@@ -144,6 +146,7 @@ struct AllTasksView: View {
 
                     task.planningStatus = "idle"
                     try? modelContext.save()
+                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan discovery: \(error)")
@@ -216,6 +219,7 @@ struct AllTasksView: View {
 
                     task.planningStatus = "idle"
                     try? modelContext.save()
+                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan execution: \(error)")

@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var selectedView: SidebarItem = .allTasks
     @State private var showingNewTaskSheet = false
+    @Query private var allTasks: [TodoTask]
 
     var body: some View {
         NavigationSplitView {
@@ -14,6 +15,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingNewTaskSheet) {
             NewTaskSheet()
+        }
+        .onAppear {
+            // Back-fill wiki pages for tasks created before the wiki feature existed.
+            KnowledgeBaseService.shared.reconcile(tasks: allTasks)
         }
         .onReceive(NotificationCenter.default.publisher(for: .newTask)) { _ in
             showingNewTaskSheet = true
@@ -41,6 +46,8 @@ struct ContentView: View {
             ActionRequiredView()
         case .completed:
             CompletedTasksView()
+        case .knowledge:
+            KnowledgeBaseView()
         case .settings:
             SettingsView()
         }
@@ -52,6 +59,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case informationRequired = "Information Required"
     case actionRequired = "Action Required"
     case completed = "Completed"
+    case knowledge = "Knowledge Base"
     case settings = "Settings"
 
     var id: String { rawValue }
@@ -62,6 +70,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .informationRequired: return "questionmark.circle.fill"
         case .actionRequired: return "bolt.fill"
         case .completed: return "checkmark.circle"
+        case .knowledge: return "book"
         case .settings: return "gear"
         }
     }
@@ -71,13 +80,14 @@ struct Sidebar: View {
     @Binding var selection: SidebarItem
     @Query(filter: #Predicate<TodoTask> { $0.status == "active" })
     private var activeTasks: [TodoTask]
+    @ObservedObject private var kb = KnowledgeBaseService.shared
 
     private var mainItems: [SidebarItem] {
         [.allTasks, .informationRequired, .actionRequired]
     }
 
     private var secondaryItems: [SidebarItem] {
-        [.completed, .settings]
+        [.completed, .knowledge, .settings]
     }
 
     var body: some View {
@@ -97,7 +107,7 @@ struct Sidebar: View {
                 }
             }
             .listStyle(.sidebar)
-            .frame(height: 88)
+            .frame(height: 132)
         }
         .frame(minWidth: 200)
     }
@@ -126,6 +136,10 @@ struct Sidebar: View {
                             .background(Color.blue)
                             .foregroundColor(.white)
                             .clipShape(Capsule())
+                    }
+                    if item == .knowledge && kb.isWorking {
+                        ProgressView()
+                            .controlSize(.mini)
                     }
                 }
             } icon: {

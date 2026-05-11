@@ -63,7 +63,8 @@ actor ClaudeAPIClient {
         systemPrompt: String,
         userMessage: String,
         responseType: T.Type,
-        maxTokens: Int = 2048
+        maxTokens: Int = 2048,
+        attachedImages: [Data] = []
     ) async throws -> T {
         // Use tool_use for guaranteed structured output
         var request = URLRequest(url: baseURL)
@@ -75,6 +76,25 @@ actor ClaudeAPIClient {
         // Define the tool schema based on the response type name
         let toolSchema = getToolSchema(for: String(describing: responseType))
 
+        // Build user message content: images first, then text. If no images, send as a plain string.
+        let userContent: Any
+        if attachedImages.isEmpty {
+            userContent = userMessage
+        } else {
+            var blocks: [[String: Any]] = attachedImages.map { data in
+                [
+                    "type": "image",
+                    "source": [
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": data.base64EncodedString()
+                    ]
+                ]
+            }
+            blocks.append(["type": "text", "text": userMessage])
+            userContent = blocks
+        }
+
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -82,7 +102,7 @@ actor ClaudeAPIClient {
             "tools": [toolSchema],
             "tool_choice": ["type": "tool", "name": toolSchema["name"] as Any],
             "messages": [
-                ["role": "user", "content": userMessage]
+                ["role": "user", "content": userContent]
             ]
         ]
 
@@ -283,6 +303,49 @@ actor ClaudeAPIClient {
                         ]
                     ],
                     "required": ["revised"]
+                ]
+            ]
+        case "DiscoveredCrossLinks":
+            return [
+                "name": "save_cross_links",
+                "description": "Save a list of cross-link suggestions between notes in the personal wiki.",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "pairs": [
+                            "type": "array",
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "sourcePath": ["type": "string", "description": "Verbatim path of the source note from the input list."],
+                                    "targetPath": ["type": "string", "description": "Verbatim path of the target note from the input list."],
+                                    "targetTitle": ["type": "string", "description": "Title to display for the link to the target."],
+                                    "reason": ["type": "string", "description": "One-sentence justification."]
+                                ],
+                                "required": ["sourcePath", "targetPath", "targetTitle", "reason"]
+                            ]
+                        ]
+                    ],
+                    "required": ["pairs"]
+                ]
+            ]
+        case "GeneratedKnowledgeNote":
+            return [
+                "name": "save_atomic_note",
+                "description": "Save one atomic markdown note with a short noun-phrase title and a concise body.",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "title": [
+                            "type": "string",
+                            "description": "Short noun-phrase title (3-8 words)."
+                        ],
+                        "body": [
+                            "type": "string",
+                            "description": "1-3 short paragraphs of concise markdown. First person, no emojis."
+                        ]
+                    ],
+                    "required": ["title", "body"]
                 ]
             ]
         case "MicroStepsResponse":
