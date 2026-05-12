@@ -268,7 +268,12 @@ struct ActionCard: View {
     init(task: TodoTask, defaultExpanded: Bool = true) {
         self.task = task
         self.defaultExpanded = defaultExpanded
-        self._viewModel = State(initialValue: ActionCardViewModel(task: task, knowledgeBase: KnowledgeBaseServiceAdapter()))
+        self._viewModel = State(initialValue: ActionCardViewModel(
+            task: task,
+            knowledgeBase: KnowledgeBaseServiceAdapter(),
+            executiveAI: ExecutiveAIServiceAdapter(),
+            plannerAI: PlannerAIServiceAdapter()
+        ))
     }
 
     var body: some View {

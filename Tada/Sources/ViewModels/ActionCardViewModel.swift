@@ -9,6 +9,8 @@ final class ActionCardViewModel {
     let task: TodoTask
     var modelContext: ModelContext?
     private let knowledgeBase: KnowledgeBaseServiceProtocol
+    private let executiveAI: ExecutiveAIServiceProtocol
+    private let plannerAI: PlannerAIServiceProtocol
 
     var actionSchema: ActionSchema?
     var actionResponse = ActionResponse()
@@ -21,9 +23,16 @@ final class ActionCardViewModel {
     var showingBlockerSelection = false
     var showingNudgeInput = false
 
-    init(task: TodoTask, knowledgeBase: KnowledgeBaseServiceProtocol) {
+    init(
+        task: TodoTask,
+        knowledgeBase: KnowledgeBaseServiceProtocol,
+        executiveAI: ExecutiveAIServiceProtocol,
+        plannerAI: PlannerAIServiceProtocol
+    ) {
         self.task = task
         self.knowledgeBase = knowledgeBase
+        self.executiveAI = executiveAI
+        self.plannerAI = plannerAI
     }
 
     // MARK: - Computed
@@ -145,8 +154,7 @@ final class ActionCardViewModel {
 
         Task {
             do {
-                let executive = ExecutiveAIService(apiKey: apiKey)
-                let schema = try await executive.generateActionUI(
+                let schema = try await executiveAI.generateActionUI(
                     subTask: subTask.title,
                     subTaskDescription: subTask.subTaskDescription,
                     taskContext: task.title,
@@ -333,8 +341,7 @@ final class ActionCardViewModel {
         if let apiKey = APIKeyManager.getAPIKey() {
             Task {
                 do {
-                    let planner = PlannerAIService(apiKey: apiKey)
-                    let lesson = try await planner.generateLearning(
+                    let lesson = try await plannerAI.generateLearning(
                         badStepTitle: badStepTitle,
                         taskContext: taskContext,
                         discoveryContext: discoveryContext.isEmpty ? "No discovery" : discoveryContext,
@@ -414,8 +421,7 @@ final class ActionCardViewModel {
 
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let microSteps = try await planner.breakDownStep(
+                let microSteps = try await plannerAI.breakDownStep(
                     stepTitle: subTask.title,
                     stepDescription: subTask.subTaskDescription,
                     taskContext: task.title,
@@ -523,7 +529,6 @@ final class ActionCardViewModel {
 
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
                 let previousResponses = gatherPreviousResponses()
 
                 let completedInfo = previousResponses.map { dict -> CompletedSubTaskInfo in
@@ -536,7 +541,7 @@ final class ActionCardViewModel {
 
                 let remainingTitles = remainingSteps.map { $0.title }
 
-                let revision = try await planner.revisePlan(
+                let revision = try await plannerAI.revisePlan(
                     originalTask: task.title,
                     completedSubTasks: completedInfo,
                     remainingSubTasks: remainingTitles,
@@ -617,8 +622,7 @@ final class ActionCardViewModel {
 
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let plan = try await planner.generateDiscoveryQuestions(for: task.originalInput)
+                let plan = try await plannerAI.generateDiscoveryQuestions(for: task.originalInput)
 
                 await MainActor.run {
                     task.title = plan.title
@@ -680,8 +684,7 @@ final class ActionCardViewModel {
 
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let executionPlan = try await planner.createExecutionPlan(
+                let executionPlan = try await plannerAI.createExecutionPlan(
                     originalTask: task.originalInput,
                     discoveryAnswers: discoveryAnswers
                 )
