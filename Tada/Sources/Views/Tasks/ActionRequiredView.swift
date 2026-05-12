@@ -20,10 +20,9 @@ struct InformationRequiredView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 20) {
-                        ForEach(Array(discoveryTasks.enumerated()), id: \.element.id) { index, task in
+                        ForEach(discoveryTasks, id: \.id) { task in
                             ActionCard(
                                 task: task,
-                                defaultExpanded: index == 0,
                                 knowledgeBase: appServices?.knowledgeBase,
                                 executiveAI: appServices?.executiveAI,
                                 plannerAI: appServices?.plannerAI
@@ -117,10 +116,10 @@ struct ActionRequiredView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 20) {
-                            ForEach(Array(executionTasks.enumerated()), id: \.element.id) { index, task in
+                            ForEach(executionTasks, id: \.id) { task in
                                 ActionCard(
                                     task: task,
-                                    defaultExpanded: focusedTaskId == nil ? index == 0 : task.id == focusedTaskId,
+                                    defaultExpanded: task.id == focusedTaskId,
                                     knowledgeBase: appServices?.knowledgeBase,
                                     executiveAI: appServices?.executiveAI,
                                     plannerAI: appServices?.plannerAI

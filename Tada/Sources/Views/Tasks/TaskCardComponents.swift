@@ -2,9 +2,9 @@ import SwiftUI
 
 struct TaskCard<Content: View>: View {
     let task: TodoTask
-    var defaultExpanded: Bool = true
+    var defaultExpanded: Bool = false
     @ViewBuilder let content: () -> Content
-    @State private var isExpanded: Bool = true
+    @State private var isExpanded: Bool = false
 
     private var phaseColor: Color {
         task.isDiscoveryPhase ? .orange : .blue
@@ -19,7 +19,9 @@ struct TaskCard<Content: View>: View {
             }
         }
         .onAppear {
-            isExpanded = defaultExpanded
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded = defaultExpanded
+            }
         }
         .onChange(of: task.isPlanning) { wasPlanning, isPlanning in
             if wasPlanning && !isPlanning {
