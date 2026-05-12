@@ -28,7 +28,11 @@ final class UITestPlannerAIService: PlannerAIServiceProtocol {
         originalTask: String,
         discoveryAnswers: [CompletedSubTaskInfo]
     ) async throws -> TaskPlan {
-        TaskPlan(
+        // Real-world planning has perceptible latency; tests rely on this delay
+        // to observe the "Planning Execution:" header before the first exec step
+        // is current. XCUITest polls at ~1Hz, so the window must be >1s.
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+        return TaskPlan(
             title: originalTask,
             description: "Test execution plan",
             subTasks: Self.executionSteps.map {

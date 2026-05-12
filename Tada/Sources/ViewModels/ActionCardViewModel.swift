@@ -692,10 +692,8 @@ final class ActionCardViewModel {
                     try? modelContext?.save()
                     knowledgeBase.handleTaskCreatedOrUpdated(task)
 
-                    let planData = ExecutionPlanData(taskId: task.id)
                     submissionState = .idle
                     clearProgressLog()
-                    NotificationCenter.default.post(name: .showExecutionPlanSheet, object: planData)
                 }
             } catch {
                 print("Failed to create execution plan: \(error)")

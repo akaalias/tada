@@ -25,14 +25,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .newTask)) { _ in
             showingNewTaskSheet = true
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToInformationRequired)) { _ in
-            selectedView = .informationRequired
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToActionItems)) { _ in
+            selectedView = .actionItems
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToActionRequired)) { _ in
-            selectedView = .actionRequired
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionRequired)) { _ in
-            selectedView = .actionRequired
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionItems)) { _ in
+            selectedView = .actionItems
         }
         .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in
             apiKeyValid = APIKeyManager.hasValidAPIKey
@@ -52,10 +49,8 @@ struct ContentView: View {
             switch selectedView {
             case .allTasks:
                 AllTasksView()
-            case .informationRequired:
-                InformationRequiredView()
-            case .actionRequired:
-                ActionRequiredView()
+            case .actionItems:
+                ActionItemsView()
             case .completed:
                 CompletedTasksView()
             case .knowledge:
@@ -69,8 +64,7 @@ struct ContentView: View {
 
 enum SidebarItem: String, CaseIterable, Identifiable {
     case allTasks = "All Tasks"
-    case informationRequired = "Information Required"
-    case actionRequired = "Action Required"
+    case actionItems = "Action Items"
     case completed = "Completed"
     case knowledge = "Knowledge Base"
     case settings = "Settings"
@@ -80,8 +74,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .allTasks: return "list.bullet"
-        case .informationRequired: return "questionmark.circle.fill"
-        case .actionRequired: return "bolt.fill"
+        case .actionItems: return "bolt.fill"
         case .completed: return "checkmark.circle"
         case .knowledge: return "book"
         case .settings: return "gear"
@@ -97,7 +90,7 @@ struct Sidebar: View {
     private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
 
     private var mainItems: [SidebarItem] {
-        [.allTasks, .informationRequired, .actionRequired]
+        [.allTasks, .actionItems]
     }
 
     private var secondaryItems: [SidebarItem] {
@@ -134,17 +127,8 @@ struct Sidebar: View {
                     Text(item.rawValue)
                         .accessibilityIdentifier("sidebar.\(item.id)")
                     Spacer()
-                    if item == .informationRequired && informationRequiredCount > 0 {
-                        Text("\(informationRequiredCount)")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.orange)
-                            .foregroundColor(.white)
-                            .clipShape(Capsule())
-                    }
-                    if item == .actionRequired && actionRequiredCount > 0 {
-                        Text("\(actionRequiredCount)")
+                    if item == .actionItems && actionItemsCount > 0 {
+                        Text("\(actionItemsCount)")
                             .font(.caption)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
@@ -163,19 +147,13 @@ struct Sidebar: View {
         }
     }
 
-    private var informationRequiredCount: Int {
+    private var actionItemsCount: Int {
         activeTasks.filter { task in
             if task.isPlanningDiscovery { return true }
             if task.subTasks.isEmpty { return true }
             if task.isDiscoveryPhase && task.currentSubTask != nil { return true }
             if task.isDiscoveryPhase && !task.discoverySubTasks.isEmpty &&
                task.discoverySubTasks.allSatisfy({ $0.isCompleted }) { return true }
-            return false
-        }.count
-    }
-
-    private var actionRequiredCount: Int {
-        activeTasks.filter { task in
             if task.isPlanningExecution { return true }
             if task.isExecutionPhase && task.currentSubTask != nil { return true }
             return false

@@ -35,10 +35,8 @@ struct TadaApp: App {
 
 extension Notification.Name {
     static let newTask = Notification.Name("newTask")
-    static let navigateToInformationRequired = Notification.Name("navigateToInformationRequired")
-    static let navigateToActionRequired = Notification.Name("navigateToActionRequired")
-    static let navigateToTaskInActionRequired = Notification.Name("navigateToTaskInActionRequired")
-    static let showExecutionPlanSheet = Notification.Name("showExecutionPlanSheet")
+    static let navigateToActionItems = Notification.Name("navigateToActionItems")
+    static let navigateToTaskInActionItems = Notification.Name("navigateToTaskInActionItems")
 }
 
 enum Theme {

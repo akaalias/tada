@@ -1,107 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct ExecutionPlanData {
-    let taskId: UUID
-}
-
-struct InformationRequiredView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.appServices) private var appServices
-    @Query private var allTasks: [TodoTask]
-    private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
-    @State private var showingExecutionPlanSheet = false
-    @State private var executionPlanData: ExecutionPlanData?
-
-    var body: some View {
-        Group {
-            if discoveryTasks.isEmpty {
-                emptyState
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 20) {
-                        ForEach(discoveryTasks, id: \.id) { task in
-                            ActionCard(
-                                task: task,
-                                knowledgeBase: appServices?.knowledgeBase,
-                                executiveAI: appServices?.executiveAI,
-                                plannerAI: appServices?.plannerAI
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-        .navigationTitle("Tasks that require your information")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    NotificationCenter.default.post(name: .newTask, object: nil)
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .showExecutionPlanSheet)) { notification in
-            if let data = notification.object as? ExecutionPlanData {
-                executionPlanData = data
-                showingExecutionPlanSheet = true
-            }
-        }
-        .sheet(isPresented: $showingExecutionPlanSheet) {
-            if let data = executionPlanData,
-               let task = activeTasks.first(where: { $0.id == data.taskId }) {
-                ExecutionPlanSheetContent(
-                    task: task,
-                    onClose: {
-                        showingExecutionPlanSheet = false
-                    },
-                    onContinue: {
-                        showingExecutionPlanSheet = false
-                        NotificationCenter.default.post(
-                            name: .navigateToTaskInActionRequired,
-                            object: data.taskId
-                        )
-                    }
-                )
-            }
-        }
-    }
-
-    private var discoveryTasks: [TodoTask] {
-        activeTasks.filter { task in
-            if task.isPlanningDiscovery { return true }
-            if task.subTasks.isEmpty { return true }
-            if task.isDiscoveryPhase && task.currentSubTask != nil { return true }
-            if task.isDiscoveryPhase && !task.discoverySubTasks.isEmpty &&
-               task.discoverySubTasks.allSatisfy({ $0.isCompleted }) {
-                return true
-            }
-            return false
-        }
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "questionmark.circle")
-                .font(.system(size: 64))
-                .foregroundColor(.orange.opacity(0.4))
-
-            Text("No questions right now")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("When tasks need clarifying information, they'll appear here.")
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-struct ActionRequiredView: View {
+struct ActionItemsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appServices) private var appServices
     @Query private var allTasks: [TodoTask]
@@ -110,13 +10,13 @@ struct ActionRequiredView: View {
 
     var body: some View {
         Group {
-            if executionTasks.isEmpty {
+            if actionableTasks.isEmpty {
                 emptyState
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 20) {
-                            ForEach(executionTasks, id: \.id) { task in
+                            ForEach(actionableTasks, id: \.id) { task in
                                 ActionCard(
                                     task: task,
                                     defaultExpanded: task.id == focusedTaskId,
@@ -139,7 +39,7 @@ struct ActionRequiredView: View {
                 }
             }
         }
-        .navigationTitle("Tasks that require your action")
+        .navigationTitle("Action Items")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -149,15 +49,20 @@ struct ActionRequiredView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionRequired)) { notification in
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionItems)) { notification in
             if let taskId = notification.object as? UUID {
                 focusedTaskId = taskId
             }
         }
     }
 
-    private var executionTasks: [TodoTask] {
+    private var actionableTasks: [TodoTask] {
         activeTasks.filter { task in
+            if task.isPlanningDiscovery { return true }
+            if task.subTasks.isEmpty { return true }
+            if task.isDiscoveryPhase && task.currentSubTask != nil { return true }
+            if task.isDiscoveryPhase && !task.discoverySubTasks.isEmpty &&
+               task.discoverySubTasks.allSatisfy({ $0.isCompleted }) { return true }
             if task.isPlanningExecution { return true }
             if task.isExecutionPhase && task.currentSubTask != nil { return true }
             return false
@@ -170,11 +75,11 @@ struct ActionRequiredView: View {
                 .font(.system(size: 64))
                 .foregroundColor(.blue.opacity(0.4))
 
-            Text("No actions right now")
+            Text("No action items right now")
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            Text("When tasks are ready for execution, their action steps will appear here.")
+            Text("When tasks need a question answered or a step completed, they'll appear here.")
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 300)
@@ -686,45 +591,6 @@ struct BlockerSelectionView: View {
     }
 }
 
-struct ExecutionPlanSheetContent: View {
-    let task: TodoTask
-    let onClose: () -> Void
-    let onContinue: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
-                TaskHeaderView(task: task, isExpanded: .constant(true))
-                SubTaskListContent(task: task)
-            }
-            .padding(16)
-            .background(Color.blue.opacity(0.05))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-            )
-            .padding(20)
-
-            HStack(spacing: 16) {
-                Button("Close") {
-                    onClose()
-                }
-                .buttonStyle(.bordered)
-
-                Button("Continue with Execution") {
-                    onContinue()
-                }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("executionPlan.continue")
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-        }
-        .frame(minWidth: 500, maxWidth: 600)
-    }
-}
-
 struct PreviousInputsSummary: View {
     let completedSubTasks: [SubTask]
     @State private var isExpanded = false
@@ -894,6 +760,6 @@ struct PreviousInputRow: View {
 }
 
 #Preview {
-    ActionRequiredView()
+    ActionItemsView()
         .modelContainer(for: [TodoTask.self, SubTask.self], inMemory: true)
 }

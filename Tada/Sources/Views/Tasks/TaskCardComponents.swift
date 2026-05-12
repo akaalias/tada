@@ -177,11 +177,7 @@ struct SubTaskRowView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if subTask.isCurrent {
-                if subTask.isDiscoveryPhase {
-                    NotificationCenter.default.post(name: .navigateToInformationRequired, object: nil)
-                } else {
-                    NotificationCenter.default.post(name: .navigateToActionRequired, object: nil)
-                }
+                NotificationCenter.default.post(name: .navigateToActionItems, object: nil)
             }
         }
     }

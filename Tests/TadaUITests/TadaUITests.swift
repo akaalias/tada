@@ -1,9 +1,10 @@
 import XCTest
 
-/// End-to-end happy path: create a task → answer 1 discovery question →
-/// continue past the execution plan sheet → complete 1 execution step →
-/// verify the task lands in Completed AND the knowledge base has the
-/// expected notes on disk.
+/// End-to-end happy path: create a task → answer 1 discovery question
+/// from the unified "Action Items" view → watch the task transition to
+/// "Planning Execution" in-place (no sheet) → complete the first
+/// execution step from the same view → verify the task lands in
+/// Completed AND the knowledge base has the expected notes on disk.
 ///
 /// Backed by deterministic mocks wired in under `-UITestMode 1`. The mocks
 /// write structural KB notes to a stable temp directory so this test process
@@ -48,22 +49,25 @@ final class TadaUITests: XCTestCase {
         XCTAssertTrue(create.isEnabled)
         create.click()
 
-        // 2. Discovery: navigate to Information Required and answer the question.
-        let infoRow = app.buttons["sidebar.Information Required"]
-        XCTAssertTrue(infoRow.waitForExistence(timeout: 10))
-        infoRow.click()
+        // 2. Navigate to the unified "Action Items" view and answer the
+        //    discovery question.
+        let actionItemsRow = app.buttons["sidebar.Action Items"]
+        XCTAssertTrue(actionItemsRow.waitForExistence(timeout: 10))
+        actionItemsRow.click()
 
         submitTextResponse(in: app, answer: "next weekend", phase: "discovery")
 
-        // 3. After the discovery answer, the execution-plan sheet appears.
-        let continueExecution = app.buttons["executionPlan.continue"]
-        XCTAssertTrue(continueExecution.waitForExistence(timeout: 10))
-        continueExecution.click()
-
-        // 4. Action Required loads the scripted execution step.
+        // 3. The task stays in Action Items and surfaces a "Planning
+        //    Execution:" indicator until the first execution sub-task is
+        //    ready. We must check for this immediately, because the mock's
+        //    planning window is brief.
         XCTAssertTrue(
-            app.buttons["sidebar.Action Required"].waitForExistence(timeout: 5)
+            app.staticTexts["Planning Execution:"].waitForExistence(timeout: 5),
+            "Task should show 'Planning Execution:' state in Action Items after last discovery answer"
         )
+
+        // 4. The first execution step appears in the same Action Items view.
+        //    No sheet ever interrupts — if one had, this submit would fail.
         submitTextResponse(in: app, answer: "booked", phase: "execution")
 
         // 5. Task should land in Completed.
