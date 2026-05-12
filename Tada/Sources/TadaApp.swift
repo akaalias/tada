@@ -22,6 +22,13 @@ struct TadaApp: App {
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
+
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    SettingsWindowManager.shared.openSettings()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
 
         Settings {

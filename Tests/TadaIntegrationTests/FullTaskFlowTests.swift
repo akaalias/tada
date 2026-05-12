@@ -7,6 +7,7 @@ import Testing
 
 @MainActor
 @Test func full_journey_create_task_through_completion() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     // ── Step 1: Fresh install — no API key ──
@@ -212,6 +213,7 @@ import Testing
 
 @MainActor
 @Test func full_journey_with_external_action_step() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)

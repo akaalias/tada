@@ -82,4 +82,24 @@ The loop pattern: "Now I'm mapping out changes" → repeat 10x with identical co
 
 ## 6. Get Caught Up On Previous Work
 - At the start of a new session, read [[CONTEXT.md]]
-- If there is any pending work to do, mention it to the user 
+- If there is any pending work to do, mention it to the user
+
+## 7. TDD Workflow — Test First, Always
+
+**Write the test that should fail first. Then make it pass. Then refactor.**
+
+For every feature or bugfix, follow this cycle:
+
+1. **Write the test** — Describe the desired behavior as a failing test (UI or unit). Be specific about inputs, outputs, and edge cases.
+2. **Watch it fail** — Confirm the test actually fails for the right reason (red).
+3. **Implement production code** — Write the minimum code to make the test pass (green).
+4. **Refactor** — Clean up both test and production code while keeping all tests green.
+
+Rules:
+- Never write production code without a failing test first.
+- Tests describe *what* the system should do. Production code describes *how*.
+- If a test can't fail, it's not a real test — rewrite it.
+- Keep tests fast and focused. One assertion per test when possible.
+- For UI features, write the Cypress/E2E test first. For logic, write the unit test first.
+
+This isn't dogma — it's a discipline that catches regressions early and keeps design decisions grounded in actual requirements. 

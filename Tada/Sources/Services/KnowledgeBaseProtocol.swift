@@ -12,7 +12,7 @@ protocol KnowledgeBaseServiceProtocol {
     func handleSubtaskCompleted(_ subTask: SubTask)
     func handleTaskCompleted(_ task: TodoTask)
     func reconcile(tasks: [TodoTask])
-    func runLinkDiscoveryNow()
+    func runLinkDiscoveryNow() async
 }
 
 /// Concrete implementation backed by the singleton.
@@ -37,8 +37,8 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
         KnowledgeBaseService.shared.reconcile(tasks: tasks)
     }
 
-    func runLinkDiscoveryNow() {
-        KnowledgeBaseService.shared.runLinkDiscoveryNow()
+    func runLinkDiscoveryNow() async {
+        await KnowledgeBaseService.shared.runLinkDiscoveryNow()
     }
 }
 

@@ -186,43 +186,49 @@ struct SubTaskRowView: View {
 
 struct SubTaskListContent: View {
     let task: TodoTask
+    @State private var discoveryExpanded = false
+    @State private var executionExpanded = false
+
+    private var discoveryComplete: Bool {
+        !task.discoverySubTasks.isEmpty && task.discoverySubTasks.allSatisfy { $0.isCompleted }
+    }
+
+    private var executionComplete: Bool {
+        !task.executionSubTasks.isEmpty && task.executionSubTasks.allSatisfy { $0.isCompleted }
+    }
 
     var body: some View {
         if !task.subTasks.isEmpty {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
+                // Discovery section
                 if !task.discoverySubTasks.isEmpty {
-                    let discoveryComplete = task.discoverySubTasks.allSatisfy { $0.isCompleted }
-                    HStack(spacing: 8) {
-                        Image(systemName: discoveryComplete ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: Theme.circleSize))
-                            .foregroundColor(.orange)
-                        Text("Discovery")
-                            .font(.system(size: Theme.fontSize, weight: .medium))
-                            .foregroundColor(.orange)
-                    }
-
-                    ForEach(task.discoverySubTasks) { subTask in
-                        SubTaskRowView(subTask: subTask, phaseColor: .orange)
+                    CollapsibleSection(
+                        title: "Discovery",
+                        icon: discoveryComplete ? "checkmark.circle.fill" : "circle",
+                        color: .orange,
+                        isExpanded: $discoveryExpanded
+                    ) {
+                        ForEach(task.discoverySubTasks) { subTask in
+                            SubTaskRowView(subTask: subTask, phaseColor: .orange)
+                        }
                     }
                 }
 
+                // Execution section
                 if task.isExecutionPhase && !task.executionSubTasks.isEmpty {
-                    let executionComplete = task.executionSubTasks.allSatisfy { $0.isCompleted }
-                    HStack(spacing: 8) {
-                        Image(systemName: executionComplete ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: Theme.circleSize))
-                            .foregroundColor(.blue)
-                        Text("Execution")
-                            .font(.system(size: Theme.fontSize, weight: .medium))
-                            .foregroundColor(.blue)
+                    CollapsibleSection(
+                        title: "Execution",
+                        icon: executionComplete ? "checkmark.circle.fill" : "circle",
+                        color: .blue,
+                        isExpanded: $executionExpanded
+                    ) {
+                        ForEach(task.executionSubTasks) { subTask in
+                            SubTaskRowView(subTask: subTask, phaseColor: .blue)
+                        }
                     }
                     .padding(.top, 8)
-
-                    ForEach(task.executionSubTasks) { subTask in
-                        SubTaskRowView(subTask: subTask, phaseColor: .blue)
-                    }
                 } else if task.isDiscoveryPhase && !task.isPlanningDiscovery && !task.discoverySubTasks.isEmpty {
                     HStack(spacing: 8) {
                         Image(systemName: "circle.dotted")
@@ -237,6 +243,57 @@ struct SubTaskListContent: View {
                     }
                     .padding(.top, 8)
                 }
+            }
+            .onAppear {
+                // Start collapsed when complete, expanded when in-progress
+                if !task.discoverySubTasks.allSatisfy({ $0.isCompleted }) {
+                    discoveryExpanded = true
+                }
+                if !task.executionSubTasks.allSatisfy({ $0.isCompleted }) {
+                    executionExpanded = true
+                }
+            }
+        }
+    }
+}
+
+/// A collapsible section with a chevron toggle for sub-task lists.
+struct CollapsibleSection<Content: View>: View {
+    let title: String
+    let icon: String
+    let color: Color
+    @Binding var isExpanded: Bool
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: Theme.circleSize))
+                        .foregroundColor(color)
+
+                    Text(title)
+                        .font(.system(size: Theme.fontSize, weight: .medium))
+                        .foregroundColor(color)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                content()
+                    .padding(.top, 4)
             }
         }
     }

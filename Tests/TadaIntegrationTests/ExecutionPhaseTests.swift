@@ -7,6 +7,7 @@ import Testing
 
 @MainActor
 @Test func completing_execution_step_creates_knowledge_base_note() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -76,6 +77,7 @@ import Testing
 
 @MainActor
 @Test func completing_all_execution_steps_marks_task_completed() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -163,6 +165,7 @@ import Testing
 
 @MainActor
 @Test func plan_revision_returns_no_change_by_default() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -180,6 +183,7 @@ import Testing
 
 @MainActor
 @Test func plan_revision_can_return_revised_plan() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -205,6 +209,7 @@ import Testing
 
 @MainActor
 @Test func knowledge_base_handles_task_completion_event() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)

@@ -68,7 +68,7 @@ struct KnowledgeBaseView: View {
             Spacer()
 
             Button {
-                kb?.runLinkDiscoveryNow()
+                Task { await kb?.runLinkDiscoveryNow() }
             } label: {
                 Image(systemName: "link.badge.plus")
             }

@@ -32,11 +32,14 @@ Tada/Sources/
 │   ├── KnowledgeAIService.swift   → AI calls for wiki note generation
 │   └── PlanningMemoryService.swift→ Persists "learnings" from bad planning decisions
 ├── Utilities/
-│   └── APIKeyManager.swift
+│   ├── APIKeyManager.swift      → Keychain storage + validation
+│   └── SettingsWindowManager.swift  → Separate settings window manager
 └── Views/
     ├── TadaApp.swift
     ├── ContentView.swift          → Navigation + sidebar
     ├── NewTaskSheet.swift         → Task creation modal
+    ├── APIKeyBanner.swift         → API key missing banner
+    ├── Settings/SettingsView.swift  → Tabbed settings (API Key, Learnings, About)
     ├── ActionUI/ActionUIRenderer.swift  → Dynamic form rendering (12+ field types)
     └── Tasks/
         ├── ActionRequiredView.swift     → Execution + discovery action cards (1659 lines)
@@ -115,7 +118,7 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 7. ~~**Add tests**~~ — 136 tests across 8 test files ✅
    - `scripts/test` — run all tests (`xcodegen generate` + `xcodebuild test`)
    - Tests cover: models (Task, SubTask, ActionSchema), utilities (ResponseFormatter, KnowledgeBaseFilesystem, frontmatter parsing), error handling, enums
-   - Integration tests: 19 tests covering full task lifecycle (discovery → execution → completion), knowledge base writes, external actions
+   - Integration tests: 25 tests covering full task lifecycle (discovery → execution → completion), knowledge base writes, external actions, collapsed card behavior
 
 ---
 

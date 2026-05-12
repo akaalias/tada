@@ -6,6 +6,7 @@ struct ContentView: View {
     @Environment(\.appServices) private var appServices
     @State private var selectedView: SidebarItem = .allTasks
     @State private var showingNewTaskSheet = false
+    @State private var apiKeyValid: Bool = APIKeyManager.hasValidAPIKey
     @Query private var allTasks: [TodoTask]
 
     var body: some View {
@@ -33,24 +34,35 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionRequired)) { _ in
             selectedView = .actionRequired
         }
+        .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in
+            apiKeyValid = APIKeyManager.hasValidAPIKey
+        }
         .frame(minWidth: 800, minHeight: 500)
     }
 
     @ViewBuilder
     private var detailView: some View {
-        switch selectedView {
-        case .allTasks:
-            AllTasksView()
-        case .informationRequired:
-            InformationRequiredView()
-        case .actionRequired:
-            ActionRequiredView()
-        case .completed:
-            CompletedTasksView()
-        case .knowledge:
-            KnowledgeBaseView()
-        case .settings:
-            SettingsView()
+        VStack(spacing: 16) {
+            if !apiKeyValid {
+                APIKeyBanner()
+                    .padding(.horizontal)
+                    .padding(.top, 16)
+            }
+
+            switch selectedView {
+            case .allTasks:
+                AllTasksView()
+            case .informationRequired:
+                InformationRequiredView()
+            case .actionRequired:
+                ActionRequiredView()
+            case .completed:
+                CompletedTasksView()
+            case .knowledge:
+                KnowledgeBaseView()
+            case .settings:
+                SettingsView()
+            }
         }
     }
 }

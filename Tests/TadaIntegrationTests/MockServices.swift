@@ -197,7 +197,7 @@ final class MockKnowledgeBaseService: KnowledgeBaseServiceProtocol {
         reconciledTasks.append(tasks)
     }
 
-    func runLinkDiscoveryNow() {
+    func runLinkDiscoveryNow() async {
         // No-op for mock
     }
 

@@ -5,6 +5,7 @@ import Testing
 // MARK: - First Launch & API Key Setup Tests
 
 @Test func api_key_not_set_on_fresh_install() async {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     // Ensure clean slate
     APIKeyManager.deleteAPIKey()
     // On a fresh install, no API key should be set
@@ -14,6 +15,7 @@ import Testing
 }
 
 @Test func api_key_can_be_saved_and_retrieved() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     // Clean slate
     APIKeyManager.deleteAPIKey()
     #expect(APIKeyManager.hasAPIKey == false)
@@ -28,6 +30,7 @@ import Testing
 }
 
 @Test func api_key_save_rejects_empty_string() async {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     APIKeyManager.deleteAPIKey()
 
     // Empty string should be stored but is effectively nil for hasAPIKey
@@ -42,6 +45,7 @@ import Testing
 }
 
 @Test func api_key_can_be_removed() async {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     // Clean slate
     APIKeyManager.deleteAPIKey()
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -54,6 +58,7 @@ import Testing
 }
 
 @Test func api_key_persists_across_retrievals() async {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     // Clean slate
     APIKeyManager.deleteAPIKey()
     try! APIKeyManager.setAPIKey(testAPIKey)

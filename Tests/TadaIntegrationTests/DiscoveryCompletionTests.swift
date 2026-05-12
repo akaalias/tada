@@ -7,6 +7,7 @@ import Testing
 
 @MainActor
 @Test func completing_one_discovery_subtask_advances_to_next() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -95,6 +96,7 @@ import Testing
 
 @MainActor
 @Test func completing_all_discovery_subtasks_triggers_execution_planning() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
@@ -217,6 +219,7 @@ import Testing
 
 @MainActor
 @Test func discovery_subtask_responses_are_preserved() async throws {
+    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)

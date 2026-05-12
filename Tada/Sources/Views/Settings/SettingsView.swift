@@ -1,10 +1,33 @@
 import SwiftUI
 
 struct SettingsView: View {
+    var body: some View {
+        TabView {
+            APIKeySettingsView()
+                .tabItem {
+                    Label("API Key", systemImage: "key.fill")
+                }
+
+            LearningsSettingsView()
+                .tabItem {
+                    Label("Learnings", systemImage: "lightbulb.fill")
+                }
+
+            AboutSettingsView()
+                .tabItem {
+                    Label("About", systemImage: "info.circle")
+                }
+        }
+        .frame(width: 650, height: 520)
+    }
+}
+
+// MARK: - API Key Tab
+
+private struct APIKeySettingsView: View {
     @State private var apiKey: String = ""
     @State private var showKey = false
     @State private var saveStatus: SaveStatus = .none
-    @State private var learnings: [PlanningLearning] = []
 
     var body: some View {
         Form {
@@ -29,10 +52,8 @@ struct SettingsView: View {
                         if APIKeyManager.hasAPIKey {
                             Button {
                                 if showKey {
-                                    // Hide: mask the key
                                     apiKey = String(repeating: "•", count: 20)
                                 } else {
-                                    // Show: read the real key from storage
                                     apiKey = APIKeyManager.getAPIKey() ?? ""
                                 }
                                 showKey.toggle()
@@ -81,7 +102,50 @@ struct SettingsView: View {
                 }
                 .padding()
             }
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            if let existingKey = APIKeyManager.getAPIKey() {
+                apiKey = String(repeating: "•", count: min(existingKey.count, 20))
+            }
+        }
+    }
 
+    private func saveAPIKey() {
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedKey.isEmpty, !trimmedKey.contains("•") else { return }
+
+        do {
+            try APIKeyManager.setAPIKey(trimmedKey)
+            saveStatus = .saved
+            apiKey = String(repeating: "•", count: 20)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                saveStatus = .none
+            }
+        } catch {
+            saveStatus = .error(AppError.userMessage(from: error))
+        }
+    }
+
+    private func removeAPIKey() {
+        APIKeyManager.deleteAPIKey()
+        apiKey = ""
+        saveStatus = .removed
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            saveStatus = .none
+        }
+    }
+}
+
+// MARK: - Learnings Tab
+
+private struct LearningsSettingsView: View {
+    @State private var learnings: [PlanningLearning] = []
+
+    var body: some View {
+        Form {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -151,7 +215,19 @@ struct SettingsView: View {
                 }
                 .padding()
             }
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            learnings = PlanningMemoryService.shared.loadLearnings()
+        }
+    }
+}
 
+// MARK: - About Tab
+
+private struct AboutSettingsView: View {
+    var body: some View {
+        Form {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("About Tada")
@@ -169,42 +245,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 500, height: 500)
-        .onAppear {
-            if let existingKey = APIKeyManager.getAPIKey() {
-                // Show masked version
-                apiKey = String(repeating: "•", count: min(existingKey.count, 20))
-            }
-            learnings = PlanningMemoryService.shared.loadLearnings()
-        }
-    }
-
-    private func saveAPIKey() {
-        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedKey.isEmpty, !trimmedKey.contains("•") else { return }
-
-        do {
-            try APIKeyManager.setAPIKey(trimmedKey)
-            saveStatus = .saved
-            apiKey = String(repeating: "•", count: 20)
-
-            // Clear status after delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                saveStatus = .none
-            }
-        } catch {
-            saveStatus = .error(AppError.userMessage(from: error))
-        }
-    }
-
-    private func removeAPIKey() {
-        APIKeyManager.deleteAPIKey()
-        apiKey = ""
-        saveStatus = .removed
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            saveStatus = .none
-        }
     }
 }
 

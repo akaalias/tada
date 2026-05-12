@@ -252,8 +252,8 @@ final class KnowledgeBaseService: ObservableObject {
         Task { await linkDiscovery.scheduleLinkDiscovery() }
     }
 
-    func runLinkDiscoveryNow() {
-        Task { await linkDiscovery.runLinkDiscoveryNow() }
+    func runLinkDiscoveryNow() async {
+        await linkDiscovery.runLinkDiscoveryNow()
     }
 }
 
