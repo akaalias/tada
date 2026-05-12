@@ -122,9 +122,9 @@ struct AllTasksView: View {
         try? modelContext.save()
 
         // Regenerate discovery
+        let plannerAI = appServices?.plannerAI ?? PlannerAIServiceAdapter()
         Task {
             do {
-                guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
                 let plan = try await plannerAI.generateDiscoveryQuestions(for: task.originalInput)
 
                 await MainActor.run {
@@ -182,9 +182,9 @@ struct AllTasksView: View {
             }
 
         // Regenerate execution
+        let plannerAI = appServices?.plannerAI ?? PlannerAIServiceAdapter()
         Task {
             do {
-                guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
                 let executionPlan = try await plannerAI.createExecutionPlan(
                     originalTask: task.originalInput,
                     discoveryAnswers: discoveryAnswers

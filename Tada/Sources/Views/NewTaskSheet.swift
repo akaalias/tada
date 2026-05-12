@@ -99,9 +99,9 @@ struct NewTaskSheet: View {
 
         // Plan in background if API key available
         if APIKeyManager.hasAPIKey {
+            let plannerAI = appServices?.plannerAI ?? PlannerAIServiceAdapter()
             Task {
                 do {
-                    guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
                     let discoveryPlan = try await plannerAI.generateDiscoveryQuestions(for: trimmedInput)
 
                     await MainActor.run {
@@ -124,12 +124,7 @@ struct NewTaskSheet: View {
 
                         task.planningStatus = PlanningStatus.idle
                         try? modelContext.save()
-                        // Refresh the wiki entry now that the planner has rewritten the title/description.
-                        appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
                     }
-                } catch DIError.missingPlanner {
-                    // appServices not injected — shouldn't happen in production
-                    print("Warning: AppServices not available for task planning")
                 } catch {
                     await MainActor.run {
                         task.planningStatus = PlanningStatus.idle

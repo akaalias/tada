@@ -140,6 +140,8 @@ Tests are configured via xcodegen (`project.yml`) and run through `xcodebuild`. 
 - Wiki notes stored on disk as markdown with Obsidian-style wikilinks (`[[path|title]]`)
 - Planning learnings persisted to `planning_learnings.json` (last 20, fed into future prompts)
 - Action schemas cached on `SubTask.actionSchemaData` to avoid regenerating
+- Settings opened in a separate window via `SettingsWindowManager`, not the SwiftUI `Settings` scene
+- AI services use fallback `PlannerAIServiceAdapter()` when DI-injected services are nil
 
 ## Open Questions (from PRD)
 

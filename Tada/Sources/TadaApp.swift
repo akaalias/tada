@@ -30,10 +30,6 @@ struct TadaApp: App {
                 .keyboardShortcut(",", modifiers: .command)
             }
         }
-
-        Settings {
-            SettingsView()
-        }
     }
 }
 
