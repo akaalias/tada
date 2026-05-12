@@ -4,10 +4,14 @@
 
 After creating new Swift files or modifying existing ones:
 
-1. **Regenerate Xcode project:** `xcodegen generate` (spec at `/Users/alexisrondeau/Workshop/tada/Project.yml`)
-2. **Clean build with xcodebuild:** `xcodebuild clean build -project Tada.xcodeproj -scheme Tada -destination 'platform=macOS'`
+1. **Regenerate Xcode project:** `xcodegen generate` (spec at `/Users/alexisrondeau/Workshop/tada/project.yml`)
+   - Schemes are auto-generated from `project.yml` — NEVER edit `.xcscheme` files manually
+   - If you add a new target, add it to `project.yml` targets section and regenerate
+2. **Run tests:** `./scripts/test`
+   - Runs both unit tests (TadaTests) and integration tests (TadaIntegrationTests)
+3. **Clean build with xcodebuild:** `xcodebuild clean build -project Tada.xcodeproj -scheme Tada -destination 'platform=macOS'`
    - `swift build` is NOT sufficient — it auto-discovers `.swift` files via Package.swift but Xcode needs explicit project membership
-3. **If build succeeds:** Relaunch the app with `open -a Tada` to confirm it runs
+4. **If build succeeds:** Relaunch the app with `open -a Tada` to confirm it runs
 
 ## Behavioral Guidelines (from CLAUDE.md)
 

@@ -112,9 +112,10 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 4. ~~**Split KnowledgeBaseService**~~ — filesystem / AI orchestration / indexing / link discovery ✅
 5. ~~**Dependency injection** — protocols + AppServices environment key~~ ✅
 6. ~~**Extract utilities** — response formatting, constants, error handling~~ ✅
-7. ~~**Add tests**~~ — 117 tests across 6 test files ✅
+7. ~~**Add tests**~~ — 136 tests across 8 test files ✅
    - `scripts/test` — run all tests (`xcodegen generate` + `xcodebuild test`)
    - Tests cover: models (Task, SubTask, ActionSchema), utilities (ResponseFormatter, KnowledgeBaseFilesystem, frontmatter parsing), error handling, enums
+   - Integration tests: 19 tests covering full task lifecycle (discovery → execution → completion), knowledge base writes, external actions
 
 ---
 
