@@ -28,6 +28,8 @@ targets:
           - "$(inherited)"
           - "@executable_path/../Frameworks"
         PRODUCT_BUNDLE_IDENTIFIER: com.tada.app
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: HKQARCV8QZ
       configurations:
         Debug:
           debugInformationFormat: dwarf
@@ -64,6 +66,20 @@ targets:
         Debug:
           debugInformationFormat: dwarf
 
+  TadaUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - Tests/TadaUITests
+    dependencies:
+      - target: Tada
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Tada
+        PRODUCT_BUNDLE_IDENTIFIER: com.tada.app.UITests
+        CODE_SIGN_STYLE: Automatic
+
 schemes:
   Tada:
     build:
@@ -87,3 +103,12 @@ schemes:
     test:
       targets:
         - name: TadaIntegrationTests
+
+  TadaUITests:
+    build:
+      targets:
+        Tada: all
+        TadaUITests: test
+    test:
+      targets:
+        - name: TadaUITests

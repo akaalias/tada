@@ -26,4 +26,11 @@ xcodebuild test \
   -destination 'platform=macOS' || exit 1
 
 echo ""
+echo "🧪 Running UI tests..."
+xcodebuild test \
+  -project Tada.xcodeproj \
+  -scheme TadaUITests \
+  -destination 'platform=macOS' || exit 1
+
+echo ""
 echo "✅ All tests passed!"
