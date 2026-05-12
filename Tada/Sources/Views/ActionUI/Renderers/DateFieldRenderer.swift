@@ -3,6 +3,7 @@ import SwiftUI
 struct DateFieldRenderer: View {
     let field: ActionField
     @Binding var response: ActionResponse
+    @Environment(\.phaseColor) private var phaseColor
 
     @State private var selectedDay: Int = Calendar.current.component(.day, from: Date())
     @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
@@ -49,7 +50,7 @@ struct DateFieldRenderer: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -74,7 +75,7 @@ struct DateFieldRenderer: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -99,7 +100,7 @@ struct DateFieldRenderer: View {
                 .padding(.vertical, 12)
                 .padding(.horizontal, 14)
                 .frame(maxWidth: .infinity)
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)

@@ -1,5 +1,16 @@
 import SwiftUI
 
+private struct PhaseColorKey: EnvironmentKey {
+    static let defaultValue: Color = .blue
+}
+
+extension EnvironmentValues {
+    var phaseColor: Color {
+        get { self[PhaseColorKey.self] }
+        set { self[PhaseColorKey.self] = newValue }
+    }
+}
+
 struct ActionUIRenderer: View {
     let schema: ActionSchema
     @Binding var response: ActionResponse
@@ -165,8 +176,9 @@ struct ActionUIRenderer: View {
             }
         }
         .padding(20)
-        .background(Color(.controlBackgroundColor))
+        .background(phaseColor.opacity(0.15))
         .cornerRadius(12)
+        .environment(\.phaseColor, phaseColor)
     }
 
     @ViewBuilder

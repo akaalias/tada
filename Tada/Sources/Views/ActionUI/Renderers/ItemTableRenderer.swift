@@ -3,6 +3,9 @@ import SwiftUI
 struct ItemTableRenderer: View {
     let field: ActionField
     @Binding var response: ActionResponse
+    @Environment(\.phaseColor) private var phaseColor
+
+    private let gridLineColor = Color.white.opacity(0.15)
 
     @State private var rows: [TableRow] = [TableRow()]
     @State private var customCategories: [String: [String]] = [:]  // columnId -> custom categories
@@ -87,7 +90,7 @@ struct ItemTableRenderer: View {
             HStack(spacing: 0) {
                 ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
                     if index > 0 {
-                        Divider().frame(height: 36)
+                        Rectangle().fill(gridLineColor).frame(width: 1, height: 36)
                     }
                     Text(column.label)
                         .font(.system(size: 14, weight: .semibold))
@@ -101,17 +104,17 @@ struct ItemTableRenderer: View {
                 }
                 Color.clear.frame(width: 36)
             }
-            .background(Color(.controlBackgroundColor))
+            .background(phaseColor.opacity(0.18))
             .cornerRadius(8, corners: [.topLeft, .topRight])
 
-            Divider()
+            Rectangle().fill(gridLineColor).frame(height: 1)
 
             // Data rows
             ForEach($rows) { $row in
                 HStack(spacing: 0) {
                     ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
                         if index > 0 {
-                            Divider().frame(height: 36)
+                            Rectangle().fill(gridLineColor).frame(width: 1, height: 36)
                         }
                         columnCell(for: column, row: $row, isFirst: index == 0)
                     }
@@ -129,9 +132,9 @@ struct ItemTableRenderer: View {
                     .frame(width: 36)
                     .disabled(rows.count <= 1)
                 }
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
 
-                Divider()
+                Rectangle().fill(gridLineColor).frame(height: 1)
             }
 
             // Add row button
@@ -149,9 +152,9 @@ struct ItemTableRenderer: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.textBackgroundColor))
+            .background(phaseColor.opacity(0.25))
 
-            Divider()
+            Rectangle().fill(gridLineColor).frame(height: 1)
 
             // Summary row
             HStack(spacing: 0) {
@@ -172,12 +175,12 @@ struct ItemTableRenderer: View {
 
                 Color.clear.frame(width: 36)
             }
-            .background(Color(.controlBackgroundColor))
+            .background(phaseColor.opacity(0.18))
             .cornerRadius(8, corners: [.bottomLeft, .bottomRight])
         }
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                .stroke(gridLineColor, lineWidth: 1)
         )
         .onAppear {
             // Initialize with prefill data if available

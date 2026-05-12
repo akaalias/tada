@@ -3,6 +3,7 @@ import SwiftUI
 struct NumberFieldRenderer: View {
     let field: ActionField
     @Binding var response: ActionResponse
+    @Environment(\.phaseColor) private var phaseColor
 
     @State private var number: Double = 0
 
@@ -13,7 +14,7 @@ struct NumberFieldRenderer: View {
                 .textFieldStyle(.plain)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 14)
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)

@@ -38,6 +38,7 @@ struct DrawingElement: Identifiable {
 struct DrawingCanvasRenderer: View {
     let field: ActionField
     @Binding var response: ActionResponse
+    @Environment(\.phaseColor) private var phaseColor
 
     @State private var elements: [DrawingElement] = []
     @State private var currentElement: DrawingElement?
@@ -120,12 +121,12 @@ struct DrawingCanvasRenderer: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(Color(.controlBackgroundColor))
+            .background(phaseColor.opacity(0.18))
             .cornerRadius(8)
 
             ZStack {
                 // Canvas background
-                Color(.textBackgroundColor)
+                phaseColor.opacity(0.25)
 
                 // Drawing layer
                 Canvas { context, size in

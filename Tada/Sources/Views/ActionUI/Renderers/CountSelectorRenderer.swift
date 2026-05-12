@@ -3,6 +3,7 @@ import SwiftUI
 struct CountSelectorRenderer: View {
     let field: ActionField
     @Binding var response: ActionResponse
+    @Environment(\.phaseColor) private var phaseColor
 
     @State private var selectedCount: Int = 1
     @State private var customCount: Int = 5
@@ -20,7 +21,7 @@ struct CountSelectorRenderer: View {
                         Text("\(count)")
                             .font(.system(size: 20, weight: .semibold))
                             .frame(width: 56, height: 56)
-                            .background(selectedCount == count && !showingCustomInput ? Color.blue : Color(.controlBackgroundColor))
+                            .background(selectedCount == count && !showingCustomInput ? phaseColor : phaseColor.opacity(0.25))
                             .foregroundColor(selectedCount == count && !showingCustomInput ? .white : .primary)
                             .cornerRadius(12)
                             .overlay(
@@ -59,7 +60,7 @@ struct CountSelectorRenderer: View {
                                 }
                         }
                         .frame(width: 80, height: 56)
-                        .background(Color.blue)
+                        .background(phaseColor)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                         .overlay(
@@ -70,7 +71,7 @@ struct CountSelectorRenderer: View {
                         Text("5+")
                             .font(.system(size: 20, weight: .semibold))
                             .frame(width: 56, height: 56)
-                            .background(Color(.controlBackgroundColor))
+                            .background(phaseColor.opacity(0.25))
                             .foregroundColor(.primary)
                             .cornerRadius(12)
                             .overlay(
