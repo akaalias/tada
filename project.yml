@@ -1,0 +1,50 @@
+name: Tada
+
+options:
+  bundleIdPrefix: com.tada
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "26.2"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+
+targets:
+  Tada:
+    type: application
+    platform: macOS
+    sources:
+      - Tada/Sources
+      - Tada/Resources
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Tada
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.productivity"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+        PRODUCT_BUNDLE_IDENTIFIER: com.tada.app
+      configurations:
+        Debug:
+          debugInformationFormat: dwarf
+        Release:
+          enablesTesting: YES
+
+  TadaTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/TadaTests
+    dependencies:
+      - target: Tada
+    settings:
+      base:
+        ENABLE_TESTABILITY: YES
+        GENERATE_INFOPLIST_FILE: YES
+      configurations:
+        Debug:
+          debugInformationFormat: dwarf
