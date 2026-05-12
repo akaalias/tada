@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run the test suite via xcodebuild.
+# The project is configured with xcodegen (project.yml) and committed to git.
+# No regeneration needed — the committed Tada.xcodeproj works as-is.
+#
+# Usage: ./scripts/test
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$PROJECT_ROOT"
+
+echo "🧪 Running tests..."
+xcodebuild test \
+  -project Tada.xcodeproj \
+  -scheme TadaTests \
+  -destination 'platform=macOS'

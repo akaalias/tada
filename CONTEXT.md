@@ -112,13 +112,23 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 4. ~~**Split KnowledgeBaseService**~~ — filesystem / AI orchestration / indexing / link discovery ✅
 5. ~~**Dependency injection** — protocols + AppServices environment key~~ ✅
 6. ~~**Extract utilities** — response formatting, constants, error handling~~ ✅
-7. **Add tests** for models and services
+7. ~~**Add tests**~~ — 117 tests across 6 test files ✅
+   - `scripts/test` — run all tests (`xcodegen generate` + `xcodebuild test`)
+   - Tests cover: models (Task, SubTask, ActionSchema), utilities (ResponseFormatter, KnowledgeBaseFilesystem, frontmatter parsing), error handling, enums
 
 ---
 
 ## Working Process
 
 - After completion of each step/phase, make a commit before moving on to the next one.
+
+## Running Tests
+
+```bash
+./scripts/test          # run all tests (regenerates project + runs xcodebuild)
+```
+
+Tests are configured via xcodegen (`project.yml`) and run through `xcodebuild`. No `Package.swift` — this is an Xcode-only project.
 
 ## Decisions Made
 
