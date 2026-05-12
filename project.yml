@@ -48,3 +48,42 @@ targets:
       configurations:
         Debug:
           debugInformationFormat: dwarf
+
+  TadaIntegrationTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/TadaIntegrationTests
+    dependencies:
+      - target: Tada
+    settings:
+      base:
+        ENABLE_TESTABILITY: YES
+        GENERATE_INFOPLIST_FILE: YES
+      configurations:
+        Debug:
+          debugInformationFormat: dwarf
+
+schemes:
+  Tada:
+    build:
+      targets:
+        Tada: all
+
+  TadaTests:
+    build:
+      targets:
+        Tada: all
+        TadaTests: test
+    test:
+      targets:
+        - name: TadaTests
+
+  TadaIntegrationTests:
+    build:
+      targets:
+        Tada: all
+        TadaIntegrationTests: test
+    test:
+      targets:
+        - name: TadaIntegrationTests

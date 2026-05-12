@@ -79,3 +79,7 @@ The loop pattern: "Now I'm mapping out changes" → repeat 10x with identical co
 - **Self-correction trigger:** If your next response starts with "Now I have a good understanding" or "Let me create..." after already stating the plan — you're looping. Stop talking, start writing.
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, clarifying questions come before implementation rather than after mistakes, and zero thinking-loop repetitions.
+
+## 6. Get Caught Up On Previous Work
+- At the start of a new session, read [[CONTEXT.md]]
+- If there is any pending work to do, mention it to the user 
