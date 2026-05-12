@@ -62,4 +62,18 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+## 5. No Thinking Loops — Commit or Stop
+
+**Once you've done recon and stated a plan, EXECUTE. No re-stating.**
+
+The loop pattern: "Now I'm mapping out changes" → repeat 10x with identical content.
+
+**Rule:** After stating a plan, the very next action MUST be a tool call (edit/write/bash). No more analysis paragraphs. No re-stating the same approach.
+
+**Anti-loop mechanism:**
+- State plan ONCE in a single paragraph (max 5 bullet points)
+- Immediately start editing files
+- If you catch yourself re-stating the same plan, STOP and execute
+- One paragraph of planning → immediate execution. That's it.
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, clarifying questions come before implementation rather than after mistakes, and zero thinking-loop repetitions.

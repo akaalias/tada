@@ -7,6 +7,7 @@ struct ExecutionPlanData {
 
 struct InformationRequiredView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appServices) private var appServices
     @Query private var allTasks: [TodoTask]
     private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @State private var showingExecutionPlanSheet = false
@@ -20,7 +21,13 @@ struct InformationRequiredView: View {
                 ScrollView {
                     LazyVStack(spacing: 20) {
                         ForEach(Array(discoveryTasks.enumerated()), id: \.element.id) { index, task in
-                            ActionCard(task: task, defaultExpanded: index == 0)
+                            ActionCard(
+                                task: task,
+                                defaultExpanded: index == 0,
+                                knowledgeBase: appServices?.knowledgeBase,
+                                executiveAI: appServices?.executiveAI,
+                                plannerAI: appServices?.plannerAI
+                            )
                         }
                     }
                     .padding()
@@ -97,6 +104,7 @@ struct InformationRequiredView: View {
 
 struct ActionRequiredView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appServices) private var appServices
     @Query private var allTasks: [TodoTask]
     private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @State private var focusedTaskId: UUID?
@@ -112,7 +120,10 @@ struct ActionRequiredView: View {
                             ForEach(Array(executionTasks.enumerated()), id: \.element.id) { index, task in
                                 ActionCard(
                                     task: task,
-                                    defaultExpanded: focusedTaskId == nil ? index == 0 : task.id == focusedTaskId
+                                    defaultExpanded: focusedTaskId == nil ? index == 0 : task.id == focusedTaskId,
+                                    knowledgeBase: appServices?.knowledgeBase,
+                                    executiveAI: appServices?.executiveAI,
+                                    plannerAI: appServices?.plannerAI
                                 )
                                 .id(task.id)
                             }
@@ -262,17 +273,30 @@ struct ActionCard: View {
     @Environment(\.modelContext) private var modelContext
     let task: TodoTask
     var defaultExpanded: Bool = true
+    private let knowledgeBase: KnowledgeBaseServiceProtocol
+    private let executiveAI: ExecutiveAIServiceProtocol
+    private let plannerAI: PlannerAIServiceProtocol
     @State private var viewModel: ActionCardViewModel
     @State private var showingSubTaskSheet = false
 
-    init(task: TodoTask, defaultExpanded: Bool = true) {
+    init(
+        task: TodoTask,
+        defaultExpanded: Bool = true,
+        knowledgeBase: KnowledgeBaseServiceProtocol? = nil,
+        executiveAI: ExecutiveAIServiceProtocol? = nil,
+        plannerAI: PlannerAIServiceProtocol? = nil
+    ) {
         self.task = task
         self.defaultExpanded = defaultExpanded
+        // Use injected services when available, fall back to defaults
+        self.knowledgeBase = knowledgeBase ?? KnowledgeBaseServiceAdapter()
+        self.executiveAI = executiveAI ?? ExecutiveAIServiceAdapter()
+        self.plannerAI = plannerAI ?? PlannerAIServiceAdapter()
         self._viewModel = State(initialValue: ActionCardViewModel(
             task: task,
-            knowledgeBase: KnowledgeBaseServiceAdapter(),
-            executiveAI: ExecutiveAIServiceAdapter(),
-            plannerAI: PlannerAIServiceAdapter()
+            knowledgeBase: self.knowledgeBase,
+            executiveAI: self.executiveAI,
+            plannerAI: self.plannerAI
         ))
     }
 

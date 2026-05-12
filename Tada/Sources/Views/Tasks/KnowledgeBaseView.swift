@@ -4,11 +4,13 @@ import SwiftUI
 /// `index.md`. Wikilinks `[[target.md|Label]]` and `[[target.md]]` are rewritten to clickable
 /// `file://` links that navigate to the corresponding file on disk.
 struct KnowledgeBaseView: View {
+    @Environment(\.appServices) private var appServices
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
 
-    private var rootURL: URL { KnowledgeBaseService.shared.rootURL }
-    private var indexURL: URL { KnowledgeBaseService.shared.indexURL }
+    private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
+    private var rootURL: URL { kb?.rootURL ?? KnowledgeBaseService.shared.rootURL }
+    private var indexURL: URL { kb?.indexURL ?? KnowledgeBaseService.shared.indexURL }
 
     private var currentURL: URL { pageStack.last ?? indexURL }
 
@@ -66,7 +68,7 @@ struct KnowledgeBaseView: View {
             Spacer()
 
             Button {
-                KnowledgeBaseService.shared.runLinkDiscoveryNow()
+                kb?.runLinkDiscoveryNow()
             } label: {
                 Image(systemName: "link.badge.plus")
             }

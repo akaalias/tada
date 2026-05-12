@@ -3,13 +3,14 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appServices) private var appServices
     @State private var selectedView: SidebarItem = .allTasks
     @State private var showingNewTaskSheet = false
     @Query private var allTasks: [TodoTask]
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $selectedView)
+            Sidebar(selection: $selectedView, appServices: appServices)
         } detail: {
             detailView
         }
@@ -18,7 +19,7 @@ struct ContentView: View {
         }
         .onAppear {
             // Back-fill wiki pages for tasks created before the wiki feature existed.
-            KnowledgeBaseService.shared.reconcile(tasks: allTasks)
+            appServices?.knowledgeBase.reconcile(tasks: allTasks)
         }
         .onReceive(NotificationCenter.default.publisher(for: .newTask)) { _ in
             showingNewTaskSheet = true
@@ -78,9 +79,10 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct Sidebar: View {
     @Binding var selection: SidebarItem
+    let appServices: AppServices?
     @Query private var allTasks: [TodoTask]
     private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
-    @ObservedObject private var kb = KnowledgeBaseService.shared
+    private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
 
     private var mainItems: [SidebarItem] {
         [.allTasks, .informationRequired, .actionRequired]
@@ -137,7 +139,7 @@ struct Sidebar: View {
                             .foregroundColor(.white)
                             .clipShape(Capsule())
                     }
-                    if item == .knowledge && kb.isWorking {
+                    if item == .knowledge, let kb = kb, kb.isWorking {
                         ProgressView()
                             .controlSize(.mini)
                     }

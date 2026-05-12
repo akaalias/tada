@@ -4,6 +4,7 @@ import SwiftData
 struct NewTaskSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appServices) private var appServices
 
     @State private var taskInput = ""
     @State private var promptQuestion: String
@@ -93,15 +94,15 @@ struct NewTaskSheet: View {
 
         modelContext.insert(task)
         try? modelContext.save()
-        KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
+        appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
         dismiss()
 
         // Plan in background if API key available
-        if let apiKey = APIKeyManager.getAPIKey() {
+        if APIKeyManager.hasAPIKey {
             Task {
                 do {
-                    let planner = PlannerAIService(apiKey: apiKey)
-                    let discoveryPlan = try await planner.generateDiscoveryQuestions(for: trimmedInput)
+                    guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
+                    let discoveryPlan = try await plannerAI.generateDiscoveryQuestions(for: trimmedInput)
 
                     await MainActor.run {
                         task.title = discoveryPlan.title
@@ -124,8 +125,11 @@ struct NewTaskSheet: View {
                         task.planningStatus = PlanningStatus.idle
                         try? modelContext.save()
                         // Refresh the wiki entry now that the planner has rewritten the title/description.
-                        KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
+                        appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
                     }
+                } catch DIError.missingPlanner {
+                    // appServices not injected — shouldn't happen in production
+                    print("Warning: AppServices not available for task planning")
                 } catch {
                     await MainActor.run {
                         task.planningStatus = PlanningStatus.idle

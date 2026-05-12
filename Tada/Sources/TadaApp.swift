@@ -3,9 +3,16 @@ import SwiftData
 
 @main
 struct TadaApp: App {
+    private let appServices = AppServices(
+        knowledgeBase: nil,
+        executiveAI: nil,
+        plannerAI: nil
+    )
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(appServices)
         }
         .modelContainer(for: [TodoTask.self, SubTask.self])
         .commands {

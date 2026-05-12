@@ -5,13 +5,22 @@ import Foundation
 /// Protocol for knowledge-base lifecycle hooks used by view models.
 @MainActor
 protocol KnowledgeBaseServiceProtocol {
+    var rootURL: URL { get }
+    var indexURL: URL { get }
+    var isWorking: Bool { get }
     func handleTaskCreatedOrUpdated(_ task: TodoTask)
     func handleSubtaskCompleted(_ subTask: SubTask)
     func handleTaskCompleted(_ task: TodoTask)
+    func reconcile(tasks: [TodoTask])
+    func runLinkDiscoveryNow()
 }
 
 /// Concrete implementation backed by the singleton.
 final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
+    var rootURL: URL { KnowledgeBaseService.shared.rootURL }
+    var indexURL: URL { KnowledgeBaseService.shared.indexURL }
+    var isWorking: Bool { KnowledgeBaseService.shared.isWorking }
+
     func handleTaskCreatedOrUpdated(_ task: TodoTask) {
         KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
     }
@@ -22,6 +31,14 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
 
     func handleTaskCompleted(_ task: TodoTask) {
         KnowledgeBaseService.shared.handleTaskCompleted(task)
+    }
+
+    func reconcile(tasks: [TodoTask]) {
+        KnowledgeBaseService.shared.reconcile(tasks: tasks)
+    }
+
+    func runLinkDiscoveryNow() {
+        KnowledgeBaseService.shared.runLinkDiscoveryNow()
     }
 }
 

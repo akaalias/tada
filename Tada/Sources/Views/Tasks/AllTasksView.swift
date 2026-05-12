@@ -3,6 +3,7 @@ import SwiftData
 
 struct AllTasksView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appServices) private var appServices
     @Query(sort: \TodoTask.createdAt, order: .reverse) private var allTasks: [TodoTask]
     private var tasks: [TodoTask] { allTasks.filter { $0.status == .active } }
 
@@ -51,7 +52,7 @@ struct AllTasksView: View {
                     let allExecutionDone = task.executionSubTasks.allSatisfy { $0.isCompleted }
                     if allExecutionDone {
                         task.markCompleted()
-                        KnowledgeBaseService.shared.handleTaskCompleted(task)
+                        appServices?.knowledgeBase.handleTaskCompleted(task)
                     }
                 }
             }
@@ -94,7 +95,7 @@ struct AllTasksView: View {
     private func completeTask(_ task: TodoTask) {
         task.markCompleted()
         try? modelContext.save()
-        KnowledgeBaseService.shared.handleTaskCompleted(task)
+        appServices?.knowledgeBase.handleTaskCompleted(task)
     }
 
     private func deleteTask(_ task: TodoTask) {
@@ -110,7 +111,7 @@ struct AllTasksView: View {
     }
 
     private func replanDiscovery(_ task: TodoTask) {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
+        guard APIKeyManager.hasAPIKey else { return }
 
         // Clear all subtasks and set planning status
         for subTask in task.subTasks {
@@ -123,8 +124,8 @@ struct AllTasksView: View {
         // Regenerate discovery
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let plan = try await planner.generateDiscoveryQuestions(for: task.originalInput)
+                guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
+                let plan = try await plannerAI.generateDiscoveryQuestions(for: task.originalInput)
 
                 await MainActor.run {
                     task.title = plan.title
@@ -146,7 +147,7 @@ struct AllTasksView: View {
 
                     task.planningStatus = .idle
                     try? modelContext.save()
-                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
+                    appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan discovery: \(error)")
@@ -159,7 +160,7 @@ struct AllTasksView: View {
     }
 
     private func replanExecution(_ task: TodoTask) {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
+        guard APIKeyManager.hasAPIKey else { return }
 
         // Clear only execution subtasks and set planning status
         for subTask in task.executionSubTasks {
@@ -191,8 +192,8 @@ struct AllTasksView: View {
         // Regenerate execution
         Task {
             do {
-                let planner = PlannerAIService(apiKey: apiKey)
-                let executionPlan = try await planner.createExecutionPlan(
+                guard let plannerAI = appServices?.plannerAI else { throw DIError.missingPlanner }
+                let executionPlan = try await plannerAI.createExecutionPlan(
                     originalTask: task.originalInput,
                     discoveryAnswers: discoveryAnswers
                 )
@@ -219,7 +220,7 @@ struct AllTasksView: View {
 
                     task.planningStatus = .idle
                     try? modelContext.save()
-                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
+                    appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to replan execution: \(error)")
