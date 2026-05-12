@@ -131,7 +131,7 @@ struct AllTasksView: View {
                     task.title = plan.title
                     task.taskDescription = plan.description
 
-                    let cappedSubTasks = Array(plan.subTasks.prefix(5))
+                    let cappedSubTasks = Array(plan.subTasks.prefix(AppConstants.maxDiscoveryQuestions))
                     for (index, subTaskPlan) in cappedSubTasks.enumerated() {
                         let subTask = SubTask(
                             title: subTaskPlan.title,
@@ -176,15 +176,7 @@ struct AllTasksView: View {
                 var responseStr = ""
                 if let data = subTask.actionResponseData,
                    let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
+                    responseStr = formatResponseValues(response)
                 }
                 return CompletedSubTaskInfo(title: subTask.title, response: responseStr)
             }

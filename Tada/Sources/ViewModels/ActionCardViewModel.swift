@@ -174,7 +174,7 @@ final class ActionCardViewModel {
                 }
             } catch {
                 await MainActor.run {
-                    self.schemaError = error.localizedDescription
+                    self.schemaError = AppError.userMessage(from: error)
                     self.isLoadingSchema = false
                     clearProgressLog()
                 }
@@ -223,7 +223,7 @@ final class ActionCardViewModel {
                 }
                 try? modelContext?.save()
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.autoAdvanceDelay) { [weak self] in
                     self?.resetForNextAction()
                 }
             }
@@ -239,7 +239,7 @@ final class ActionCardViewModel {
                 addProgressMessage("Moving to next step...")
                 try? modelContext?.save()
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.autoAdvanceDelay) { [weak self] in
                     self?.resetForNextAction()
                 }
             } else {
@@ -318,15 +318,7 @@ final class ActionCardViewModel {
                 var responseStr = "(no response)"
                 if let data = ds.actionResponseData,
                    let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
+                    responseStr = formatResponseValues(response)
                 }
                 return "Q: \(ds.title)\nA: \(responseStr)"
             }
@@ -399,15 +391,7 @@ final class ActionCardViewModel {
                 var responseStr = "(no response recorded)"
                 if let data = discoverySubTask.actionResponseData,
                    let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
+                    responseStr = formatResponseValues(response)
                 }
                 return "Q: \(discoverySubTask.title)\nA: \(responseStr)"
             }
@@ -472,7 +456,7 @@ final class ActionCardViewModel {
                 }
             } catch {
                 await MainActor.run {
-                    addProgressMessage("Couldn't break down step: \(error.localizedDescription)")
+                    addProgressMessage("Couldn't break down step: \(AppError.userMessage(from: error))")
                     pendingSubTask = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                         self?.resetForNextAction()
@@ -578,7 +562,7 @@ final class ActionCardViewModel {
                         try? modelContext?.save()
                         addProgressMessage("Plan updated!")
 
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                        DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.autoAdvanceDelay) { [weak self] in
                             self?.resetForNextAction()
                         }
                     } else {
@@ -600,7 +584,7 @@ final class ActionCardViewModel {
             addProgressMessage("Moving to next step...")
             try? modelContext?.save()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.autoAdvanceDelay) { [weak self] in
                 self?.resetForNextAction()
             }
         }
@@ -669,15 +653,7 @@ final class ActionCardViewModel {
                 var responseStr = ""
                 if let data = subTask.actionResponseData,
                    let response = try? JSONDecoder().decode(ActionResponse.self, from: data) {
-                    responseStr = response.values.map { _, value in
-                        switch value {
-                        case .string(let s): return s
-                        case .number(let n): return String(n)
-                        case .boolean(let b): return b ? "Yes" : "No"
-                        case .stringArray(let arr): return arr.joined(separator: ", ")
-                        case .date(let d): return d.formatted()
-                        }
-                    }.joined(separator: "; ")
+                    responseStr = formatResponseValues(response)
                 }
                 return CompletedSubTaskInfo(title: subTask.title, response: responseStr)
             }
@@ -763,20 +739,7 @@ final class ActionCardViewModel {
 
             if let responseData = subTask.actionResponseData,
                let actionResponse = try? JSONDecoder().decode(ActionResponse.self, from: responseData) {
-                for (key, value) in actionResponse.values {
-                    switch value {
-                    case .string(let s):
-                        responseDict[key] = s
-                    case .number(let n):
-                        responseDict[key] = String(n)
-                    case .boolean(let b):
-                        responseDict[key] = b ? "Yes" : "No"
-                    case .date(let d):
-                        responseDict[key] = d.formatted(date: .abbreviated, time: .omitted)
-                    case .stringArray(let arr):
-                        responseDict[key] = arr.joined(separator: ", ")
-                    }
-                }
+                responseDict.merge(actionResponseToDict(actionResponse)) { _, new in new }
             }
 
             responses.append(responseDict)

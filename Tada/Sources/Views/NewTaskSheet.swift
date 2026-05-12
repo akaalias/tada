@@ -108,7 +108,7 @@ struct NewTaskSheet: View {
                         task.title = discoveryPlan.title
                         task.taskDescription = discoveryPlan.description
 
-                        let cappedQuestions = Array(discoveryPlan.subTasks.prefix(5))
+                        let cappedQuestions = Array(discoveryPlan.subTasks.prefix(AppConstants.maxDiscoveryQuestions))
                         for (index, questionPlan) in cappedQuestions.enumerated() {
                             let subTask = SubTask(
                                 title: questionPlan.title,

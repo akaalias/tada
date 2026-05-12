@@ -49,7 +49,7 @@ final actor KnowledgeBaseLinkDiscovery {
                 await self.applyDiscoveredLinks(result.pairs, allNotes: inputs)
                 NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
             } catch {
-                print("[KnowledgeBase] Cross-link discovery failed: \(error.localizedDescription)")
+                print("[KnowledgeBase] Cross-link discovery failed: \(AppError.userMessage(from: error))")
             }
         }
     }

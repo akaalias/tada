@@ -193,7 +193,7 @@ struct SettingsView: View {
                 saveStatus = .none
             }
         } catch {
-            saveStatus = .error(error.localizedDescription)
+            saveStatus = .error(AppError.userMessage(from: error))
         }
     }
 

@@ -145,7 +145,7 @@ final actor KnowledgeBaseGenerator {
                         )
                         print("[KnowledgeBase] Wrote sub-task note: \(await self.filesystem.subtaskFilename(for: (snap.id, snap.order, snap.title)))")
                     } catch {
-                        print("[KnowledgeBase] Failed to generate sub-task note for '\(snap.title)': \(error.localizedDescription)")
+                        print("[KnowledgeBase] Failed to generate sub-task note for '\(snap.title)': \(AppError.userMessage(from: error))")
                     }
                 }
             }
@@ -179,7 +179,7 @@ final actor KnowledgeBaseGenerator {
             )
             print("[KnowledgeBase] Wrote task overview note")
         } catch {
-            print("[KnowledgeBase] Failed to generate task overview note: \(error.localizedDescription)")
+            print("[KnowledgeBase] Failed to generate task overview note: \(AppError.userMessage(from: error))")
         }
     }
 
