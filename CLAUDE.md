@@ -70,10 +70,12 @@ The loop pattern: "Now I'm mapping out changes" → repeat 10x with identical co
 
 **Rule:** After stating a plan, the very next action MUST be a tool call (edit/write/bash). No more analysis paragraphs. No re-stating the same approach.
 
-**Anti-loop mechanism:**
-- State plan ONCE in a single paragraph (max 5 bullet points)
-- Immediately start editing files
-- If you catch yourself re-stating the same plan, STOP and execute
-- One paragraph of planning → immediate execution. That's it.
+### Anti-loop mechanism (HARD RULE)
+- State plan ONCE in a single paragraph (max 5 bullet points). That's it. One time only.
+- Immediately start executing with tool calls (edit/write/bash).
+- **Verification commands (`ls`, `cat`, file reads) are PART of execution, not analysis.** After any command returns — even if it's just confirming a file exists — you EXECUTE. You do NOT restate the plan.
+- **The forbidden pattern:** state plan → run `ls`/read file → restate plan → run same `ls`/read file → repeat. This is a failure state.
+- **If you find yourself about to restate the plan:** write the first file immediately. No preamble. No "now I'll..." Just a tool call.
+- **Self-correction trigger:** If your next response starts with "Now I have a good understanding" or "Let me create..." after already stating the plan — you're looping. Stop talking, start writing.
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, clarifying questions come before implementation rather than after mistakes, and zero thinking-loop repetitions.
