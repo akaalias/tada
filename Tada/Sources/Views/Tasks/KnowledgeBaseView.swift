@@ -371,10 +371,14 @@ private struct MarkdownBlockView: View {
                 Text("•")
                     .font(.system(size: Theme.fontSize))
                     .foregroundColor(.secondary)
-                Text(inline(text))
-                    .font(.system(size: Theme.fontSize))
-                    .lineSpacing(lineSpacing)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let link = SingleLinkExtractor.extract(from: text) {
+                    LinkButton(label: link.label, suffix: link.suffix, url: link.url)
+                } else {
+                    Text(inline(text))
+                        .font(.system(size: Theme.fontSize))
+                        .lineSpacing(lineSpacing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(.leading, 4)
             .padding(.bottom, listItemSpacing)
@@ -519,6 +523,56 @@ private struct MarkdownBlockView: View {
             return attr
         }
         return AttributedString(text)
+    }
+}
+
+// MARK: - List-item link button
+
+/// Identifies a list item whose body is a single markdown link, optionally
+/// followed by some trailing plain text (e.g. " — started 12. May · 2 notes").
+/// Used by the wiki renderer to render those items as real, hit-testable
+/// buttons rather than inline AttributedString links.
+private enum SingleLinkExtractor {
+    static func extract(from text: String) -> (label: String, suffix: String, url: URL)? {
+        let pattern = #"^\[([^\]]+)\]\(([^)]+)\)(.*)$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let ns = text as NSString
+        guard let match = regex.firstMatch(in: text, range: NSRange(location: 0, length: ns.length)),
+              match.range(at: 1).location != NSNotFound else {
+            return nil
+        }
+        let label = ns.substring(with: match.range(at: 1))
+        let urlString = ns.substring(with: match.range(at: 2))
+        let suffix = ns.substring(with: match.range(at: 3))
+        guard let url = URL(string: urlString) else { return nil }
+        return (label, suffix, url)
+    }
+}
+
+private struct LinkButton: View {
+    let label: String
+    let suffix: String
+    let url: URL
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            Button {
+                openURL(url)
+            } label: {
+                Text(label)
+                    .font(.system(size: Theme.fontSize))
+                    .foregroundColor(.accentColor)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("kb.link.\(url.lastPathComponent)")
+            if !suffix.isEmpty {
+                Text(suffix)
+                    .font(.system(size: Theme.fontSize))
+                    .foregroundColor(.secondary)
+            }
+        }
     }
 }
 

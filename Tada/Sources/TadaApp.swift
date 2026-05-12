@@ -12,9 +12,9 @@ struct TadaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(appServices)
+                .environment(\.appServices, appServices)
         }
-        .modelContainer(for: [TodoTask.self, SubTask.self])
+        .modelContainer(for: [TodoTask.self, SubTask.self], inMemory: UITestSupport.isActive)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Task") {

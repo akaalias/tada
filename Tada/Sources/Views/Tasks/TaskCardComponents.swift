@@ -105,6 +105,7 @@ struct TaskHeaderView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("taskCard.toggleExpand")
             }
 
             if !task.taskDescription.isEmpty || !task.subTasks.isEmpty {
