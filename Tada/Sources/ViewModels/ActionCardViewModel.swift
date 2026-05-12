@@ -8,6 +8,7 @@ import Observation
 final class ActionCardViewModel {
     let task: TodoTask
     var modelContext: ModelContext?
+    private let knowledgeBase: KnowledgeBaseServiceProtocol
 
     var actionSchema: ActionSchema?
     var actionResponse = ActionResponse()
@@ -20,8 +21,9 @@ final class ActionCardViewModel {
     var showingBlockerSelection = false
     var showingNudgeInput = false
 
-    init(task: TodoTask) {
+    init(task: TodoTask, knowledgeBase: KnowledgeBaseServiceProtocol) {
         self.task = task
+        self.knowledgeBase = knowledgeBase
     }
 
     // MARK: - Computed
@@ -198,7 +200,7 @@ final class ActionCardViewModel {
 
         subTask.markCompleted()
         try? modelContext?.save()
-        KnowledgeBaseService.shared.handleSubtaskCompleted(subTask)
+        knowledgeBase.handleSubtaskCompleted(subTask)
 
         if task.isDiscoveryPhase {
             let remainingQuestions = task.sortedSubTasks.filter { $0.isPending }
@@ -240,7 +242,7 @@ final class ActionCardViewModel {
                     guard let self else { return }
                     self.task.markCompleted()
                     try? self.modelContext?.save()
-                    KnowledgeBaseService.shared.handleTaskCompleted(self.task)
+                    knowledgeBase.handleTaskCompleted(self.task)
                     self.resetForNextAction()
                 }
             }
@@ -602,7 +604,7 @@ final class ActionCardViewModel {
     func completeTask() {
         task.markCompleted()
         try? modelContext?.save()
-        KnowledgeBaseService.shared.handleTaskCompleted(task)
+        knowledgeBase.handleTaskCompleted(task)
     }
 
     // MARK: - Planning
@@ -709,7 +711,7 @@ final class ActionCardViewModel {
 
                     task.planningStatus = .idle
                     try? modelContext?.save()
-                    KnowledgeBaseService.shared.handleTaskCreatedOrUpdated(task)
+                    knowledgeBase.handleTaskCreatedOrUpdated(task)
 
                     let planData = ExecutionPlanData(taskId: task.id)
                     submissionState = .idle

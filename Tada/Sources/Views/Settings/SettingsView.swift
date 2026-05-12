@@ -18,20 +18,29 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
 
                     HStack {
-                        if showKey {
-                            TextField("sk-ant-...", text: $apiKey)
+                        if APIKeyManager.hasAPIKey && !showKey {
+                            SecureField("", text: $apiKey)
                                 .textFieldStyle(.roundedBorder)
                         } else {
-                            SecureField("sk-ant-...", text: $apiKey)
+                            TextField("Enter your API key", text: $apiKey)
                                 .textFieldStyle(.roundedBorder)
                         }
 
-                        Button {
-                            showKey.toggle()
-                        } label: {
-                            Image(systemName: showKey ? "eye.slash" : "eye")
+                        if APIKeyManager.hasAPIKey {
+                            Button {
+                                if showKey {
+                                    // Hide: mask the key
+                                    apiKey = String(repeating: "•", count: 20)
+                                } else {
+                                    // Show: read the real key from storage
+                                    apiKey = APIKeyManager.getAPIKey() ?? ""
+                                }
+                                showKey.toggle()
+                            } label: {
+                                Image(systemName: showKey ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .buttonStyle(.borderless)
                     }
 
                     HStack {

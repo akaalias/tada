@@ -268,7 +268,7 @@ struct ActionCard: View {
     init(task: TodoTask, defaultExpanded: Bool = true) {
         self.task = task
         self.defaultExpanded = defaultExpanded
-        self._viewModel = State(initialValue: ActionCardViewModel(task: task))
+        self._viewModel = State(initialValue: ActionCardViewModel(task: task, knowledgeBase: KnowledgeBaseServiceAdapter()))
     }
 
     var body: some View {

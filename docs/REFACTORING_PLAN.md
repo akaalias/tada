@@ -31,13 +31,13 @@ Track progress of the refactoring plan documented in CONTEXT.md.
 
 ## Phase 2: Architecture (Critical–Medium)
 
-- [ ] **P2.1 — Split KnowledgeBaseService (IN PROGRESS)**
+- [x] **P2.1 — Split KnowledgeBaseService**
   - `KnowledgeBaseFilesystem` — file ops, folder mgmt, frontmatter parsing
-  - `KnowledgeBaseGenerator` — AI note generation orchestration
-  - `KnowledgeBaseIndexer` — index/regeneration
+  - `KnowledgeBaseGenerator` — AI note generation orchestration + response extraction
+  - `KnowledgeBaseIndexer` — index/regeneration, entry loading
   - `KnowledgeBaseLinkDiscovery` — cross-link logic
-  - Files: `Services/KnowledgeBaseService.swift` (reduce from ~1300 lines)
-  - Status: Not started
+  - Files: `Services/` (reduce from single ~1300-line file to 5 focused files)
+  - Status: **Done** — build passes. Coordinator is thin, all actors properly isolated.
 
 - [ ] **P2.2 — Dependency injection**
   - Protocol-based service interfaces
@@ -67,3 +67,6 @@ Track progress of the refactoring plan documented in CONTEXT.md.
 |------|--------------|
 | 2026-05-11 | Initial codebase review. Identified 12 issues across 3 priority levels. Created CONTEXT.md, ADR-001, and this plan file. No code changes yet — user asked to save state for later. |
 | 2026-05-11 | **P1.1 Done** — Created `Enums.swift` with 4 Swift enums (`TaskStatus`, `SubTaskStatus`, `TaskPhase`, `PlanningStatus`). Updated all models, views, and KnowledgeBaseService. SwiftData predicates use `.rawValue` for enum comparisons. Build passes.
+| 2026-05-11 | **P1.3 Done** — Split 2054-line `ActionUIRenderer.swift` into 13 renderer files under `Views/ActionUI/Renderers/`. Coordinator reduced to ~160 lines. Build passes.
+| 2026-05-11 | **P1.2 Done** — Extracted `ActionCardViewModel` (400+ lines) owning schema loading, response handling, submission flow, plan revision. View wiring still pending.
+| 2026-05-12 | **P2.1 Done** — Split KnowledgeBaseService (~1300 lines) into 5 focused files: `KnowledgeBaseFilesystem`, `KnowledgeBaseGenerator`, `KnowledgeBaseIndexer`, `KnowledgeBaseLinkDiscovery`, and thin coordinator. All actors properly isolated. Build passes.

@@ -106,10 +106,10 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 
 ### Recommended Order
 
-1. **String enums** — `TaskStatus`, `SubTaskStatus`, `TaskPhase`, `PlanningStatus`
-2. **ViewModel extraction** from `ActionCard` — biggest single improvement
-3. **Split ActionUIRenderer** — one file per field renderer type + coordinator
-4. **Split KnowledgeBaseService** — filesystem / AI orchestration / indexing / link discovery
+1. ~~**String enums**~~ — `TaskStatus`, `SubTaskStatus`, `TaskPhase`, `PlanningStatus` ✅
+2. ~~**ViewModel extraction**~~ from `ActionCard` — biggest single improvement ✅ (model extracted, view wiring pending)
+3. ~~**Split ActionUIRenderer**~~ — one file per field renderer type + coordinator ✅
+4. ~~**Split KnowledgeBaseService**~~ — filesystem / AI orchestration / indexing / link discovery ✅
 5. **Dependency injection** — protocols + optional container
 6. **Extract utilities** — response formatting, constants, error handling
 7. **Add tests** for models and services
