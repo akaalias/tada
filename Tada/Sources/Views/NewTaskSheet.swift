@@ -44,6 +44,7 @@ struct NewTaskSheet: View {
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .accessibilityIdentifier("newTaskSheet.input")
             }
             .frame(minHeight: 100)
             .background(Color(.textBackgroundColor))
@@ -68,6 +69,7 @@ struct NewTaskSheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.escape, modifiers: [])
+                .accessibilityIdentifier("newTaskSheet.cancel")
 
                 Spacer()
 
@@ -75,6 +77,7 @@ struct NewTaskSheet: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(taskInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .keyboardShortcut(.return, modifiers: .command)
+                    .accessibilityIdentifier("newTaskSheet.create")
             }
         }
         .padding(24)

@@ -65,6 +65,7 @@ struct AllTasksView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("allTasks.toolbar.add")
             }
         }
     }
@@ -88,6 +89,7 @@ struct AllTasksView: View {
                 Label("Add Task", systemImage: "plus")
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("allTasks.emptyState.addTask")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

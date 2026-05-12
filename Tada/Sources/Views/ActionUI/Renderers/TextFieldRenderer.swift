@@ -18,6 +18,7 @@ struct TextFieldRenderer: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
+            .accessibilityIdentifier("actionUI.field.\(field.id)")
             .onChange(of: text) { _, newValue in
                 response[field.id] = .string(newValue)
             }

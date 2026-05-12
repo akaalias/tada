@@ -132,6 +132,7 @@ struct Sidebar: View {
             Label {
                 HStack {
                     Text(item.rawValue)
+                        .accessibilityIdentifier("sidebar.\(item.id)")
                     Spacer()
                     if item == .informationRequired && informationRequiredCount > 0 {
                         Text("\(informationRequiredCount)")

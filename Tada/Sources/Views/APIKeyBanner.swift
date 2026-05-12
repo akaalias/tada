@@ -16,6 +16,7 @@ struct APIKeyBanner: View {
                 SettingsWindowManager.shared.openSettings()
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("apiKeyBanner.openSettings")
         }
         .padding(12)
         .background(Color.orange.opacity(0.1))

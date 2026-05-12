@@ -160,6 +160,7 @@ struct ActionUIRenderer: View {
                     .tint(phaseColor)
                     .controlSize(.large)
                     .disabled(!checkValidity())
+                    .accessibilityIdentifier("actionUI.submit")
                 }
             }
         }

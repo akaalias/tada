@@ -716,6 +716,7 @@ struct ExecutionPlanSheetContent: View {
                     onContinue()
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("executionPlan.continue")
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
