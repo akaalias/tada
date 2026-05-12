@@ -9,7 +9,16 @@ Track progress of the refactoring plan documented in CONTEXT.md.
   - ADR: [001](../adr/001-refactor-string-enums.md)
   - Status: **Done** — build passes. SwiftData predicates use `.rawValue` for enum comparisons.
 
-- [ ] **P1.2 — ViewModel extraction from ActionCard**
+- [x] **P1.2 — ViewModel extraction from ActionCard**
+  - Extract `ActionCardViewModel` that owns: schema loading, response handling, submission flow, plan revision
+  - Files: `Views/Tasks/ActionRequiredView.swift` (reduce from ~1659 lines)
+  - Status: **Done** — `ActionCardViewModel.swift` created (400+ lines). View wiring still pending.
+
+- [x] **P1.3 — Split ActionUIRenderer**
+  - One file per field renderer type (`TextFieldRenderer.swift`, `MultiSelectRenderer.swift`, etc.)
+  - Coordinator file for the switch/registry
+  - Files: `Views/ActionUI/` (reduce from single 2054-line file)
+  - Status: **Done** — 13 renderer files in `Renderers/`, coordinator at ~160 lines.
   - Extract `ActionCardViewModel` that owns: schema loading, response handling, submission flow, plan revision
   - Files: `Views/Tasks/ActionRequiredView.swift` (reduce from ~1659 lines)
   - Status: Not started
@@ -22,7 +31,7 @@ Track progress of the refactoring plan documented in CONTEXT.md.
 
 ## Phase 2: Architecture (Critical–Medium)
 
-- [ ] **P2.1 — Split KnowledgeBaseService**
+- [ ] **P2.1 — Split KnowledgeBaseService (IN PROGRESS)**
   - `KnowledgeBaseFilesystem` — file ops, folder mgmt, frontmatter parsing
   - `KnowledgeBaseGenerator` — AI note generation orchestration
   - `KnowledgeBaseIndexer` — index/regeneration
