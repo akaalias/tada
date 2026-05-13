@@ -180,28 +180,49 @@ private struct GraphWebView: NSViewRepresentable {
           const nodeColor = (n) => n.kind === 'entity' ? palette.entity
                                 : n.kind === 'task'   ? palette.task
                                                        : palette.note;
-          const nodeSize = (n) => n.kind === 'task'    ? 5.0
-                               : n.kind === 'entity'  ? 4.0
-                                                       : 2.4;
+
+          // Node size scales with degree (in + out). Compute once up front. Same shape per kind
+          // (task/entity vs note) just smaller base radius, then sqrt-scaled by degree so a node
+          // with 16 connections is ~4× the area of an isolated one, not 16×.
+          const degree = new Map();
+          data.nodes.forEach(n => degree.set(n.id, 0));
+          data.links.forEach(l => {
+            const s = typeof l.source === 'object' ? l.source.id : l.source;
+            const t = typeof l.target === 'object' ? l.target.id : l.target;
+            degree.set(s, (degree.get(s) || 0) + 1);
+            degree.set(t, (degree.get(t) || 0) + 1);
+          });
+          const nodeSize = (n) => {
+            const base = n.kind === 'note' ? 1.6 : 2.4;
+            const d = degree.get(n.id) || 0;
+            return base + Math.sqrt(d) * 0.9;
+          };
 
           // Threshold above which note labels appear. Tasks + entities still need a higher
           // bar than before so the canvas stays calm until the user zooms in.
           const LABEL_ZOOM = { task: 1.8, entity: 1.8, note: 4.2 };
+          const isLabelVisibleOnCanvas = (n, scale) => scale > (LABEL_ZOOM[n.kind] || 4.2);
 
           let hoverId = null;
 
+          // Track the current zoom so the hover tooltip can suppress itself when the canvas
+          // already paints the label at that zoom level.
+          let currentScale = 1;
           const Graph = ForceGraph()(el)
             .graphData(data)
             .backgroundColor('rgba(0,0,0,0)')
             .nodeId('id')
-            .nodeLabel(n => n.title)
+            // Suppress the built-in tooltip when the canvas-painted label is already visible.
+            .nodeLabel(n => isLabelVisibleOnCanvas(n, currentScale) ? '' : n.title)
             .nodeRelSize(1)
             .linkColor(() => palette.rule)
             .linkWidth(0.6)
+            .linkCurvature(0.18)
             .cooldownTicks(180)
             .d3AlphaDecay(0.018)
             .d3VelocityDecay(0.4)
             .warmupTicks(40)
+            .onZoom(({ k }) => { currentScale = k; })
             .onNodeHover(n => { hoverId = n ? n.id : null; el.style.cursor = n ? 'pointer' : 'default'; })
             .onNodeClick(n => {
               if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tada) {
@@ -214,8 +235,7 @@ private struct GraphWebView: NSViewRepresentable {
               ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
               ctx.fillStyle = node.id === hoverId ? palette.hover : nodeColor(node);
               ctx.fill();
-              const threshold = LABEL_ZOOM[node.kind] || 4.2;
-              if (globalScale > threshold && node.title) {
+              if (isLabelVisibleOnCanvas(node, globalScale) && node.title) {
                 ctx.font = `${10 / Math.min(globalScale, 1.4)}px Iowan Old Style, Palatino, Georgia, serif`;
                 ctx.fillStyle = node.id === hoverId ? palette.hover : palette.muted;
                 ctx.textAlign = 'left';
