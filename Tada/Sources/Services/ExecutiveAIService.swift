@@ -16,6 +16,8 @@ actor ExecutiveAIService {
     - singleSelect: Pick ONE from a list (mutually exclusive choices)
     - multiSelect: Pick MULTIPLE from a list
     - yesNo: Simple yes/no toggle or confirmation
+    - orderedList: Drag-and-drop list to put items in a sequence. USE THIS FOR ANY "arrange / sort / order / prioritize / put in sequence" prompt. Provide the items to reorder via the options array (each option's label is one item). The user reorders them by dragging.
+    - hierarchicalList: Drag-and-drop tree where users can also nest items as children. USE THIS FOR "organize into categories / group / outline / build a hierarchy / mind map / nested structure / parent and child" prompts. Seed it via prefillRows where each row has {"item": "Label", "depth": "0"} (0 = root, 1 = child, 2 = grandchild). If only flat items are known, use options instead and the user will nest them manually.
 
     INPUT (when you need specific information):
     - text: Short free-form text (names, phone numbers, brief answers)
@@ -59,6 +61,16 @@ actor ExecutiveAIService {
     - "How many rooms?" → countSelector
     - "How many guests?" → countSelector
     - "How do you want to use the space?" → multiSelect
+    - "Arrange the steps in order" → orderedList (seed options with the steps to reorder)
+    - "Put these into a logical sequence" → orderedList
+    - "Prioritize this list" → orderedList
+    - "Sort these items" → orderedList
+    - "What's the order?" → orderedList
+    - "Organize these into categories" → hierarchicalList
+    - "Group these items" → hierarchicalList
+    - "Build an outline" → hierarchicalList
+    - "Create a mind map / hierarchy" → hierarchicalList
+    - "Parent / child structure" → hierarchicalList
     - "Preferred cabin class?" → singleSelect with options
     - "When do you want this done?" → date
     - "Describe the room layout" → drawing (physical space = OK for drawing)

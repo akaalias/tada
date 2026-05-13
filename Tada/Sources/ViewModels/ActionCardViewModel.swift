@@ -114,12 +114,34 @@ final class ActionCardViewModel {
             }
         }
 
+        var seededOptions = options
+        if newType == .orderedList, seededOptions == nil {
+            let lines = currentText
+                .components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            if !lines.isEmpty {
+                seededOptions = lines.map { FieldOption(label: $0) }
+            }
+        }
+
+        if newType == .hierarchicalList, prefillRows == nil {
+            let lines = currentText.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            if !lines.isEmpty {
+                prefillRows = lines.map { rawLine in
+                    let leading = rawLine.prefix(while: { $0 == " " || $0 == "\t" }).count
+                    let trimmed = rawLine.trimmingCharacters(in: .whitespaces)
+                    return ["item": trimmed, "depth": String(leading / 2)]
+                }
+            }
+        }
+
         let newField = ActionField(
             id: "field_\(newType.rawValue)",
             type: newType,
             label: "",
             placeholder: newType == .textarea ? "Enter your response here..." : nil,
-            options: options,
+            options: seededOptions,
             defaultValue: defaultValue,
             prefillRows: prefillRows
         )

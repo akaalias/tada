@@ -187,7 +187,7 @@ import Testing
     let types: [ActionField.FieldType] = [
         .text, .number, .multiSelect, .singleSelect, .yesNo, .date,
         .textarea, .checklist, .drawing, .slider, .rangeSlider,
-        .countSelector, .itemTable
+        .countSelector, .itemTable, .orderedList, .hierarchicalList
     ]
 
     let encoder = JSONEncoder()

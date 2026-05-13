@@ -73,6 +73,8 @@ struct ActionField: Codable, Identifiable, Equatable {
         case rangeSlider
         case countSelector
         case itemTable
+        case orderedList
+        case hierarchicalList
     }
 
     enum CodingKeys: String, CodingKey {

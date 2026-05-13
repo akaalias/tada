@@ -205,8 +205,8 @@ actor ClaudeAPIClient {
                                     "id": ["type": "string", "description": "Unique field identifier"],
                                     "type": [
                                         "type": "string",
-                                        "enum": ["text", "number", "multiSelect", "singleSelect", "yesNo", "date", "textarea", "drawing", "slider", "itemTable"],
-                                        "description": "Field type. Use yesNo for yes/no questions, singleSelect for picking one option, multiSelect for multiple options, textarea for long text, drawing for sketches, slider for numeric ranges, itemTable for tables with custom columns (define columns via options: each option is a column with id, label, and description for type - use 'currency' for amounts or 'select:Choice1,Choice2' for dropdowns)"
+                                        "enum": ["text", "number", "multiSelect", "singleSelect", "yesNo", "date", "textarea", "drawing", "slider", "itemTable", "orderedList", "hierarchicalList"],
+                                        "description": "Field type. Use yesNo for yes/no questions, singleSelect for picking one option, multiSelect for multiple options, textarea for long text, drawing for sketches, slider for numeric ranges, itemTable for tables with custom columns (define columns via options: each option is a column with id, label, and description for type - use 'currency' for amounts or 'select:Choice1,Choice2' for dropdowns), orderedList for drag-and-drop reorderable lists (provide the items to be reordered via options - each option's label becomes a draggable row), hierarchicalList for drag-and-drop trees where users can nest items as children (seed via prefillRows with each row holding 'item' label and 'depth' as a string number: '0' root, '1' child, '2' grandchild)"
                                     ],
                                     "label": ["type": "string", "description": "Field label shown to user"],
                                     "placeholder": ["type": "string", "description": "Placeholder text"],
