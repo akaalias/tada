@@ -258,6 +258,15 @@ final class KnowledgeBaseService: ObservableObject {
         await linkDiscovery.runLinkDiscoveryNow()
     }
 
+    // MARK: - Graph data
+
+    /// Builds the JSON payload that drives the force-directed graph view. Walks every note +
+    /// entity on disk and emits `{nodes, links}`.
+    func buildGraphData() async -> KnowledgeGraphData {
+        let inputs = await filesystem.collectGraphInputs()
+        return KnowledgeGraphBuilder.build(from: inputs)
+    }
+
     // MARK: - Backlinks
 
     /// Returns the list of notes that link to the entity at `slug`, used by the wiki view to

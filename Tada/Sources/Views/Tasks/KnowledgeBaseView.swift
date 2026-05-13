@@ -9,6 +9,7 @@ struct KnowledgeBaseView: View {
     @Query private var allTasks: [TodoTask]
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
+    @State private var showingGraph: Bool = false
 
     private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
     private var rootURL: URL { kb?.rootURL ?? KnowledgeBaseService.shared.rootURL }
@@ -20,19 +21,23 @@ struct KnowledgeBaseView: View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            ScrollView {
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    VStack(alignment: .leading, spacing: 0) {
-                        MarkdownPageBody(url: currentURL, rootURL: rootURL)
-                        TaskContextFooter(url: currentURL, tasks: allTasks)
-                        BacklinksFooter(url: currentURL, refreshTick: refreshTick)
+            if showingGraph {
+                KnowledgeGraphView(onNodeClick: openFromGraph)
+            } else {
+                ScrollView {
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        VStack(alignment: .leading, spacing: 0) {
+                            MarkdownPageBody(url: currentURL, rootURL: rootURL)
+                            TaskContextFooter(url: currentURL, tasks: allTasks)
+                            BacklinksFooter(url: currentURL, refreshTick: refreshTick)
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 32)
+                        .frame(maxWidth: 750, alignment: .leading)
+                        .id("\(currentURL.absoluteString)-\(refreshTick)")
+                        Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 32)
-                    .frame(maxWidth: 750, alignment: .leading)
-                    .id("\(currentURL.absoluteString)-\(refreshTick)")
-                    Spacer(minLength: 0)
                 }
             }
         }
@@ -42,6 +47,18 @@ struct KnowledgeBaseView: View {
         })
         .onReceive(NotificationCenter.default.publisher(for: .knowledgeBaseUpdated)) { _ in
             refreshTick &+= 1
+        }
+    }
+
+    /// Called by the graph view when a node is clicked. Opens that note in the wiki.
+    private func openFromGraph(_ relativePath: String) {
+        let target = rootURL.appendingPathComponent(relativePath).standardizedFileURL
+        guard FileManager.default.fileExists(atPath: target.path) else { return }
+        showingGraph = false
+        if target == indexURL {
+            pageStack.removeAll()
+        } else if pageStack.last != target {
+            pageStack.append(target)
         }
     }
 
@@ -88,6 +105,14 @@ struct KnowledgeBaseView: View {
                 .help("Extract entities from this note (uses AI)")
                 .accessibilityIdentifier("kb.extractEntities")
             }
+
+            Button {
+                showingGraph.toggle()
+            } label: {
+                Image(systemName: showingGraph ? "doc.text" : "point.3.connected.trianglepath.dotted")
+            }
+            .help(showingGraph ? "Back to wiki" : "Show graph of all notes")
+            .accessibilityIdentifier("kb.toggleGraph")
 
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting([rootURL])

@@ -181,6 +181,10 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
 
     func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink] { [] }
 
+    func buildGraphData() async -> KnowledgeGraphData {
+        KnowledgeGraphData(nodes: [], links: [])
+    }
+
     // MARK: - Helpers (mirror KnowledgeBaseFilesystem / KnowledgeBaseIndexer formats)
 
     private func ensureFolder(for task: TodoTask) -> URL {

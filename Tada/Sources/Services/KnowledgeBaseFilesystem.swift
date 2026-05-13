@@ -115,6 +115,51 @@ final actor KnowledgeBaseFilesystem {
     /// Task notes live at `notes/<taskFolder>/<file>.md`; entities live at `notes/_entities/<slug>.md`.
     nonisolated static let entityLinkPrefix = "../\(KnowledgeBaseFilesystem.entitiesFolderName)/"
 
+    /// Walks every note in the wiki and returns the inputs needed to build the graph payload.
+    /// One pass over the disk: cheaper than iterating per-folder from outside the actor.
+    func collectGraphInputs() -> [KnowledgeGraphBuilder.NoteInput] {
+        var inputs: [KnowledgeGraphBuilder.NoteInput] = []
+
+        // Task folders + their notes.
+        for folder in listTaskFolders() {
+            let folderRel = relativePath(from: rootURL, to: folder)
+            let files = listNoteFiles(in: folder)
+            for url in files where url.pathExtension == "md" {
+                guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                let meta = Self.parseFrontmatter(raw)
+                let title = meta["title"] ?? url.deletingPathExtension().lastPathComponent
+                let isOverview = url.lastPathComponent == "_overview.md"
+                inputs.append(.init(
+                    relativePath: relativePath(from: rootURL, to: url),
+                    title: title,
+                    isOverview: isOverview,
+                    isEntity: false,
+                    folderRelativePath: folderRel,
+                    body: raw
+                ))
+            }
+        }
+
+        // Entity notes.
+        let entitiesFolderRel = "notes/\(Self.entitiesFolderName)"
+        let entityFiles = (try? FileManager.default.contentsOfDirectory(at: entitiesURL, includingPropertiesForKeys: nil)) ?? []
+        for url in entityFiles where url.pathExtension == "md" {
+            guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            let meta = Self.parseFrontmatter(raw)
+            let title = meta["title"] ?? url.deletingPathExtension().lastPathComponent
+            inputs.append(.init(
+                relativePath: relativePath(from: rootURL, to: url),
+                title: title,
+                isOverview: false,
+                isEntity: true,
+                folderRelativePath: entitiesFolderRel,
+                body: raw
+            ))
+        }
+
+        return inputs
+    }
+
     /// Scans every task-folder note for wikilinks to the entity at `slug` and returns the backlinks
     /// in title-sorted order. Used by the wiki view to render an entity note's "Backlinks" section.
     func backlinks(toEntitySlug slug: String) -> [KnowledgeBaseEntityLinker.Backlink] {
