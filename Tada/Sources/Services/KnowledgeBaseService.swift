@@ -257,6 +257,27 @@ final class KnowledgeBaseService: ObservableObject {
     func runLinkDiscoveryNow() async {
         await linkDiscovery.runLinkDiscoveryNow()
     }
+
+    // MARK: - Backlinks
+
+    /// Returns the list of notes that link to the entity at `slug`, used by the wiki view to
+    /// render a Backlinks section under entity notes.
+    func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink] {
+        await filesystem.backlinks(toEntitySlug: slug)
+    }
+
+    // MARK: - Manual extraction
+
+    /// Runs the entity-extraction pass on a single note (the one currently being viewed).
+    /// Idempotent: notes already containing entity wikilinks are skipped. Drives the
+    /// `isWorking` indicator and regenerates the index so new entities appear immediately.
+    func runEntityExtractionForCurrentNote(_ url: URL) async {
+        beginWork()
+        defer { endWork() }
+        await generator.runEntityExtraction(for: url)
+        await indexer.regenerateGlobalIndex()
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+    }
 }
 
 // MARK: - Subtask Snapshot (used by generator)

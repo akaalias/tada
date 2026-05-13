@@ -115,6 +115,29 @@ final actor KnowledgeBaseFilesystem {
     /// Task notes live at `notes/<taskFolder>/<file>.md`; entities live at `notes/_entities/<slug>.md`.
     nonisolated static let entityLinkPrefix = "../\(KnowledgeBaseFilesystem.entitiesFolderName)/"
 
+    /// Scans every task-folder note for wikilinks to the entity at `slug` and returns the backlinks
+    /// in title-sorted order. Used by the wiki view to render an entity note's "Backlinks" section.
+    func backlinks(toEntitySlug slug: String) -> [KnowledgeBaseEntityLinker.Backlink] {
+        let folders = listTaskFolders()
+        var results: [KnowledgeBaseEntityLinker.Backlink] = []
+        for folder in folders {
+            let files = listNoteFiles(in: folder)
+            // The overview file holds the task title that we'll attribute backlinks to.
+            let overviewURL = folder.appendingPathComponent("_overview.md")
+            let overviewBody = (try? String(contentsOf: overviewURL, encoding: .utf8)) ?? ""
+            let taskTitle = Self.parseFrontmatter(overviewBody)["title"]
+
+            for url in files where url.pathExtension == "md" && url.lastPathComponent != "_overview.md" {
+                guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                if !KnowledgeBaseEntityLinker.bodyContainsEntityLink(raw, entitySlug: slug) { continue }
+                let meta = Self.parseFrontmatter(raw)
+                let noteTitle = meta["title"] ?? url.deletingPathExtension().lastPathComponent
+                results.append(.init(fileURL: url, noteTitle: noteTitle, taskTitle: taskTitle))
+            }
+        }
+        return results.sorted { $0.noteTitle.localizedCaseInsensitiveCompare($1.noteTitle) == .orderedAscending }
+    }
+
     // MARK: - Note writing
 
     func writeNote(
@@ -216,6 +239,12 @@ final actor KnowledgeBaseFilesystem {
     // MARK: - Frontmatter parsing
 
     func parseFrontmatter(_ raw: String) -> [String: String] {
+        Self.parseFrontmatter(raw)
+    }
+
+    /// Nonisolated static parser so callers outside the actor (e.g. views) can read frontmatter
+    /// without bouncing through actor isolation.
+    nonisolated static func parseFrontmatter(_ raw: String) -> [String: String] {
         guard raw.hasPrefix("---") else { return [:] }
         let trimmed = raw.dropFirst(3)
         guard let endRange = trimmed.range(of: "\n---") else { return [:] }

@@ -177,6 +177,10 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
 
     func runLinkDiscoveryNow() async {}
 
+    func runEntityExtractionForCurrentNote(_ url: URL) async {}
+
+    func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink] { [] }
+
     // MARK: - Helpers (mirror KnowledgeBaseFilesystem / KnowledgeBaseIndexer formats)
 
     private func ensureFolder(for task: TodoTask) -> URL {

@@ -1,10 +1,12 @@
 import SwiftUI
+import SwiftData
 
 /// Renders the knowledge-base wiki as a stack of styled markdown blocks. Always starts at
 /// `index.md`. Wikilinks `[[target.md|Label]]` and `[[target.md]]` are rewritten to clickable
 /// `file://` links that navigate to the corresponding file on disk.
 struct KnowledgeBaseView: View {
     @Environment(\.appServices) private var appServices
+    @Query private var allTasks: [TodoTask]
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
 
@@ -21,11 +23,15 @@ struct KnowledgeBaseView: View {
             ScrollView {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    MarkdownPageBody(url: currentURL, rootURL: rootURL)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 32)
-                        .frame(maxWidth: 750, alignment: .leading)
-                        .id("\(currentURL.absoluteString)-\(refreshTick)")
+                    VStack(alignment: .leading, spacing: 0) {
+                        MarkdownPageBody(url: currentURL, rootURL: rootURL)
+                        TaskContextFooter(url: currentURL, tasks: allTasks)
+                        BacklinksFooter(url: currentURL, refreshTick: refreshTick)
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 32)
+                    .frame(maxWidth: 750, alignment: .leading)
+                    .id("\(currentURL.absoluteString)-\(refreshTick)")
                     Spacer(minLength: 0)
                 }
             }
@@ -67,12 +73,21 @@ struct KnowledgeBaseView: View {
 
             Spacer()
 
-            Button {
-                Task { await kb?.runLinkDiscoveryNow() }
-            } label: {
-                Image(systemName: "link.badge.plus")
+            if kb?.isWorking == true {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 24, height: 18)
+                    .help("Working…")
+            } else if isEntityExtractable(currentURL) {
+                Button {
+                    let url = currentURL
+                    Task { await kb?.runEntityExtractionForCurrentNote(url) }
+                } label: {
+                    Image(systemName: "wand.and.stars")
+                }
+                .help("Extract entities from this note (uses AI)")
+                .accessibilityIdentifier("kb.extractEntities")
             }
-            .help("Re-run cross-link discovery between all notes (uses AI)")
 
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting([rootURL])
@@ -83,6 +98,16 @@ struct KnowledgeBaseView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    /// Whether the file at the given URL is a note that benefits from entity extraction.
+    /// Excludes the index, `_overview.md` (planner-set description), and entity notes themselves.
+    private func isEntityExtractable(_ url: URL) -> Bool {
+        let name = url.lastPathComponent
+        if url.path == indexURL.path { return false }
+        if name == "_overview.md" { return false }
+        if url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName { return false }
+        return name.hasSuffix(".md")
     }
 
     private func handleLinkTap(_ url: URL) -> OpenURLAction.Result {
@@ -573,6 +598,191 @@ private struct LinkButton: View {
                     .foregroundColor(.secondary)
             }
         }
+    }
+}
+
+// MARK: - Source task footer
+
+/// Renders the parent task (and, where applicable, sub-task) that produced the current note as
+/// real UI below the markdown body. Reads `taskId` + optional `subtaskTitle` from the note's
+/// frontmatter and looks them up in SwiftData. Renders nothing if the file has no task
+/// association (entity notes, the index) or if the referenced task / sub-task no longer exists.
+private struct TaskContextFooter: View {
+    let url: URL
+    let tasks: [TodoTask]
+
+    var body: some View {
+        if let context = resolve() {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Source")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(context.task.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.primary)
+
+                    if let subTask = context.subTask {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(subTask.phase == .discovery ? "Question" : "Step")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.secondary.opacity(0.15))
+                                )
+                            Text(subTask.title)
+                                .font(.system(size: 13))
+                                .foregroundColor(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        if !subTask.subTaskDescription.isEmpty {
+                            Text(subTask.subTaskDescription)
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.secondary.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                )
+            }
+            .padding(.top, 24)
+        }
+    }
+
+    private struct ResolvedContext {
+        let task: TodoTask
+        let subTask: SubTask?
+    }
+
+    private func resolve() -> ResolvedContext? {
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        let meta = KnowledgeBaseFilesystem.parseFrontmatter(raw)
+        guard let taskIdStr = meta["taskId"],
+              let taskId = UUID(uuidString: taskIdStr),
+              let task = tasks.first(where: { $0.id == taskId }) else {
+            return nil
+        }
+        // Entity notes set `kind: entity` and have no task association.
+        if meta["kind"] == "entity" { return nil }
+
+        // Sub-task notes carry `subtaskTitle`. Match against current sub-tasks by title.
+        let subTask: SubTask? = meta["subtaskTitle"].flatMap { title in
+            task.sortedSubTasks.first { $0.title == title }
+        }
+        return ResolvedContext(task: task, subTask: subTask)
+    }
+}
+
+// MARK: - Backlinks footer
+
+/// Lists the notes that link to the entity at the current URL. Only renders for entity notes
+/// (files inside `notes/_entities/`). Loads asynchronously on appear so the wiki view doesn't
+/// block while scanning. Re-runs when `refreshTick` changes so the list updates after
+/// extraction / generation runs.
+private struct BacklinksFooter: View {
+    let url: URL
+    let refreshTick: Int
+
+    @Environment(\.appServices) private var appServices
+    @Environment(\.openURL) private var openURL
+    @State private var backlinks: [KnowledgeBaseEntityLinker.Backlink] = []
+    @State private var hasLoaded = false
+
+    private var slug: String? {
+        guard url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName else {
+            return nil
+        }
+        return url.deletingPathExtension().lastPathComponent
+    }
+
+    var body: some View {
+        if let slug {
+            content(for: slug)
+                .task(id: "\(slug)-\(refreshTick)") {
+                    backlinks = await appServices?.knowledgeBase.backlinks(toEntitySlug: slug) ?? []
+                    hasLoaded = true
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func content(for slug: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Backlinks")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+                .tracking(0.5)
+
+            if !hasLoaded {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Scanning…").font(.system(size: 12)).foregroundColor(.secondary)
+                }
+                .padding(12)
+            } else if backlinks.isEmpty {
+                Text("No notes link to this entity yet.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(backlinks.enumerated()), id: \.element.id) { idx, link in
+                        Button {
+                            openURL(link.fileURL)
+                        } label: {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Image(systemName: "doc.text")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(link.noteTitle)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.primary)
+                                        .multilineTextAlignment(.leading)
+                                    if let taskTitle = link.taskTitle {
+                                        Text(taskTitle)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.leading)
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if idx < backlinks.count - 1 {
+                            Divider().opacity(0.5)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.2), lineWidth: 1))
+            }
+        }
+        .padding(.top, 24)
     }
 }
 

@@ -72,6 +72,51 @@ enum KnowledgeBaseEntityLinker {
         return false
     }
 
+    /// A note that links to an entity.
+    struct Backlink: Identifiable, Equatable {
+        let fileURL: URL
+        let noteTitle: String
+        let taskTitle: String?
+        var id: String { fileURL.path }
+    }
+
+    /// Returns true if `body` contains a wikilink to the entity with the given slug.
+    static func bodyContainsEntityLink(_ body: String, entitySlug slug: String) -> Bool {
+        // We match the canonical path-prefixed form we write: `[[../_entities/<slug>.md|...`
+        // (with the optional `|Display Name` part).
+        let target = "[[\(KnowledgeBaseFilesystem.entityLinkPrefix)\(slug).md"
+        return body.contains(target)
+    }
+
+    /// Locates the body slice inside a written note file. The body lives between the `# Title`
+    /// heading and the first trailing structural section (`## Original input`, `## Related`,
+    /// or the `<!-- tada:related:start -->` marker). Returns the body text and the range that
+    /// can be used to splice an updated body back into the file.
+    static func extractBodyRegion(from raw: String) -> (body: String, range: Range<String.Index>)? {
+        guard let titleRegex = try? NSRegularExpression(pattern: #"(?m)^# [^\n]+\n+"#) else {
+            return nil
+        }
+        let nsRaw = raw as NSString
+        guard let titleMatch = titleRegex.firstMatch(in: raw, range: NSRange(location: 0, length: nsRaw.length)),
+              let titleEndStringIdx = Range(titleMatch.range, in: raw)?.upperBound else {
+            return nil
+        }
+
+        // Find the earliest trailing marker after the heading. Markers may sit right at the
+        // body start (empty body) or further down preceded by a newline.
+        let markers = ["## Original input", "## Related", "<!-- tada:related:start -->"]
+        var bodyEnd: String.Index = raw.endIndex
+        for marker in markers {
+            if let r = raw.range(of: marker, range: titleEndStringIdx..<raw.endIndex) {
+                if r.lowerBound < bodyEnd { bodyEnd = r.lowerBound }
+            }
+        }
+        let bodySlice = raw[titleEndStringIdx..<bodyEnd]
+        let trimmed = bodySlice.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return (trimmed, titleEndStringIdx..<bodyEnd)
+    }
+
     private static func resolveFinalSlug(
         aiSlug: String,
         display: String,

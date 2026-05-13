@@ -226,6 +226,62 @@ final actor KnowledgeBaseGenerator {
         }
     }
 
+    /// Runs the entity-extraction pass on a single note: reads the body, asks the AI for entities,
+    /// writes any new `_entities/<slug>.md` files, and splices the linked body back in. Idempotent:
+    /// returns false without an AI call if the note already contains entity wikilinks.
+    @discardableResult
+    func runEntityExtraction(for url: URL) async -> Bool {
+        guard let apiKey = APIKeyManager.getAPIKey() else {
+            print("[KnowledgeBase] Entity extraction skipped: no API key configured")
+            return false
+        }
+        let service = KnowledgeAIService(apiKey: apiKey)
+        return await backfillSingleNote(url: url, service: service)
+    }
+
+    /// Returns true if the note was rewritten with entity links.
+    private func backfillSingleNote(url: URL, service: KnowledgeAIService) async -> Bool {
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return false }
+        guard let region = KnowledgeBaseEntityLinker.extractBodyRegion(from: raw) else { return false }
+        if region.body.contains("[[\(KnowledgeBaseFilesystem.entityLinkPrefix)") {
+            return false  // already linked, skip
+        }
+        let title = await filesystem.parseFrontmatter(raw)["title"] ?? ""
+        let existing = await filesystem.listEntities()
+        let refs = existing.map { ExistingEntityRef(slug: $0.slug, title: $0.title) }
+        do {
+            let result = try await service.extractEntitiesAndLink(
+                noteTitle: title,
+                noteBody: region.body,
+                existingEntities: refs
+            )
+            let canonicalized = KnowledgeBaseEntityLinker.canonicalize(
+                linkedBody: result.linkedBody,
+                newEntities: result.newEntities,
+                existingSlugs: Set(existing.map { $0.slug })
+            )
+            for entity in canonicalized.finalNewEntities {
+                let created = await filesystem.writeEntityNote(
+                    slug: entity.slug,
+                    displayName: entity.displayName,
+                    body: entity.body
+                )
+                if created {
+                    print("[KnowledgeBase] Backfill wrote entity: _entities/\(entity.slug).md")
+                }
+            }
+            // Splice the linked body back in, preserving surrounding whitespace.
+            var updated = raw
+            updated.replaceSubrange(region.range, with: "\n" + canonicalized.body + "\n")
+            try? updated.write(to: url, atomically: true, encoding: .utf8)
+            print("[KnowledgeBase] Backfill linked: \(url.lastPathComponent)")
+            return true
+        } catch {
+            print("[KnowledgeBase] Backfill failed for \(url.lastPathComponent): \(AppError.userMessage(from: error))")
+            return false
+        }
+    }
+
     func generateTaskOverviewNote(
         taskId: UUID,
         taskTitle: String,

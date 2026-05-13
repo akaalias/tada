@@ -97,6 +97,120 @@ import Testing
     #expect(result.finalNewEntities.count == 3)
 }
 
+// MARK: - Backlink Detection
+
+@Test func bodyContainsEntityLink_matches_canonical_link() {
+    let body = "We use [[../_entities/tada-app.md|Tada.app]] daily."
+    #expect(KnowledgeBaseEntityLinker.bodyContainsEntityLink(body, entitySlug: "tada-app"))
+}
+
+@Test func bodyContainsEntityLink_no_display_name_still_matches() {
+    let body = "See [[../_entities/openai.md]] for context."
+    #expect(KnowledgeBaseEntityLinker.bodyContainsEntityLink(body, entitySlug: "openai"))
+}
+
+@Test func bodyContainsEntityLink_does_not_match_different_slug() {
+    let body = "[[../_entities/openai.md|OpenAI]]"
+    #expect(!KnowledgeBaseEntityLinker.bodyContainsEntityLink(body, entitySlug: "anthropic"))
+}
+
+@Test func bodyContainsEntityLink_ignores_subtask_links() {
+    let body = "See [[02-some-step.md|Some Step]]."
+    #expect(!KnowledgeBaseEntityLinker.bodyContainsEntityLink(body, entitySlug: "some-step"))
+}
+
+// MARK: - Body Region Extraction
+
+@Test func extractBodyRegion_finds_body_before_original_input() {
+    let raw = """
+    ---
+    title: "Some Note"
+    taskId: 123
+    ---
+
+    # Some Note
+
+    This is the body of the note across one line.
+
+    ## Original input
+
+    raw user text
+
+    <!-- tada:related:start -->
+    <!-- tada:related:end -->
+
+    ---
+    Back to [[_overview.md|Parent]]
+    """
+
+    let region = KnowledgeBaseEntityLinker.extractBodyRegion(from: raw)
+    #expect(region?.body == "This is the body of the note across one line.")
+}
+
+@Test func extractBodyRegion_finds_body_before_related_marker_when_no_original_input() {
+    let raw = """
+    ---
+    title: "X"
+    ---
+
+    # X
+
+    Body line.
+
+    <!-- tada:related:start -->
+    <!-- tada:related:end -->
+    """
+
+    let region = KnowledgeBaseEntityLinker.extractBodyRegion(from: raw)
+    #expect(region?.body == "Body line.")
+}
+
+@Test func extractBodyRegion_returns_nil_when_no_heading() {
+    let raw = "Just some text without a heading."
+    #expect(KnowledgeBaseEntityLinker.extractBodyRegion(from: raw) == nil)
+}
+
+@Test func extractBodyRegion_returns_nil_when_body_empty() {
+    let raw = """
+    # Heading
+
+    ## Original input
+
+    foo
+    """
+    #expect(KnowledgeBaseEntityLinker.extractBodyRegion(from: raw) == nil)
+}
+
+@Test func extractBodyRegion_splice_replaces_body_only() {
+    let raw = """
+    ---
+    title: "X"
+    ---
+
+    # X
+
+    Original body.
+
+    ## Original input
+
+    foo
+
+    <!-- tada:related:start -->
+    <!-- tada:related:end -->
+
+    ---
+    Back to [[_overview.md|P]]
+    """
+    let region = KnowledgeBaseEntityLinker.extractBodyRegion(from: raw)!
+    var updated = raw
+    updated.replaceSubrange(region.range, with: "\nLINKED BODY\n")
+
+    #expect(updated.contains("LINKED BODY"))
+    #expect(!updated.contains("Original body."))
+    #expect(updated.contains("## Original input"))
+    #expect(updated.contains("Back to [[_overview.md|P]]"))
+}
+
 // MARK: - Filesystem Entity Helpers
 
 @Test func writeEntityNote_creates_file() async throws {
