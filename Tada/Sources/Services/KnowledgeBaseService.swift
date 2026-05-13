@@ -69,9 +69,9 @@ final class KnowledgeBaseService: ObservableObject {
                 status: task.status,
                 folderURL: folder
             )
+            await indexer.regenerateGlobalIndex()
+            NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         }
-        Task { await indexer.regenerateGlobalIndex() }
-        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
     /// Ensures every supplied task has a wiki folder + overview file. Used on app launch to back-fill
@@ -105,8 +105,9 @@ final class KnowledgeBaseService: ObservableObject {
                 status: parent.status,
                 folderURL: folder
             )
+            await indexer.regenerateGlobalIndex()
+            NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         }
-        Task { await indexer.regenerateGlobalIndex() }
 
         guard APIKeyManager.hasAPIKey else { return }
 
@@ -185,8 +186,9 @@ final class KnowledgeBaseService: ObservableObject {
                 status: status,
                 folderURL: folder
             )
+            await indexer.regenerateGlobalIndex()
+            NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         }
-        Task { await indexer.regenerateGlobalIndex() }
 
         guard APIKeyManager.hasAPIKey else { return }
 

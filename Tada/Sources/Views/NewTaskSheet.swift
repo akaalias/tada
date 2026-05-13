@@ -127,6 +127,7 @@ struct NewTaskSheet: View {
 
                         task.planningStatus = PlanningStatus.idle
                         try? modelContext.save()
+                        appServices?.knowledgeBase.handleTaskCreatedOrUpdated(task)
                     }
                 } catch {
                     await MainActor.run {

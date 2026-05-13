@@ -236,6 +236,54 @@ import Testing
     #expect(markdown?.contains("_Total: €30_") == true)
 }
 
+@Test func originalTextInput_returns_nil_for_drawing_only() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .string("data:image/png;base64,abc123")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
+}
+
+@Test func originalTextInput_returns_nil_for_table_blob() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["table"] = .string("__tada_table__{\"columns\":[],\"rows\":[]}")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
+}
+
+@Test func originalTextInput_returns_text_for_string_value() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["answer"] = .string("I went to Berlin last summer.")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "I went to Berlin last summer.")
+}
+
+@Test func originalTextInput_returns_nil_when_no_data() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    subTask.actionResponseData = nil
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
+}
+
+@Test func originalTextInput_excludes_drawing_keeps_text() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .string("data:image/png;base64,abc")
+    response["caption"] = .string("Layout for the kitchen")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "Layout for the kitchen")
+}
+
 @Test func extractTableMarkdown_no_total_when_zero() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
 

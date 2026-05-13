@@ -650,6 +650,7 @@ final class ActionCardViewModel {
 
                     task.planningStatus = .idle
                     try? modelContext?.save()
+                    knowledgeBase.handleTaskCreatedOrUpdated(task)
                 }
             } catch {
                 print("Failed to generate discovery questions: \(error)")

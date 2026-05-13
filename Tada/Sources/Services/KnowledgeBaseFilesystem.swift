@@ -6,10 +6,14 @@ import Foundation
 final actor KnowledgeBaseFilesystem {
     let rootURL: URL
     private let notesURL: URL
+    private let entitiesURL: URL
+
+    static let entitiesFolderName = "_entities"
 
     init(notesURL: URL, rootURL: URL) {
         self.notesURL = notesURL
         self.rootURL = rootURL
+        self.entitiesURL = notesURL.appendingPathComponent(Self.entitiesFolderName, isDirectory: true)
     }
 
     // MARK: - Folder management
@@ -41,9 +45,75 @@ final actor KnowledgeBaseFilesystem {
     }
 
     func listTaskFolders() -> [URL] {
-        (try? FileManager.default.contentsOfDirectory(at: notesURL, includingPropertiesForKeys: nil))
-            ?? []
+        let all = (try? FileManager.default.contentsOfDirectory(at: notesURL, includingPropertiesForKeys: nil)) ?? []
+        return all.filter { $0.lastPathComponent != Self.entitiesFolderName }
     }
+
+    // MARK: - Entities
+
+    func ensureEntitiesFolder() -> URL {
+        try? FileManager.default.createDirectory(at: entitiesURL, withIntermediateDirectories: true)
+        return entitiesURL
+    }
+
+    /// Canonical slug for an entity display name: lowercase, alphanumeric, hyphen-separated, max 48 chars.
+    nonisolated static func entitySlug(from displayName: String) -> String {
+        let lowered = displayName.lowercased()
+        let allowed = lowered.map { ch -> Character in
+            if ch.isLetter || ch.isNumber { return ch }
+            return "-"
+        }
+        let collapsed = String(allowed).split(separator: "-", omittingEmptySubsequences: true).joined(separator: "-")
+        return String(collapsed.prefix(48))
+    }
+
+    /// Returns existing entity refs (slug + title) for prompting the AI.
+    func listEntities() -> [(slug: String, title: String)] {
+        let fm = FileManager.default
+        guard let files = try? fm.contentsOfDirectory(at: entitiesURL, includingPropertiesForKeys: nil) else {
+            return []
+        }
+        return files.compactMap { url -> (String, String)? in
+            guard url.pathExtension == "md" else { return nil }
+            let slug = url.deletingPathExtension().lastPathComponent
+            let body = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+            let title = parseFrontmatter(body)["title"] ?? slug
+            return (slug, title)
+        }
+    }
+
+    /// Writes an entity note. Returns true if a new file was created, false if the slug already existed.
+    @discardableResult
+    func writeEntityNote(slug: String, displayName: String, body: String) -> Bool {
+        _ = ensureEntitiesFolder()
+        let fileURL = entitiesURL.appendingPathComponent("\(slug).md")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return false
+        }
+        let content = """
+        ---
+        title: \(escapeFrontmatter(displayName))
+        kind: entity
+        slug: \(slug)
+        ---
+
+        # \(displayName)
+
+        \(body)
+
+        <!-- tada:related:start -->
+        <!-- tada:related:end -->
+
+        ---
+        Back to [[../../index.md|Knowledge Base index]]
+        """
+        try? content.write(to: fileURL, atomically: true, encoding: .utf8)
+        return true
+    }
+
+    /// Path prefix for entity links from notes inside a task folder.
+    /// Task notes live at `notes/<taskFolder>/<file>.md`; entities live at `notes/_entities/<slug>.md`.
+    nonisolated static let entityLinkPrefix = "../\(KnowledgeBaseFilesystem.entitiesFolderName)/"
 
     // MARK: - Note writing
 
@@ -53,9 +123,14 @@ final actor KnowledgeBaseFilesystem {
         taskId: UUID,
         parentTitle: String,
         folderURL: URL,
-        sourceSubtaskTitle: String?
+        sourceSubtaskTitle: String?,
+        originalInput: String? = nil
     ) {
         let subtaskField = sourceSubtaskTitle.map { "subtaskTitle: \(escapeFrontmatter($0))\n" } ?? ""
+        let trimmedOriginal = originalInput?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let originalSection = trimmedOriginal.isEmpty
+            ? ""
+            : "\n## Original input\n\n\(trimmedOriginal)\n"
         let content = """
         ---
         title: \(escapeFrontmatter(note.title))
@@ -65,7 +140,7 @@ final actor KnowledgeBaseFilesystem {
         # \(note.title)
 
         \(note.body)
-
+        \(originalSection)
         <!-- tada:related:start -->
         <!-- tada:related:end -->
 

@@ -91,7 +91,19 @@ final actor KnowledgeBaseIndexer {
             lines.append("")
         }
 
-        if entries.isEmpty {
+        let entities = await filesystem.listEntities()
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        if !entities.isEmpty {
+            lines.append("## Entities")
+            lines.append("")
+            for entity in entities {
+                let entityPath = "notes/\(KnowledgeBaseFilesystem.entitiesFolderName)/\(entity.slug).md"
+                lines.append("- [[\(entityPath)|\(entity.title)]]")
+            }
+            lines.append("")
+        }
+
+        if entries.isEmpty && entities.isEmpty {
             lines.append("_No tasks yet. Create one and it will appear here._")
         }
 

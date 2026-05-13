@@ -179,6 +179,58 @@ import Testing
     #expect(await fs.relativePath(from: URL(fileURLWithPath: "/tmp/notes/a/b"), to: target) == "../../../other/file.md")
 }
 
+@Test func writeNote_appends_original_input_section() async throws {
+    let tmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("kb-test-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tmp) }
+
+    let fs = KnowledgeBaseFilesystem(notesURL: tmp, rootURL: tmp)
+    let note = GeneratedKnowledgeNote(title: "Trip to Berlin", body: "Last summer I visited the capital and explored its history.")
+    let filename = "01-trip.md"
+
+    await fs.writeNote(
+        note,
+        filename: filename,
+        taskId: UUID(),
+        parentTitle: "Travel notes",
+        folderURL: tmp,
+        sourceSubtaskTitle: "Where did you go?",
+        originalInput: "berlin last summer was awesome"
+    )
+
+    let written = try String(contentsOf: tmp.appendingPathComponent(filename), encoding: .utf8)
+    #expect(written.contains("## Original input"))
+    #expect(written.contains("berlin last summer was awesome"))
+    let bodyRange = written.range(of: "Last summer I visited")!
+    let originalRange = written.range(of: "berlin last summer was awesome")!
+    #expect(bodyRange.lowerBound < originalRange.lowerBound)
+    let relatedRange = written.range(of: "tada:related:start")!
+    #expect(originalRange.lowerBound < relatedRange.lowerBound)
+}
+
+@Test func writeNote_skips_original_input_section_when_empty() async throws {
+    let tmp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("kb-test-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tmp) }
+
+    let fs = KnowledgeBaseFilesystem(notesURL: tmp, rootURL: tmp)
+    let note = GeneratedKnowledgeNote(title: "T", body: "body")
+    let filename = "01-t.md"
+
+    await fs.writeNote(
+        note,
+        filename: filename,
+        taskId: UUID(),
+        parentTitle: "Parent",
+        folderURL: tmp,
+        sourceSubtaskTitle: nil,
+        originalInput: nil
+    )
+
+    let written = try String(contentsOf: tmp.appendingPathComponent(filename), encoding: .utf8)
+    #expect(!written.contains("## Original input"))
+}
+
 @Test func subtaskFilename_formats_correctly() async {
     let fs = KnowledgeBaseFilesystem(notesURL: URL(fileURLWithPath: "/tmp"), rootURL: URL(fileURLWithPath: "/tmp"))
 

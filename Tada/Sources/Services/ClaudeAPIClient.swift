@@ -348,6 +348,43 @@ actor ClaudeAPIClient {
                     "required": ["title", "body"]
                 ]
             ]
+        case "EntityExtractionResult":
+            return [
+                "name": "extract_entities_and_link",
+                "description": "Rewrite the note body with Obsidian wikilinks around high-signal entities and emit any new atomic entity notes.",
+                "input_schema": [
+                    "type": "object",
+                    "properties": [
+                        "linkedBody": [
+                            "type": "string",
+                            "description": "The note body with first-occurrence wikilinks of the form [[<slug>.md|<Display Name>]] around each entity (existing or new). All other text preserved verbatim."
+                        ],
+                        "newEntities": [
+                            "type": "array",
+                            "description": "Entities not already in the existing list. Empty array if no new entities.",
+                            "items": [
+                                "type": "object",
+                                "properties": [
+                                    "slug": [
+                                        "type": "string",
+                                        "description": "Lowercase kebab-case slug (alphanumerics and hyphens only, max 48 chars)."
+                                    ],
+                                    "displayName": [
+                                        "type": "string",
+                                        "description": "Human-friendly display name for the entity."
+                                    ],
+                                    "body": [
+                                        "type": "string",
+                                        "description": "1-2 short sentences distilling the entity. First person, no emojis, no wikilinks."
+                                    ]
+                                ],
+                                "required": ["slug", "displayName", "body"]
+                            ]
+                        ]
+                    ],
+                    "required": ["linkedBody", "newEntities"]
+                ]
+            ]
         case "MicroStepsResponse":
             return [
                 "name": "break_down_step",

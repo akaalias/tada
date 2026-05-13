@@ -16,6 +16,22 @@ struct CrossLinkPair: Codable {
     let reason: String
 }
 
+struct ExtractedEntity: Codable {
+    let slug: String
+    let displayName: String
+    let body: String
+}
+
+struct EntityExtractionResult: Codable {
+    let linkedBody: String
+    let newEntities: [ExtractedEntity]
+}
+
+struct ExistingEntityRef {
+    let slug: String
+    let title: String
+}
+
 actor KnowledgeAIService {
     private let client: ClaudeAPIClient
 
@@ -129,6 +145,56 @@ actor KnowledgeAIService {
             userMessage: userMessage,
             responseType: DiscoveredCrossLinks.self,
             maxTokens: 8192
+        )
+    }
+
+    private let entityExtractionPrompt = """
+    You analyse a wiki note and identify high-signal entities to extract into atomic sub-notes.
+
+    INPUT:
+    - The note's title and body.
+    - A list of entities that already exist in the wiki: { slug, title }.
+
+    OUTPUT:
+    - `linkedBody`: the note body rewritten as Obsidian-style wikilinks around entity mentions. For every entity (existing OR new), wrap its FIRST occurrence as [[<slug>.md|<Display Name>]]. Leave subsequent occurrences as plain text. Preserve all other text verbatim — same line breaks, same paragraphs, same punctuation.
+    - `newEntities`: entities that are NOT in the existing list, each with { slug, displayName, body }. Body: 1-2 short sentences distilling the durable concept, written first person, no emojis, no filler.
+
+    RULES:
+    - Prefer linking to EXISTING entities. Only create a new entity when the mention is high-signal AND not already covered.
+    - High-signal = a proper noun, named concept/movement, specific company/person/place, calendar date that anchors a deadline, or domain-specific term. SKIP generic verbs, adjectives, and common nouns.
+    - Slug format: lowercase ASCII, hyphenated separator, alphanumerics only, max 48 chars. Examples: "tada-app", "human-agency", "openai", "june-1-2026".
+    - For an existing entity, use its existing slug verbatim — do not invent a new variant.
+    - Never invent entities the body doesn't mention.
+    - Aim for 3-10 entities per note; quality over quantity.
+    - The new entity's `body` should NOT itself contain wikilinks. Entity bodies are leaf nodes.
+    """
+
+    func extractEntitiesAndLink(
+        noteTitle: String,
+        noteBody: String,
+        existingEntities: [ExistingEntityRef]
+    ) async throws -> EntityExtractionResult {
+        let existingList = existingEntities.isEmpty
+            ? "(none yet)"
+            : existingEntities.map { "- slug: \($0.slug) | title: \($0.title)" }.joined(separator: "\n")
+
+        let userMessage = """
+        NOTE TITLE: \(noteTitle)
+
+        NOTE BODY:
+        \(noteBody)
+
+        EXISTING ENTITIES:
+        \(existingList)
+
+        Rewrite the body with first-occurrence wikilinks and emit any new high-signal entities.
+        """
+
+        return try await client.sendStructuredMessage(
+            systemPrompt: entityExtractionPrompt,
+            userMessage: userMessage,
+            responseType: EntityExtractionResult.self,
+            maxTokens: 2048
         )
     }
 
