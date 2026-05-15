@@ -258,6 +258,55 @@ import Testing
     #expect(log.entries.first?.phase == nil)
 }
 
+// MARK: - Pending Requests
+
+@MainActor
+@Test func apiLog_hasPendingRequests_reflects_incomplete_entries() {
+    let log = APILog()
+    #expect(log.hasPendingRequests == false)
+
+    let id = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    #expect(log.hasPendingRequests == true)
+
+    log.logResponse(id: id, statusCode: 200, body: Data(), durationMS: 5)
+    #expect(log.hasPendingRequests == false)
+}
+
+@MainActor
+@Test func apiLog_marks_interrupted_request_as_cancelled_on_reload() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let first = APILog(fileURL: file)
+    _ = first.logRequest(URLRequest(url: URL(string: "https://example.com/pending")!))
+    #expect(first.entries.first?.isComplete == false)
+
+    // Reloading simulates a relaunch after the app was terminated mid-request.
+    let reloaded = APILog(fileURL: file)
+    #expect(reloaded.entries.first?.isComplete == true)
+    #expect(reloaded.entries.first?.errorMessage != nil)
+    #expect(reloaded.hasPendingRequests == false)
+
+    // The cancellation is persisted, so a second relaunch stays clean.
+    #expect(APILog(fileURL: file).hasPendingRequests == false)
+}
+
+@MainActor
+@Test func apiLog_reload_leaves_completed_entries_untouched() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let first = APILog(fileURL: file)
+    let id = first.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    first.logResponse(id: id, statusCode: 200, body: Data(), durationMS: 9)
+
+    let reloaded = APILog(fileURL: file)
+    #expect(reloaded.entries.first?.statusCode == 200)
+    #expect(reloaded.entries.first?.errorMessage == nil)
+}
+
 @MainActor
 @Test func apiLogEntry_requestSummary_is_nil_for_plain_message() {
     let log = APILog()

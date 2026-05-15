@@ -11,7 +11,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $selectedView, appServices: appServices)
+            Sidebar(selection: $selectedView)
         } detail: {
             detailView
         }
@@ -88,10 +88,9 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct Sidebar: View {
     @Binding var selection: SidebarItem
-    let appServices: AppServices?
+    @State private var apiLog = APILog.shared
     @Query private var allTasks: [TodoTask]
     private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
-    private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
 
     private var mainItems: [SidebarItem] {
         [.allTasks, .actionItems]
@@ -140,7 +139,7 @@ struct Sidebar: View {
                             .foregroundColor(.white)
                             .clipShape(Capsule())
                     }
-                    if item == .knowledge, let kb = kb, kb.isWorking {
+                    if item == .console && apiLog.hasPendingRequests {
                         ProgressView()
                             .controlSize(.mini)
                     }

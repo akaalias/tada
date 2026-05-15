@@ -94,6 +94,12 @@ final class APILog {
 
     private(set) var entries: [APILogEntry] = []
 
+    /// True while any logged request has not yet received a response or
+    /// failure. Drives the Console sidebar spinner.
+    var hasPendingRequests: Bool {
+        entries.contains { !$0.isComplete }
+    }
+
     /// File entries are persisted to. `nil` disables persistence (in-memory only).
     private let fileURL: URL?
 
@@ -170,6 +176,15 @@ final class APILog {
               let decoded = try? JSONDecoder().decode([APILogEntry].self, from: data)
         else { return }
         entries = decoded
+
+        // A request still pending in a freshly loaded log was interrupted by
+        // app termination — it cannot still be running. Mark it cancelled so
+        // its spinner doesn't reappear on the next launch.
+        let interrupted = entries.indices.filter { !entries[$0].isComplete }
+        for index in interrupted {
+            entries[index].errorMessage = "Request interrupted — app closed before it completed"
+        }
+        if !interrupted.isEmpty { persist() }
     }
 
     private func persist() {
