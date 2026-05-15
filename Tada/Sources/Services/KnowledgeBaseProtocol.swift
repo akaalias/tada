@@ -77,7 +77,8 @@ protocol ExecutiveAIServiceProtocol {
         subTaskDescription: String,
         taskContext: String,
         previousResponses: [[String: String]],
-        taskMemory: String
+        taskMemory: String,
+        phase: TaskPhase
     ) async throws -> ActionSchema
 }
 
@@ -91,7 +92,8 @@ final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
         subTaskDescription: String,
         taskContext: String,
         previousResponses: [[String: String]],
-        taskMemory: String
+        taskMemory: String,
+        phase: TaskPhase
     ) async throws -> ActionSchema {
         if let testMock {
             return try await testMock.generateActionUI(
@@ -99,7 +101,8 @@ final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
                 subTaskDescription: subTaskDescription,
                 taskContext: taskContext,
                 previousResponses: previousResponses,
-                taskMemory: taskMemory
+                taskMemory: taskMemory,
+                phase: phase
             )
         }
         let executive = ExecutiveAIService(apiKey: APIKeyManager.getAPIKey() ?? "")
@@ -108,7 +111,8 @@ final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
             subTaskDescription: subTaskDescription,
             taskContext: taskContext,
             previousResponses: previousResponses,
-            taskMemory: taskMemory
+            taskMemory: taskMemory,
+            phase: phase
         )
     }
 }

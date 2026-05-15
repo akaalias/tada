@@ -75,7 +75,8 @@ actor KnowledgeAIService {
         subtaskDescription: String,
         response: String,
         attachedImage: Data? = nil,
-        tableMarkdown: String? = nil
+        tableMarkdown: String? = nil,
+        phase: APIRequestPhase
     ) async throws -> GeneratedKnowledgeNote {
         let imageHint = attachedImage == nil ? "" : "\nAn image of the user's sketch is attached — describe what it shows in concrete spatial/architectural terms in the note body.\n"
         let tableSection = tableMarkdown.map { "\n\nSTRUCTURED TABLE DATA:\n\($0)\n" } ?? ""
@@ -96,6 +97,7 @@ actor KnowledgeAIService {
             responseType: GeneratedKnowledgeNote.self,
             maxTokens: 1024,
             attachedImages: attachedImage.map { [$0] } ?? [],
+            phase: phase,
             taskTitle: subtaskTitle
         )
     }
@@ -124,6 +126,11 @@ actor KnowledgeAIService {
         - sourcePath and targetPath MUST be the EXACT verbatim strings from the input list — including the "notes/<folder>/" prefix. Do not abbreviate, rename, or invent paths.
         - Never link a note to itself.
         - Cross-links are directional: a pair {source, target} adds a link from source → target. If you want bidirectional, emit two pairs.
+
+        ENTITY NOTES:
+        - Some notes live under "notes/_entities/" — these are atomic concept notes (a person, product, place, decision, deadline, or named idea).
+        - Link a task note TO an entity note when the task note is meaningfully about that entity, even if it only refers to the concept colloquially (e.g. a note mentioning "plants and greenery" should link the entity "Plants as Privacy Solution").
+        - Link an entity note back TO the task notes that involve it, so the entity acts as a hub. Match on meaning, not just exact wording.
 
         WHAT TO LINK:
         - Notes from the SAME parent task folder are usually related — they describe one project. Always link them when there's a real semantic connection: the answer to one question informs another, a decision flows from a constraint, a budget feeds a shopping list, etc.
@@ -173,7 +180,8 @@ actor KnowledgeAIService {
     func extractEntitiesAndLink(
         noteTitle: String,
         noteBody: String,
-        existingEntities: [ExistingEntityRef]
+        existingEntities: [ExistingEntityRef],
+        phase: APIRequestPhase = .knowledge
     ) async throws -> EntityExtractionResult {
         let existingList = existingEntities.isEmpty
             ? "(none yet)"
@@ -196,6 +204,7 @@ actor KnowledgeAIService {
             userMessage: userMessage,
             responseType: EntityExtractionResult.self,
             maxTokens: 2048,
+            phase: phase,
             taskTitle: noteTitle
         )
     }

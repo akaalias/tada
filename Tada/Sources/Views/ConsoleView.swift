@@ -95,14 +95,28 @@ private struct APILogEntryRow: View {
 
     // MARK: Summary
 
+    /// Fixed column widths keep the role and task badges flush down the list,
+    /// regardless of how wide any individual badge's text is.
+    private static let roleColumnWidth: CGFloat = 150
+    private static let taskColumnWidth: CGFloat = 360
+
     private var summary: some View {
         HStack(spacing: 12) {
-            if let role = entry.aiRole {
-                roleBadge(role)
+            Group {
+                if let role = entry.aiRole {
+                    roleBadge(role)
+                }
             }
-            if let taskTitle = entry.taskTitle {
-                taskTitleBadge(taskTitle)
+            .frame(width: Self.roleColumnWidth, alignment: .leading)
+
+            Group {
+                if let taskTitle = entry.taskTitle {
+                    taskTitleBadge(taskTitle)
+                }
             }
+            .frame(width: Self.taskColumnWidth, alignment: .leading)
+            .clipped()
+
             if let summary = entry.requestSummary {
                 Text(summary)
                     .font(.system(size: Theme.fontSize))
@@ -160,8 +174,8 @@ private struct APILogEntryRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
-    /// The task or sub-task this request serves. Capped in width so a long
-    /// title can't crowd out the request summary.
+    /// The task or sub-task this request serves. Hugs its text; the enclosing
+    /// fixed-width column keeps it from crowding out the request summary.
     private func taskTitleBadge(_ title: String) -> some View {
         Text(title)
             .font(.system(size: Theme.badgeFontSize, weight: .medium))
@@ -172,7 +186,6 @@ private struct APILogEntryRow: View {
             .background(Color.primary.opacity(0.08))
             .foregroundStyle(.secondary)
             .clipShape(RoundedRectangle(cornerRadius: 4))
-            .frame(maxWidth: 440, alignment: .leading)
     }
 
     /// Colour for the task phase this request serves; tints the whole entry to

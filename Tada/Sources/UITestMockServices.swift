@@ -77,7 +77,8 @@ final class UITestExecutiveAIService: ExecutiveAIServiceProtocol {
         subTaskDescription: String,
         taskContext: String,
         previousResponses: [[String: String]],
-        taskMemory: String
+        taskMemory: String,
+        phase: TaskPhase
     ) async throws -> ActionSchema {
         let field = ActionField(
             id: "field_text",

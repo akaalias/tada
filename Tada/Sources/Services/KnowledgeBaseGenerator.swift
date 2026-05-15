@@ -142,13 +142,18 @@ final actor KnowledgeBaseGenerator {
                             imageMarkdown = "![\(snap.title) sketch](./\(imageFilename))"
                         }
 
+                        // Both AI passes inherit the sub-task's phase so the Console
+                        // colours the request to match the work item it serves.
+                        let requestPhase = APIRequestPhase(snap.phase)
+
                         let note = try await service.generateSubtaskNote(
                             taskTitle: taskTitle,
                             subtaskTitle: snap.title,
                             subtaskDescription: snap.description,
                             response: snap.response,
                             attachedImage: snap.imagePNG,
-                            tableMarkdown: snap.tableMarkdown
+                            tableMarkdown: snap.tableMarkdown,
+                            phase: requestPhase
                         )
 
                         // Run a second AI pass that extracts high-signal entities into atomic sub-notes
@@ -156,7 +161,8 @@ final actor KnowledgeBaseGenerator {
                         let entityLinkedBody = await self.runEntityPass(
                             service: service,
                             noteTitle: note.title,
-                            noteBody: note.body
+                            noteBody: note.body,
+                            phase: requestPhase
                         )
 
                         // Append the image and/or table to the body so they render on the wiki page.
@@ -193,7 +199,8 @@ final actor KnowledgeBaseGenerator {
     private func runEntityPass(
         service: KnowledgeAIService,
         noteTitle: String,
-        noteBody: String
+        noteBody: String,
+        phase: APIRequestPhase = .knowledge
     ) async -> String {
         let existing = await filesystem.listEntities()
         let refs = existing.map { ExistingEntityRef(slug: $0.slug, title: $0.title) }
@@ -201,7 +208,8 @@ final actor KnowledgeBaseGenerator {
             let result = try await service.extractEntitiesAndLink(
                 noteTitle: noteTitle,
                 noteBody: noteBody,
-                existingEntities: refs
+                existingEntities: refs,
+                phase: phase
             )
             let existingSlugs = Set(existing.map { $0.slug })
             let canonicalized = KnowledgeBaseEntityLinker.canonicalize(

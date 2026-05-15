@@ -181,7 +181,8 @@ final class ActionCardViewModel {
                     subTaskDescription: subTask.subTaskDescription,
                     taskContext: task.title,
                     previousResponses: previousResponses,
-                    taskMemory: task.memory
+                    taskMemory: task.memory,
+                    phase: subTask.phase
                 )
 
                 await MainActor.run {

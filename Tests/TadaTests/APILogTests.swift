@@ -219,6 +219,11 @@ import Testing
     #expect(log.entries.first?.taskTitle == nil)
 }
 
+@Test func apiRequestPhase_maps_from_task_phase() {
+    #expect(APIRequestPhase(TaskPhase.discovery) == .discovery)
+    #expect(APIRequestPhase(TaskPhase.execution) == .execution)
+}
+
 @Test func aiRole_displayNames_are_full_agent_names() {
     #expect(AIRole.planner.displayName == "Planning Agent")
     #expect(AIRole.executive.displayName == "Executive Agent")

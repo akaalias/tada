@@ -22,6 +22,16 @@ enum APIRequestPhase: String, Codable, Sendable {
     case discovery
     case execution
     case knowledge
+
+    /// Maps a task-lifecycle phase to the request phase it corresponds to, so a
+    /// request inherits the colour of the work item it serves — a request for a
+    /// discovery sub-task reads as discovery even when issued by another agent.
+    init(_ taskPhase: TaskPhase) {
+        switch taskPhase {
+        case .discovery: self = .discovery
+        case .execution: self = .execution
+        }
+    }
 }
 
 /// One recorded HTTP request/response pair to the Claude API.

@@ -231,7 +231,8 @@ actor ExecutiveAIService {
         subTaskDescription: String,
         taskContext: String,
         previousResponses: [[String: String]],
-        taskMemory: String = ""
+        taskMemory: String = "",
+        phase: TaskPhase
     ) async throws -> ActionSchema {
         let memorySection = taskMemory.isEmpty ? "" : """
 
@@ -257,6 +258,7 @@ actor ExecutiveAIService {
             systemPrompt: systemPrompt,
             userMessage: contextMessage,
             responseType: ActionSchema.self,
+            phase: APIRequestPhase(phase),
             taskTitle: subTask
         )
     }
