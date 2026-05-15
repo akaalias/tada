@@ -4,7 +4,7 @@ import SwiftData
 struct ActionItemsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appServices) private var appServices
-    @Query private var allTasks: [TodoTask]
+    @Query(sort: \TodoTask.createdAt, order: .reverse) private var allTasks: [TodoTask]
     private var activeTasks: [TodoTask] { allTasks.filter { $0.status == .active } }
     @State private var focusedTaskId: UUID?
 
