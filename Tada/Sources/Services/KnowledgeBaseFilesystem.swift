@@ -393,4 +393,38 @@ final actor KnowledgeBaseFilesystem {
     func imageFilename(for order: Int, title: String) -> String {
         imageFilename(for: order, title)
     }
+
+    // MARK: - Cleanup
+
+    /// Extracts the taskId UUID from a task folder name (format: `<UUID>__<slug>`).
+    nonisolated static func taskId(fromFolderName name: String) -> UUID? {
+        let parts = name.split(separator: "_", maxSplits: 2)
+        guard let first = parts.first else { return nil }
+        return UUID(uuidString: String(first))
+    }
+
+    /// Deletes a task folder and all its contents.
+    func deleteTaskFolder(_ folderURL: URL) {
+        try? FileManager.default.removeItem(at: folderURL)
+    }
+
+    /// Deletes an entity note file.
+    func deleteEntityNote(_ fileURL: URL) {
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    /// Checks if any task-folder note links to the given entity slug.
+    func hasBacklinks(toEntitySlug slug: String) -> Bool {
+        let folders = listTaskFolders()
+        for folder in folders {
+            let files = listNoteFiles(in: folder)
+            for url in files where url.pathExtension == "md" {
+                guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                if KnowledgeBaseEntityLinker.bodyContainsEntityLink(raw, entitySlug: slug) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
 }

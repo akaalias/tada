@@ -16,6 +16,7 @@ protocol KnowledgeBaseServiceProtocol {
     func runEntityExtractionForCurrentNote(_ url: URL) async
     func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink]
     func buildGraphData() async -> KnowledgeGraphData
+    func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int)
 }
 
 /// Concrete implementation backed by the singleton. Under UI test mode, routes
@@ -65,6 +66,11 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
     func buildGraphData() async -> KnowledgeGraphData {
         if let testMock { return await testMock.buildGraphData() }
         return await KnowledgeBaseService.shared.buildGraphData()
+    }
+
+    func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int) {
+        if let testMock { return await testMock.cleanupOrphanedNotes(existingTaskIds: existingTaskIds) }
+        return await KnowledgeBaseService.shared.cleanupOrphanedNotes(existingTaskIds: existingTaskIds)
     }
 }
 

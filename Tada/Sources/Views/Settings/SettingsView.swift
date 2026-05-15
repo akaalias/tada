@@ -28,6 +28,7 @@ private struct APIKeySettingsView: View {
     @State private var apiKey: String = ""
     @State private var showKey = false
     @State private var saveStatus: SaveStatus = .none
+    @State private var hasKey = APIKeyManager.hasAPIKey
 
     var body: some View {
         Form {
@@ -40,65 +41,62 @@ private struct APIKeySettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
 
-                    HStack {
-                        if APIKeyManager.hasAPIKey && !showKey {
-                            SecureField("", text: $apiKey)
-                                .textFieldStyle(.roundedBorder)
-                        } else {
-                            TextField("Enter your API key", text: $apiKey)
-                                .textFieldStyle(.roundedBorder)
-                        }
+                    if hasKey {
+                        HStack {
+                            Text(showKey ? (APIKeyManager.getAPIKey() ?? "") : String(repeating: "•", count: 24))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color(.controlBackgroundColor))
+                                .cornerRadius(6)
 
-                        if APIKeyManager.hasAPIKey {
                             Button {
-                                if showKey {
-                                    apiKey = String(repeating: "•", count: 20)
-                                } else {
-                                    apiKey = APIKeyManager.getAPIKey() ?? ""
-                                }
                                 showKey.toggle()
                             } label: {
                                 Image(systemName: showKey ? "eye.slash" : "eye")
                             }
                             .buttonStyle(.borderless)
                         }
-                    }
 
-                    HStack {
-                        Button("Save API Key") {
-                            saveAPIKey()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                        if APIKeyManager.hasAPIKey {
+                        HStack {
                             Button("Remove", role: .destructive) {
                                 removeAPIKey()
                             }
+
+                            Spacer()
+
+                            if case .removed = saveStatus {
+                                Label("Removed", systemImage: "trash.fill")
+                                    .foregroundColor(.orange)
+                            }
                         }
+                    } else {
+                        TextField("Enter your API key", text: $apiKey)
+                            .textFieldStyle(.roundedBorder)
 
-                        Spacer()
+                        HStack {
+                            Button("Save API Key") {
+                                saveAPIKey()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                        switch saveStatus {
-                        case .none:
-                            EmptyView()
-                        case .saved:
-                            Label("Saved", systemImage: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                        case .removed:
-                            Label("Removed", systemImage: "trash.fill")
-                                .foregroundColor(.orange)
-                        case .error(let message):
-                            Label(message, systemImage: "exclamationmark.triangle.fill")
-                                .foregroundColor(.red)
+                            Spacer()
+
+                            switch saveStatus {
+                            case .saved:
+                                Label("Saved", systemImage: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            case .error(let message):
+                                Label(message, systemImage: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                            default:
+                                EmptyView()
+                            }
                         }
                     }
-
-                    Divider()
-
-                    Text("Get your API key from [console.anthropic.com](https://console.anthropic.com/)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
 
                     if APIKeyManager.hasValidAPIKey {
                         Divider()
@@ -109,21 +107,17 @@ private struct APIKeySettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear {
-            if let existingKey = APIKeyManager.getAPIKey() {
-                apiKey = String(repeating: "•", count: min(existingKey.count, 20))
-            }
-        }
     }
 
     private func saveAPIKey() {
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedKey.isEmpty, !trimmedKey.contains("•") else { return }
+        guard !trimmedKey.isEmpty else { return }
 
         do {
             try APIKeyManager.setAPIKey(trimmedKey)
             saveStatus = .saved
-            apiKey = String(repeating: "•", count: 20)
+            hasKey = true
+            apiKey = ""
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 saveStatus = .none
@@ -135,7 +129,8 @@ private struct APIKeySettingsView: View {
 
     private func removeAPIKey() {
         APIKeyManager.deleteAPIKey()
-        apiKey = ""
+        hasKey = false
+        showKey = false
         saveStatus = .removed
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -302,69 +297,48 @@ private struct LearningsSettingsView: View {
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Planning Learnings")
-                            .font(.headline)
+                    Text("Planning Learnings")
+                        .font(.headline)
 
-                        Spacer()
-
-                        if !learnings.isEmpty {
-                            Button("Clear All", role: .destructive) {
-                                PlanningMemoryService.shared.clearAllLearnings()
-                                learnings = []
-                            }
-                            .font(.caption)
-                        }
-                    }
-
-                    Text("Lessons learned from steps you marked as 'doesn't make sense'. These guide future AI planning.")
+                    Text("Lessons the AI has learned from your feedback.")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     if learnings.isEmpty {
-                        Text("No learnings yet. When you mark steps as not making sense, the AI will learn from those mistakes.")
+                        Text("None yet.")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .italic()
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 4)
                     } else {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(spacing: 8) {
                             ForEach(learnings) { learning in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "lightbulb.fill")
-                                        .foregroundColor(.yellow)
-                                        .font(.system(size: 12))
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(learning.lesson)
-                                            .font(.system(size: 13))
-
-                                        Text("From: \(learning.badStepTitle)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-
-                                    Spacer()
+                                HStack(alignment: .top, spacing: 12) {
+                                    Text(learning.lesson.trimmingCharacters(in: CharacterSet(charactersIn: "\"")))
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
 
                                     Button {
                                         PlanningMemoryService.shared.deleteLearning(id: learning.id)
                                         learnings = PlanningMemoryService.shared.loadLearnings()
                                     } label: {
-                                        Image(systemName: "xmark.circle")
-                                            .foregroundColor(.secondary)
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundColor(.secondary.opacity(0.6))
                                     }
                                     .buttonStyle(.plain)
                                 }
-                                .padding(.vertical, 4)
-
-                                if learning.id != learnings.last?.id {
-                                    Divider()
-                                }
+                                .padding(10)
+                                .background(Color(.controlBackgroundColor))
+                                .cornerRadius(6)
                             }
                         }
-                        .padding(8)
-                        .background(Color(.controlBackgroundColor))
-                        .cornerRadius(8)
+
+                        Button("Clear All", role: .destructive) {
+                            PlanningMemoryService.shared.clearAllLearnings()
+                            learnings = []
+                        }
+                        .font(.caption)
                     }
                 }
                 .padding()

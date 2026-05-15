@@ -297,6 +297,51 @@ final class KnowledgeBaseService: ObservableObject {
             await linkDiscovery.discoverLinks(forNoteAt: url)
         }
     }
+
+    // MARK: - Cleanup
+
+    /// Removes orphaned notes from the knowledge base:
+    /// - Task folders whose task no longer exists in SwiftData
+    /// - Entity notes that have no backlinks from any task note
+    /// Returns the count of deleted items.
+    func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int) {
+        beginWork()
+        defer { endWork() }
+
+        var deletedFolders = 0
+        var deletedEntities = 0
+
+        // Clean up orphaned task folders
+        let taskFolders = await filesystem.listTaskFolders()
+        for folder in taskFolders {
+            let folderName = folder.lastPathComponent
+            guard let taskId = KnowledgeBaseFilesystem.taskId(fromFolderName: folderName) else { continue }
+            if !existingTaskIds.contains(taskId) {
+                await filesystem.deleteTaskFolder(folder)
+                deletedFolders += 1
+                print("[KnowledgeBase] Deleted orphaned task folder: \(folderName)")
+            }
+        }
+
+        // Clean up orphaned entity notes
+        let entityFiles = await filesystem.listEntityFiles()
+        for entityURL in entityFiles {
+            let slug = entityURL.deletingPathExtension().lastPathComponent
+            let hasLinks = await filesystem.hasBacklinks(toEntitySlug: slug)
+            if !hasLinks {
+                await filesystem.deleteEntityNote(entityURL)
+                deletedEntities += 1
+                print("[KnowledgeBase] Deleted orphaned entity: \(slug)")
+            }
+        }
+
+        if deletedFolders > 0 || deletedEntities > 0 {
+            await indexer.regenerateGlobalIndex()
+            NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+        }
+
+        return (deletedFolders, deletedEntities)
+    }
 }
 
 // MARK: - Subtask Snapshot (used by generator)

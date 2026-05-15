@@ -186,6 +186,10 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
         KnowledgeGraphData(nodes: [], links: [])
     }
 
+    func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int) {
+        (0, 0)
+    }
+
     // MARK: - Helpers (mirror KnowledgeBaseFilesystem / KnowledgeBaseIndexer formats)
 
     private func ensureFolder(for task: TodoTask) -> URL {

@@ -10,6 +10,7 @@ struct KnowledgeBaseView: View {
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
     @State private var showingGraph: Bool = false
+    @State private var cleanupResult: (taskFolders: Int, entities: Int)?
     // Observed directly so the toolbar spinner reacts the moment work starts/stops — the
     // protocol adapter is not an ObservableObject and would not drive a re-render.
     @ObservedObject private var kbService = KnowledgeBaseService.shared
@@ -107,6 +108,19 @@ struct KnowledgeBaseView: View {
                     .frame(width: 24, height: 18)
                     .help("Working…")
             } else {
+                if currentURL.path == indexURL.path {
+                    Button {
+                        Task {
+                            let taskIds = Set(allTasks.map(\.id))
+                            cleanupResult = await kb?.cleanupOrphanedNotes(existingTaskIds: taskIds)
+                            refreshTick &+= 1
+                        }
+                    } label: {
+                        Image(systemName: "trash.circle")
+                    }
+                    .help("Remove orphaned notes (tasks that no longer exist)")
+                    .accessibilityIdentifier("kb.cleanup")
+                }
                 if isEntityExtractable(currentURL) {
                     Button {
                         let url = currentURL
