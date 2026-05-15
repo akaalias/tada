@@ -82,6 +82,12 @@ final actor KnowledgeBaseFilesystem {
         }
     }
 
+    /// Returns the URLs of every entity note file (`_entities/<slug>.md`).
+    func listEntityFiles() -> [URL] {
+        let files = (try? FileManager.default.contentsOfDirectory(at: entitiesURL, includingPropertiesForKeys: nil)) ?? []
+        return files.filter { $0.pathExtension == "md" }
+    }
+
     /// Writes an entity note. Returns true if a new file was created, false if the slug already existed.
     @discardableResult
     func writeEntityNote(slug: String, displayName: String, body: String) -> Bool {

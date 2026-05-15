@@ -54,14 +54,14 @@ final actor KnowledgeBaseLinkDiscovery {
         }
     }
 
-    private struct NoteForDiscovery {
+    struct NoteForDiscovery {
         let relPath: String       // e.g. "notes/<folder>/01-slug.md"
         let title: String
         let body: String          // body without frontmatter or related markers
         let fileURL: URL
     }
 
-    private func collectNotesForDiscovery(rootURL: URL) async -> [NoteForDiscovery] {
+    func collectNotesForDiscovery(rootURL: URL) async -> [NoteForDiscovery] {
         let folders = await filesystem.listTaskFolders()
         var result: [NoteForDiscovery] = []
 
@@ -70,16 +70,31 @@ final actor KnowledgeBaseLinkDiscovery {
             guard FileManager.default.fileExists(atPath: folder.path, isDirectory: &isDir), isDir.boolValue else { continue }
             let files = await filesystem.listNoteFiles(in: folder)
             for file in files where file.pathExtension == "md" {
-                guard let raw = try? String(contentsOf: file, encoding: .utf8) else { continue }
-                let meta = await filesystem.parseFrontmatter(raw)
-                let title = meta["title"] ?? file.deletingPathExtension().lastPathComponent
-                let stripped = await filesystem.stripFrontmatterAndMarkers(raw)
-                // path relative to rootURL (e.g. "notes/<folder>/<file>.md")
-                let rel = file.path.replacingOccurrences(of: rootURL.path + "/", with: "")
-                result.append(NoteForDiscovery(relPath: rel, title: title, body: stripped, fileURL: file))
+                if let note = await makeNote(from: file, rootURL: rootURL) {
+                    result.append(note)
+                }
+            }
+        }
+
+        // Entity notes (`_entities/<slug>.md`) participate in discovery too, so the Related
+        // section can connect task notes to the entities they're about — and surface other
+        // notes that reference the same entity.
+        for file in await filesystem.listEntityFiles() {
+            if let note = await makeNote(from: file, rootURL: rootURL) {
+                result.append(note)
             }
         }
         return result
+    }
+
+    private func makeNote(from file: URL, rootURL: URL) async -> NoteForDiscovery? {
+        guard let raw = try? String(contentsOf: file, encoding: .utf8) else { return nil }
+        let meta = await filesystem.parseFrontmatter(raw)
+        let title = meta["title"] ?? file.deletingPathExtension().lastPathComponent
+        let stripped = await filesystem.stripFrontmatterAndMarkers(raw)
+        // path relative to rootURL (e.g. "notes/<folder>/<file>.md")
+        let rel = file.path.replacingOccurrences(of: rootURL.path + "/", with: "")
+        return NoteForDiscovery(relPath: rel, title: title, body: stripped, fileURL: file)
     }
 
     private func applyDiscoveredLinks(_ pairs: [CrossLinkPair], allNotes: [NoteForDiscovery]) async {
