@@ -23,7 +23,7 @@ struct TextAreaRenderer: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
         }
-        .frame(minHeight: 160)
+        .frame(height: 160)
         .background(phaseColor.opacity(0.25))
         .cornerRadius(8)
         .overlay(

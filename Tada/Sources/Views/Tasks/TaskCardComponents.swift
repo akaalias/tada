@@ -108,23 +108,11 @@ struct TaskHeaderView: View {
                 .accessibilityIdentifier("taskCard.toggleExpand")
             }
 
-            if !task.taskDescription.isEmpty || !task.subTasks.isEmpty {
-                HStack(alignment: .top) {
-                    if !task.taskDescription.isEmpty {
-                        Text(task.taskDescription)
-                            .font(.system(size: Theme.fontSize))
-                            .foregroundColor(.secondary)
-                    }
-
-                    Spacer()
-
-                    if !task.subTasks.isEmpty {
-                        ProgressIndicator(
-                            progress: task.progress,
-                            isDiscovery: task.isDiscoveryPhase
-                        )
-                    }
-                }
+            if !task.taskDescription.isEmpty {
+                Text(task.taskDescription)
+                    .font(.system(size: Theme.fontSize))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -184,9 +172,11 @@ struct SubTaskRowView: View {
         )
         .opacity(subTask.isCompleted || subTask.isCurrent ? 1.0 : 0.5)
         .contentShape(Rectangle())
+        .accessibilityIdentifier(isClickable ? "subTaskRow.current" : "")
+        .accessibilityAddTraits(isClickable ? .isButton : [])
         .onTapGesture {
-            if subTask.isCurrent {
-                NotificationCenter.default.post(name: .navigateToActionItems, object: nil)
+            if let taskId = subTask.task?.id, subTask.isCurrent {
+                NotificationCenter.default.post(name: .focusTask, object: taskId)
             }
         }
         .onHover { hovering in
@@ -313,32 +303,5 @@ struct CollapsibleSection<Content: View>: View {
                     .padding(.top, 4)
             }
         }
-    }
-}
-
-struct ProgressIndicator: View {
-    let progress: Double
-    var isDiscovery: Bool = false
-
-    private var phaseColor: Color {
-        isDiscovery ? .orange : .blue
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(phaseColor.opacity(0.2), lineWidth: 3)
-
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(phaseColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            Text("\(Int(progress * 100))%")
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundColor(phaseColor)
-        }
-        .frame(width: 40, height: 40)
     }
 }

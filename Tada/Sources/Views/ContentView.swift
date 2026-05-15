@@ -7,7 +7,13 @@ struct ContentView: View {
     @State private var selectedView: SidebarItem = .allTasks
     @State private var showingNewTaskSheet = false
     @State private var apiKeyValid: Bool = APIKeyManager.hasValidAPIKey
+    @State private var focusedTaskId: UUID?
     @Query private var allTasks: [TodoTask]
+
+    private var focusedTask: TodoTask? {
+        guard let focusedTaskId else { return nil }
+        return allTasks.first { $0.id == focusedTaskId }
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -25,11 +31,16 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .newTask)) { _ in
             showingNewTaskSheet = true
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToActionItems)) { _ in
-            selectedView = .actionItems
+        .onReceive(NotificationCenter.default.publisher(for: .focusTask)) { notification in
+            if let taskId = notification.object as? UUID {
+                focusedTaskId = taskId
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionItems)) { _ in
             selectedView = .actionItems
+        }
+        .onChange(of: selectedView) { _, _ in
+            focusedTaskId = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in
             apiKeyValid = APIKeyManager.hasValidAPIKey
@@ -46,19 +57,25 @@ struct ContentView: View {
                     .padding(.top, 16)
             }
 
-            switch selectedView {
-            case .allTasks:
-                AllTasksView()
-            case .actionItems:
-                ActionItemsView()
-            case .completed:
-                CompletedTasksView()
-            case .knowledge:
-                KnowledgeBaseView()
-            case .console:
-                ConsoleView()
-            case .settings:
-                SettingsView()
+            if let focusedTask {
+                FocusedTaskView(task: focusedTask) {
+                    focusedTaskId = nil
+                }
+            } else {
+                switch selectedView {
+                case .allTasks:
+                    AllTasksView()
+                case .actionItems:
+                    ActionItemsView()
+                case .completed:
+                    CompletedTasksView()
+                case .knowledge:
+                    KnowledgeBaseView()
+                case .console:
+                    ConsoleView()
+                case .settings:
+                    SettingsView()
+                }
             }
         }
     }

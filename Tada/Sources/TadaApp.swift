@@ -35,7 +35,8 @@ struct TadaApp: App {
 
 extension Notification.Name {
     static let newTask = Notification.Name("newTask")
-    static let navigateToActionItems = Notification.Name("navigateToActionItems")
+    /// Posted with the task's `UUID` as `object` to open the focused single-task view.
+    static let focusTask = Notification.Name("focusTask")
     static let navigateToTaskInActionItems = Notification.Name("navigateToTaskInActionItems")
 }
 
