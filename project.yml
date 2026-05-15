@@ -33,11 +33,30 @@ targets:
           - "@executable_path/../Frameworks"
         PRODUCT_BUNDLE_IDENTIFIER: com.tada.app
         ENABLE_HARDENED_RUNTIME: YES
+        # Marketing version is kept here and bumped by hand on releases.
+        # Build number (CFBundleVersion) is set automatically at build time
+        # by the "Set build number from git" script below.
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
       configurations:
         Debug:
           debugInformationFormat: dwarf
         Release:
           enablesTesting: YES
+    postBuildScripts:
+      - name: Set build number from git
+        basedOnDependencyAnalysis: false
+        script: |
+          # Stamp CFBundleVersion with the branch's commit count so every
+          # build gets a unique, monotonically increasing build number.
+          plist="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+          build_number=$(git -C "${SRCROOT}" rev-list --count HEAD 2>/dev/null)
+          if [ -z "$build_number" ]; then
+            echo "warning: not a git checkout — leaving CFBundleVersion unchanged"
+            exit 0
+          fi
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build_number" "$plist"
+          echo "CFBundleVersion set to $build_number"
 
   TadaTests:
     type: bundle.unit-test

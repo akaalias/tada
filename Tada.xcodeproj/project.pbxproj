@@ -428,6 +428,7 @@
 			buildPhases = (
 				ED9498633CB6972A46DC9153 /* Sources */,
 				7EFE8915A87FC49252D0A128 /* Resources */,
+				0986F1814DE24E935A2EC2A0 /* Set build number from git */,
 			);
 			buildRules = (
 			);
@@ -554,6 +555,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0986F1814DE24E935A2EC2A0 /* Set build number from git */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Set build number from git";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Stamp CFBundleVersion with the branch's commit count so every\n# build gets a unique, monotonically increasing build number.\nplist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\nbuild_number=$(git -C \"${SRCROOT}\" rev-list --count HEAD 2>/dev/null)\nif [ -z \"$build_number\" ]; then\n  echo \"warning: not a git checkout — leaving CFBundleVersion unchanged\"\n  exit 0\nfi\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $build_number\" \"$plist\"\necho \"CFBundleVersion set to $build_number\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		43DA42316C853EF17BBFF829 /* Sources */ = {
@@ -708,6 +731,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Tada;
@@ -716,6 +740,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tada.app;
 				SDKROOT = macosx;
 			};
@@ -744,6 +769,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Tada;
@@ -752,6 +778,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tada.app;
 				SDKROOT = macosx;
 			};
