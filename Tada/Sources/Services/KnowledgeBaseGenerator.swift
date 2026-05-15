@@ -118,20 +118,23 @@ final actor KnowledgeBaseGenerator {
         self.filesystem = filesystem
     }
 
+    /// Generates the atomic note for each snapshot. Returns the on-disk URLs of the notes that
+    /// were successfully written — used to trigger per-note link discovery afterwards.
+    @discardableResult
     func generateSubtaskNotes(
         _ snapshots: [SubtaskSnapshot],
         taskId: UUID,
         taskTitle: String,
         folderURL: URL
-    ) async {
-        guard !snapshots.isEmpty, let apiKey = APIKeyManager.getAPIKey() else { return }
+    ) async -> [URL] {
+        guard !snapshots.isEmpty, let apiKey = APIKeyManager.getAPIKey() else { return [] }
         let service = KnowledgeAIService(apiKey: apiKey)
 
         // Run notes in parallel for speed.
-        await withTaskGroup(of: Void.self) { group in
+        return await withTaskGroup(of: URL?.self) { group in
             for snap in snapshots {
                 group.addTask { [weak self] in
-                    guard let self else { return }
+                    guard let self else { return nil }
                     do {
                         // If the sub-task captured a sketch, save it next to the note as PNG so the
                         // wiki can embed it and the AI can see it for richer descriptions.
@@ -175,21 +178,30 @@ final actor KnowledgeBaseGenerator {
                         }
                         let augmented = GeneratedKnowledgeNote(title: note.title, body: body)
 
+                        let filename = await self.filesystem.subtaskFilename(for: (snap.id, snap.order, snap.title))
                         await self.filesystem.writeNote(
                             augmented,
-                            filename: await self.filesystem.subtaskFilename(for: (snap.id, snap.order, snap.title)),
+                            filename: filename,
                             taskId: taskId,
                             parentTitle: taskTitle,
                             folderURL: folderURL,
                             sourceSubtaskTitle: snap.title,
                             originalInput: KnowledgeResponseExtractor.originalTextInput(for: snap.subTask)
                         )
-                        print("[KnowledgeBase] Wrote sub-task note: \(await self.filesystem.subtaskFilename(for: (snap.id, snap.order, snap.title)))")
+                        print("[KnowledgeBase] Wrote sub-task note: \(filename)")
+                        return folderURL.appendingPathComponent(filename)
                     } catch {
                         print("[KnowledgeBase] Failed to generate sub-task note for '\(snap.title)': \(AppError.userMessage(from: error))")
+                        return nil
                     }
                 }
             }
+
+            var writtenURLs: [URL] = []
+            for await url in group {
+                if let url { writtenURLs.append(url) }
+            }
+            return writtenURLs
         }
     }
 
@@ -290,6 +302,8 @@ final actor KnowledgeBaseGenerator {
         }
     }
 
+    /// Generates the task-level overview note. Returns its on-disk URL on success, or nil.
+    @discardableResult
     func generateTaskOverviewNote(
         taskId: UUID,
         taskTitle: String,
@@ -297,8 +311,8 @@ final actor KnowledgeBaseGenerator {
         taskDescription: String,
         subtaskSummaries: [(title: String, response: String, filename: String)],
         folderURL: URL
-    ) async {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
+    ) async -> URL? {
+        guard let apiKey = APIKeyManager.getAPIKey() else { return nil }
         do {
             let service = KnowledgeAIService(apiKey: apiKey)
             let note = try await service.generateTaskOverviewNote(
@@ -313,9 +327,10 @@ final actor KnowledgeBaseGenerator {
                 noteBody: note.body
             )
             let augmented = GeneratedKnowledgeNote(title: note.title, body: entityLinkedBody)
+            let filename = "00-\(slugify(note.title)).md"
             await filesystem.writeNote(
                 augmented,
-                filename: "00-\(slugify(note.title)).md",
+                filename: filename,
                 taskId: taskId,
                 parentTitle: taskTitle,
                 folderURL: folderURL,
@@ -323,8 +338,10 @@ final actor KnowledgeBaseGenerator {
                 originalInput: originalInput
             )
             print("[KnowledgeBase] Wrote task overview note")
+            return folderURL.appendingPathComponent(filename)
         } catch {
             print("[KnowledgeBase] Failed to generate task overview note: \(AppError.userMessage(from: error))")
+            return nil
         }
     }
 

@@ -140,7 +140,7 @@ final class KnowledgeBaseService: ObservableObject {
             beginWork()
             defer { endWork() }
 
-            await generator.generateSubtaskNotes(pending, taskId: taskId, taskTitle: taskTitle, folderURL: folder)
+            let writtenURLs = await generator.generateSubtaskNotes(pending, taskId: taskId, taskTitle: taskTitle, folderURL: folder)
 
             await filesystem.writeOverview(
                 taskId: taskId,
@@ -154,7 +154,10 @@ final class KnowledgeBaseService: ObservableObject {
             )
             await indexer.regenerateGlobalIndex()
             NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
-            await linkDiscovery.scheduleLinkDiscovery()
+
+            // Discover related notes for each freshly generated note. Runs after generation
+            // (and its inline entity-extraction pass) so there is no race.
+            await linkDiscovery.discoverLinks(forNotesAt: writtenURLs)
         }
     }
 
@@ -206,14 +209,14 @@ final class KnowledgeBaseService: ObservableObject {
 
             print("[KnowledgeBase] Task completed: '\(taskTitle)' — \(pending.count) sub-task notes pending + 1 overview")
 
-            await generator.generateSubtaskNotes(pending, taskId: taskId, taskTitle: taskTitle, folderURL: folder)
+            let writtenSubtaskURLs = await generator.generateSubtaskNotes(pending, taskId: taskId, taskTitle: taskTitle, folderURL: folder)
 
             var subtaskSummaries: [(title: String, response: String, filename: String)] = []
             for snap in allCompletedSnapshots {
                 let filename = await filesystem.subtaskFilename(for: (snap.id, snap.order, snap.title))
                 subtaskSummaries.append((snap.title, KnowledgeResponseExtractor.responseString(for: snap.subTask), filename))
             }
-            await generator.generateTaskOverviewNote(
+            let overviewURL = await generator.generateTaskOverviewNote(
                 taskId: taskId,
                 taskTitle: taskTitle,
                 originalInput: originalInput,
@@ -234,7 +237,10 @@ final class KnowledgeBaseService: ObservableObject {
             )
             await indexer.regenerateGlobalIndex()
             NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
-            await linkDiscovery.scheduleLinkDiscovery()
+
+            // Discover related notes for each freshly generated note. Runs after generation
+            // (and its inline entity-extraction pass) so there is no race.
+            await linkDiscovery.discoverLinks(forNotesAt: writtenSubtaskURLs + (overviewURL.map { [$0] } ?? []))
         }
     }
 
@@ -250,12 +256,12 @@ final class KnowledgeBaseService: ObservableObject {
 
     // MARK: - Link discovery
 
-    func scheduleLinkDiscovery() {
-        Task { await linkDiscovery.scheduleLinkDiscovery() }
-    }
-
-    func runLinkDiscoveryNow() async {
-        await linkDiscovery.runLinkDiscoveryNow()
+    /// Runs single-note link discovery for one note on demand (the "Discover Related Notes"
+    /// toolbar button). Drives the `isWorking` indicator.
+    func runLinkDiscoveryForNote(_ url: URL) async {
+        beginWork()
+        defer { endWork() }
+        await linkDiscovery.discoverLinks(forNoteAt: url)
     }
 
     // MARK: - Graph data
@@ -283,9 +289,13 @@ final class KnowledgeBaseService: ObservableObject {
     func runEntityExtractionForCurrentNote(_ url: URL) async {
         beginWork()
         defer { endWork() }
-        await generator.runEntityExtraction(for: url)
+        let rewritten = await generator.runEntityExtraction(for: url)
         await indexer.regenerateGlobalIndex()
         NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+        // Chain link discovery off the extraction so the discovery AI sees the linked note.
+        if rewritten {
+            await linkDiscovery.discoverLinks(forNoteAt: url)
+        }
     }
 }
 

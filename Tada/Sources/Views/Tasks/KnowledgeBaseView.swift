@@ -80,6 +80,14 @@ struct KnowledgeBaseView: View {
             .disabled(pageStack.isEmpty)
             .help("Index")
 
+            Button {
+                showingGraph.toggle()
+            } label: {
+                Image(systemName: showingGraph ? "doc.text" : "point.3.connected.trianglepath.dotted")
+            }
+            .help(showingGraph ? "Back to wiki" : "Show graph of all notes")
+            .accessibilityIdentifier("kb.toggleGraph")
+
             Spacer()
 
             Text(currentURL.lastPathComponent)
@@ -95,24 +103,16 @@ struct KnowledgeBaseView: View {
                     .controlSize(.small)
                     .frame(width: 24, height: 18)
                     .help("Working…")
-            } else if isEntityExtractable(currentURL) {
+            } else if isDiscoverable(currentURL) {
                 Button {
                     let url = currentURL
-                    Task { await kb?.runEntityExtractionForCurrentNote(url) }
+                    Task { await kb?.runLinkDiscoveryForNote(url) }
                 } label: {
-                    Image(systemName: "wand.and.stars")
+                    Image(systemName: "link")
                 }
-                .help("Extract entities from this note (uses AI)")
-                .accessibilityIdentifier("kb.extractEntities")
+                .help("Discover related notes for this note (uses AI)")
+                .accessibilityIdentifier("kb.discoverLinks")
             }
-
-            Button {
-                showingGraph.toggle()
-            } label: {
-                Image(systemName: showingGraph ? "doc.text" : "point.3.connected.trianglepath.dotted")
-            }
-            .help(showingGraph ? "Back to wiki" : "Show graph of all notes")
-            .accessibilityIdentifier("kb.toggleGraph")
 
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting([rootURL])
@@ -125,14 +125,11 @@ struct KnowledgeBaseView: View {
         .padding(.vertical, 10)
     }
 
-    /// Whether the file at the given URL is a note that benefits from entity extraction.
-    /// Excludes the index, `_overview.md` (planner-set description), and entity notes themselves.
-    private func isEntityExtractable(_ url: URL) -> Bool {
-        let name = url.lastPathComponent
+    /// Whether the file at the given URL is a note that link discovery can run on.
+    /// Any markdown note qualifies; only the global index is excluded.
+    private func isDiscoverable(_ url: URL) -> Bool {
         if url.path == indexURL.path { return false }
-        if name == "_overview.md" { return false }
-        if url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName { return false }
-        return name.hasSuffix(".md")
+        return url.lastPathComponent.hasSuffix(".md")
     }
 
     private func handleLinkTap(_ url: URL) -> OpenURLAction.Result {

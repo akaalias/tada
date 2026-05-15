@@ -337,28 +337,27 @@ actor ClaudeAPIClient {
                     "required": ["revised"]
                 ]
             ]
-        case "DiscoveredCrossLinks":
+        case "NoteLinkSuggestions":
             return [
-                "name": "save_cross_links",
-                "description": "Save a list of cross-link suggestions between notes in the personal wiki.",
+                "name": "save_related_notes",
+                "description": "Save the list of existing notes that belong in the new note's Related section.",
                 "input_schema": [
                     "type": "object",
                     "properties": [
-                        "pairs": [
+                        "links": [
                             "type": "array",
                             "items": [
                                 "type": "object",
                                 "properties": [
-                                    "sourcePath": ["type": "string", "description": "Verbatim path of the source note from the input list."],
-                                    "targetPath": ["type": "string", "description": "Verbatim path of the target note from the input list."],
+                                    "targetPath": ["type": "string", "description": "Verbatim path of an existing note from the input list."],
                                     "targetTitle": ["type": "string", "description": "Title to display for the link to the target."],
                                     "reason": ["type": "string", "description": "One-sentence justification."]
                                 ],
-                                "required": ["sourcePath", "targetPath", "targetTitle", "reason"]
+                                "required": ["targetPath", "targetTitle", "reason"]
                             ]
                         ]
                     ],
-                    "required": ["pairs"]
+                    "required": ["links"]
                 ]
             ]
         case "GeneratedKnowledgeNote":

@@ -5,12 +5,11 @@ struct GeneratedKnowledgeNote: Codable {
     let body: String
 }
 
-struct DiscoveredCrossLinks: Codable {
-    let pairs: [CrossLinkPair]
+struct NoteLinkSuggestions: Codable {
+    let links: [SuggestedRelatedNote]
 }
 
-struct CrossLinkPair: Codable {
-    let sourcePath: String
+struct SuggestedRelatedNote: Codable {
     let targetPath: String
     let targetTitle: String
     let reason: String
@@ -102,57 +101,65 @@ actor KnowledgeAIService {
         )
     }
 
-    func discoverCrossLinks(
-        notes: [(path: String, title: String, body: String)]
-    ) async throws -> DiscoveredCrossLinks {
-        let formatted = notes.map { note in
+    /// Single-source cross-link discovery: given ONE new note and a list of CANDIDATE notes
+    /// (everything not already structurally close to it), returns the candidates that belong
+    /// in the new note's Related section.
+    func discoverLinksForNote(
+        note: (path: String, title: String, body: String),
+        candidates: [(path: String, title: String, body: String)]
+    ) async throws -> NoteLinkSuggestions {
+        let candidateList = candidates.map { n in
             """
             ---
-            path: \(note.path)
-            title: \(note.title)
+            path: \(n.path)
+            title: \(n.title)
             ---
-            \(note.body.prefix(1200))
+            \(n.body.prefix(800))
             """
         }.joined(separator: "\n\n")
 
         let systemPrompt = """
-        You analyse a personal knowledge wiki and suggest cross-links between related notes.
+        You maintain the cross-links of a personal knowledge wiki.
 
-        INPUT: a list of notes. Each has a unique `path` (relative to the wiki root, e.g. "notes/<folder>/<file>.md"), a `title`, and a `body`.
+        INPUT:
+        - ONE new note that was just created: its `path`, `title`, and full `body`.
+        - A list of CANDIDATE notes, each with a `path`, `title`, and `body`.
 
-        OUTPUT: a list of `pairs`. Each pair: { sourcePath, targetPath, targetTitle, reason }.
+        IMPORTANT — the candidate list has already been pruned. Notes that are ALREADY connected to the new note (its task-folder siblings, entities it already links to, notes already in its Related section) were removed on purpose. Every candidate is a note the new note is NOT yet connected to.
+
+        YOUR GOAL: surface the NON-OBVIOUS connections. Link the new note to candidates that share a genuine conceptual thread but live in a different task or context — the kind of link the user would not stumble on by browsing the same project. Think: the same underlying theme or argument, a decision in one project that informs another, the same person / product / place / idea resurfacing in unrelated work.
+
+        OUTPUT: a list of `links` — the candidates that belong in the new note's "Related" section. Each link: { targetPath, targetTitle, reason }.
 
         STRICT RULES:
-        - sourcePath and targetPath MUST be the EXACT verbatim strings from the input list — including the "notes/<folder>/" prefix. Do not abbreviate, rename, or invent paths.
-        - Never link a note to itself.
-        - Cross-links are directional: a pair {source, target} adds a link from source → target. If you want bidirectional, emit two pairs.
+        - targetPath MUST be the EXACT verbatim `path` string of a candidate from the list — including the "notes/<folder>/" prefix. Never abbreviate, rename, or invent a path.
+        - Only suggest candidates from the list. Never suggest the new note itself.
+        - Quality over quantity. Return 0-4 links. An empty list is a perfectly good answer when nothing is genuinely related — do NOT pad.
+        - Do NOT link on weak or generic overlap (both notes mention "decisions", both involve "writing"). Require a concrete shared entity or a specific shared idea.
 
-        ENTITY NOTES:
-        - Some notes live under "notes/_entities/" — these are atomic concept notes (a person, product, place, decision, deadline, or named idea).
-        - Link a task note TO an entity note when the task note is meaningfully about that entity, even if it only refers to the concept colloquially (e.g. a note mentioning "plants and greenery" should link the entity "Plants as Privacy Solution").
-        - Link an entity note back TO the task notes that involve it, so the entity acts as a hub. Match on meaning, not just exact wording.
-
-        WHAT TO LINK:
-        - Notes from the SAME parent task folder are usually related — they describe one project. Always link them when there's a real semantic connection: the answer to one question informs another, a decision flows from a constraint, a budget feeds a shopping list, etc.
-        - Notes across DIFFERENT task folders should also be linked when they share a concrete entity (same person, product, place, deadline, decision).
-        - Aim for 1-5 outgoing links per note. Don't blanket-link everything; pick the most useful connections.
-
-        Use `reason` to justify in one sentence why the link is useful — this is an internal hint, not shown to the user.
+        Use `reason` to name, in one sentence, the specific shared thread — this is an internal hint, not shown to the user.
         """
 
         let userMessage = """
-        Here are the notes:
+        NEW NOTE:
+        ---
+        path: \(note.path)
+        title: \(note.title)
+        ---
+        \(note.body)
 
-        \(formatted)
+        CANDIDATE NOTES:
 
-        Identify cross-link opportunities between them.
+        \(candidateList)
+
+        Which candidates share a real, non-obvious connection with the new note?
         """
 
         return try await client.sendStructuredMessage(
             systemPrompt: systemPrompt,
             userMessage: userMessage,
-            responseType: DiscoveredCrossLinks.self,
-            maxTokens: 8192
+            responseType: NoteLinkSuggestions.self,
+            maxTokens: AppConstants.kbLinkDiscoveryMaxTokens
         )
     }
 

@@ -12,7 +12,7 @@ protocol KnowledgeBaseServiceProtocol {
     func handleSubtaskCompleted(_ subTask: SubTask)
     func handleTaskCompleted(_ task: TodoTask)
     func reconcile(tasks: [TodoTask])
-    func runLinkDiscoveryNow() async
+    func runLinkDiscoveryForNote(_ url: URL) async
     func runEntityExtractionForCurrentNote(_ url: URL) async
     func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink]
     func buildGraphData() async -> KnowledgeGraphData
@@ -47,9 +47,9 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
         KnowledgeBaseService.shared.reconcile(tasks: tasks)
     }
 
-    func runLinkDiscoveryNow() async {
-        if let testMock { await testMock.runLinkDiscoveryNow(); return }
-        await KnowledgeBaseService.shared.runLinkDiscoveryNow()
+    func runLinkDiscoveryForNote(_ url: URL) async {
+        if let testMock { await testMock.runLinkDiscoveryForNote(url); return }
+        await KnowledgeBaseService.shared.runLinkDiscoveryForNote(url)
     }
 
     func runEntityExtractionForCurrentNote(_ url: URL) async {

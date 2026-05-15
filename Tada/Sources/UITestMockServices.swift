@@ -176,7 +176,7 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
         for task in tasks { handleTaskCreatedOrUpdated(task) }
     }
 
-    func runLinkDiscoveryNow() async {}
+    func runLinkDiscoveryForNote(_ url: URL) async {}
 
     func runEntityExtractionForCurrentNote(_ url: URL) async {}
 
