@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Developer console: a chronological log of every Claude API request/response.
@@ -81,10 +82,10 @@ private struct APILogEntryRow: View {
             }
         }
         .padding(16)
-        .background(statusColor.opacity(0.05))
+        .background(phaseColor.opacity(0.06))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(statusColor.opacity(0.3), lineWidth: 1)
+                .stroke(phaseColor.opacity(0.35), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
@@ -102,11 +103,18 @@ private struct APILogEntryRow: View {
             }
             Text(entry.method)
                 .font(.system(size: Theme.fontSize, weight: .semibold, design: .monospaced))
-            Text(entry.url)
-                .font(.system(size: Theme.fontSize, design: .monospaced))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundStyle(.secondary)
+            if let summary = entry.requestSummary {
+                Text(summary)
+                    .font(.system(size: Theme.fontSize))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            } else {
+                Text(entry.url)
+                    .font(.system(size: Theme.fontSize, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
             if let durationMS = entry.durationMS {
                 Text("\(durationMS) ms")
@@ -133,21 +141,24 @@ private struct APILogEntryRow: View {
     }
 
     private func roleBadge(_ role: AIRole) -> some View {
-        let color = roleColor(role)
-        return Text(role.displayName)
+        Text(role.displayName)
             .font(.system(size: Theme.badgeFontSize, weight: .medium))
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
+            .background(phaseColor.opacity(0.2))
+            .foregroundStyle(phaseColor)
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
-    private func roleColor(_ role: AIRole) -> Color {
-        switch role {
-        case .planner: .blue
-        case .executive: .purple
-        case .knowledge: .teal
+    /// Colour for the task phase this request serves; tints the whole entry to
+    /// match the app's phase palette — discovery (orange), execution (blue),
+    /// knowledge work on completed tasks (emerald). Grey when phase is unknown.
+    private var phaseColor: Color {
+        switch entry.phase {
+        case .discovery: Color(lightHex: 0xC8762A, darkHex: 0xE8A04F)
+        case .execution: Color(lightHex: 0x2F6FCE, darkHex: 0x5E9BF2)
+        case .knowledge: Color(lightHex: 0x1F9D78, darkHex: 0x3FC9A3)
+        case nil: .gray
         }
     }
 
@@ -216,5 +227,24 @@ private struct APILogEntryRow: View {
         if entry.errorMessage != nil { return "FAILED" }
         if let status = entry.statusCode { return "\(status)" }
         return "PENDING"
+    }
+}
+
+// MARK: - Appearance-adaptive colour
+
+private extension Color {
+    /// Builds a colour from two `0xRRGGBB` hex values, picking light or dark to
+    /// match the current appearance.
+    init(lightHex: UInt32, darkHex: UInt32) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            let hex = isDark ? darkHex : lightHex
+            return NSColor(
+                red: CGFloat((hex >> 16) & 0xFF) / 255,
+                green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255,
+                alpha: 1
+            )
+        })
     }
 }

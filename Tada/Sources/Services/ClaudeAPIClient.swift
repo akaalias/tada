@@ -6,18 +6,21 @@ private let logger = Logger(subsystem: "com.tada.app", category: "API")
 actor ClaudeAPIClient {
     private let apiKey: String
     private let role: AIRole
+    /// Task phase used for requests that don't specify one explicitly.
+    private let defaultPhase: APIRequestPhase
     private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
     private let model: String
 
-    init(apiKey: String, role: AIRole) {
+    init(apiKey: String, role: AIRole, phase: APIRequestPhase) {
         self.apiKey = apiKey
         self.role = role
+        self.defaultPhase = phase
         self.model = ModelPreference.selectedModel
     }
 
     /// Sends a request via URLSession while recording it in `APILog` for the Console view.
-    private func performLoggedRequest(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let entryID = await APILog.shared.logRequest(request, role: role)
+    private func performLoggedRequest(_ request: URLRequest, phase: APIRequestPhase) async throws -> (Data, HTTPURLResponse) {
+        let entryID = await APILog.shared.logRequest(request, role: role, phase: phase)
         let start = Date()
         func elapsedMS() -> Int { Int(Date().timeIntervalSince(start) * 1000) }
 
@@ -46,7 +49,8 @@ actor ClaudeAPIClient {
     func sendMessage(
         systemPrompt: String,
         userMessage: String,
-        maxTokens: Int = 2048
+        maxTokens: Int = 2048,
+        phase: APIRequestPhase? = nil
     ) async throws -> String {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
@@ -66,7 +70,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, httpResponse) = try await performLoggedRequest(request)
+        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase)
 
         guard httpResponse.statusCode == 200 else {
             if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -92,7 +96,8 @@ actor ClaudeAPIClient {
         userMessage: String,
         responseType: T.Type,
         maxTokens: Int = 2048,
-        attachedImages: [Data] = []
+        attachedImages: [Data] = [],
+        phase: APIRequestPhase? = nil
     ) async throws -> T {
         // Use tool_use for guaranteed structured output
         var request = URLRequest(url: baseURL)
@@ -137,7 +142,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, httpResponse) = try await performLoggedRequest(request)
+        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase)
 
         // Check for API errors in the response body (works for any status code)
         if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -281,8 +286,8 @@ actor ClaudeAPIClient {
                 "input_schema": [
                     "type": "object",
                     "properties": [
-                        "title": ["type": "string"],
-                        "description": ["type": "string"],
+                        "title": ["type": "string", "description": "Short, specific name for the USER'S task - what they want to accomplish, in their own terms. Never a generic label like 'Clarifying Questions' or 'Task Discovery'."],
+                        "description": ["type": "string", "description": "One plain sentence summarising the task itself."],
                         "subTasks": [
                             "type": "array",
                             "items": [

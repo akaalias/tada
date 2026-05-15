@@ -8,11 +8,20 @@ enum AIRole: String, Codable, Sendable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .planner: "Planner"
-        case .executive: "Executive"
-        case .knowledge: "Knowledge"
+        case .planner: "Planning Agent"
+        case .executive: "Executive Agent"
+        case .knowledge: "Knowledge Base Agent"
         }
     }
+}
+
+/// The task-lifecycle phase a request serves. Drives the Console's colour
+/// coding, matching the app's phase palette: discovery (orange), execution
+/// (blue), knowledge work on completed tasks (emerald).
+enum APIRequestPhase: String, Codable, Sendable {
+    case discovery
+    case execution
+    case knowledge
 }
 
 /// One recorded HTTP request/response pair to the Claude API.
@@ -25,6 +34,8 @@ struct APILogEntry: Identifiable, Sendable, Codable {
     let requestBody: String?
     /// Which AI agent issued the request, if known.
     let aiRole: AIRole?
+    /// The task phase this request serves, if known.
+    let phase: APIRequestPhase?
 
     var statusCode: Int?
     var responseHeaders: [String: String]?
@@ -39,6 +50,33 @@ struct APILogEntry: Identifiable, Sendable, Codable {
     var isSuccess: Bool {
         guard let statusCode else { return false }
         return (200..<300).contains(statusCode)
+    }
+
+    /// A plain-language, phase-aware summary of what the request is for, derived
+    /// from the tool it invokes. `nil` for plain (non-tool) messages.
+    var requestSummary: String? {
+        guard let requestBody,
+              let data = requestBody.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let tools = json["tools"] as? [[String: Any]],
+              let toolName = tools.first?["name"] as? String
+        else { return nil }
+
+        switch toolName {
+        case "generate_action_ui":        return "Generating an interactive step"
+        case "create_task_plan":
+            switch phase {
+            case .discovery: return "Creating a task plan for discovery"
+            case .execution: return "Creating a task plan for execution"
+            default:         return "Creating a task plan"
+            }
+        case "revise_plan":               return "Revising the execution task plan"
+        case "break_down_step":           return "Breaking a step into micro-steps"
+        case "save_cross_links":          return "Finding links between notes"
+        case "save_atomic_note":          return "Writing a knowledge note"
+        case "extract_entities_and_link": return "Extracting entities and wikilinks"
+        default:                          return nil
+        }
     }
 }
 
@@ -75,7 +113,7 @@ final class APILog {
 
     /// Records an outgoing request and returns its id for later completion.
     @discardableResult
-    func logRequest(_ request: URLRequest, role: AIRole? = nil) -> UUID {
+    func logRequest(_ request: URLRequest, role: AIRole? = nil, phase: APIRequestPhase? = nil) -> UUID {
         let id = UUID()
         let entry = APILogEntry(
             id: id,
@@ -84,7 +122,8 @@ final class APILog {
             url: request.url?.absoluteString ?? "",
             requestHeaders: Self.redact(request.allHTTPHeaderFields ?? [:]),
             requestBody: request.httpBody.map { Self.prettyJSON($0) ?? Self.utf8($0) },
-            aiRole: role
+            aiRole: role,
+            phase: phase
         )
         entries.insert(entry, at: 0)
         if entries.count > Self.maxEntries {
@@ -144,9 +183,18 @@ final class APILog {
     private static func redact(_ headers: [String: String]) -> [String: String] {
         var result = headers
         for key in headers.keys where sensitiveHeaders.contains(key.lowercased()) {
-            result[key] = redactedValue
+            result[key] = mask(headers[key] ?? "")
         }
         return result
+    }
+
+    /// Partially masks a secret: keeps the first 16 and last 8 characters
+    /// visible so the key can be identified, hiding the middle. Values short
+    /// enough that this would reveal most of the secret (≤24 chars) are fully
+    /// redacted instead.
+    static func mask(_ value: String) -> String {
+        guard value.count > 24 else { return redactedValue }
+        return "\(value.prefix(16))...\(value.suffix(8))"
     }
 
     /// Pretty-prints JSON data, or returns nil if the data is not valid JSON.

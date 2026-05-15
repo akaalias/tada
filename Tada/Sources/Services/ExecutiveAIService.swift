@@ -223,7 +223,7 @@ actor ExecutiveAIService {
     """
 
     init(apiKey: String) {
-        self.client = ClaudeAPIClient(apiKey: apiKey, role: .executive)
+        self.client = ClaudeAPIClient(apiKey: apiKey, role: .executive, phase: .execution)
     }
 
     func generateActionUI(
@@ -245,7 +245,7 @@ actor ExecutiveAIService {
         Current sub-task to complete: \(subTask)
         \(subTaskDescription.isEmpty ? "" : "Details: \(subTaskDescription)")
 
-        \(previousResponses.isEmpty ? "" : "Previous responses in this task:\n\(formatPreviousResponses(previousResponses))")
+        \(previousResponses.isEmpty ? "" : "Previous responses in this task:\n\(Self.formatPreviousResponses(previousResponses))")
         \(memorySection)
 
         Design a simple UI for the user to complete this sub-task.
@@ -260,9 +260,16 @@ actor ExecutiveAIService {
         )
     }
 
-    private func formatPreviousResponses(_ responses: [[String: String]]) -> String {
+    /// Renders prior sub-task answers as prompt text. Drawing fields store their
+    /// image as a `data:image/png;base64,…` URL — that blob is useless as text
+    /// and costs thousands of tokens, so it is dropped here. The companion
+    /// `field_drawing` text description is kept, so the model still has context.
+    nonisolated static func formatPreviousResponses(_ responses: [[String: String]]) -> String {
         responses.map { dict in
-            dict.map { "- \($0.key): \($0.value)" }.joined(separator: "\n")
+            dict
+                .filter { !$0.value.hasPrefix("data:image") }
+                .map { "- \($0.key): \($0.value)" }
+                .joined(separator: "\n")
         }.joined(separator: "\n")
     }
 }

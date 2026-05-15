@@ -66,7 +66,7 @@ actor KnowledgeAIService {
     """
 
     init(apiKey: String) {
-        self.client = ClaudeAPIClient(apiKey: apiKey, role: .knowledge)
+        self.client = ClaudeAPIClient(apiKey: apiKey, role: .knowledge, phase: .knowledge)
     }
 
     func generateSubtaskNote(

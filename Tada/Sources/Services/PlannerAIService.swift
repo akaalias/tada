@@ -13,7 +13,17 @@ actor PlannerAIService {
     - What constraints or preferences do they have?
     - KEY DETAILS needed for execution (names, contact info, locations, etc.)
 
-    TITLE GUIDELINES:
+    TASK TITLE & DESCRIPTION (the top-level "title" and "description" fields):
+    - The top-level "title" is the NAME OF THE USER'S TASK - what THEY want to accomplish.
+      It is NOT a label for your questions.
+    - Restate the user's goal as a short, specific title (4-9 words) in their own terms.
+    - NEVER use generic labels like "Clarifying Questions", "Task Discovery", "Questions",
+      or "Understanding your task". Those describe your output, not the user's goal.
+    - Example: user enters "Untangle my German tax returns for 2020-2024" →
+      title: "Sort Out 2020-2024 German Tax Returns"
+    - The top-level "description" summarises the task itself in one plain sentence.
+
+    QUESTION TITLE GUIDELINES (each subTask "title"):
     - Titles should be COMPLETE questions that make sense on their own
     - Keep them concise but natural - around 5-10 words
     - Don't list all the options in the title
@@ -123,7 +133,7 @@ actor PlannerAIService {
     """
 
     init(apiKey: String) {
-        self.client = ClaudeAPIClient(apiKey: apiKey, role: .planner)
+        self.client = ClaudeAPIClient(apiKey: apiKey, role: .planner, phase: .execution)
     }
 
     // MARK: - Discovery Phase
@@ -137,7 +147,8 @@ actor PlannerAIService {
         return try await client.sendStructuredMessage(
             systemPrompt: discoveryPrompt,
             userMessage: prompt,
-            responseType: TaskPlan.self
+            responseType: TaskPlan.self,
+            phase: .discovery
         )
     }
 

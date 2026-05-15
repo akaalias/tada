@@ -22,6 +22,27 @@ import Testing
 }
 
 @MainActor
+@Test func apiLog_logRequest_partially_reveals_long_api_key() {
+    let log = APILog()
+    var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+    request.httpMethod = "POST"
+    let key = "sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-abcdEFGH"
+    request.setValue(key, forHTTPHeaderField: "x-api-key")
+
+    _ = log.logRequest(request)
+
+    let masked = log.entries.first!.requestHeaders["x-api-key"]!
+    #expect(masked == "sk-ant-api03-ABC...abcdEFGH")
+    #expect(masked != key)
+}
+
+@MainActor
+@Test func apiLog_mask_fully_redacts_short_secrets() {
+    #expect(APILog.mask("sk-ant-secret-value") == APILog.redactedValue)
+    #expect(APILog.mask("") == APILog.redactedValue)
+}
+
+@MainActor
 @Test func apiLog_logRequest_captures_method_url_and_inserts_at_front() {
     let log = APILog()
     var first = URLRequest(url: URL(string: "https://example.com/one")!)
@@ -172,4 +193,77 @@ import Testing
     _ = first.logRequest(URLRequest(url: URL(string: "https://example.com")!), role: .knowledge)
 
     #expect(APILog(fileURL: file).entries.first?.aiRole == .knowledge)
+}
+
+@Test func aiRole_displayNames_are_full_agent_names() {
+    #expect(AIRole.planner.displayName == "Planning Agent")
+    #expect(AIRole.executive.displayName == "Executive Agent")
+    #expect(AIRole.knowledge.displayName == "Knowledge Base Agent")
+}
+
+// MARK: - Request Summary
+
+@MainActor
+@Test func apiLogEntry_requestSummary_describes_known_tool_requests() {
+    let cases: [(tool: String, summary: String)] = [
+        ("generate_action_ui", "Generating an interactive step"),
+        ("create_task_plan", "Creating a task plan"),
+        ("revise_plan", "Revising the execution task plan"),
+        ("break_down_step", "Breaking a step into micro-steps"),
+        ("save_cross_links", "Finding links between notes"),
+        ("save_atomic_note", "Writing a knowledge note"),
+        ("extract_entities_and_link", "Extracting entities and wikilinks"),
+    ]
+    for (tool, summary) in cases {
+        let log = APILog()
+        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+        request.httpMethod = "POST"
+        request.httpBody = try! JSONSerialization.data(withJSONObject: ["tools": [["name": tool]]])
+        _ = log.logRequest(request)
+        #expect(log.entries.first?.requestSummary == summary)
+    }
+}
+
+@MainActor
+@Test func apiLogEntry_requestSummary_qualifies_task_plan_by_phase() {
+    func summary(forPhase phase: APIRequestPhase?) -> String? {
+        let log = APILog()
+        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+        request.httpMethod = "POST"
+        request.httpBody = try! JSONSerialization.data(withJSONObject: ["tools": [["name": "create_task_plan"]]])
+        _ = log.logRequest(request, phase: phase)
+        return log.entries.first?.requestSummary
+    }
+    #expect(summary(forPhase: .discovery) == "Creating a task plan for discovery")
+    #expect(summary(forPhase: .execution) == "Creating a task plan for execution")
+    #expect(summary(forPhase: nil) == "Creating a task plan")
+}
+
+@MainActor
+@Test func apiLog_logRequest_records_and_persists_phase() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let log = APILog(fileURL: file)
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!), phase: .execution)
+    #expect(log.entries.first?.phase == .execution)
+    #expect(APILog(fileURL: file).entries.first?.phase == .execution)
+}
+
+@MainActor
+@Test func apiLog_logRequest_phase_defaults_to_nil() {
+    let log = APILog()
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    #expect(log.entries.first?.phase == nil)
+}
+
+@MainActor
+@Test func apiLogEntry_requestSummary_is_nil_for_plain_message() {
+    let log = APILog()
+    var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+    request.httpMethod = "POST"
+    request.httpBody = try! JSONSerialization.data(withJSONObject: ["messages": []])
+    _ = log.logRequest(request)
+    #expect(log.entries.first?.requestSummary == nil)
 }
