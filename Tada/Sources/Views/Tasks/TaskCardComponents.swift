@@ -133,15 +133,18 @@ struct TaskHeaderView: View {
 struct SubTaskRowView: View {
     let subTask: SubTask
     let phaseColor: Color
+    @State private var isHovering = false
+
+    /// Only the current (next actionable) sub-task is clickable.
+    private var isClickable: Bool { subTask.isCurrent }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: subTask.isCompleted ? "checkmark.circle.fill" :
                     (subTask.status == SubTaskStatus.skipped ? "arrow.right.circle" : "circle"))
                 .foregroundColor(subTask.isCompleted ? phaseColor :
                     (subTask.status == SubTaskStatus.skipped ? .orange : phaseColor.opacity(0.4)))
                 .font(.system(size: Theme.circleSize))
-                .padding(.top, 2)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(subTask.title)
@@ -173,11 +176,26 @@ struct SubTaskRowView: View {
             Spacer()
         }
         .padding(.leading, 16)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isClickable && isHovering ? Color.black.opacity(0.25) : Color.clear)
+        )
         .opacity(subTask.isCompleted || subTask.isCurrent ? 1.0 : 0.5)
         .contentShape(Rectangle())
         .onTapGesture {
             if subTask.isCurrent {
                 NotificationCenter.default.post(name: .navigateToActionItems, object: nil)
+            }
+        }
+        .onHover { hovering in
+            isHovering = hovering
+            guard isClickable else { return }
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
             }
         }
     }
