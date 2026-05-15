@@ -106,15 +106,27 @@ struct KnowledgeBaseView: View {
                     .controlSize(.small)
                     .frame(width: 24, height: 18)
                     .help("Working…")
-            } else if isDiscoverable(currentURL) {
-                Button {
-                    let url = currentURL
-                    Task { await kb?.runLinkDiscoveryForNote(url) }
-                } label: {
-                    Image(systemName: "link")
+            } else {
+                if isEntityExtractable(currentURL) {
+                    Button {
+                        let url = currentURL
+                        Task { await kb?.runEntityExtractionForCurrentNote(url) }
+                    } label: {
+                        Image(systemName: "wand.and.stars")
+                    }
+                    .help("Extract entities from this note (uses AI)")
+                    .accessibilityIdentifier("kb.extractEntities")
                 }
-                .help("Discover related notes for this note (uses AI)")
-                .accessibilityIdentifier("kb.discoverLinks")
+                if isDiscoverable(currentURL) {
+                    Button {
+                        let url = currentURL
+                        Task { await kb?.runLinkDiscoveryForNote(url) }
+                    } label: {
+                        Image(systemName: "link")
+                    }
+                    .help("Discover related notes for this note (uses AI)")
+                    .accessibilityIdentifier("kb.discoverLinks")
+                }
             }
 
             Button {
@@ -133,6 +145,16 @@ struct KnowledgeBaseView: View {
     private func isDiscoverable(_ url: URL) -> Bool {
         if url.path == indexURL.path { return false }
         return url.lastPathComponent.hasSuffix(".md")
+    }
+
+    /// Whether the note benefits from entity extraction. Excludes the index, `_overview.md`
+    /// (the planner-set description), and entity notes themselves.
+    private func isEntityExtractable(_ url: URL) -> Bool {
+        let name = url.lastPathComponent
+        if url.path == indexURL.path { return false }
+        if name == "_overview.md" { return false }
+        if url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName { return false }
+        return name.hasSuffix(".md")
     }
 
     private func handleLinkTap(_ url: URL) -> OpenURLAction.Result {
