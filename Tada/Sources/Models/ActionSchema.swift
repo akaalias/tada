@@ -69,6 +69,7 @@ struct ActionField: Codable, Identifiable, Equatable {
         case textarea
         case checklist
         case drawing
+        case brainstorm
         case slider
         case rangeSlider
         case countSelector

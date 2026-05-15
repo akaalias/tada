@@ -135,6 +135,7 @@ struct ActionUIRenderer: View {
                             }
                             Section("Visual") {
                                 FieldTypeButton(type: .drawing, label: "Drawing", icon: "pencil.tip", onSelect: onChangeFieldType)
+                                FieldTypeButton(type: .brainstorm, label: "Brainstorm", icon: "lightbulb", onSelect: onChangeFieldType)
                             }
                         } label: {
                             Label("Change input type", systemImage: "arrow.triangle.2.circlepath")
@@ -204,6 +205,8 @@ struct ActionUIRenderer: View {
                 ChecklistRenderer(field: field, response: $response)
             case .drawing:
                 DrawingCanvasRenderer(field: field, response: $response)
+            case .brainstorm:
+                BrainstormCanvasRenderer(field: field, response: $response)
             case .slider:
                 SliderRenderer(field: field, response: $response)
             case .rangeSlider:
