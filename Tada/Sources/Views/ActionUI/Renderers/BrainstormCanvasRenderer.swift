@@ -120,7 +120,6 @@ struct BrainstormCanvasRenderer: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            inputRow
             canvas
             if let placeholder = field.placeholder {
                 Text(placeholder)
@@ -131,9 +130,9 @@ struct BrainstormCanvasRenderer: View {
         .onAppear { inputFocused = true }
     }
 
-    // MARK: Input
+    // MARK: Input Toolbar
 
-    private var inputRow: some View {
+    private var inputToolbar: some View {
         HStack(spacing: 8) {
             TextField("Type a term and press Return…", text: $inputText)
                 .textFieldStyle(.plain)
@@ -141,13 +140,9 @@ struct BrainstormCanvasRenderer: View {
                 .focused($inputFocused)
                 .onSubmit(addCurrentTerm)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(phaseColor.opacity(0.25))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(phaseColor.opacity(0.4), lineWidth: 1)
-                )
+                .padding(.vertical, 6)
+                .background(.regularMaterial)
+                .cornerRadius(6)
                 .accessibilityIdentifier("brainstorm.input")
 
             ForEach(BrainstormLabelColor.allCases, id: \.self) { color in
@@ -156,7 +151,7 @@ struct BrainstormCanvasRenderer: View {
                 } label: {
                     Circle()
                         .fill(color.swatch)
-                        .frame(width: 24, height: 24)
+                        .frame(width: 22, height: 22)
                         .overlay(
                             Circle()
                                 .stroke(Color.white, lineWidth: selectedColor == color ? 2 : 0)
@@ -165,6 +160,9 @@ struct BrainstormCanvasRenderer: View {
                 .buttonStyle(.plain)
             }
         }
+        .padding(8)
+        .background(.regularMaterial)
+        .cornerRadius(8)
     }
 
     private func addCurrentTerm() {
@@ -201,6 +199,10 @@ struct BrainstormCanvasRenderer: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
         )
+        .overlay(alignment: .top) {
+            inputToolbar
+                .padding(8)
+        }
         .overlay(alignment: .bottomTrailing) { zoomControls }
         .gesture(panGesture)
         .gesture(magnifyGesture)
@@ -218,8 +220,8 @@ struct BrainstormCanvasRenderer: View {
     private func labelView(_ label: BrainstormLabel) -> some View {
         Text(label.text)
             .font(.system(size: Theme.fontSize, weight: .medium))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(label.color.background)
             .cornerRadius(6)
             .overlay(
@@ -377,8 +379,8 @@ struct BrainstormBoardSnapshot: View {
             ForEach(labels) { label in
                 Text(label.text)
                     .font(.system(size: Theme.fontSize, weight: .medium))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .background(label.color.background)
                     .cornerRadius(6)
                     .overlay(
