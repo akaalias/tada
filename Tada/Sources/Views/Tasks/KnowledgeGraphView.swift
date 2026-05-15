@@ -151,6 +151,7 @@ private struct GraphWebView: NSViewRepresentable {
       #graph { position: absolute; inset: 0; }
       .legend {
         position: absolute; left: 16px; bottom: 14px; font-size: 11px;
+        font-family: -apple-system, system-ui, 'Helvetica Neue', sans-serif;
         color: var(--muted); letter-spacing: 0.02em;
         display: flex; gap: 18px; align-items: center; pointer-events: none;
       }
@@ -217,12 +218,17 @@ private struct GraphWebView: NSViewRepresentable {
           // per kind (top-level task / entity vs sub-task), then sqrt-scaled by degree so a node
           // with 16 connections is ~4× the area of an isolated one, not 16×.
           const degree = new Map();
-          data.nodes.forEach(n => degree.set(n.id, 0));
+          // Adjacency: nodeId → Set of directly connected nodeIds, used to
+          // highlight a hovered node's immediate neighbourhood.
+          const neighbors = new Map();
+          data.nodes.forEach(n => { degree.set(n.id, 0); neighbors.set(n.id, new Set()); });
           data.links.forEach(l => {
             const s = typeof l.source === 'object' ? l.source.id : l.source;
             const t = typeof l.target === 'object' ? l.target.id : l.target;
             degree.set(s, (degree.get(s) || 0) + 1);
             degree.set(t, (degree.get(t) || 0) + 1);
+            neighbors.get(s) && neighbors.get(s).add(t);
+            neighbors.get(t) && neighbors.get(t).add(s);
           });
           const nodeSize = (n) => {
             const base = n.kind === 'subTask' ? 1.6 : 2.4;
@@ -230,7 +236,63 @@ private struct GraphWebView: NSViewRepresentable {
             return base + Math.sqrt(d) * 0.9;
           };
 
+          // Entities stay circles; tasks and sub-tasks are drawn as rounded
+          // rectangles. `r` is the sizing radius — the square is 2r per side.
+          const traceNode = (node, ctx) => {
+            const r = nodeSize(node);
+            ctx.beginPath();
+            if (node.kind === 'entity') {
+              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+            } else {
+              ctx.roundRect(node.x - r, node.y - r, r * 2, r * 2, r * 0.55);
+            }
+          };
+
+          // Multiplies an #rrggbb colour toward black (factor < 1 darkens).
+          const darken = (hex, factor) => {
+            const h = hex.replace('#', '');
+            const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+            const ch = i => Math.round(parseInt(f.substr(i, 2), 16) * factor);
+            return `rgb(${ch(0)},${ch(2)},${ch(4)})`;
+          };
+
+          // Returns `color` with `alpha` applied. Accepts #rgb / #rrggbb or rgb()/rgba().
+          const withAlpha = (color, alpha) => {
+            if (color.startsWith('#')) {
+              const h = color.replace('#', '');
+              const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+              const ch = i => parseInt(f.substr(i, 2), 16);
+              return `rgba(${ch(0)},${ch(2)},${ch(4)},${alpha})`;
+            }
+            const n = color.match(/[\\d.]+/g) || [0, 0, 0];
+            return `rgba(${n[0]},${n[1]},${n[2]},${alpha})`;
+          };
+          // Parses #rgb / #rrggbb / rgb() / rgba() to an [r,g,b,a] array.
+          const parseColor = (color) => {
+            if (color.startsWith('#')) {
+              const h = color.replace('#', '');
+              const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+              const v = i => parseInt(f.substr(i, 2), 16);
+              return [v(0), v(2), v(4), 1];
+            }
+            const n = (color.match(/[\\d.]+/g) || [0, 0, 0]).map(Number);
+            return [n[0] || 0, n[1] || 0, n[2] || 0, n[3] == null ? 1 : n[3]];
+          };
+          // Per-frame easing factor for hover highlight transitions (~0.3s in/out).
+          const HL_EASE = 0.2;
+
           let hoverId = null;
+          // With a node hovered: that node + its neighbours stay at full strength,
+          // the edges touching it are emphasised, everything else fades back.
+          const nodeHighlighted = (node) =>
+            hoverId == null || node.id === hoverId
+            || (neighbors.get(hoverId) && neighbors.get(hoverId).has(node.id));
+          const linkHighlighted = (link) => {
+            if (hoverId == null) return true;
+            const s = typeof link.source === 'object' ? link.source.id : link.source;
+            const t = typeof link.target === 'object' ? link.target.id : link.target;
+            return s === hoverId || t === hoverId;
+          };
 
           const Graph = ForceGraph()(el)
             .graphData(data)
@@ -243,8 +305,23 @@ private struct GraphWebView: NSViewRepresentable {
             // Keep repainting after the simulation cools, otherwise the hover
             // label only updates when a zoom/pan happens to trigger a redraw.
             .autoPauseRedraw(false)
-            .linkColor(() => palette.rule)
-            .linkWidth(0.6)
+            .linkColor(link => {
+              // Ease each link's colour toward its hover target so the
+              // highlight fades rather than snaps (autoPauseRedraw(false)
+              // guarantees a frame every tick to advance the easing).
+              const target = parseColor(
+                hoverId == null ? palette.rule
+                : linkHighlighted(link) ? withAlpha(palette.ink, 0.5)
+                                        : withAlpha(palette.rule, 0.08));
+              const cur = link.__col || (link.__col = target.slice());
+              for (let i = 0; i < 4; i++) cur[i] += (target[i] - cur[i]) * HL_EASE;
+              return `rgba(${cur[0]|0},${cur[1]|0},${cur[2]|0},${cur[3].toFixed(3)})`;
+            })
+            .linkWidth(link => {
+              const target = hoverId != null && linkHighlighted(link) ? 1.4 : 0.6;
+              link.__w = link.__w == null ? target : link.__w + (target - link.__w) * HL_EASE;
+              return link.__w;
+            })
             .linkCurvature(0.18)
             .cooldownTicks(180)
             .d3AlphaDecay(0.018)
@@ -259,20 +336,33 @@ private struct GraphWebView: NSViewRepresentable {
               }
             })
             .nodeCanvasObject((node, ctx) => {
-              const r = nodeSize(node);
-              ctx.beginPath();
-              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
-              ctx.fillStyle = node.id === hoverId ? palette.hover : nodeColor(node);
+              const base = nodeColor(node);
+              // Ease per-node dim / hover levels so the highlight fades in and
+              // out instead of snapping when the cursor enters or leaves.
+              const dimTarget = hoverId != null && !nodeHighlighted(node) ? 1 : 0;
+              const hovTarget = node.id === hoverId ? 1 : 0;
+              node.__dim = node.__dim == null ? dimTarget : node.__dim + (dimTarget - node.__dim) * HL_EASE;
+              node.__hov = node.__hov == null ? hovTarget : node.__hov + (hovTarget - node.__hov) * HL_EASE;
+              const dim = node.__dim, hov = node.__hov;
+              traceNode(node, ctx);
+              // Hovered node eases toward its darkened tint; everything else
+              // eases between full colour and 12% alpha as it dims.
+              ctx.fillStyle = hov > 0.01 ? darken(base, 1 - 0.4 * hov)
+                                         : withAlpha(base, 1 - 0.88 * dim);
               ctx.fill();
+              if (node.kind !== 'entity') {
+                // Slightly darker, thick border on task / sub-task cards.
+                ctx.lineWidth = Math.max(0.7, nodeSize(node) * 0.4);
+                ctx.strokeStyle = withAlpha(darken(base, 0.7 - 0.28 * hov), 1 - 0.88 * dim);
+                ctx.stroke();
+              }
             })
             .nodeCanvasObjectMode(() => 'replace')
-            // Hit area = the whole node circle, so hover fires anywhere on it
+            // Hit area = the whole node shape, so hover fires anywhere on it
             // rather than only the tiny default dot at its centre.
             .nodePointerAreaPaint((node, color, ctx) => {
-              const r = nodeSize(node);
+              traceNode(node, ctx);
               ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
               ctx.fill();
             })
             // The hovered node's title is drawn in a post pass — after every
@@ -293,7 +383,8 @@ private struct GraphWebView: NSViewRepresentable {
               const boxX = node.x - boxW / 2;
               // Label sits above the node, clear of its circle.
               const boxY = node.y - r - 2 / globalScale - boxH;
-              ctx.fillStyle = 'rgba(0,0,0,0.9)';
+              // Label background uses the hovered node's darkened colour.
+              ctx.fillStyle = darken(nodeColor(node), 0.6);
               ctx.beginPath();
               ctx.roundRect(boxX, boxY, boxW, boxH, 3 / globalScale);
               ctx.fill();
