@@ -135,7 +135,8 @@ final actor KnowledgeBaseFilesystem {
                     isOverview: isOverview,
                     isEntity: false,
                     folderRelativePath: folderRel,
-                    body: raw
+                    body: raw,
+                    taskId: meta["taskId"]
                 ))
             }
         }
@@ -153,7 +154,8 @@ final actor KnowledgeBaseFilesystem {
                 isOverview: false,
                 isEntity: true,
                 folderRelativePath: entitiesFolderRel,
-                body: raw
+                body: raw,
+                taskId: meta["taskId"]
             ))
         }
 

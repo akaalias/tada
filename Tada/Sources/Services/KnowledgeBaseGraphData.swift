@@ -4,18 +4,19 @@ import Foundation
 
 /// JSON-serialisable graph payload that drives the wiki's force-directed graph view.
 /// Three node kinds:
-///   - `task`     — `_overview.md` of a task folder (the root of one project)
-///   - `note`     — sub-task notes (`XX-*.md`) and AI task-overview notes (`00-*.md`)
-///   - `entity`   — atomic notes under `_entities/`
+///   - `topLevelTask` — `_overview.md` of a task folder (the root of one project)
+///   - `subTask`      — sub-task notes (`XX-*.md`) and AI task-overview notes (`00-*.md`)
+///   - `entity`       — atomic notes under `_entities/`
 /// Three link kinds:
-///   - `parent`   — task overview ↔ its constituent notes
-///   - `entity`   — note → entity it wikilinks
+///   - `parent`   — task overview ↔ its constituent sub-task notes
+///   - `entity`   — sub-task note → entity it wikilinks
 ///   - `related`  — cross-task related links (from cross-link discovery)
 struct KnowledgeGraphData: Codable, Equatable {
     struct Node: Codable, Equatable, Hashable {
         let id: String           // relative path from the wiki root, e.g. "notes/<folder>/01-foo.md"
         let title: String
-        let kind: String         // "task" | "note" | "entity"
+        let kind: String         // "topLevelTask" | "subTask" | "entity"
+        let taskId: String?      // owning task's UUID string — set on topLevelTask nodes, nil otherwise
     }
 
     struct Link: Codable, Equatable, Hashable {
@@ -26,6 +27,45 @@ struct KnowledgeGraphData: Codable, Equatable {
 
     var nodes: [Node]
     var links: [Link]
+
+    /// Returns a copy keeping only nodes that belong to a task in `allowedTaskIds`,
+    /// plus entity nodes (which carry no `taskId`). Links to dropped nodes are
+    /// removed. Used to hide wiki folders whose task was deleted or archived.
+    func keepingTasks(in allowedTaskIds: Set<String>) -> KnowledgeGraphData {
+        let keptNodes = nodes.filter { node in
+            guard let taskId = node.taskId else { return true }   // entities are always kept
+            return allowedTaskIds.contains(taskId)
+        }
+        let keptIds = Set(keptNodes.map(\.id))
+        let keptLinks = links.filter { keptIds.contains($0.source) && keptIds.contains($0.target) }
+        return KnowledgeGraphData(nodes: keptNodes, links: keptLinks)
+    }
+}
+
+// MARK: - Task state → graph colour
+
+/// Maps a top-level task's live state to the colour bucket the graph node uses.
+/// Planning status takes precedence over phase; a completed (or archived) task
+/// is `completed` regardless of phase.
+enum GraphTaskState: String {
+    case discovery
+    case execution
+    case completed
+
+    init(task: TodoTask) {
+        if task.status == .completed || task.status == .archived {
+            self = .completed
+            return
+        }
+        switch task.planningStatus {
+        case .planningDiscovery:
+            self = .discovery
+        case .planningExecution:
+            self = .execution
+        case .idle:
+            self = task.phase == .execution ? .execution : .discovery
+        }
+    }
 }
 
 // MARK: - Builder
@@ -42,6 +82,7 @@ enum KnowledgeGraphBuilder {
         let isEntity: Bool         // inside `_entities/`
         let folderRelativePath: String  // e.g. "notes/<folder>" or "notes/_entities"
         let body: String           // raw file content (frontmatter+body), used to find wikilinks
+        let taskId: String?        // owning task's UUID string, from the `taskId` frontmatter field
     }
 
     static func build(from inputs: [NoteInput]) -> KnowledgeGraphData {
@@ -58,10 +99,12 @@ enum KnowledgeGraphBuilder {
 
         for input in inputs {
             let kind: String
-            if input.isOverview { kind = "task" }
+            if input.isOverview { kind = "topLevelTask" }
             else if input.isEntity { kind = "entity" }
-            else { kind = "note" }
-            let node = KnowledgeGraphData.Node(id: input.relativePath, title: input.title, kind: kind)
+            else { kind = "subTask" }
+            let node = KnowledgeGraphData.Node(
+                id: input.relativePath.precomposedStringWithCanonicalMapping,
+                title: input.title, kind: kind, taskId: input.taskId)
             if nodeIds.insert(node.id).inserted {
                 nodes.append(node)
             }
@@ -107,6 +150,13 @@ enum KnowledgeGraphBuilder {
         links: inout [KnowledgeGraphData.Link],
         keys: inout Set<String>
     ) {
+        // Normalise to NFC so link endpoints byte-match node ids in the emitted JSON.
+        // macOS filenames are NFD; wikilinks in note bodies are NFC. Swift's String
+        // compares them equal (canonical equivalence) so the builder's `nodeIds.contains`
+        // check passes — but JavaScript string equality is byte-exact, so a mismatched
+        // pair would leave the link's node unresolvable and force-graph would drop it.
+        let source = source.precomposedStringWithCanonicalMapping
+        let target = target.precomposedStringWithCanonicalMapping
         let key = "\(source)→\(target)|\(kind)"
         if keys.insert(key).inserted {
             links.append(.init(source: source, target: target, kind: kind))
