@@ -172,7 +172,7 @@ private struct APILogEntryRow: View {
             .background(Color.primary.opacity(0.08))
             .foregroundStyle(.secondary)
             .clipShape(RoundedRectangle(cornerRadius: 4))
-            .frame(maxWidth: 220, alignment: .leading)
+            .frame(maxWidth: 440, alignment: .leading)
     }
 
     /// Colour for the task phase this request serves; tints the whole entry to
