@@ -281,6 +281,104 @@ private struct GraphWebView: NSViewRepresentable {
           // Per-frame easing factor for hover highlight transitions (~0.3s in/out).
           const HL_EASE = 0.2;
 
+          // --- Task-folder cluster backgrounds -------------------------------------------
+          // Andrew's monotone-chain convex hull. Returns the hull vertices, or the input
+          // points unchanged for a degenerate (fewer than 3 distinct/collinear) set.
+          const convexHull = (pts) => {
+            if (pts.length < 3) return pts.slice();
+            const p = pts.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+            const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            const lower = [];
+            for (const pt of p) {
+              while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0) lower.pop();
+              lower.push(pt);
+            }
+            const upper = [];
+            for (let i = p.length - 1; i >= 0; i--) {
+              const pt = p[i];
+              while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0) upper.pop();
+              upper.push(pt);
+            }
+            lower.pop(); upper.pop();
+            const h = lower.concat(upper);
+            return h.length >= 3 ? h : pts.slice();
+          };
+
+          // One group per task folder — the folder is the first two path components of a
+          // node id ("notes/<folder>"). Entities live in a flat folder and are skipped.
+          // Membership is static; node positions are read live each frame.
+          const folderGroups = (() => {
+            const byFolder = new Map();
+            data.nodes.forEach(n => {
+              if (n.kind === 'entity') return;
+              const folder = n.id.split('/').slice(0, 2).join('/');
+              if (!byFolder.has(folder)) byFolder.set(folder, []);
+              byFolder.get(folder).push(n);
+            });
+            const groups = [];
+            byFolder.forEach(nodes => {
+              if (nodes.length < 2) return;   // a lone node needs no wrapper
+              const top = nodes.find(n => n.kind === 'topLevelTask') || nodes[0];
+              groups.push({ nodes, top, pad: Math.max(...nodes.map(nodeSize)) + 9 });
+            });
+            return groups;
+          })();
+
+          // Draws a soft rounded wrapper behind each task folder's cluster. The hull is
+          // inflated outward by `pad` with rounded corners and drawn as ONE closed path, so a
+          // single fill yields a uniform shade — no overlapping stroke, no double-painted band.
+          const drawFolderGroups = (ctx) => {
+            for (const g of folderGroups) {
+              const pts = g.nodes.filter(n => n.x != null && n.y != null);
+              if (pts.length < 2) continue;
+              const hull = convexHull(pts);
+              ctx.beginPath();
+              if (hull.length < 3) {
+                // Two-node cluster: a capsule (two semicircles joined by parallel sides).
+                const a = hull[0], b = hull[1];
+                const ang = Math.atan2(b.y - a.y, b.x - a.x);
+                ctx.arc(b.x, b.y, g.pad, ang - Math.PI / 2, ang + Math.PI / 2);
+                ctx.arc(a.x, a.y, g.pad, ang + Math.PI / 2, ang + 3 * Math.PI / 2);
+              } else {
+                // Convex hull offset outward by `pad`: a rounded arc at each vertex, joined by
+                // the offset edges (canvas connects consecutive arcs with a straight line).
+                const n = hull.length;
+                let cx = 0, cy = 0;
+                for (const p of hull) { cx += p.x; cy += p.y; }
+                cx /= n; cy /= n;
+                const norm = [];
+                for (let i = 0; i < n; i++) {
+                  const a = hull[i], b = hull[(i + 1) % n];
+                  let nx = b.y - a.y, ny = -(b.x - a.x);
+                  const L = Math.hypot(nx, ny) || 1;
+                  nx /= L; ny /= L;
+                  // Flip the normal if it points toward the centroid (we want it outward).
+                  if (((a.x + b.x) / 2 - cx) * nx + ((a.y + b.y) / 2 - cy) * ny < 0) { nx = -nx; ny = -ny; }
+                  norm.push({ x: nx, y: ny });
+                }
+                const STEPS = 6;
+                let started = false;
+                for (let i = 0; i < n; i++) {
+                  const v = hull[i];
+                  const a0 = Math.atan2(norm[(i - 1 + n) % n].y, norm[(i - 1 + n) % n].x);
+                  const a1 = Math.atan2(norm[i].y, norm[i].x);
+                  let da = a1 - a0;
+                  while (da > Math.PI) da -= 2 * Math.PI;
+                  while (da < -Math.PI) da += 2 * Math.PI;
+                  for (let k = 0; k <= STEPS; k++) {
+                    const ang = a0 + da * (k / STEPS);
+                    const px = v.x + g.pad * Math.cos(ang);
+                    const py = v.y + g.pad * Math.sin(ang);
+                    if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+                  }
+                }
+              }
+              ctx.closePath();
+              ctx.fillStyle = withAlpha(nodeColor(g.top), 0.1);
+              ctx.fill();
+            }
+          };
+
           let hoverId = null;
           // With a node hovered: that node + its neighbours stay at full strength,
           // the edges touching it are emphasised, everything else fades back.
@@ -365,6 +463,8 @@ private struct GraphWebView: NSViewRepresentable {
               ctx.fillStyle = color;
               ctx.fill();
             })
+            // Task-folder cluster wrappers are drawn first, behind links and nodes.
+            .onRenderFramePre((ctx) => { drawFolderGroups(ctx); })
             // The hovered node's title is drawn in a post pass — after every
             // node — so it is never painted over by a neighbouring node.
             .onRenderFramePost((ctx, globalScale) => {
