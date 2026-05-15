@@ -304,10 +304,11 @@ private struct GraphWebView: NSViewRepresentable {
             return h.length >= 3 ? h : pts.slice();
           };
 
-          // One group per task folder — the folder is the first two path components of a
-          // node id ("notes/<folder>"). Entities live in a flat folder and are skipped.
-          // Membership is static; node positions are read live each frame.
+          // Groups: task folders get one blob each (convex hull); entities get one
+          // blob per connected component using metaballs for organic shapes.
           const folderGroups = (() => {
+            const groups = [];
+            // Task folders: group by path prefix (non-entities only).
             const byFolder = new Map();
             data.nodes.forEach(n => {
               if (n.kind === 'entity') return;
@@ -315,67 +316,184 @@ private struct GraphWebView: NSViewRepresentable {
               if (!byFolder.has(folder)) byFolder.set(folder, []);
               byFolder.get(folder).push(n);
             });
-            const groups = [];
             byFolder.forEach(nodes => {
-              if (nodes.length < 2) return;   // a lone node needs no wrapper
+              if (nodes.length < 2) return;
               const top = nodes.find(n => n.kind === 'topLevelTask') || nodes[0];
-              groups.push({ nodes, top, pad: Math.max(...nodes.map(nodeSize)) + 9 });
+              groups.push({ nodes, top, pad: Math.max(...nodes.map(nodeSize)) + 9, isEntity: false });
             });
+            // Entity clusters: find connected components via BFS.
+            const entities = data.nodes.filter(n => n.kind === 'entity');
+            if (entities.length >= 2) {
+              const visited = new Set();
+              const findComponent = (start) => {
+                const component = [];
+                const queue = [start.id];
+                visited.add(start.id);
+                while (queue.length > 0) {
+                  const id = queue.shift();
+                  const node = data.nodes.find(n => n.id === id);
+                  if (node) component.push(node);
+                  const adj = neighbors.get(id) || new Set();
+                  for (const nid of adj) {
+                    if (!visited.has(nid)) {
+                      visited.add(nid);
+                      queue.push(nid);
+                    }
+                  }
+                }
+                return component;
+              };
+              for (const e of entities) {
+                if (visited.has(e.id)) continue;
+                const component = findComponent(e);
+                const entitiesInComponent = component.filter(n => n.kind === 'entity');
+                if (entitiesInComponent.length >= 2) {
+                  groups.push({
+                    nodes: entitiesInComponent,
+                    top: entitiesInComponent[0],
+                    pad: Math.max(...entitiesInComponent.map(nodeSize)) + 9,
+                    isEntity: true
+                  });
+                }
+              }
+            }
             return groups;
           })();
 
-          // Draws a soft rounded wrapper behind each task folder's cluster. The hull is
-          // inflated outward by `pad` with rounded corners and drawn as ONE closed path, so a
-          // single fill yields a uniform shade — no overlapping stroke, no double-painted band.
+          // DBSCAN-style spatial clustering: groups nearby points into clusters.
+          // Returns array of point arrays, one per cluster.
+          const spatialCluster = (pts, eps) => {
+            const clusters = [];
+            const visited = new Set();
+            const getNeighbors = (p) => pts.filter(q => q !== p && Math.hypot(q.x - p.x, q.y - p.y) <= eps);
+
+            for (const p of pts) {
+              if (visited.has(p)) continue;
+              visited.add(p);
+              const neighbors = getNeighbors(p);
+              const cluster = [p];
+              const queue = [...neighbors];
+              while (queue.length > 0) {
+                const q = queue.shift();
+                if (visited.has(q)) continue;
+                visited.add(q);
+                cluster.push(q);
+                const qNeighbors = getNeighbors(q);
+                queue.push(...qNeighbors.filter(n => !visited.has(n)));
+              }
+              clusters.push(cluster); // Include all clusters, even single nodes
+            }
+            return clusters;
+          };
+
+          // Draws a soft rounded wrapper behind each cluster. Task folders use convex
+          // hull; entity clusters use spatial clustering for organic sub-groups.
           const drawFolderGroups = (ctx) => {
             for (const g of folderGroups) {
               const pts = g.nodes.filter(n => n.x != null && n.y != null);
               if (pts.length < 2) continue;
-              const hull = convexHull(pts);
-              ctx.beginPath();
-              if (hull.length < 3) {
-                // Two-node cluster: a capsule (two semicircles joined by parallel sides).
-                const a = hull[0], b = hull[1];
-                const ang = Math.atan2(b.y - a.y, b.x - a.x);
-                ctx.arc(b.x, b.y, g.pad, ang - Math.PI / 2, ang + Math.PI / 2);
-                ctx.arc(a.x, a.y, g.pad, ang + Math.PI / 2, ang + 3 * Math.PI / 2);
-              } else {
-                // Convex hull offset outward by `pad`: a rounded arc at each vertex, joined by
-                // the offset edges (canvas connects consecutive arcs with a straight line).
-                const n = hull.length;
-                let cx = 0, cy = 0;
-                for (const p of hull) { cx += p.x; cy += p.y; }
-                cx /= n; cy /= n;
-                const norm = [];
-                for (let i = 0; i < n; i++) {
-                  const a = hull[i], b = hull[(i + 1) % n];
-                  let nx = b.y - a.y, ny = -(b.x - a.x);
-                  const L = Math.hypot(nx, ny) || 1;
-                  nx /= L; ny /= L;
-                  // Flip the normal if it points toward the centroid (we want it outward).
-                  if (((a.x + b.x) / 2 - cx) * nx + ((a.y + b.y) / 2 - cy) * ny < 0) { nx = -nx; ny = -ny; }
-                  norm.push({ x: nx, y: ny });
+              // Entity groups: spatially cluster and draw separate hulls for each
+              if (g.isEntity) {
+                const eps = g.pad * 4; // Distance threshold for clustering (larger = more connected)
+                const clusters = spatialCluster(pts, eps);
+                for (const cluster of clusters) {
+                  ctx.beginPath();
+                  if (cluster.length === 1) {
+                    // Single node: draw a circle
+                    ctx.arc(cluster[0].x, cluster[0].y, g.pad, 0, 2 * Math.PI);
+                  } else if (cluster.length === 2) {
+                    // Two nodes: capsule shape
+                    const a = cluster[0], b = cluster[1];
+                    const ang = Math.atan2(b.y - a.y, b.x - a.x);
+                    ctx.arc(b.x, b.y, g.pad, ang - Math.PI / 2, ang + Math.PI / 2);
+                    ctx.arc(a.x, a.y, g.pad, ang + Math.PI / 2, ang + 3 * Math.PI / 2);
+                  } else {
+                    // 3+ nodes: padded convex hull
+                    const hull = convexHull(cluster);
+                    const n = hull.length;
+                    let cx = 0, cy = 0;
+                    for (const p of hull) { cx += p.x; cy += p.y; }
+                    cx /= n; cy /= n;
+                    const norm = [];
+                    for (let i = 0; i < n; i++) {
+                      const a = hull[i], b = hull[(i + 1) % n];
+                      let nx = b.y - a.y, ny = -(b.x - a.x);
+                      const L = Math.hypot(nx, ny) || 1;
+                      nx /= L; ny /= L;
+                      if (((a.x + b.x) / 2 - cx) * nx + ((a.y + b.y) / 2 - cy) * ny < 0) { nx = -nx; ny = -ny; }
+                      norm.push({ x: nx, y: ny });
+                    }
+                    const STEPS = 6;
+                    let started = false;
+                    for (let i = 0; i < n; i++) {
+                      const v = hull[i];
+                      const a0 = Math.atan2(norm[(i - 1 + n) % n].y, norm[(i - 1 + n) % n].x);
+                      const a1 = Math.atan2(norm[i].y, norm[i].x);
+                      let da = a1 - a0;
+                      while (da > Math.PI) da -= 2 * Math.PI;
+                      while (da < -Math.PI) da += 2 * Math.PI;
+                      for (let k = 0; k <= STEPS; k++) {
+                        const ang = a0 + da * (k / STEPS);
+                        const px = v.x + g.pad * Math.cos(ang);
+                        const py = v.y + g.pad * Math.sin(ang);
+                        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+                      }
+                    }
+                  }
+                  ctx.closePath();
+                  ctx.fillStyle = withAlpha(nodeColor(g.top), 0.1);
+                  ctx.fill();
                 }
-                const STEPS = 6;
-                let started = false;
-                for (let i = 0; i < n; i++) {
-                  const v = hull[i];
-                  const a0 = Math.atan2(norm[(i - 1 + n) % n].y, norm[(i - 1 + n) % n].x);
-                  const a1 = Math.atan2(norm[i].y, norm[i].x);
-                  let da = a1 - a0;
-                  while (da > Math.PI) da -= 2 * Math.PI;
-                  while (da < -Math.PI) da += 2 * Math.PI;
-                  for (let k = 0; k <= STEPS; k++) {
-                    const ang = a0 + da * (k / STEPS);
-                    const px = v.x + g.pad * Math.cos(ang);
-                    const py = v.y + g.pad * Math.sin(ang);
-                    if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+                continue;
+              }
+              // Task folders: also use spatial clustering for sub-groups
+              const eps = g.pad * 4;
+              const clusters = spatialCluster(pts, eps);
+              for (const cluster of clusters) {
+                ctx.beginPath();
+                if (cluster.length === 1) {
+                  ctx.arc(cluster[0].x, cluster[0].y, g.pad, 0, 2 * Math.PI);
+                } else if (cluster.length === 2) {
+                  const a = cluster[0], b = cluster[1];
+                  const ang = Math.atan2(b.y - a.y, b.x - a.x);
+                  ctx.arc(b.x, b.y, g.pad, ang - Math.PI / 2, ang + Math.PI / 2);
+                  ctx.arc(a.x, a.y, g.pad, ang + Math.PI / 2, ang + 3 * Math.PI / 2);
+                } else {
+                  const hull = convexHull(cluster);
+                  const n = hull.length;
+                  let cx = 0, cy = 0;
+                  for (const p of hull) { cx += p.x; cy += p.y; }
+                  cx /= n; cy /= n;
+                  const norm = [];
+                  for (let i = 0; i < n; i++) {
+                    const a = hull[i], b = hull[(i + 1) % n];
+                    let nx = b.y - a.y, ny = -(b.x - a.x);
+                    const L = Math.hypot(nx, ny) || 1;
+                    nx /= L; ny /= L;
+                    if (((a.x + b.x) / 2 - cx) * nx + ((a.y + b.y) / 2 - cy) * ny < 0) { nx = -nx; ny = -ny; }
+                    norm.push({ x: nx, y: ny });
+                  }
+                  const STEPS = 6;
+                  let started = false;
+                  for (let i = 0; i < n; i++) {
+                    const v = hull[i];
+                    const a0 = Math.atan2(norm[(i - 1 + n) % n].y, norm[(i - 1 + n) % n].x);
+                    const a1 = Math.atan2(norm[i].y, norm[i].x);
+                    let da = a1 - a0;
+                    while (da > Math.PI) da -= 2 * Math.PI;
+                    while (da < -Math.PI) da += 2 * Math.PI;
+                    for (let k = 0; k <= STEPS; k++) {
+                      const ang = a0 + da * (k / STEPS);
+                      const px = v.x + g.pad * Math.cos(ang);
+                      const py = v.y + g.pad * Math.sin(ang);
+                      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+                    }
                   }
                 }
+                ctx.closePath();
+                ctx.fillStyle = withAlpha(nodeColor(g.top), 0.1);
+                ctx.fill();
               }
-              ctx.closePath();
-              ctx.fillStyle = withAlpha(nodeColor(g.top), 0.1);
-              ctx.fill();
             }
           };
 
@@ -404,19 +522,17 @@ private struct GraphWebView: NSViewRepresentable {
             // label only updates when a zoom/pan happens to trigger a redraw.
             .autoPauseRedraw(false)
             .linkColor(link => {
-              // Ease each link's colour toward its hover target so the
-              // highlight fades rather than snaps (autoPauseRedraw(false)
-              // guarantees a frame every tick to advance the easing).
+              // Links invisible by default, only show on hover
               const target = parseColor(
-                hoverId == null ? palette.rule
+                hoverId == null ? 'rgba(0,0,0,0)'
                 : linkHighlighted(link) ? withAlpha(palette.ink, 0.5)
-                                        : withAlpha(palette.rule, 0.08));
+                                        : 'rgba(0,0,0,0)');
               const cur = link.__col || (link.__col = target.slice());
               for (let i = 0; i < 4; i++) cur[i] += (target[i] - cur[i]) * HL_EASE;
               return `rgba(${cur[0]|0},${cur[1]|0},${cur[2]|0},${cur[3].toFixed(3)})`;
             })
             .linkWidth(link => {
-              const target = hoverId != null && linkHighlighted(link) ? 1.4 : 0.6;
+              const target = hoverId != null && linkHighlighted(link) ? 1.4 : 0;
               link.__w = link.__w == null ? target : link.__w + (target - link.__w) * HL_EASE;
               return link.__w;
             })
