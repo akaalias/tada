@@ -9,6 +9,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
+    # Shared by every target so test bundles and the host app sign with the
+    # same Team ID — required for the hardened-runtime app to load test bundles.
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: HKQARCV8QZ
 
 targets:
   Tada:
@@ -28,8 +32,7 @@ targets:
           - "$(inherited)"
           - "@executable_path/../Frameworks"
         PRODUCT_BUNDLE_IDENTIFIER: com.tada.app
-        CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: HKQARCV8QZ
+        ENABLE_HARDENED_RUNTIME: YES
       configurations:
         Debug:
           debugInformationFormat: dwarf
@@ -78,7 +81,6 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: Tada
         PRODUCT_BUNDLE_IDENTIFIER: com.tada.app.UITests
-        CODE_SIGN_STYLE: Automatic
 
 schemes:
   Tada:

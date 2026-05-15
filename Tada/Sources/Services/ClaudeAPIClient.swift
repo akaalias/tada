@@ -12,6 +12,34 @@ actor ClaudeAPIClient {
         self.apiKey = apiKey
     }
 
+    /// Sends a request via URLSession while recording it in `APILog` for the Console view.
+    private func performLoggedRequest(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let entryID = await APILog.shared.logRequest(request)
+        let start = Date()
+        func elapsedMS() -> Int { Int(Date().timeIntervalSince(start) * 1000) }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ClaudeAPIError.invalidResponse
+            }
+            let headers = httpResponse.allHeaderFields.reduce(into: [String: String]()) { result, pair in
+                if let key = pair.key as? String { result[key] = String(describing: pair.value) }
+            }
+            await APILog.shared.logResponse(
+                id: entryID,
+                statusCode: httpResponse.statusCode,
+                headers: headers,
+                body: data,
+                durationMS: elapsedMS()
+            )
+            return (data, httpResponse)
+        } catch {
+            await APILog.shared.logFailure(id: entryID, error: error.localizedDescription, durationMS: elapsedMS())
+            throw error
+        }
+    }
+
     func sendMessage(
         systemPrompt: String,
         userMessage: String,
@@ -34,11 +62,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ClaudeAPIError.invalidResponse
-        }
+        let (data, httpResponse) = try await performLoggedRequest(request)
 
         guard httpResponse.statusCode == 200 else {
             if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -108,11 +132,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ClaudeAPIError.invalidResponse
-        }
+        let (data, httpResponse) = try await performLoggedRequest(request)
 
         // Check for API errors in the response body (works for any status code)
         if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

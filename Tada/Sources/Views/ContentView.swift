@@ -55,6 +55,8 @@ struct ContentView: View {
                 CompletedTasksView()
             case .knowledge:
                 KnowledgeBaseView()
+            case .console:
+                ConsoleView()
             case .settings:
                 SettingsView()
             }
@@ -67,6 +69,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case actionItems = "Action Items"
     case completed = "Completed"
     case knowledge = "Knowledge Base"
+    case console = "Console"
     case settings = "Settings"
 
     var id: String { rawValue }
@@ -77,6 +80,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .actionItems: return "bolt.fill"
         case .completed: return "checkmark.circle"
         case .knowledge: return "book"
+        case .console: return "terminal"
         case .settings: return "gear"
         }
     }
@@ -94,7 +98,7 @@ struct Sidebar: View {
     }
 
     private var secondaryItems: [SidebarItem] {
-        [.completed, .knowledge, .settings]
+        [.completed, .knowledge, .console, .settings]
     }
 
     var body: some View {
@@ -114,7 +118,7 @@ struct Sidebar: View {
                 }
             }
             .listStyle(.sidebar)
-            .frame(height: 132)
+            .frame(height: 176)
         }
         .frame(minWidth: 200)
     }
