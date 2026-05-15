@@ -36,52 +36,75 @@ final actor KnowledgeBaseLinkDiscovery {
             print("[KnowledgeBase] Link discovery: note not found on disk: \(url.lastPathComponent)")
             return
         }
+        let newIsEntity = Self.entitySlug(of: newNote) != nil
 
         // Only consider notes that aren't already structurally close — siblings, entities the
         // note already links to, and notes already in its Related section are dropped, so the
         // AI spends its judgement on non-obvious, cross-context connections.
         let candidates = await filterCandidates(for: newNote, from: all)
-        guard !candidates.isEmpty else {
+        if candidates.isEmpty {
             print("[KnowledgeBase] Link discovery: no non-obvious candidates for '\(newNote.relPath)'")
-            return
+        } else {
+            print("[KnowledgeBase] Link discovery for '\(newNote.relPath)' against \(candidates.count) candidate(s)")
+
+            // Co-occurrence context: which task notes mention each entity. Shared mentions are
+            // a strong signal that two entities belong together.
+            let mentions = Self.entityMentionMap(in: all)
+            do {
+                let service = KnowledgeAIService(apiKey: apiKey)
+                let result = try await service.discoverLinksForNote(
+                    note: (newNote.relPath, newNote.title, newNote.body, Self.mentionContext(for: newNote, mentions: mentions)),
+                    candidates: candidates.map {
+                        ($0.relPath, $0.title, $0.body, Self.mentionContext(for: $0, mentions: mentions))
+                    },
+                    newNoteIsEntity: newIsEntity
+                )
+                await applySuggestions(result.links, newNote: newNote, allNotes: all)
+            } catch {
+                print("[KnowledgeBase] Link discovery failed: \(AppError.userMessage(from: error))")
+            }
         }
 
-        print("[KnowledgeBase] Link discovery for '\(newNote.relPath)' against \(candidates.count) candidate(s)")
-
-        do {
-            let service = KnowledgeAIService(apiKey: apiKey)
-            let result = try await service.discoverLinksForNote(
-                note: (newNote.relPath, newNote.title, newNote.body),
-                candidates: candidates.map { ($0.relPath, $0.title, $0.body) }
-            )
-            await applySuggestions(result.links, newNote: newNote, allNotes: all)
-            NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
-        } catch {
-            print("[KnowledgeBase] Link discovery failed: \(AppError.userMessage(from: error))")
-        }
+        // An entity's Related section only ever holds other entities — task notes that
+        // reference it already surface under Backlinks. Normalise it here so stale task-note
+        // links written by earlier runs get cleaned up.
+        if newIsEntity { await pruneToEntityLinks(newNote) }
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
     // MARK: - Candidate filtering (proximity)
 
     /// Drops notes that are already close to `newNote`, so discovery targets only connections
-    /// that aren't already obvious:
-    ///   - notes in the same task folder (siblings + that task's `_overview`, all linked via
-    ///     the overview already);
-    ///   - entity notes the new note already wikilinks in its body;
-    ///   - notes already present in the new note's Related section.
+    /// that aren't already obvious.
+    ///
+    /// When the new note is an **entity**, candidates are restricted to other entities — its
+    /// Related section is for entity↔entity links; task notes that reference it already surface
+    /// under Backlinks. When the new note is a **task note**, same-task-folder siblings are
+    /// dropped (already connected through the shared overview).
+    ///
+    /// In both cases, entities the new note already wikilinks, and notes already in its Related
+    /// section, are dropped.
     func filterCandidates(for newNote: NoteForDiscovery, from all: [NoteForDiscovery]) async -> [NoteForDiscovery] {
         let newDir = newNote.fileURL.deletingLastPathComponent().standardizedFileURL
+        let newIsEntity = Self.entitySlug(of: newNote) != nil
         let linkedEntitySlugs = Self.entitySlugsLinked(inBody: newNote.body)
         let alreadyRelated = relatedTargetURLs(of: newNote)
 
         return all.filter { candidate in
             guard candidate.relPath != newNote.relPath else { return false }
-            // Same task folder — already connected through the shared overview.
-            if candidate.fileURL.deletingLastPathComponent().standardizedFileURL == newDir { return false }
+            let candidateSlug = Self.entitySlug(of: candidate)
+
+            if newIsEntity {
+                // An entity links only to other entities.
+                guard candidateSlug != nil else { return false }
+            } else {
+                // Same task folder — already connected through the shared overview.
+                if candidate.fileURL.deletingLastPathComponent().standardizedFileURL == newDir { return false }
+            }
             // Already linked from the new note's Related section.
             if alreadyRelated.contains(candidate.fileURL.standardizedFileURL) { return false }
             // An entity the new note already wikilinks in its body.
-            if let slug = Self.entitySlug(of: candidate), linkedEntitySlugs.contains(slug) { return false }
+            if let candidateSlug, linkedEntitySlugs.contains(candidateSlug) { return false }
             return true
         }
     }
@@ -220,27 +243,74 @@ final actor KnowledgeBaseLinkDiscovery {
     }
 
     /// Additively merges the given targets into `note`'s Related section on disk, preserving
-    /// any links already there.
+    /// any links already there. When `note` is an entity, the section is kept entity-only:
+    /// non-entity targets are dropped and stale non-entity bullets are pruned.
     private func addRelatedLinks(
         to note: NoteForDiscovery,
         targets: [(target: NoteForDiscovery, title: String)]
     ) async {
         guard let raw = try? String(contentsOf: note.fileURL, encoding: .utf8) else { return }
         let sourceDir = note.fileURL.deletingLastPathComponent()
+        let destIsEntity = Self.entitySlug(of: note) != nil
 
-        var bullets: [String] = []
-        for entry in targets {
+        // An entity links only to other entities.
+        let effectiveTargets = destIsEntity
+            ? targets.filter { Self.entitySlug(of: $0.target) != nil }
+            : targets
+
+        var newBullets: [String] = []
+        for entry in effectiveTargets {
             let rel = await filesystem.relativePath(from: sourceDir, to: entry.target.fileURL)
             if !rel.isEmpty {
-                bullets.append("- [[\(rel)|\(entry.title)]]")
+                newBullets.append("- [[\(rel)|\(entry.title)]]")
             }
         }
-        guard !bullets.isEmpty else { return }
 
-        let updated = Self.addRelatedBullets(bullets, to: raw)
+        // Existing bullets — for an entity destination, drop any that no longer point at an entity.
+        var existing = Self.existingRelatedBullets(in: raw)
+        if destIsEntity {
+            existing = existing.filter { Self.bulletResolvesToEntity($0, sourceDir: sourceDir) }
+        }
+
+        let merged = Self.dedupedBullets(existing + newBullets)
+        let updated = Self.writeRelatedSection(in: raw, bullets: merged)
         if updated != raw {
             try? updated.write(to: note.fileURL, atomically: true, encoding: .utf8)
         }
+    }
+
+    /// Rewrites `note`'s Related section to drop any bullet that does not resolve to an entity
+    /// note. Used to normalise entity notes (their Related section is entity-only).
+    private func pruneToEntityLinks(_ note: NoteForDiscovery) async {
+        guard let raw = try? String(contentsOf: note.fileURL, encoding: .utf8) else { return }
+        let sourceDir = note.fileURL.deletingLastPathComponent()
+        let bullets = Self.existingRelatedBullets(in: raw)
+        let entityBullets = bullets.filter { Self.bulletResolvesToEntity($0, sourceDir: sourceDir) }
+        guard entityBullets.count != bullets.count else { return }
+        let updated = Self.writeRelatedSection(in: raw, bullets: entityBullets)
+        if updated != raw {
+            try? updated.write(to: note.fileURL, atomically: true, encoding: .utf8)
+        }
+    }
+
+    // MARK: - Co-occurrence
+
+    /// Maps each entity slug to the titles of the task notes whose body wikilinks it. Two
+    /// entities mentioned together in the same note are a strong candidate for a Related link.
+    static func entityMentionMap(in notes: [NoteForDiscovery]) -> [String: [String]] {
+        var map: [String: [String]] = [:]
+        for note in notes where entitySlug(of: note) == nil {
+            for slug in entitySlugsLinked(inBody: note.body) {
+                map[slug, default: []].append(note.title)
+            }
+        }
+        return map
+    }
+
+    /// A human-readable "mentioned in" line for an entity note, or "" for non-entities.
+    private static func mentionContext(for note: NoteForDiscovery, mentions: [String: [String]]) -> String {
+        guard let slug = entitySlug(of: note), let notes = mentions[slug], !notes.isEmpty else { return "" }
+        return "mentioned in: \(notes.joined(separator: ", "))"
     }
 
     // MARK: - Related-section editing (pure)
@@ -267,17 +337,32 @@ final actor KnowledgeBaseLinkDiscovery {
         return String(after[..<end])
     }
 
-    /// Merges `newBullets` into `raw`'s Related section, preserving existing bullets and
-    /// de-duplicating by wikilink target path. Existing bullets win on a path collision.
-    static func addRelatedBullets(_ newBullets: [String], to raw: String) -> String {
+    /// Whether a `- [[path|title]]` bullet, resolved relative to `sourceDir`, points at an
+    /// entity note — a file inside the `_entities/` folder. Resolution is required because a
+    /// link to a sibling entity is a bare filename (`executives.md`) with no `_entities/` in it.
+    static func bulletResolvesToEntity(_ bullet: String, sourceDir: URL) -> Bool {
+        guard let target = bulletTarget(bullet) else { return false }
+        let resolved = URL(fileURLWithPath: target, relativeTo: sourceDir).standardizedFileURL
+        return resolved.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
+    }
+
+    /// De-duplicates bullets by wikilink target path. The first occurrence of a path wins.
+    static func dedupedBullets(_ bullets: [String]) -> [String] {
         var merged: [String] = []
         var seen: Set<String> = []
-        for bullet in existingRelatedBullets(in: raw) + newBullets {
+        for bullet in bullets {
             let key = bulletTarget(bullet) ?? bullet
             if seen.contains(key) { continue }
             seen.insert(key)
             merged.append(bullet)
         }
+        return merged
+    }
+
+    /// Merges `newBullets` into `raw`'s Related section, preserving existing bullets and
+    /// de-duplicating by wikilink target path. Existing bullets win on a path collision.
+    static func addRelatedBullets(_ newBullets: [String], to raw: String) -> String {
+        let merged = dedupedBullets(existingRelatedBullets(in: raw) + newBullets)
         return writeRelatedSection(in: raw, bullets: merged)
     }
 

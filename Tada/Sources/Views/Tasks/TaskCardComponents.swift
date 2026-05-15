@@ -1,8 +1,19 @@
 import SwiftUI
 
+/// The trailing control shown in a task card's header.
+enum TaskCardAccessory {
+    /// Chevron that toggles the card's expansion (default).
+    case expandChevron
+    /// "Take Action" button that opens the focused single-task view.
+    case takeAction
+
+    var allowsExpansion: Bool { self == .expandChevron }
+}
+
 struct TaskCard<Content: View>: View {
     let task: TodoTask
     var defaultExpanded: Bool = false
+    var accessory: TaskCardAccessory = .expandChevron
     @ViewBuilder let content: () -> Content
     @State private var isExpanded: Bool = false
 
@@ -12,9 +23,9 @@ struct TaskCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            TaskHeaderView(task: task, isExpanded: $isExpanded)
+            TaskHeaderView(task: task, isExpanded: $isExpanded, accessory: accessory)
 
-            if isExpanded {
+            if isExpanded && accessory.allowsExpansion {
                 content()
             }
         }
@@ -44,6 +55,7 @@ struct TaskCard<Content: View>: View {
 struct TaskHeaderView: View {
     let task: TodoTask
     @Binding var isExpanded: Bool
+    var accessory: TaskCardAccessory = .expandChevron
 
     private var phaseColor: Color {
         task.isDiscoveryPhase ? .orange : .blue
@@ -72,48 +84,93 @@ struct TaskHeaderView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                if isPlanning {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: Theme.circleSize))
-                        .foregroundColor(phaseColor)
+        if accessory.allowsExpansion {
+            // Chevron sits inline in the title row; description flows below.
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    iconAndTitle
+                    Spacer()
+                    headerAccessory
                 }
-
-                Text(phaseLabel)
-                    .font(.system(size: Theme.fontSize, weight: .medium))
-                    .foregroundColor(phaseColor)
-
-                Text(task.title)
-                    .font(.system(size: Theme.fontSize, weight: .semibold))
-
-                Spacer()
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
+                descriptionText
+            }
+        } else {
+            // Accessory is centered against the whole title + description block.
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        iconAndTitle
+                        Spacer()
                     }
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
+                    descriptionText
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("taskCard.toggleExpand")
+                headerAccessory
             }
+        }
+    }
 
-            if !task.taskDescription.isEmpty {
-                Text(task.taskDescription)
-                    .font(.system(size: Theme.fontSize))
+    @ViewBuilder
+    private var iconAndTitle: some View {
+        if isPlanning {
+            ProgressView()
+                .controlSize(.small)
+        } else {
+            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: Theme.circleSize))
+                .foregroundColor(phaseColor)
+        }
+
+        Text(phaseLabel)
+            .font(.system(size: Theme.fontSize, weight: .medium))
+            .foregroundColor(phaseColor)
+
+        Text(task.title)
+            .font(.system(size: Theme.fontSize, weight: .semibold))
+    }
+
+    @ViewBuilder
+    private var descriptionText: some View {
+        if !task.taskDescription.isEmpty {
+            Text(task.taskDescription)
+                .font(.system(size: Theme.fontSize))
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var headerAccessory: some View {
+        switch accessory {
+        case .expandChevron:
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("taskCard.toggleExpand")
+
+        case .takeAction:
+            Button {
+                NotificationCenter.default.post(name: .focusTask, object: task.id)
+            } label: {
+                Text("Take Action")
+                    .font(.system(size: Theme.fontSize - 2, weight: .medium))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(phaseColor.opacity(0.15))
+                    .foregroundColor(phaseColor)
+                    .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("taskCard.takeAction")
         }
     }
 }

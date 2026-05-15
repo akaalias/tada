@@ -103,65 +103,102 @@ actor KnowledgeAIService {
 
     /// Single-source cross-link discovery: given ONE new note and a list of CANDIDATE notes
     /// (everything not already structurally close to it), returns the candidates that belong
-    /// in the new note's Related section.
+    /// in the new note's Related section. Each note may carry a `context` line (e.g. which
+    /// other notes mention an entity) that helps spot co-occurrence.
     func discoverLinksForNote(
-        note: (path: String, title: String, body: String),
-        candidates: [(path: String, title: String, body: String)]
+        note: (path: String, title: String, body: String, context: String),
+        candidates: [(path: String, title: String, body: String, context: String)],
+        newNoteIsEntity: Bool
     ) async throws -> NoteLinkSuggestions {
-        let candidateList = candidates.map { n in
-            """
+        func block(path: String, title: String, body: String, context: String) -> String {
+            let contextLine = context.isEmpty ? "" : "\n\(context)"
+            return """
             ---
-            path: \(n.path)
-            title: \(n.title)
+            path: \(path)
+            title: \(title)\(contextLine)
             ---
-            \(n.body.prefix(800))
+            \(body.prefix(800))
             """
-        }.joined(separator: "\n\n")
+        }
 
-        let systemPrompt = """
-        You maintain the cross-links of a personal knowledge wiki.
+        let candidateList = candidates
+            .map { block(path: $0.path, title: $0.title, body: $0.body, context: $0.context) }
+            .joined(separator: "\n\n")
 
-        INPUT:
-        - ONE new note that was just created: its `path`, `title`, and full `body`.
-        - A list of CANDIDATE notes, each with a `path`, `title`, and `body`.
+        let systemPrompt = newNoteIsEntity ? Self.entityLinkPrompt : Self.taskNoteLinkPrompt
 
-        IMPORTANT — the candidate list has already been pruned. Notes that are ALREADY connected to the new note (its task-folder siblings, entities it already links to, notes already in its Related section) were removed on purpose. Every candidate is a note the new note is NOT yet connected to.
-
-        YOUR GOAL: surface the NON-OBVIOUS connections. Link the new note to candidates that share a genuine conceptual thread but live in a different task or context — the kind of link the user would not stumble on by browsing the same project. Think: the same underlying theme or argument, a decision in one project that informs another, the same person / product / place / idea resurfacing in unrelated work.
-
-        OUTPUT: a list of `links` — the candidates that belong in the new note's "Related" section. Each link: { targetPath, targetTitle, reason }.
-
-        STRICT RULES:
-        - targetPath MUST be the EXACT verbatim `path` string of a candidate from the list — including the "notes/<folder>/" prefix. Never abbreviate, rename, or invent a path.
-        - Only suggest candidates from the list. Never suggest the new note itself.
-        - Quality over quantity. Return 0-4 links. An empty list is a perfectly good answer when nothing is genuinely related — do NOT pad.
-        - Do NOT link on weak or generic overlap (both notes mention "decisions", both involve "writing"). Require a concrete shared entity or a specific shared idea.
-
-        Use `reason` to name, in one sentence, the specific shared thread — this is an internal hint, not shown to the user.
-        """
+        let closingQuestion = newNoteIsEntity
+            ? "Which candidate entities belong in the same theme as the new entity?"
+            : "Which candidates share a real, non-obvious connection with the new note?"
 
         let userMessage = """
         NEW NOTE:
-        ---
-        path: \(note.path)
-        title: \(note.title)
-        ---
-        \(note.body)
+        \(block(path: note.path, title: note.title, body: note.body, context: note.context))
 
         CANDIDATE NOTES:
 
         \(candidateList)
 
-        Which candidates share a real, non-obvious connection with the new note?
+        \(closingQuestion)
         """
 
         return try await client.sendStructuredMessage(
             systemPrompt: systemPrompt,
             userMessage: userMessage,
             responseType: NoteLinkSuggestions.self,
-            maxTokens: AppConstants.kbLinkDiscoveryMaxTokens
+            maxTokens: AppConstants.kbLinkDiscoveryMaxTokens,
+            taskTitle: note.title
         )
     }
+
+    /// Discovery prompt when the new note is an ENTITY — favours generous thematic clustering
+    /// so each topic forms a richly interlinked sub-graph.
+    private static let entityLinkPrompt = """
+    You maintain the entity graph of a personal knowledge wiki.
+
+    The new note is an ENTITY — an atomic concept note: a person, company, lab, product, place, role, idea, movement, or deadline. The candidates are other entities.
+
+    YOUR GOAL: connect this entity to other entities in the SAME DOMAIN OR THEME, so each topic forms a richly interlinked cluster the user can navigate. Link generously WITHIN a theme:
+    - a person or role and the organisations, fields, or other roles they belong to (e.g. "Technical Leaders" ↔ "Anthropic", "SSI", "AI Researchers", "Executives");
+    - companies, labs, products, or accelerators in the same industry (e.g. "Anthropic" ↔ "OpenAI" ↔ "SSI" ↔ "Y Combinator");
+    - concepts, methods, movements, or topics within the same discipline (e.g. "RLHF" ↔ "RLHR" ↔ "Human Agency").
+
+    DO NOT link across unrelated domains. The wiki spans several worlds (AI industry, balcony renovation, German tax filing, a cycling trip, …). An AI-industry entity has nothing to do with a balcony-furniture entity or a tax-form entity. Stay strictly within the new entity's theme.
+
+    Some entities carry a `mentioned in:` line listing the notes that reference them. Entities mentioned by the same notes are an especially strong link — but a shared theme alone is enough; co-occurrence is a bonus, not a requirement.
+
+    OUTPUT: a list of `links` — the candidate entities that belong in the new entity's "Related" section. Each link: { targetPath, targetTitle, reason }.
+
+    RULES:
+    - targetPath MUST be the EXACT verbatim `path` string of a candidate from the list. Never abbreviate, rename, or invent a path.
+    - Only suggest candidates from the list. Never suggest the new note itself.
+    - Aim for 3-8 links when the entity sits in a populated theme; return fewer (or none) only when its theme genuinely has few other entities.
+    - Use `reason` to name the shared theme in one sentence — an internal hint, not shown to the user.
+    """
+
+    /// Discovery prompt when the new note is a TASK note — favours precise, non-obvious links.
+    private static let taskNoteLinkPrompt = """
+    You maintain the cross-links of a personal knowledge wiki.
+
+    INPUT:
+    - ONE new note that was just created: its `path`, `title`, and full `body`.
+    - A list of CANDIDATE notes, each with a `path`, `title`, and `body`.
+    - Some notes also carry a `mentioned in:` line listing the other notes that reference them. When the new note and a candidate are mentioned by the same notes, that is a STRONG signal they belong together.
+
+    IMPORTANT — the candidate list has already been pruned. Notes that are ALREADY connected to the new note (its task-folder siblings, entities it already links to, notes already in its Related section) were removed on purpose. Every candidate is a note the new note is NOT yet connected to.
+
+    YOUR GOAL: surface the NON-OBVIOUS connections. Link the new note to candidates that share a genuine conceptual thread — the same underlying theme or argument, a decision in one project that informs another, the same person / product / place / idea resurfacing across the user's work.
+
+    OUTPUT: a list of `links` — the candidates that belong in the new note's "Related" section. Each link: { targetPath, targetTitle, reason }.
+
+    STRICT RULES:
+    - targetPath MUST be the EXACT verbatim `path` string of a candidate from the list — including the "notes/<folder>/" prefix. Never abbreviate, rename, or invent a path.
+    - Only suggest candidates from the list. Never suggest the new note itself.
+    - Quality over quantity. Return 0-5 links. An empty list is a fine answer when nothing is genuinely related — do NOT pad.
+    - Do NOT link on weak or generic overlap (both notes mention "decisions", both involve "writing"). Require a concrete shared entity, a specific shared idea, or genuine co-occurrence.
+
+    Use `reason` to name, in one sentence, the specific shared thread — this is an internal hint, not shown to the user.
+    """
 
     private let entityExtractionPrompt = """
     You analyse a wiki note and identify high-signal entities to extract into atomic sub-notes.

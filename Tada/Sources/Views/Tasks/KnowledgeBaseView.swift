@@ -90,7 +90,7 @@ struct KnowledgeBaseView: View {
 
             Spacer()
 
-            Text(currentURL.lastPathComponent)
+            Text("\(currentURL.deletingLastPathComponent().lastPathComponent)/\(currentURL.lastPathComponent)")
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(.secondary)
                 .lineLimit(1)

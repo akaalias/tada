@@ -20,6 +20,7 @@ struct ActionItemsView: View {
                                 ActionCard(
                                     task: task,
                                     defaultExpanded: task.id == focusedTaskId,
+                                    accessory: .takeAction,
                                     knowledgeBase: appServices?.knowledgeBase,
                                     executiveAI: appServices?.executiveAI,
                                     plannerAI: appServices?.plannerAI
@@ -177,6 +178,7 @@ struct ActionCard: View {
     @Environment(\.modelContext) private var modelContext
     let task: TodoTask
     var defaultExpanded: Bool = true
+    var accessory: TaskCardAccessory = .expandChevron
     private let knowledgeBase: KnowledgeBaseServiceProtocol
     private let executiveAI: ExecutiveAIServiceProtocol
     private let plannerAI: PlannerAIServiceProtocol
@@ -186,12 +188,14 @@ struct ActionCard: View {
     init(
         task: TodoTask,
         defaultExpanded: Bool = true,
+        accessory: TaskCardAccessory = .expandChevron,
         knowledgeBase: KnowledgeBaseServiceProtocol? = nil,
         executiveAI: ExecutiveAIServiceProtocol? = nil,
         plannerAI: PlannerAIServiceProtocol? = nil
     ) {
         self.task = task
         self.defaultExpanded = defaultExpanded
+        self.accessory = accessory
         // Use injected services when available, fall back to defaults
         self.knowledgeBase = knowledgeBase ?? KnowledgeBaseServiceAdapter()
         self.executiveAI = executiveAI ?? ExecutiveAIServiceAdapter()
@@ -206,7 +210,7 @@ struct ActionCard: View {
 
     var body: some View {
         @Bindable var vm = viewModel
-        return TaskCard(task: task, defaultExpanded: defaultExpanded) {
+        return TaskCard(task: task, defaultExpanded: defaultExpanded, accessory: accessory) {
             Divider()
 
             if viewModel.submissionState != .idle || viewModel.isLoadingSchema {

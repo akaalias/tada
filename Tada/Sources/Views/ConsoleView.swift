@@ -162,6 +162,12 @@ private struct APILogEntryRow: View {
             .background(statusColor.opacity(0.2))
             .foregroundStyle(statusColor)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+            .modifier(PendingPulse(active: isPending))
+    }
+
+    /// True while a request is in flight — no status code and no error yet.
+    private var isPending: Bool {
+        entry.statusCode == nil && entry.errorMessage == nil
     }
 
     private func roleBadge(_ role: AIRole) -> some View {
@@ -265,6 +271,29 @@ private struct APILogEntryRow: View {
         if entry.errorMessage != nil { return "FAILED" }
         if let status = entry.statusCode { return "\(status)" }
         return "PENDING"
+    }
+}
+
+// MARK: - Pending pulse
+
+/// Gently pulses the opacity of a view while `active`, so an in-flight
+/// request is easy to spot in the console list. Settles back to fully
+/// opaque once the request resolves.
+private struct PendingPulse: ViewModifier {
+    let active: Bool
+    @State private var dimmed = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(active && dimmed ? 0.35 : 1.0)
+            .animation(
+                active
+                    ? .easeInOut(duration: 0.75).repeatForever(autoreverses: true)
+                    : .default,
+                value: dimmed
+            )
+            .onAppear { dimmed = active }
+            .onChange(of: active) { _, isActive in dimmed = isActive }
     }
 }
 

@@ -195,21 +195,26 @@ private func makeMultiTaskFixture() throws -> URL {
     try note("B One", body: "First note in task B.")
         .write(to: taskB.appendingPathComponent("01-b-one.md"), atomically: true, encoding: .utf8)
 
-    let entity = """
-    ---
-    title: "Shared Idea"
-    kind: entity
-    slug: shared-idea
-    ---
+    func entity(_ title: String, slug: String, body: String) -> String {
+        """
+        ---
+        title: "\(title)"
+        kind: entity
+        slug: \(slug)
+        ---
 
-    # Shared Idea
+        # \(title)
 
-    A concept shared across tasks.
+        \(body)
 
-    <!-- tada:related:start -->
-    <!-- tada:related:end -->
-    """
-    try entity.write(to: entities.appendingPathComponent("shared-idea.md"), atomically: true, encoding: .utf8)
+        <!-- tada:related:start -->
+        <!-- tada:related:end -->
+        """
+    }
+    try entity("Shared Idea", slug: "shared-idea", body: "A concept shared across tasks.")
+        .write(to: entities.appendingPathComponent("shared-idea.md"), atomically: true, encoding: .utf8)
+    try entity("Other Entity", slug: "other-entity", body: "An unrelated standalone concept.")
+        .write(to: entities.appendingPathComponent("other-entity.md"), atomically: true, encoding: .utf8)
     return root
 }
 
@@ -248,6 +253,59 @@ private func makeMultiTaskFixture() throws -> URL {
     let paths = Set(candidates.map { $0.relPath })
 
     #expect(!paths.contains("notes/_entities/shared-idea.md"))  // already body-linked
+}
+
+@Test func filterCandidates_for_entity_keeps_sibling_entities() async throws {
+    let root = try makeMultiTaskFixture()
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let fs = KnowledgeBaseFilesystem(
+        notesURL: root.appendingPathComponent("notes", isDirectory: true),
+        rootURL: root
+    )
+    let discovery = KnowledgeBaseLinkDiscovery(filesystem: fs)
+
+    let all = await discovery.collectNotesForDiscovery(rootURL: root)
+    let sharedIdea = all.first { $0.relPath.hasSuffix("_entities/shared-idea.md") }!
+    let candidates = await discovery.filterCandidates(for: sharedIdea, from: all)
+    let paths = Set(candidates.map { $0.relPath })
+
+    // The flat _entities/ folder is not a structural cluster — sibling entities stay candidates.
+    #expect(paths.contains("notes/_entities/other-entity.md"))
+}
+
+@Test func filterCandidates_for_entity_excludes_all_task_notes() async throws {
+    let root = try makeMultiTaskFixture()
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let fs = KnowledgeBaseFilesystem(
+        notesURL: root.appendingPathComponent("notes", isDirectory: true),
+        rootURL: root
+    )
+    let discovery = KnowledgeBaseLinkDiscovery(filesystem: fs)
+
+    let all = await discovery.collectNotesForDiscovery(rootURL: root)
+    let sharedIdea = all.first { $0.relPath.hasSuffix("_entities/shared-idea.md") }!
+    let candidates = await discovery.filterCandidates(for: sharedIdea, from: all)
+
+    // An entity's Related section is entity-only — every candidate must be an entity note.
+    #expect(!candidates.isEmpty)
+    #expect(candidates.allSatisfy { $0.relPath.contains("/_entities/") })
+}
+
+@Test func bulletResolvesToEntity_classifies_by_resolved_folder() {
+    let entitiesDir = URL(fileURLWithPath: "/w/notes/_entities", isDirectory: true)
+    let taskDir = URL(fileURLWithPath: "/w/notes/SOME__task", isDirectory: true)
+
+    // Entity → sibling entity: a bare filename, no `_entities/` in the path string itself.
+    #expect(KnowledgeBaseLinkDiscovery.bulletResolvesToEntity(
+        "- [[executives.md|Executives]]", sourceDir: entitiesDir))
+    // Task note → entity: a `../_entities/` prefixed path.
+    #expect(KnowledgeBaseLinkDiscovery.bulletResolvesToEntity(
+        "- [[../_entities/anthropic.md|Anthropic]]", sourceDir: taskDir))
+    // Entity → task note: not an entity.
+    #expect(!KnowledgeBaseLinkDiscovery.bulletResolvesToEntity(
+        "- [[../SOME__task/01-x.md|X]]", sourceDir: entitiesDir))
 }
 
 @Test func addRelatedBullets_legacy_note_without_markers_inserts_section() {
