@@ -97,12 +97,12 @@ private struct APILogEntryRow: View {
 
     private var summary: some View {
         HStack(spacing: 12) {
-            statusBadge
             if let role = entry.aiRole {
                 roleBadge(role)
             }
-            Text(entry.method)
-                .font(.system(size: Theme.fontSize, weight: .semibold, design: .monospaced))
+            if let taskTitle = entry.taskTitle {
+                taskTitleBadge(taskTitle)
+            }
             if let summary = entry.requestSummary {
                 Text(summary)
                     .font(.system(size: Theme.fontSize))
@@ -116,18 +116,28 @@ private struct APILogEntryRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if let durationMS = entry.durationMS {
-                Text("\(durationMS) ms")
+            if let durationText {
+                Text(durationText)
                     .font(.system(size: Theme.fontSize))
                     .foregroundStyle(.secondary)
             }
             Text(Self.timeFormatter.string(from: entry.timestamp))
                 .font(.system(size: Theme.fontSize))
                 .foregroundStyle(.secondary)
+            Text(entry.method)
+                .font(.system(size: Theme.fontSize, weight: .semibold, design: .monospaced))
+            statusBadge
             Image(systemName: expanded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    /// Human-readable elapsed time: seconds once a request runs past 1s,
+    /// milliseconds below that. `nil` until the request completes.
+    private var durationText: String? {
+        guard let ms = entry.durationMS else { return nil }
+        return ms >= 1000 ? String(format: "%.1fs", Double(ms) / 1000) : "\(ms) ms"
     }
 
     private var statusBadge: some View {
@@ -148,6 +158,21 @@ private struct APILogEntryRow: View {
             .background(phaseColor.opacity(0.2))
             .foregroundStyle(phaseColor)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    /// The task or sub-task this request serves. Capped in width so a long
+    /// title can't crowd out the request summary.
+    private func taskTitleBadge(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: Theme.badgeFontSize, weight: .medium))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.primary.opacity(0.08))
+            .foregroundStyle(.secondary)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .frame(maxWidth: 220, alignment: .leading)
     }
 
     /// Colour for the task phase this request serves; tints the whole entry to

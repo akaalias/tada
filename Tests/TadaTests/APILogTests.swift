@@ -195,6 +195,30 @@ import Testing
     #expect(APILog(fileURL: file).entries.first?.aiRole == .knowledge)
 }
 
+// MARK: - Task Title
+
+@MainActor
+@Test func apiLog_logRequest_records_and_persists_task_title() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let log = APILog(fileURL: file)
+    _ = log.logRequest(
+        URLRequest(url: URL(string: "https://example.com")!),
+        taskTitle: "Plan a birthday party"
+    )
+    #expect(log.entries.first?.taskTitle == "Plan a birthday party")
+    #expect(APILog(fileURL: file).entries.first?.taskTitle == "Plan a birthday party")
+}
+
+@MainActor
+@Test func apiLog_logRequest_task_title_defaults_to_nil() {
+    let log = APILog()
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    #expect(log.entries.first?.taskTitle == nil)
+}
+
 @Test func aiRole_displayNames_are_full_agent_names() {
     #expect(AIRole.planner.displayName == "Planning Agent")
     #expect(AIRole.executive.displayName == "Executive Agent")

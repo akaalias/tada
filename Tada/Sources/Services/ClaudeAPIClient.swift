@@ -19,8 +19,8 @@ actor ClaudeAPIClient {
     }
 
     /// Sends a request via URLSession while recording it in `APILog` for the Console view.
-    private func performLoggedRequest(_ request: URLRequest, phase: APIRequestPhase) async throws -> (Data, HTTPURLResponse) {
-        let entryID = await APILog.shared.logRequest(request, role: role, phase: phase)
+    private func performLoggedRequest(_ request: URLRequest, phase: APIRequestPhase, taskTitle: String?) async throws -> (Data, HTTPURLResponse) {
+        let entryID = await APILog.shared.logRequest(request, role: role, phase: phase, taskTitle: taskTitle)
         let start = Date()
         func elapsedMS() -> Int { Int(Date().timeIntervalSince(start) * 1000) }
 
@@ -50,7 +50,8 @@ actor ClaudeAPIClient {
         systemPrompt: String,
         userMessage: String,
         maxTokens: Int = 2048,
-        phase: APIRequestPhase? = nil
+        phase: APIRequestPhase? = nil,
+        taskTitle: String? = nil
     ) async throws -> String {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
@@ -70,7 +71,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase)
+        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase, taskTitle: taskTitle)
 
         guard httpResponse.statusCode == 200 else {
             if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -97,7 +98,8 @@ actor ClaudeAPIClient {
         responseType: T.Type,
         maxTokens: Int = 2048,
         attachedImages: [Data] = [],
-        phase: APIRequestPhase? = nil
+        phase: APIRequestPhase? = nil,
+        taskTitle: String? = nil
     ) async throws -> T {
         // Use tool_use for guaranteed structured output
         var request = URLRequest(url: baseURL)
@@ -142,7 +144,7 @@ actor ClaudeAPIClient {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase)
+        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase, taskTitle: taskTitle)
 
         // Check for API errors in the response body (works for any status code)
         if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

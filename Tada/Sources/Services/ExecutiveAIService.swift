@@ -256,7 +256,8 @@ actor ExecutiveAIService {
         return try await client.sendStructuredMessage(
             systemPrompt: systemPrompt,
             userMessage: contextMessage,
-            responseType: ActionSchema.self
+            responseType: ActionSchema.self,
+            taskTitle: subTask
         )
     }
 

@@ -95,7 +95,8 @@ actor KnowledgeAIService {
             userMessage: userMessage,
             responseType: GeneratedKnowledgeNote.self,
             maxTokens: 1024,
-            attachedImages: attachedImage.map { [$0] } ?? []
+            attachedImages: attachedImage.map { [$0] } ?? [],
+            taskTitle: subtaskTitle
         )
     }
 
@@ -194,7 +195,8 @@ actor KnowledgeAIService {
             systemPrompt: entityExtractionPrompt,
             userMessage: userMessage,
             responseType: EntityExtractionResult.self,
-            maxTokens: 2048
+            maxTokens: 2048,
+            taskTitle: noteTitle
         )
     }
 
@@ -225,7 +227,8 @@ actor KnowledgeAIService {
             systemPrompt: taskOverviewPrompt,
             userMessage: userMessage,
             responseType: GeneratedKnowledgeNote.self,
-            maxTokens: 1024
+            maxTokens: 1024,
+            taskTitle: taskTitle
         )
     }
 }

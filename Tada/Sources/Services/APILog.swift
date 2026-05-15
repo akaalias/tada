@@ -36,6 +36,9 @@ struct APILogEntry: Identifiable, Sendable, Codable {
     let aiRole: AIRole?
     /// The task phase this request serves, if known.
     let phase: APIRequestPhase?
+    /// The task or sub-task title this request serves, if known. Shown as a
+    /// badge in the Console so each request is traceable to its work item.
+    let taskTitle: String?
 
     var statusCode: Int?
     var responseHeaders: [String: String]?
@@ -119,7 +122,7 @@ final class APILog {
 
     /// Records an outgoing request and returns its id for later completion.
     @discardableResult
-    func logRequest(_ request: URLRequest, role: AIRole? = nil, phase: APIRequestPhase? = nil) -> UUID {
+    func logRequest(_ request: URLRequest, role: AIRole? = nil, phase: APIRequestPhase? = nil, taskTitle: String? = nil) -> UUID {
         let id = UUID()
         let entry = APILogEntry(
             id: id,
@@ -129,7 +132,8 @@ final class APILog {
             requestHeaders: Self.redact(request.allHTTPHeaderFields ?? [:]),
             requestBody: request.httpBody.map { Self.prettyJSON($0) ?? Self.utf8($0) },
             aiRole: role,
-            phase: phase
+            phase: phase,
+            taskTitle: taskTitle
         )
         entries.insert(entry, at: 0)
         if entries.count > Self.maxEntries {

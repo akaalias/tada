@@ -148,7 +148,8 @@ actor PlannerAIService {
             systemPrompt: discoveryPrompt,
             userMessage: prompt,
             responseType: TaskPlan.self,
-            phase: .discovery
+            phase: .discovery,
+            taskTitle: task
         )
     }
 
@@ -176,7 +177,8 @@ actor PlannerAIService {
         return try await client.sendStructuredMessage(
             systemPrompt: executionPrompt,
             userMessage: prompt,
-            responseType: TaskPlan.self
+            responseType: TaskPlan.self,
+            taskTitle: originalTask
         )
     }
 
@@ -241,7 +243,8 @@ actor PlannerAIService {
         return try await client.sendStructuredMessage(
             systemPrompt: revisionPrompt,
             userMessage: "Evaluate the plan: should we continue as-is or revise based on what we learned?",
-            responseType: PlanRevision.self
+            responseType: PlanRevision.self,
+            taskTitle: originalTask
         )
     }
 
@@ -313,7 +316,8 @@ actor PlannerAIService {
         let result = try await client.sendStructuredMessage(
             systemPrompt: breakdownPrompt,
             userMessage: prompt,
-            responseType: MicroStepsResponse.self
+            responseType: MicroStepsResponse.self,
+            taskTitle: stepTitle
         )
 
         return result.microSteps
@@ -353,7 +357,8 @@ actor PlannerAIService {
         let result = try await client.sendMessage(
             systemPrompt: "You extract lessons from planning mistakes. Be concise and actionable.",
             userMessage: prompt,
-            maxTokens: 100
+            maxTokens: 100,
+            taskTitle: badStepTitle
         )
 
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
