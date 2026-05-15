@@ -10,6 +10,9 @@ struct KnowledgeBaseView: View {
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
     @State private var showingGraph: Bool = false
+    // Observed directly so the toolbar spinner reacts the moment work starts/stops — the
+    // protocol adapter is not an ObservableObject and would not drive a re-render.
+    @ObservedObject private var kbService = KnowledgeBaseService.shared
 
     private var kb: KnowledgeBaseServiceProtocol? { appServices?.knowledgeBase }
     private var rootURL: URL { kb?.rootURL ?? KnowledgeBaseService.shared.rootURL }
@@ -98,7 +101,7 @@ struct KnowledgeBaseView: View {
 
             Spacer()
 
-            if kb?.isWorking == true {
+            if kbService.isWorking {
                 ProgressView()
                     .controlSize(.small)
                     .frame(width: 24, height: 18)

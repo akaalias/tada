@@ -239,7 +239,7 @@ import Testing
         ("create_task_plan", "Creating a task plan"),
         ("revise_plan", "Revising the execution task plan"),
         ("break_down_step", "Breaking a step into micro-steps"),
-        ("save_cross_links", "Finding links between notes"),
+        ("save_related_notes", "Discovering related notes"),
         ("save_atomic_note", "Writing a knowledge note"),
         ("extract_entities_and_link", "Extracting entities and wikilinks"),
     ]

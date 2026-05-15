@@ -85,7 +85,7 @@ struct APILogEntry: Identifiable, Sendable, Codable {
             }
         case "revise_plan":               return "Revising the execution task plan"
         case "break_down_step":           return "Breaking a step into micro-steps"
-        case "save_cross_links":          return "Finding links between notes"
+        case "save_related_notes":        return "Discovering related notes"
         case "save_atomic_note":          return "Writing a knowledge note"
         case "extract_entities_and_link": return "Extracting entities and wikilinks"
         default:                          return nil
