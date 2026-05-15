@@ -8,11 +8,44 @@ struct BrainstormLabel: Identifiable, Equatable {
     let id: UUID
     var text: String
     var position: CGPoint
+    var color: BrainstormLabelColor
 
-    init(id: UUID = UUID(), text: String, position: CGPoint) {
+    init(id: UUID = UUID(), text: String, position: CGPoint, color: BrainstormLabelColor = .yellow) {
         self.id = id
         self.text = text
         self.position = position
+        self.color = color
+    }
+}
+
+enum BrainstormLabelColor: String, CaseIterable {
+    case yellow, blue, green, pink
+
+    var background: Color {
+        switch self {
+        case .yellow: return Color.yellow.opacity(0.3)
+        case .blue: return Color.blue.opacity(0.3)
+        case .green: return Color.green.opacity(0.3)
+        case .pink: return Color.pink.opacity(0.3)
+        }
+    }
+
+    var border: Color {
+        switch self {
+        case .yellow: return Color.yellow.opacity(0.6)
+        case .blue: return Color.blue.opacity(0.6)
+        case .green: return Color.green.opacity(0.6)
+        case .pink: return Color.pink.opacity(0.6)
+        }
+    }
+
+    var swatch: Color {
+        switch self {
+        case .yellow: return Color.yellow
+        case .blue: return Color.blue
+        case .green: return Color.green
+        case .pink: return Color.pink
+        }
     }
 }
 
@@ -21,13 +54,11 @@ struct BrainstormLabel: Identifiable, Equatable {
 struct BrainstormBoard: Equatable {
     var labels: [BrainstormLabel] = []
 
-    /// Adds a label with the given (trimmed) text. Returns `false` and does
-    /// nothing if the text is empty once trimmed.
     @discardableResult
-    mutating func addLabel(_ text: String, at position: CGPoint) -> Bool {
+    mutating func addLabel(_ text: String, at position: CGPoint, color: BrainstormLabelColor) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
-        labels.append(BrainstormLabel(text: trimmed, position: position))
+        labels.append(BrainstormLabel(text: trimmed, position: position, color: color))
         return true
     }
 
@@ -80,6 +111,8 @@ struct BrainstormCanvasRenderer: View {
     @State private var panStart: CGSize = .zero
     @State private var zoomStart: CGFloat = 1.0
     @State private var canvasSize: CGSize = CGSize(width: 800, height: 400)
+    @State private var dragStartPositions: [UUID: CGPoint] = [:]
+    @State private var selectedColor: BrainstormLabelColor = .yellow
 
     private let canvasHeight: CGFloat = 400
     private let minZoom: CGFloat = 0.25
@@ -109,26 +142,35 @@ struct BrainstormCanvasRenderer: View {
                 .onSubmit(addCurrentTerm)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background(Color(.textBackgroundColor))
+                .background(phaseColor.opacity(0.25))
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(phaseColor.opacity(0.4), lineWidth: 1)
                 )
                 .accessibilityIdentifier("brainstorm.input")
 
-            Text("\(board.labels.count)")
-                .font(.system(size: Theme.fontSize, weight: .medium))
-                .foregroundColor(.secondary)
-                .frame(minWidth: 24)
-                .help("Terms on the canvas")
+            ForEach(BrainstormLabelColor.allCases, id: \.self) { color in
+                Button {
+                    selectedColor = color
+                } label: {
+                    Circle()
+                        .fill(color.swatch)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: selectedColor == color ? 2 : 0)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
     private func addCurrentTerm() {
         let visibleBounds = CGRect(origin: .zero, size: canvasSize)
         let screenPoint = BrainstormCanvas.randomPosition(in: visibleBounds)
-        let added = board.addLabel(inputText, at: contentPoint(fromScreen: screenPoint))
+        let added = board.addLabel(inputText, at: contentPoint(fromScreen: screenPoint), color: selectedColor)
         guard added else { return }
         inputText = ""
         inputFocused = true
@@ -178,28 +220,32 @@ struct BrainstormCanvasRenderer: View {
             .font(.system(size: Theme.fontSize, weight: .medium))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.accentColor.opacity(0.2))
+            .background(label.color.background)
             .cornerRadius(6)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                    .stroke(label.color.border, lineWidth: 1)
             )
             .position(label.position)
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        // Drag translation is in screen points; divide by zoom
-                        // to convert into canvas-space movement.
-                        let origin = label.position
+                        if dragStartPositions[label.id] == nil {
+                            dragStartPositions[label.id] = label.position
+                        }
+                        let origin = dragStartPositions[label.id]!
                         board.moveLabel(
                             id: label.id,
                             to: CGPoint(
-                                x: origin.x + value.translation.width / zoom,
-                                y: origin.y + value.translation.height / zoom
+                                x: origin.x + value.translation.width,
+                                y: origin.y + value.translation.height
                             )
                         )
                     }
-                    .onEnded { _ in saveBoard() }
+                    .onEnded { _ in
+                        dragStartPositions.removeValue(forKey: label.id)
+                        saveBoard()
+                    }
             )
             .contextMenu {
                 Button("Delete", role: .destructive) {
@@ -333,11 +379,11 @@ struct BrainstormBoardSnapshot: View {
                     .font(.system(size: Theme.fontSize, weight: .medium))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.accentColor.opacity(0.2))
+                    .background(label.color.background)
                     .cornerRadius(6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                            .stroke(label.color.border, lineWidth: 1)
                     )
                     .position(
                         x: label.position.x - frame.minX,

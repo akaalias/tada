@@ -34,10 +34,9 @@ struct FocusedTaskView: View {
                         plannerAI: appServices?.plannerAI
                     )
                     .frame(maxWidth: 820)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(24)
-                    // Center the card vertically; grow past the viewport
-                    // (and scroll) only when the card is taller than it.
-                    .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                    .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .top)
                 }
             }
         }
