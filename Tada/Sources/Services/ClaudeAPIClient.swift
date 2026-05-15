@@ -5,16 +5,19 @@ private let logger = Logger(subsystem: "com.tada.app", category: "API")
 
 actor ClaudeAPIClient {
     private let apiKey: String
+    private let role: AIRole
     private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
-    private let model = "claude-sonnet-4-6"
+    private let model: String
 
-    init(apiKey: String) {
+    init(apiKey: String, role: AIRole) {
         self.apiKey = apiKey
+        self.role = role
+        self.model = ModelPreference.selectedModel
     }
 
     /// Sends a request via URLSession while recording it in `APILog` for the Console view.
     private func performLoggedRequest(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let entryID = await APILog.shared.logRequest(request)
+        let entryID = await APILog.shared.logRequest(request, role: role)
         let start = Date()
         func elapsedMS() -> Int { Int(Date().timeIntervalSince(start) * 1000) }
 
@@ -50,6 +53,7 @@ actor ClaudeAPIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = AppConstants.requestTimeout
 
         let body: [String: Any] = [
             "model": model,
@@ -96,6 +100,7 @@ actor ClaudeAPIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = AppConstants.requestTimeout
 
         // Define the tool schema based on the response type name
         let toolSchema = getToolSchema(for: String(describing: responseType))

@@ -106,3 +106,70 @@ import Testing
 @Test func apiLog_prettyJSON_returns_nil_for_non_json() {
     #expect(APILog.prettyJSON("not json".data(using: .utf8)!) == nil)
 }
+
+// MARK: - Persistence
+
+@MainActor
+@Test func apiLog_persists_entries_across_instances() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let first = APILog(fileURL: file)
+    let id = first.logRequest(URLRequest(url: URL(string: "https://example.com/x")!))
+    first.logResponse(id: id, statusCode: 200, body: #"{"ok":true}"#.data(using: .utf8)!, durationMS: 7)
+
+    let reloaded = APILog(fileURL: file)
+    #expect(reloaded.entries.count == 1)
+    #expect(reloaded.entries.first?.url == "https://example.com/x")
+    #expect(reloaded.entries.first?.statusCode == 200)
+    #expect(reloaded.entries.first?.responseBody?.contains("ok") == true)
+}
+
+@MainActor
+@Test func apiLog_clear_is_persisted() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let log = APILog(fileURL: file)
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    log.clear()
+
+    #expect(APILog(fileURL: file).entries.isEmpty)
+}
+
+@MainActor
+@Test func apiLog_without_file_url_does_not_persist() {
+    let log = APILog()
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    #expect(log.entries.count == 1)
+}
+
+// MARK: - AI Role
+
+@MainActor
+@Test func apiLog_logRequest_records_ai_role() {
+    let log = APILog()
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!), role: .planner)
+    #expect(log.entries.first?.aiRole == .planner)
+}
+
+@MainActor
+@Test func apiLog_logRequest_role_defaults_to_nil() {
+    let log = APILog()
+    _ = log.logRequest(URLRequest(url: URL(string: "https://example.com")!))
+    #expect(log.entries.first?.aiRole == nil)
+}
+
+@MainActor
+@Test func apiLog_ai_role_survives_persistence() {
+    let file = FileManager.default.temporaryDirectory
+        .appendingPathComponent("apilog-\(UUID()).json")
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let first = APILog(fileURL: file)
+    _ = first.logRequest(URLRequest(url: URL(string: "https://example.com")!), role: .knowledge)
+
+    #expect(APILog(fileURL: file).entries.first?.aiRole == .knowledge)
+}

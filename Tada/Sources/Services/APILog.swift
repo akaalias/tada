@@ -1,13 +1,30 @@
 import Foundation
 
+/// The agentic role responsible for a Claude API request.
+enum AIRole: String, Codable, Sendable, CaseIterable {
+    case planner
+    case executive
+    case knowledge
+
+    var displayName: String {
+        switch self {
+        case .planner: "Planner"
+        case .executive: "Executive"
+        case .knowledge: "Knowledge"
+        }
+    }
+}
+
 /// One recorded HTTP request/response pair to the Claude API.
-struct APILogEntry: Identifiable, Sendable {
+struct APILogEntry: Identifiable, Sendable, Codable {
     let id: UUID
     let timestamp: Date
     let method: String
     let url: String
     let requestHeaders: [String: String]
     let requestBody: String?
+    /// Which AI agent issued the request, if known.
+    let aiRole: AIRole?
 
     var statusCode: Int?
     var responseHeaders: [String: String]?
@@ -25,12 +42,13 @@ struct APILogEntry: Identifiable, Sendable {
     }
 }
 
-/// In-memory log of Claude API traffic, surfaced in the Console view.
-/// Holds the most recent `maxEntries` requests, newest first.
+/// Log of Claude API traffic, surfaced in the Console view.
+/// Holds the most recent `maxEntries` requests, newest first, and persists
+/// them to disk so they survive relaunches and rebuilds.
 @Observable
 @MainActor
 final class APILog {
-    static let shared = APILog()
+    static let shared = APILog(fileURL: APILog.defaultFileURL)
 
     static let maxEntries = 100
     static let redactedValue = "••••••••"
@@ -38,11 +56,26 @@ final class APILog {
 
     private(set) var entries: [APILogEntry] = []
 
-    init() {}
+    /// File entries are persisted to. `nil` disables persistence (in-memory only).
+    private let fileURL: URL?
+
+    init(fileURL: URL? = nil) {
+        self.fileURL = fileURL
+        load()
+    }
+
+    /// `~/Library/Application Support/Tada/console/api-log.json`.
+    static var defaultFileURL: URL {
+        let appSupport = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("Tada/console", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("api-log.json")
+    }
 
     /// Records an outgoing request and returns its id for later completion.
     @discardableResult
-    func logRequest(_ request: URLRequest) -> UUID {
+    func logRequest(_ request: URLRequest, role: AIRole? = nil) -> UUID {
         let id = UUID()
         let entry = APILogEntry(
             id: id,
@@ -50,12 +83,14 @@ final class APILog {
             method: request.httpMethod ?? "GET",
             url: request.url?.absoluteString ?? "",
             requestHeaders: Self.redact(request.allHTTPHeaderFields ?? [:]),
-            requestBody: request.httpBody.map { Self.prettyJSON($0) ?? Self.utf8($0) }
+            requestBody: request.httpBody.map { Self.prettyJSON($0) ?? Self.utf8($0) },
+            aiRole: role
         )
         entries.insert(entry, at: 0)
         if entries.count > Self.maxEntries {
             entries.removeLast(entries.count - Self.maxEntries)
         }
+        persist()
         return id
     }
 
@@ -79,11 +114,28 @@ final class APILog {
 
     func clear() {
         entries.removeAll()
+        persist()
     }
 
     private func update(_ id: UUID, _ mutate: (inout APILogEntry) -> Void) {
         guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
         mutate(&entries[index])
+        persist()
+    }
+
+    // MARK: - Persistence
+
+    private func load() {
+        guard let fileURL,
+              let data = try? Data(contentsOf: fileURL),
+              let decoded = try? JSONDecoder().decode([APILogEntry].self, from: data)
+        else { return }
+        entries = decoded
+    }
+
+    private func persist() {
+        guard let fileURL, let data = try? JSONEncoder().encode(entries) else { return }
+        try? data.write(to: fileURL, options: .atomic)
     }
 
     // MARK: - Helpers

@@ -11,6 +11,10 @@ enum AppConstants {
     /// Default max tokens for Claude API structured messages.
     static let defaultMaxTokens = 2048
 
+    /// Timeout for a single Claude API request (seconds). Large structured
+    /// requests can take minutes, so this is generous.
+    static let requestTimeout: TimeInterval = 300
+
     /// Max tokens for short-form AI responses (lessons, summaries).
     static let shortMaxTokens = 100
 

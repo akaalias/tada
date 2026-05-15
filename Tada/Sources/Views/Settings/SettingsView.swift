@@ -99,6 +99,11 @@ private struct APIKeySettingsView: View {
                     Text("Get your API key from [console.anthropic.com](https://console.anthropic.com/)")
                         .font(.caption)
                         .foregroundColor(.secondary)
+
+                    if APIKeyManager.hasValidAPIKey {
+                        Divider()
+                        ModelPickerView()
+                    }
                 }
                 .padding()
             }
@@ -136,6 +141,155 @@ private struct APIKeySettingsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             saveStatus = .none
         }
+    }
+}
+
+// MARK: - Model Picker
+
+/// A searchable dropdown of Claude models available to the configured API key.
+private struct ModelPickerView: View {
+    @State private var models: [ClaudeModel] = []
+    @State private var selectedModel: String = ModelPreference.selectedModel
+    @State private var search = ""
+    @State private var isLoading = false
+    @State private var loadError: String?
+    @State private var showPicker = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Model")
+                .font(.headline)
+
+            Text("Choose which Claude model handles task planning and action generation.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                Button {
+                    showPicker.toggle()
+                } label: {
+                    HStack {
+                        Text(currentDisplayName)
+                            .lineLimit(1)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .frame(width: 300)
+                    .background(Color(.controlBackgroundColor))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.secondary.opacity(0.3))
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isLoading || models.isEmpty)
+                .popover(isPresented: $showPicker, arrowEdge: .bottom) {
+                    modelList
+                }
+
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                Button {
+                    Task { await loadModels() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
+                .disabled(isLoading)
+                .help("Refresh model list")
+            }
+
+            if let loadError {
+                Label(loadError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        }
+        .task {
+            await loadModels()
+        }
+    }
+
+    private var currentDisplayName: String {
+        models.first { $0.id == selectedModel }?.displayName ?? selectedModel
+    }
+
+    private var filteredModels: [ClaudeModel] {
+        guard !search.isEmpty else { return models }
+        return models.filter {
+            $0.displayName.localizedCaseInsensitiveContains(search)
+                || $0.id.localizedCaseInsensitiveContains(search)
+        }
+    }
+
+    private var modelList: some View {
+        VStack(spacing: 0) {
+            TextField("Search models", text: $search)
+                .textFieldStyle(.roundedBorder)
+                .padding(8)
+
+            Divider()
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(filteredModels) { model in
+                        Button {
+                            selectedModel = model.id
+                            ModelPreference.selectedModel = model.id
+                            search = ""
+                            showPicker = false
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(model.displayName)
+                                    Text(model.id)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if model.id == selectedModel {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if filteredModels.isEmpty {
+                        Text("No models match.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding()
+                    }
+                }
+            }
+            .frame(maxHeight: 220)
+        }
+        .frame(width: 320)
+    }
+
+    private func loadModels() async {
+        guard let key = APIKeyManager.getAPIKey(), !key.isEmpty else { return }
+        isLoading = true
+        loadError = nil
+        do {
+            models = try await ModelCatalog.fetchModels(apiKey: key)
+        } catch {
+            loadError = AppError.userMessage(from: error)
+        }
+        isLoading = false
     }
 }
 

@@ -97,6 +97,9 @@ private struct APILogEntryRow: View {
     private var summary: some View {
         HStack(spacing: 12) {
             statusBadge
+            if let role = entry.aiRole {
+                roleBadge(role)
+            }
             Text(entry.method)
                 .font(.system(size: Theme.fontSize, weight: .semibold, design: .monospaced))
             Text(entry.url)
@@ -127,6 +130,25 @@ private struct APILogEntryRow: View {
             .background(statusColor.opacity(0.2))
             .foregroundStyle(statusColor)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private func roleBadge(_ role: AIRole) -> some View {
+        let color = roleColor(role)
+        return Text(role.displayName)
+            .font(.system(size: Theme.badgeFontSize, weight: .medium))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private func roleColor(_ role: AIRole) -> Color {
+        switch role {
+        case .planner: .blue
+        case .executive: .purple
+        case .knowledge: .teal
+        }
     }
 
     // MARK: Details

@@ -223,7 +223,7 @@ actor ExecutiveAIService {
     """
 
     init(apiKey: String) {
-        self.client = ClaudeAPIClient(apiKey: apiKey)
+        self.client = ClaudeAPIClient(apiKey: apiKey, role: .executive)
     }
 
     func generateActionUI(

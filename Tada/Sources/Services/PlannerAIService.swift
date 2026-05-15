@@ -123,7 +123,7 @@ actor PlannerAIService {
     """
 
     init(apiKey: String) {
-        self.client = ClaudeAPIClient(apiKey: apiKey)
+        self.client = ClaudeAPIClient(apiKey: apiKey, role: .planner)
     }
 
     // MARK: - Discovery Phase
