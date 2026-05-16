@@ -14,6 +14,7 @@ struct TaskCard<Content: View>: View {
     let task: TodoTask
     var defaultExpanded: Bool = false
     var accessory: TaskCardAccessory = .expandChevron
+    var isSelected: Bool = false
     @ViewBuilder let content: () -> Content
     @State private var isExpanded: Bool = false
 
@@ -42,11 +43,11 @@ struct TaskCard<Content: View>: View {
             }
         }
         .padding(16)
-        .background(phaseColor.opacity(0.05))
+        .background(phaseColor.opacity(isSelected ? 0.1 : 0.05))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(phaseColor.opacity(0.3), lineWidth: 1)
+                .stroke(phaseColor.opacity(isSelected ? 0.8 : 0.3), lineWidth: isSelected ? 2 : 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
     }

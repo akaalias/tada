@@ -4,6 +4,7 @@ import Foundation
 enum CoachTool: String, CaseIterable, Codable {
     case captureInboxItem = "capture_inbox_item"
     case createTask = "create_task"
+    case searchTasks = "search_tasks"
     case updateDiscoveryQuestions = "update_discovery_questions"
     case replanExecution = "replan_execution"
     case readNote = "read_note"
@@ -19,6 +20,7 @@ enum CoachTool: String, CaseIterable, Codable {
         switch self {
         case .captureInboxItem: return "Capture inbox item"
         case .createTask: return "Create a new task"
+        case .searchTasks: return "Search tasks"
         case .updateDiscoveryQuestions: return "Update discovery questions"
         case .replanExecution: return "Replan execution steps"
         case .readNote: return "Read note content"
@@ -38,6 +40,8 @@ enum CoachTool: String, CaseIterable, Codable {
             return "Quickly capture a thought or item to the inbox for later processing"
         case .createTask:
             return "Create a new task with AI-generated discovery questions"
+        case .searchTasks:
+            return "Search for tasks by name or description. Returns matching task IDs and titles."
         case .updateDiscoveryQuestions:
             return "Regenerate discovery questions for a task with new framing"
         case .replanExecution:
@@ -70,6 +74,10 @@ enum CoachTool: String, CaseIterable, Codable {
         case .createTask:
             return [
                 ToolParameter(name: "description", type: .string, description: "Description of the task to create", required: true)
+            ]
+        case .searchTasks:
+            return [
+                ToolParameter(name: "query", type: .string, description: "Search query to match against task titles and descriptions", required: true)
             ]
         case .updateDiscoveryQuestions:
             return [

@@ -7,6 +7,12 @@ struct CoachChatView: View {
     @Environment(\.appServices) private var appServices
     @Bindable var viewModel: CoachViewModel
     @FocusState private var isInputFocused: Bool
+    @Query private var allTasks: [TodoTask]
+
+    private var selectedTask: TodoTask? {
+        guard let selectedId = viewModel.context.selectedTaskId else { return nil }
+        return allTasks.first { $0.id == selectedId }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,6 +68,9 @@ struct CoachChatView: View {
     }
 
     private var contextIcon: String {
+        if selectedTask != nil {
+            return "scope"
+        }
         switch viewModel.context.currentView {
         case .allTasks: return "list.bullet"
         case .actionItems: return "bolt.fill"
@@ -74,6 +83,9 @@ struct CoachChatView: View {
     }
 
     private var contextLabel: String {
+        if let task = selectedTask {
+            return "Task: \(task.title)"
+        }
         switch viewModel.context.currentView {
         case .allTasks: return "Viewing All Tasks"
         case .actionItems: return "Viewing Action Items"

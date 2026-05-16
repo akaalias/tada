@@ -145,6 +145,9 @@ final class CoachViewModel {
         case .createTask:
             return await createTask(description: arguments["description"] ?? "")
 
+        case .searchTasks:
+            return await searchTasks(query: arguments["query"] ?? "")
+
         case .updateDiscoveryQuestions:
             return await updateDiscoveryQuestions(
                 taskIdString: arguments["task_id"] ?? "",
@@ -276,6 +279,39 @@ final class CoachViewModel {
         } catch {
             return (false, error.localizedDescription)
         }
+    }
+
+    private func searchTasks(query: String) async -> (success: Bool, message: String) {
+        guard let modelContext else {
+            return (false, "No model context")
+        }
+
+        let descriptor = FetchDescriptor<TodoTask>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+
+        guard let allTasks = try? modelContext.fetch(descriptor) else {
+            return (false, "Failed to fetch tasks")
+        }
+
+        let lowercaseQuery = query.lowercased()
+        let matchingTasks = allTasks.filter { task in
+            task.title.lowercased().contains(lowercaseQuery) ||
+            task.taskDescription.lowercased().contains(lowercaseQuery) ||
+            task.originalInput.lowercased().contains(lowercaseQuery)
+        }
+
+        if matchingTasks.isEmpty {
+            return (true, "No tasks found matching '\(query)'")
+        }
+
+        let results = matchingTasks.prefix(5).map { task in
+            let phase = task.isDiscoveryPhase ? "discovery" : "execution"
+            let status = task.status == .completed ? "completed" : "active"
+            return "- ID: \(task.id.uuidString)\n  Title: \(task.title)\n  Phase: \(phase), Status: \(status)"
+        }.joined(separator: "\n")
+
+        return (true, "Found \(matchingTasks.count) task(s):\n\(results)")
     }
 
     private func updateDiscoveryQuestions(taskIdString: String, newFraming: String) async -> (success: Bool, message: String) {

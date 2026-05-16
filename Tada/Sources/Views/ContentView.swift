@@ -118,7 +118,7 @@ struct ContentView: View {
             } else {
                 switch selectedView {
                 case .allTasks:
-                    AllTasksView()
+                    AllTasksView(coachContext: coachContext)
                 case .actionItems:
                     ActionItemsView()
                 case .completed:

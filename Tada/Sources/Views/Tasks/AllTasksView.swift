@@ -7,7 +7,7 @@ struct AllTasksView: View {
     @Query(sort: \TodoTask.createdAt, order: .reverse) private var allTasks: [TodoTask]
     private var tasks: [TodoTask] { allTasks.filter { $0.status == .active } }
 
-    @State private var selectedTask: TodoTask?
+    var coachContext: CoachContext
 
     var body: some View {
         Group {
@@ -17,8 +17,19 @@ struct AllTasksView: View {
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         ForEach(tasks) { task in
-                            TaskCard(task: task, defaultExpanded: true) {
+                            TaskCard(
+                                task: task,
+                                defaultExpanded: true,
+                                isSelected: coachContext.selectedTaskId == task.id
+                            ) {
                                 SubTaskListContent(task: task)
+                            }
+                            .onTapGesture {
+                                if coachContext.selectedTaskId == task.id {
+                                    coachContext.selectedTaskId = nil
+                                } else {
+                                    coachContext.selectedTaskId = task.id
+                                }
                             }
                             .contextMenu {
                                     Button("Complete Task") {
@@ -228,6 +239,6 @@ struct AllTasksView: View {
 }
 
 #Preview {
-    AllTasksView()
+    AllTasksView(coachContext: CoachContext())
         .modelContainer(for: [TodoTask.self, SubTask.self], inMemory: true)
 }

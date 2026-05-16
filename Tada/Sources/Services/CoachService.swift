@@ -19,16 +19,17 @@ actor CoachService {
 
     1. capture_inbox_item - Quickly capture a thought for later
     2. create_task - Create a new task with AI-generated planning
-    3. update_discovery_questions - Reframe discovery questions for a task
-    4. replan_execution - Regenerate execution steps with new guidance
-    5. read_note - Read the content of a note to see its text
-    6. create_knowledge_entity - Create a new entity in the knowledge base
-    7. link_knowledge_entities - Add an entity to the Related section of a note
-    8. replace_text_with_link - Find and replace text in a note with a wiki link
-    9. edit_note - Edit the body content of a note
-    10. generate_knowledge_summary - Generate a summary of the knowledge base
-    11. complete_subtask - Mark a subtask as done
-    12. skip_subtask - Skip a subtask
+    3. search_tasks - Search for tasks by name. Use this when the user mentions a task by name and you need to find its ID.
+    4. update_discovery_questions - Reframe discovery questions for a task
+    5. replan_execution - Regenerate execution steps with new guidance
+    6. read_note - Read the content of a note to see its text
+    7. create_knowledge_entity - Create a new entity in the knowledge base
+    8. link_knowledge_entities - Add an entity to the Related section of a note
+    9. replace_text_with_link - Find and replace text in a note with a wiki link
+    10. edit_note - Edit the body content of a note
+    11. generate_knowledge_summary - Generate a summary of the knowledge base
+    12. complete_subtask - Mark a subtask as done
+    13. skip_subtask - Skip a subtask
 
     CRITICAL - WORKING WITH NOTES:
     - When you need to see a note's content, use read_note first with the note_path from context
