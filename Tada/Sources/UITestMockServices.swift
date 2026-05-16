@@ -234,6 +234,10 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
         }
     }
 
+    func searchNotes(query: String) async -> [(name: String, path: String, kind: String)] {
+        []
+    }
+
     // MARK: - Helpers (mirror KnowledgeBaseFilesystem / KnowledgeBaseIndexer formats)
 
     private func ensureFolder(for task: TodoTask) -> URL {

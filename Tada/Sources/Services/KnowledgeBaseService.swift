@@ -504,6 +504,38 @@ final class KnowledgeBaseService: ObservableObject {
     func listUserNotes() async -> [(slug: String, title: String)] {
         await filesystem.listUserNotes()
     }
+
+    /// Searches for notes by name across entities and user notes. Returns matching note info.
+    func searchNotes(query: String) async -> [(name: String, path: String, kind: String)] {
+        let lowercaseQuery = query.lowercased()
+        let queryWords = lowercaseQuery.split(separator: " ").map(String.init)
+
+        var results: [(name: String, path: String, kind: String)] = []
+
+        let entities = await filesystem.listEntities()
+        for entity in entities {
+            let nameLower = entity.title.lowercased()
+            let slugLower = entity.slug.lowercased()
+            if nameLower.contains(lowercaseQuery) || slugLower.contains(lowercaseQuery) ||
+               queryWords.contains(where: { nameLower.contains($0) || slugLower.contains($0) }) {
+                let path = "Knowledge/Entities/\(entity.title).md"
+                results.append((name: entity.title, path: path, kind: "entity"))
+            }
+        }
+
+        let userNotes = await filesystem.listUserNotes()
+        for note in userNotes {
+            let nameLower = note.title.lowercased()
+            let slugLower = note.slug.lowercased()
+            if nameLower.contains(lowercaseQuery) || slugLower.contains(lowercaseQuery) ||
+               queryWords.contains(where: { nameLower.contains($0) || slugLower.contains($0) }) {
+                let path = "Knowledge/Notes/\(note.title).md"
+                results.append((name: note.title, path: path, kind: "userNote"))
+            }
+        }
+
+        return results
+    }
 }
 
 enum KnowledgeBaseError: LocalizedError {

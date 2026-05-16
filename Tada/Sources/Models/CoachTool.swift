@@ -5,6 +5,7 @@ enum CoachTool: String, CaseIterable, Codable {
     case captureInboxItem = "capture_inbox_item"
     case createTask = "create_task"
     case searchTasks = "search_tasks"
+    case getSubtasks = "get_subtasks"
     case updateDiscoveryQuestions = "update_discovery_questions"
     case replanExecution = "replan_execution"
     case readNote = "read_note"
@@ -13,14 +14,18 @@ enum CoachTool: String, CaseIterable, Codable {
     case replaceTextWithLink = "replace_text_with_link"
     case editNote = "edit_note"
     case generateKnowledgeSummary = "generate_knowledge_summary"
+    case searchNotes = "search_notes"
     case completeSubTask = "complete_subtask"
     case skipSubTask = "skip_subtask"
+    case splitSubTask = "split_subtask"
+    case updateSubTask = "update_subtask"
 
     var displayName: String {
         switch self {
         case .captureInboxItem: return "Capture inbox item"
         case .createTask: return "Create a new task"
         case .searchTasks: return "Search tasks"
+        case .getSubtasks: return "Get task subtasks"
         case .updateDiscoveryQuestions: return "Update discovery questions"
         case .replanExecution: return "Replan execution steps"
         case .readNote: return "Read note content"
@@ -29,8 +34,11 @@ enum CoachTool: String, CaseIterable, Codable {
         case .replaceTextWithLink: return "Replace text with wiki link"
         case .editNote: return "Edit note content"
         case .generateKnowledgeSummary: return "Generate knowledge summary"
+        case .searchNotes: return "Search knowledge base notes"
         case .completeSubTask: return "Complete current step"
         case .skipSubTask: return "Skip current step"
+        case .splitSubTask: return "Split step into smaller steps"
+        case .updateSubTask: return "Update step title or description"
         }
     }
 
@@ -42,6 +50,8 @@ enum CoachTool: String, CaseIterable, Codable {
             return "Create a new task with AI-generated discovery questions"
         case .searchTasks:
             return "Search for tasks by name or description. Returns matching task IDs and titles."
+        case .getSubtasks:
+            return "Get all subtasks for a task. Returns subtask IDs and titles so you can update or split them."
         case .updateDiscoveryQuestions:
             return "Regenerate discovery questions for a task with new framing"
         case .replanExecution:
@@ -58,10 +68,16 @@ enum CoachTool: String, CaseIterable, Codable {
             return "Edit the body content of the current note based on user instructions"
         case .generateKnowledgeSummary:
             return "Generate a summary of the knowledge base"
+        case .searchNotes:
+            return "Search for notes in the knowledge base by name. Returns note paths that can be used with link_knowledge_entities."
         case .completeSubTask:
             return "Mark the current subtask as complete"
         case .skipSubTask:
             return "Skip the current subtask"
+        case .splitSubTask:
+            return "Replace a subtask with multiple smaller subtasks. Use when the user is stuck and needs the step broken down into more manageable pieces."
+        case .updateSubTask:
+            return "Update a subtask's title or description. Use when the user wants to rename or clarify a step."
         }
     }
 
@@ -78,6 +94,10 @@ enum CoachTool: String, CaseIterable, Codable {
         case .searchTasks:
             return [
                 ToolParameter(name: "query", type: .string, description: "Search query to match against task titles and descriptions", required: true)
+            ]
+        case .getSubtasks:
+            return [
+                ToolParameter(name: "task_id", type: .string, description: "ID of the task to get subtasks for", required: true)
             ]
         case .updateDiscoveryQuestions:
             return [
@@ -100,7 +120,7 @@ enum CoachTool: String, CaseIterable, Codable {
             ]
         case .linkKnowledgeEntities:
             return [
-                ToolParameter(name: "source_note", type: .string, description: "Path to the source note", required: true),
+                ToolParameter(name: "source_note", type: .string, description: "The source note: use the full note_path from context, or just the entity name", required: true),
                 ToolParameter(name: "target_entity", type: .string, description: "Name of the entity to link to", required: true)
             ]
         case .replaceTextWithLink:
@@ -116,6 +136,10 @@ enum CoachTool: String, CaseIterable, Codable {
             ]
         case .generateKnowledgeSummary:
             return []
+        case .searchNotes:
+            return [
+                ToolParameter(name: "query", type: .string, description: "Search query to match against note names", required: true)
+            ]
         case .completeSubTask:
             return [
                 ToolParameter(name: "task_id", type: .string, description: "ID of the task", required: true),
@@ -125,6 +149,19 @@ enum CoachTool: String, CaseIterable, Codable {
             return [
                 ToolParameter(name: "task_id", type: .string, description: "ID of the task", required: true),
                 ToolParameter(name: "subtask_id", type: .string, description: "ID of the subtask to skip", required: true)
+            ]
+        case .splitSubTask:
+            return [
+                ToolParameter(name: "task_id", type: .string, description: "ID of the task", required: true),
+                ToolParameter(name: "subtask_id", type: .string, description: "ID of the subtask to replace", required: true),
+                ToolParameter(name: "new_subtasks", type: .string, description: "JSON array of new subtasks, each with 'title' and optional 'description'. Example: [{\"title\":\"Research stores\",\"description\":\"Find nearby stores\"},{\"title\":\"Buy cable\"}]", required: true)
+            ]
+        case .updateSubTask:
+            return [
+                ToolParameter(name: "task_id", type: .string, description: "ID of the task", required: true),
+                ToolParameter(name: "subtask_id", type: .string, description: "ID of the subtask to update", required: true),
+                ToolParameter(name: "title", type: .string, description: "New title for the subtask", required: false),
+                ToolParameter(name: "description", type: .string, description: "New description for the subtask", required: false)
             ]
         }
     }

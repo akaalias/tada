@@ -24,6 +24,7 @@ protocol KnowledgeBaseServiceProtocol {
     func generateSummary() async throws -> String
     func createUserNote(title: String, body: String) async -> URL
     func listUserNotes() async -> [(slug: String, title: String)]
+    func searchNotes(query: String) async -> [(name: String, path: String, kind: String)]
 }
 
 /// Concrete implementation backed by the singleton. Under UI test mode, routes
@@ -113,6 +114,11 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
     func listUserNotes() async -> [(slug: String, title: String)] {
         if let testMock { return await testMock.listUserNotes() }
         return await KnowledgeBaseService.shared.listUserNotes()
+    }
+
+    func searchNotes(query: String) async -> [(name: String, path: String, kind: String)] {
+        if let testMock { return await testMock.searchNotes(query: query) }
+        return await KnowledgeBaseService.shared.searchNotes(query: query)
     }
 }
 

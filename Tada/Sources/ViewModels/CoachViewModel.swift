@@ -148,6 +148,9 @@ final class CoachViewModel {
         case .searchTasks:
             return await searchTasks(query: arguments["query"] ?? "")
 
+        case .getSubtasks:
+            return await getSubtasks(taskIdString: arguments["task_id"] ?? "")
+
         case .updateDiscoveryQuestions:
             return await updateDiscoveryQuestions(
                 taskIdString: arguments["task_id"] ?? "",
@@ -191,6 +194,9 @@ final class CoachViewModel {
         case .generateKnowledgeSummary:
             return await generateKnowledgeSummary()
 
+        case .searchNotes:
+            return await searchNotes(query: arguments["query"] ?? "")
+
         case .completeSubTask:
             return await completeSubTask(
                 taskIdString: arguments["task_id"] ?? "",
@@ -201,6 +207,21 @@ final class CoachViewModel {
             return await skipSubTask(
                 taskIdString: arguments["task_id"] ?? "",
                 subtaskIdString: arguments["subtask_id"] ?? ""
+            )
+
+        case .splitSubTask:
+            return await splitSubTask(
+                taskIdString: arguments["task_id"] ?? "",
+                subtaskIdString: arguments["subtask_id"] ?? "",
+                newSubTasksJson: arguments["new_subtasks"] ?? "[]"
+            )
+
+        case .updateSubTask:
+            return await updateSubTask(
+                taskIdString: arguments["task_id"] ?? "",
+                subtaskIdString: arguments["subtask_id"] ?? "",
+                newTitle: arguments["title"],
+                newDescription: arguments["description"]
             )
         }
     }
@@ -295,10 +316,13 @@ final class CoachViewModel {
         }
 
         let lowercaseQuery = query.lowercased()
+        let queryWords = lowercaseQuery.split(separator: " ").map(String.init)
+
         let matchingTasks = allTasks.filter { task in
-            task.title.lowercased().contains(lowercaseQuery) ||
-            task.taskDescription.lowercased().contains(lowercaseQuery) ||
-            task.originalInput.lowercased().contains(lowercaseQuery)
+            let searchText = "\(task.title) \(task.taskDescription) \(task.originalInput)".lowercased()
+            // Match if the full query is contained, OR if any query word matches
+            return searchText.contains(lowercaseQuery) ||
+                   queryWords.contains { searchText.contains($0) }
         }
 
         if matchingTasks.isEmpty {
@@ -312,6 +336,36 @@ final class CoachViewModel {
         }.joined(separator: "\n")
 
         return (true, "Found \(matchingTasks.count) task(s):\n\(results)")
+    }
+
+    private func getSubtasks(taskIdString: String) async -> (success: Bool, message: String) {
+        guard let taskId = UUID(uuidString: taskIdString) else {
+            return (false, "Invalid task ID")
+        }
+
+        guard let modelContext else {
+            return (false, "No model context")
+        }
+
+        let descriptor = FetchDescriptor<TodoTask>(
+            predicate: #Predicate { $0.id == taskId }
+        )
+
+        guard let task = try? modelContext.fetch(descriptor).first else {
+            return (false, "Task not found")
+        }
+
+        let subtasks = task.sortedSubTasks
+        if subtasks.isEmpty {
+            return (true, "Task '\(task.title)' has no subtasks")
+        }
+
+        let results = subtasks.map { st in
+            let status = st.isCurrent ? "current" : (st.isCompleted ? "done" : "pending")
+            return "- subtask_id: \(st.id.uuidString)\n  Title: \(st.title)\n  Status: \(status)"
+        }.joined(separator: "\n")
+
+        return (true, "Subtasks for '\(task.title)':\n\(results)")
     }
 
     private func updateDiscoveryQuestions(taskIdString: String, newFraming: String) async -> (success: Bool, message: String) {
@@ -492,17 +546,27 @@ final class CoachViewModel {
         var sourceURL: URL
         if sourceNote.hasPrefix("/") {
             sourceURL = URL(fileURLWithPath: sourceNote)
-        } else {
+        } else if sourceNote.contains("/_entities/") || sourceNote.contains("/_notes/") || sourceNote.contains("notes/") {
             sourceURL = knowledgeBase.rootURL.appendingPathComponent(sourceNote)
+        } else {
+            let slug = sourceNote.lowercased()
+                .replacingOccurrences(of: " ", with: "-")
+                .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+            let entityPath = "notes/_entities/\(slug).md"
+            sourceURL = knowledgeBase.rootURL.appendingPathComponent(entityPath)
+            if !FileManager.default.fileExists(atPath: sourceURL.path) {
+                let userNotePath = "notes/_notes/\(slug).md"
+                sourceURL = knowledgeBase.rootURL.appendingPathComponent(userNotePath)
+            }
         }
 
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            return (false, "Source note not found: \(sourceNote)")
+            return (false, "Source note not found: \(sourceNote). Use the note_path from context or the entity name.")
         }
 
         do {
             try await knowledgeBase.addLinkToNote(at: sourceURL, targetEntity: targetEntity)
-            return (true, "Linked \(sourceNote) to \(targetEntity)")
+            return (true, "Linked '\(sourceNote)' to '\(targetEntity)'")
         } catch {
             return (false, error.localizedDescription)
         }
@@ -557,6 +621,24 @@ final class CoachViewModel {
         } catch {
             return (false, error.localizedDescription)
         }
+    }
+
+    private func searchNotes(query: String) async -> (success: Bool, message: String) {
+        guard let knowledgeBase else {
+            return (false, "Knowledge base not available")
+        }
+
+        let matchingNotes = await knowledgeBase.searchNotes(query: query)
+
+        if matchingNotes.isEmpty {
+            return (true, "No notes found matching '\(query)'")
+        }
+
+        let results = matchingNotes.prefix(10).map { note in
+            "- \(note.name) (\(note.kind))"
+        }.joined(separator: "\n")
+
+        return (true, "Found \(matchingNotes.count) note(s):\n\(results)\n\nUse the entity name with link_knowledge_entities to create a link.")
     }
 
     private func completeSubTask(taskIdString: String, subtaskIdString: String) async -> (success: Bool, message: String) {
@@ -618,6 +700,126 @@ final class CoachViewModel {
         do {
             try modelContext.save()
             return (true, "Skipped: \(subTask.title)")
+        } catch {
+            return (false, error.localizedDescription)
+        }
+    }
+
+    private func splitSubTask(
+        taskIdString: String,
+        subtaskIdString: String,
+        newSubTasksJson: String
+    ) async -> (success: Bool, message: String) {
+        guard let taskId = UUID(uuidString: taskIdString),
+              let subtaskId = UUID(uuidString: subtaskIdString) else {
+            return (false, "Invalid ID")
+        }
+
+        guard let modelContext else {
+            return (false, "No model context")
+        }
+
+        struct NewSubTaskInput: Codable {
+            let title: String
+            let description: String?
+        }
+
+        guard let jsonData = newSubTasksJson.data(using: .utf8),
+              let newSubTasks = try? JSONDecoder().decode([NewSubTaskInput].self, from: jsonData),
+              !newSubTasks.isEmpty else {
+            return (false, "Invalid new_subtasks JSON format")
+        }
+
+        let taskDescriptor = FetchDescriptor<TodoTask>(
+            predicate: #Predicate { $0.id == taskId }
+        )
+
+        guard let task = try? modelContext.fetch(taskDescriptor).first,
+              let oldSubTask = task.subTasks.first(where: { $0.id == subtaskId }) else {
+            return (false, "Task or subtask not found")
+        }
+
+        let oldOrder = oldSubTask.order
+        let oldPhase = oldSubTask.phase
+        let wasCurrent = oldSubTask.isCurrent
+
+        // Shift subsequent subtasks to make room
+        let subsequentSubTasks = task.subTasks.filter { $0.order > oldOrder }
+        for st in subsequentSubTasks {
+            st.order += newSubTasks.count - 1
+        }
+
+        // Delete the old subtask
+        modelContext.delete(oldSubTask)
+
+        // Create new subtasks in place
+        var createdTitles: [String] = []
+        for (index, input) in newSubTasks.enumerated() {
+            let newSubTask = SubTask(
+                title: input.title,
+                description: input.description ?? "",
+                order: oldOrder + index,
+                phase: oldPhase
+            )
+            if wasCurrent && index == 0 {
+                newSubTask.markCurrent()
+            }
+            newSubTask.task = task
+            task.subTasks.append(newSubTask)
+            newSubTask.order = oldOrder + index  // Set order after append to avoid addSubTask overwriting it
+            modelContext.insert(newSubTask)
+            createdTitles.append(input.title)
+        }
+
+        do {
+            try modelContext.save()
+            return (true, "Split into \(newSubTasks.count) steps: \(createdTitles.joined(separator: ", "))")
+        } catch {
+            return (false, error.localizedDescription)
+        }
+    }
+
+    private func updateSubTask(
+        taskIdString: String,
+        subtaskIdString: String,
+        newTitle: String?,
+        newDescription: String?
+    ) async -> (success: Bool, message: String) {
+        guard let taskId = UUID(uuidString: taskIdString),
+              let subtaskId = UUID(uuidString: subtaskIdString) else {
+            return (false, "Invalid ID")
+        }
+
+        guard let modelContext else {
+            return (false, "No model context")
+        }
+
+        guard newTitle != nil || newDescription != nil else {
+            return (false, "Must provide title or description to update")
+        }
+
+        let taskDescriptor = FetchDescriptor<TodoTask>(
+            predicate: #Predicate { $0.id == taskId }
+        )
+
+        guard let task = try? modelContext.fetch(taskDescriptor).first,
+              let subTask = task.subTasks.first(where: { $0.id == subtaskId }) else {
+            return (false, "Task or subtask not found")
+        }
+
+        var updates: [String] = []
+        if let title = newTitle, !title.isEmpty {
+            subTask.title = title
+            updates.append("title")
+        }
+        if let description = newDescription {
+            subTask.subTaskDescription = description
+            updates.append("description")
+        }
+
+        do {
+            try modelContext.save()
+            return (true, "Updated \(updates.joined(separator: " and ")): \(subTask.title)")
         } catch {
             return (false, error.localizedDescription)
         }

@@ -18,11 +18,25 @@ final class CoachContext {
     var currentView: CoachViewContext = .allTasks
     var selectedTaskId: UUID?
     var selectedSubTaskId: UUID?
+    var currentSubTaskTitle: String?
+    var currentSubTaskDescription: String?
+    var allSubTasks: [(id: UUID, title: String, isCurrent: Bool)]?
 
     var contextDescription: String {
         switch currentView {
         case .allTasks:
-            return "User is viewing the All Tasks list, showing all active tasks with their subtasks."
+            var desc = "User is viewing the All Tasks list."
+            if let taskId = selectedTaskId {
+                desc += " They have selected a task (task_id: \(taskId.uuidString))."
+                if let subtasks = allSubTasks, !subtasks.isEmpty {
+                    desc += "\n\nSELECTED TASK STEPS:"
+                    for st in subtasks {
+                        let marker = st.isCurrent ? " (current)" : ""
+                        desc += "\n- subtask_id: \(st.id.uuidString) | \(st.title)\(marker)"
+                    }
+                }
+            }
+            return desc
         case .actionItems:
             return "User is viewing Action Items, showing tasks that need attention or have pending steps."
         case .completed:
@@ -37,7 +51,22 @@ final class CoachContext {
         case .settings:
             return "User is viewing Settings."
         case .focusedTask(let taskId):
-            return "User is focused on a specific task (ID: \(taskId.uuidString.prefix(8))...)."
+            var desc = "User is focused on a specific task (task_id: \(taskId.uuidString))."
+            if let subTaskId = selectedSubTaskId, let title = currentSubTaskTitle {
+                desc += "\n\nCURRENT STEP:\n- task_id: \(taskId.uuidString)\n- subtask_id: \(subTaskId.uuidString)\n- Title: \(title)"
+                if let subDesc = currentSubTaskDescription, !subDesc.isEmpty {
+                    desc += "\n- Description: \(subDesc)"
+                }
+                desc += "\n\nThe user may be stuck on this step. Use these IDs with split_subtask if they need it broken down."
+            }
+            if let subtasks = allSubTasks, !subtasks.isEmpty {
+                desc += "\n\nALL STEPS IN THIS TASK:"
+                for st in subtasks {
+                    let marker = st.isCurrent ? " (current)" : ""
+                    desc += "\n- subtask_id: \(st.id.uuidString) | \(st.title)\(marker)"
+                }
+            }
+            return desc
         }
     }
 }

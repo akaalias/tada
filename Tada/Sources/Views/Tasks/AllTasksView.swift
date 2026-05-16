@@ -27,8 +27,10 @@ struct AllTasksView: View {
                             .onTapGesture {
                                 if coachContext.selectedTaskId == task.id {
                                     coachContext.selectedTaskId = nil
+                                    coachContext.allSubTasks = nil
                                 } else {
                                     coachContext.selectedTaskId = task.id
+                                    coachContext.allSubTasks = task.sortedSubTasks.map { ($0.id, $0.title, $0.isCurrent) }
                                 }
                             }
                             .contextMenu {

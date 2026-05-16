@@ -75,6 +75,14 @@ struct ContentView: View {
             if let taskId = newTaskId {
                 coachContext.currentView = .focusedTask(taskId: taskId)
                 coachContext.selectedTaskId = taskId
+                if let task = allTasks.first(where: { $0.id == taskId }) {
+                    if let currentSubTask = task.currentSubTask {
+                        coachContext.selectedSubTaskId = currentSubTask.id
+                        coachContext.currentSubTaskTitle = currentSubTask.title
+                        coachContext.currentSubTaskDescription = currentSubTask.subTaskDescription
+                    }
+                    coachContext.allSubTasks = task.sortedSubTasks.map { ($0.id, $0.title, $0.isCurrent) }
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in

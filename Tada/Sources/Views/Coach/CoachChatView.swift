@@ -84,6 +84,9 @@ struct CoachChatView: View {
 
     private var contextLabel: String {
         if let task = selectedTask {
+            if let subTaskTitle = viewModel.context.currentSubTaskTitle {
+                return "Step: \(subTaskTitle)"
+            }
             return "Task: \(task.title)"
         }
         switch viewModel.context.currentView {
