@@ -454,6 +454,34 @@ actor ClaudeAPIClient {
             ]
         }
     }
+
+    /// Sends a request body and returns the raw JSON response. Used by CoachService.
+    func sendRequest(body: [String: Any], phase: APIRequestPhase, taskTitle: String?) async throws -> [String: Any] {
+        var request = URLRequest(url: baseURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = AppConstants.requestTimeout
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, httpResponse) = try await performLoggedRequest(request, phase: phase, taskTitle: taskTitle)
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = errorBody["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw ClaudeAPIError.apiError(message)
+            }
+            throw ClaudeAPIError.httpError(httpResponse.statusCode)
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ClaudeAPIError.invalidResponse
+        }
+
+        return json
+    }
 }
 
 enum ClaudeAPIError: LocalizedError {

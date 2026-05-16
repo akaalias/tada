@@ -132,6 +132,7 @@ private struct GraphWebView: NSViewRepresentable {
         --state-execution: #2f6fce;
         --state-completed: #1f9d78;
         --node-entity: #8f8c87;
+        --node-user-note: #9b59b6;
         --hover: #b54923;
       }
       @media (prefers-color-scheme: dark) {
@@ -143,6 +144,7 @@ private struct GraphWebView: NSViewRepresentable {
           --state-execution: #5e9bf2;
           --state-completed: #3fc9a3;
           --node-entity: #807d79;
+          --node-user-note: #b87fd9;
           --hover: #e08562;
         }
       }
@@ -171,6 +173,7 @@ private struct GraphWebView: NSViewRepresentable {
         <span><span class="swatch" style="background: var(--state-execution);"></span>Execution</span>
         <span><span class="swatch" style="background: var(--state-completed);"></span>Completed</span>
         <span><span class="swatch" style="background: var(--node-entity);"></span>Entity</span>
+        <span><span class="swatch" style="background: var(--node-user-note);"></span>Note</span>
       </div>
       <script>
         const data = __TADA_DATA_JSON__;
@@ -187,6 +190,7 @@ private struct GraphWebView: NSViewRepresentable {
             execution: cs.getPropertyValue('--state-execution').trim(),
             completed: cs.getPropertyValue('--state-completed').trim(),
             entity: cs.getPropertyValue('--node-entity').trim(),
+            userNote: cs.getPropertyValue('--node-user-note').trim(),
             hover: cs.getPropertyValue('--hover').trim(),
           };
         };
@@ -209,6 +213,7 @@ private struct GraphWebView: NSViewRepresentable {
                                   : palette.completed;
           const nodeColor = (n) => {
             if (n.kind === 'entity') return palette.entity;
+            if (n.kind === 'userNote') return palette.userNote;
             if (n.kind === 'subTask') return palette.completed;
             const state = taskStates[n.taskId];
             return state ? stateColor(state) : palette.entity;
@@ -237,12 +242,23 @@ private struct GraphWebView: NSViewRepresentable {
           };
 
           // Entities stay circles; tasks and sub-tasks are drawn as rounded
-          // rectangles. `r` is the sizing radius — the square is 2r per side.
+          // rectangles; user notes are octagons. `r` is the sizing radius.
           const traceNode = (node, ctx) => {
             const r = nodeSize(node);
             ctx.beginPath();
             if (node.kind === 'entity') {
               ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+            } else if (node.kind === 'userNote') {
+              // Draw octagon
+              const sides = 8;
+              for (let i = 0; i < sides; i++) {
+                const angle = (i * 2 * Math.PI / sides) - Math.PI / 2;
+                const x = node.x + r * Math.cos(angle);
+                const y = node.y + r * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+              }
+              ctx.closePath();
             } else {
               ctx.roundRect(node.x - r, node.y - r, r * 2, r * 2, r * 0.55);
             }
@@ -311,7 +327,7 @@ private struct GraphWebView: NSViewRepresentable {
             // Task folders: group by path prefix (non-entities only).
             const byFolder = new Map();
             data.nodes.forEach(n => {
-              if (n.kind === 'entity') return;
+              if (n.kind === 'entity' || n.kind === 'userNote') return;
               const folder = n.id.split('/').slice(0, 2).join('/');
               if (!byFolder.has(folder)) byFolder.set(folder, []);
               byFolder.get(folder).push(n);

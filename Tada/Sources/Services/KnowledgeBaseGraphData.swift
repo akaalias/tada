@@ -80,6 +80,7 @@ enum KnowledgeGraphBuilder {
         let title: String
         let isOverview: Bool       // `_overview.md`
         let isEntity: Bool         // inside `_entities/`
+        let isUserNote: Bool       // inside `_notes/` - user-created notes
         let folderRelativePath: String  // e.g. "notes/<folder>" or "notes/_entities"
         let body: String           // raw file content (frontmatter+body), used to find wikilinks
         let taskId: String?        // owning task's UUID string, from the `taskId` frontmatter field
@@ -99,7 +100,8 @@ enum KnowledgeGraphBuilder {
 
         for input in inputs {
             let kind: String
-            if input.isOverview { kind = "topLevelTask" }
+            if input.isUserNote { kind = "userNote" }
+            else if input.isOverview { kind = "topLevelTask" }
             else if input.isEntity { kind = "entity" }
             else { kind = "subTask" }
             let node = KnowledgeGraphData.Node(
@@ -111,8 +113,8 @@ enum KnowledgeGraphBuilder {
         }
 
         for input in inputs {
-            // Parent link: every non-overview, non-entity note → its folder's overview.
-            if !input.isOverview && !input.isEntity {
+            // Parent link: every non-overview, non-entity, non-userNote note → its folder's overview.
+            if !input.isOverview && !input.isEntity && !input.isUserNote {
                 if let overview = overviewByFolder[input.folderRelativePath] {
                     addLink(source: overview, target: input.relativePath, kind: "parent",
                             links: &links, keys: &linkKeys)

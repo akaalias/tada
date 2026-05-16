@@ -17,6 +17,13 @@ protocol KnowledgeBaseServiceProtocol {
     func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink]
     func buildGraphData() async -> KnowledgeGraphData
     func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int)
+    func createEntity(name: String, body: String) async throws
+    func addLinkToNote(at url: URL, targetEntity: String) async throws
+    func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws
+    func editNoteBody(at url: URL, newBody: String) async throws
+    func generateSummary() async throws -> String
+    func createUserNote(title: String, body: String) async -> URL
+    func listUserNotes() async -> [(slug: String, title: String)]
 }
 
 /// Concrete implementation backed by the singleton. Under UI test mode, routes
@@ -71,6 +78,41 @@ final class KnowledgeBaseServiceAdapter: KnowledgeBaseServiceProtocol {
     func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int) {
         if let testMock { return await testMock.cleanupOrphanedNotes(existingTaskIds: existingTaskIds) }
         return await KnowledgeBaseService.shared.cleanupOrphanedNotes(existingTaskIds: existingTaskIds)
+    }
+
+    func createEntity(name: String, body: String) async throws {
+        if let testMock { try await testMock.createEntity(name: name, body: body); return }
+        try await KnowledgeBaseService.shared.createEntity(name: name, body: body)
+    }
+
+    func addLinkToNote(at url: URL, targetEntity: String) async throws {
+        if let testMock { try await testMock.addLinkToNote(at: url, targetEntity: targetEntity); return }
+        try await KnowledgeBaseService.shared.addLinkToNote(at: url, targetEntity: targetEntity)
+    }
+
+    func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws {
+        if let testMock { try await testMock.replaceTextWithLink(at: url, textToFind: textToFind, targetEntity: targetEntity); return }
+        try await KnowledgeBaseService.shared.replaceTextWithLink(at: url, textToFind: textToFind, targetEntity: targetEntity)
+    }
+
+    func editNoteBody(at url: URL, newBody: String) async throws {
+        if let testMock { try await testMock.editNoteBody(at: url, newBody: newBody); return }
+        try await KnowledgeBaseService.shared.editNoteBody(at: url, newBody: newBody)
+    }
+
+    func generateSummary() async throws -> String {
+        if let testMock { return try await testMock.generateSummary() }
+        return try await KnowledgeBaseService.shared.generateSummary()
+    }
+
+    func createUserNote(title: String, body: String) async -> URL {
+        if let testMock { return await testMock.createUserNote(title: title, body: body) }
+        return await KnowledgeBaseService.shared.createUserNote(title: title, body: body)
+    }
+
+    func listUserNotes() async -> [(slug: String, title: String)] {
+        if let testMock { return await testMock.listUserNotes() }
+        return await KnowledgeBaseService.shared.listUserNotes()
     }
 }
 

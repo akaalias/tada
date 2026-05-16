@@ -190,6 +190,50 @@ final class UITestKnowledgeBaseService: KnowledgeBaseServiceProtocol {
         (0, 0)
     }
 
+    func createEntity(name: String, body: String) async throws {}
+
+    func addLinkToNote(at url: URL, targetEntity: String) async throws {}
+
+    func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws {}
+
+    func editNoteBody(at url: URL, newBody: String) async throws {}
+
+    func generateSummary() async throws -> String {
+        "Test knowledge base summary"
+    }
+
+    func createUserNote(title: String, body: String) async -> URL {
+        let userNotesFolder = notesURL.appendingPathComponent("_notes", isDirectory: true)
+        try? FileManager.default.createDirectory(at: userNotesFolder, withIntermediateDirectories: true)
+        let slug = Self.slugify(title)
+        let url = userNotesFolder.appendingPathComponent("\(slug).md")
+        let content = """
+        ---
+        title: \(escapeFrontmatter(title))
+        kind: userNote
+        slug: \(slug)
+        ---
+
+        # \(title)
+
+        \(body)
+        """
+        try? content.write(to: url, atomically: true, encoding: .utf8)
+        return url
+    }
+
+    func listUserNotes() async -> [(slug: String, title: String)] {
+        let userNotesFolder = notesURL.appendingPathComponent("_notes", isDirectory: true)
+        let files = (try? FileManager.default.contentsOfDirectory(at: userNotesFolder, includingPropertiesForKeys: nil)) ?? []
+        return files.compactMap { url -> (String, String)? in
+            guard url.pathExtension == "md" else { return nil }
+            let slug = url.deletingPathExtension().lastPathComponent
+            let raw = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+            let title = parseTitleFromFrontmatter(raw) ?? slug
+            return (slug, title)
+        }
+    }
+
     // MARK: - Helpers (mirror KnowledgeBaseFilesystem / KnowledgeBaseIndexer formats)
 
     private func ensureFolder(for task: TodoTask) -> URL {

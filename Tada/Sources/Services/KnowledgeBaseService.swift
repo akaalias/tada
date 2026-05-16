@@ -342,6 +342,185 @@ final class KnowledgeBaseService: ObservableObject {
 
         return (deletedFolders, deletedEntities)
     }
+
+    // MARK: - Coach Actions
+
+    /// Creates a new entity note in the knowledge base with the given name and body.
+    func createEntity(name: String, body: String) async throws {
+        beginWork()
+        defer { endWork() }
+
+        let slug = KnowledgeBaseFilesystem.entitySlug(from: name)
+        let created = await filesystem.writeEntityNote(slug: slug, displayName: name, body: body)
+
+        if created {
+            await indexer.regenerateGlobalIndex()
+        }
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+    }
+
+    /// Adds a wikilink to the target entity at the end of a note.
+    func addLinkToNote(at url: URL, targetEntity: String) async throws {
+        beginWork()
+        defer { endWork() }
+
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw KnowledgeBaseError.noteNotFound
+        }
+
+        var content = try String(contentsOf: url, encoding: .utf8)
+
+        let slug = targetEntity.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+
+        let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
+        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
+        let wikilink = "[[\(linkPath)|\(targetEntity)]]"
+
+        if content.contains(wikilink) {
+            return
+        }
+
+        if content.contains("## Related") {
+            content = content.replacingOccurrences(of: "## Related", with: "## Related\n\n- \(wikilink)")
+        } else {
+            content += "\n\n## Related\n\n- \(wikilink)"
+        }
+
+        try content.write(to: url, atomically: true, encoding: .utf8)
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+    }
+
+    /// Finds text in a note and replaces it with a wikilink to the target entity.
+    func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws {
+        beginWork()
+        defer { endWork() }
+
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw KnowledgeBaseError.noteNotFound
+        }
+
+        var content = try String(contentsOf: url, encoding: .utf8)
+
+        guard content.contains(textToFind) else {
+            throw KnowledgeBaseError.textNotFound
+        }
+
+        let slug = targetEntity.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+
+        let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
+        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
+        let wikilink = "[[\(linkPath)|\(targetEntity)]]"
+
+        content = content.replacingOccurrences(of: textToFind, with: wikilink)
+
+        try content.write(to: url, atomically: true, encoding: .utf8)
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+    }
+
+    /// Edits the body content of a note, preserving frontmatter and structural sections.
+    func editNoteBody(at url: URL, newBody: String) async throws {
+        beginWork()
+        defer { endWork() }
+
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw KnowledgeBaseError.noteNotFound
+        }
+
+        let raw = try String(contentsOf: url, encoding: .utf8)
+
+        guard let (_, bodyRange) = KnowledgeBaseEntityLinker.extractBodyRegion(from: raw) else {
+            throw KnowledgeBaseError.bodyNotFound
+        }
+
+        var content = raw
+        content.replaceSubrange(bodyRange, with: "\n\(newBody)\n\n")
+
+        try content.write(to: url, atomically: true, encoding: .utf8)
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+    }
+
+    /// Generates a summary of the knowledge base by reading the index and summarizing entries.
+    func generateSummary() async throws -> String {
+        beginWork()
+        defer { endWork() }
+
+        let entries = await loadAllEntries()
+        let entityFiles = await filesystem.listEntityFiles()
+
+        if entries.isEmpty && entityFiles.isEmpty {
+            return "Your knowledge base is empty. Complete some tasks to start building your personal wiki."
+        }
+
+        var summary = "Your knowledge base contains:\n\n"
+
+        if !entries.isEmpty {
+            summary += "Tasks (\(entries.count)):\n"
+            for entry in entries.prefix(5) {
+                summary += "- \(entry.title)\n"
+            }
+            if entries.count > 5 {
+                summary += "- ... and \(entries.count - 5) more\n"
+            }
+            summary += "\n"
+        }
+
+        if !entityFiles.isEmpty {
+            summary += "Entities (\(entityFiles.count)):\n"
+            for entityURL in entityFiles.prefix(5) {
+                let name = entityURL.deletingPathExtension().lastPathComponent
+                    .replacingOccurrences(of: "-", with: " ")
+                    .capitalized
+                summary += "- \(name)\n"
+            }
+            if entityFiles.count > 5 {
+                summary += "- ... and \(entityFiles.count - 5) more\n"
+            }
+        }
+
+        return summary
+    }
+
+    // MARK: - User Notes
+
+    func createUserNote(title: String, body: String) async -> URL {
+        beginWork()
+        defer { endWork() }
+
+        let slug = title.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+            .prefix(48)
+
+        let url = await filesystem.writeUserNote(slug: String(slug), title: title, body: body)
+        await indexer.regenerateGlobalIndex()
+        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
+        return url
+    }
+
+    func listUserNotes() async -> [(slug: String, title: String)] {
+        await filesystem.listUserNotes()
+    }
+}
+
+enum KnowledgeBaseError: LocalizedError {
+    case noteNotFound
+    case textNotFound
+    case bodyNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .noteNotFound:
+            return "Note not found"
+        case .textNotFound:
+            return "Text not found in note"
+        case .bodyNotFound:
+            return "Could not find body section in note"
+        }
+    }
 }
 
 // MARK: - Subtask Snapshot (used by generator)

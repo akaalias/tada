@@ -7,10 +7,13 @@ import SwiftData
 struct KnowledgeBaseView: View {
     @Environment(\.appServices) private var appServices
     @Query private var allTasks: [TodoTask]
+    var coachContext: CoachContext
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
     @State private var showingGraph: Bool = false
     @State private var cleanupResult: (taskFolders: Int, entities: Int)?
+    @State private var showingNoteEditor: Bool = false
+    @State private var existingNotes: [(slug: String, title: String)] = []
     // Observed directly so the toolbar spinner reacts the moment work starts/stops — the
     // protocol adapter is not an ObservableObject and would not drive a re-render.
     @ObservedObject private var kbService = KnowledgeBaseService.shared
@@ -52,6 +55,34 @@ struct KnowledgeBaseView: View {
         .onReceive(NotificationCenter.default.publisher(for: .knowledgeBaseUpdated)) { _ in
             refreshTick &+= 1
         }
+        .sheet(isPresented: $showingNoteEditor) {
+            NoteEditorView(
+                isPresented: $showingNoteEditor,
+                onSave: { title, body in
+                    Task {
+                        _ = await kb?.createUserNote(title: title, body: body)
+                    }
+                },
+                existingNotes: existingNotes
+            )
+        }
+        .task {
+            await loadExistingNotes()
+        }
+        .onChange(of: refreshTick) { _, _ in
+            Task { await loadExistingNotes() }
+        }
+        .onChange(of: pageStack) { _, newStack in
+            let noteURL = newStack.last
+            coachContext.currentView = .knowledgeBase(currentNote: noteURL)
+        }
+        .onAppear {
+            coachContext.currentView = .knowledgeBase(currentNote: pageStack.last)
+        }
+    }
+
+    private func loadExistingNotes() async {
+        existingNotes = await kb?.listUserNotes() ?? []
     }
 
     /// Called by the graph view when a node is clicked. Opens that note in the wiki.
@@ -91,6 +122,14 @@ struct KnowledgeBaseView: View {
             }
             .help(showingGraph ? "Back to wiki" : "Show graph of all notes")
             .accessibilityIdentifier("kb.toggleGraph")
+
+            Button {
+                showingNoteEditor = true
+            } label: {
+                Image(systemName: "square.and.pencil")
+            }
+            .help("New Note")
+            .accessibilityIdentifier("kb.newNote")
 
             Spacer()
 
@@ -848,5 +887,5 @@ private struct BacklinksFooter: View {
 }
 
 #Preview {
-    KnowledgeBaseView()
+    KnowledgeBaseView(coachContext: CoachContext())
 }

@@ -82,10 +82,15 @@ enum KnowledgeBaseEntityLinker {
 
     /// Returns true if `body` contains a wikilink to the entity with the given slug.
     static func bodyContainsEntityLink(_ body: String, entitySlug slug: String) -> Bool {
-        // We match the canonical path-prefixed form we write: `[[../_entities/<slug>.md|...`
-        // (with the optional `|Display Name` part).
-        let target = "[[\(KnowledgeBaseFilesystem.entityLinkPrefix)\(slug).md"
-        return body.contains(target)
+        // Match the canonical path-prefixed form from task notes: `[[../_entities/<slug>.md|...`
+        let taskNoteFormat = "[[\(KnowledgeBaseFilesystem.entityLinkPrefix)\(slug).md"
+        if body.contains(taskNoteFormat) { return true }
+        // Also match entity-to-entity links (same folder): `[[<slug>.md|...`
+        let entityFormat = "[[\(slug).md"
+        if body.contains(entityFormat) { return true }
+        // And links with _entities/ prefix (from notes not in task folders)
+        let prefixedFormat = "[[_entities/\(slug).md"
+        return body.contains(prefixedFormat)
     }
 
     /// Locates the body slice inside a written note file. The body lives between the `# Title`

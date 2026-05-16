@@ -9,11 +9,15 @@ final actor KnowledgeBaseFilesystem {
     private let entitiesURL: URL
 
     static let entitiesFolderName = "_entities"
+    static let userNotesFolderName = "_notes"
+
+    private let userNotesURL: URL
 
     init(notesURL: URL, rootURL: URL) {
         self.notesURL = notesURL
         self.rootURL = rootURL
         self.entitiesURL = notesURL.appendingPathComponent(Self.entitiesFolderName, isDirectory: true)
+        self.userNotesURL = notesURL.appendingPathComponent(Self.userNotesFolderName, isDirectory: true)
     }
 
     // MARK: - Folder management
@@ -46,7 +50,55 @@ final actor KnowledgeBaseFilesystem {
 
     func listTaskFolders() -> [URL] {
         let all = (try? FileManager.default.contentsOfDirectory(at: notesURL, includingPropertiesForKeys: nil)) ?? []
-        return all.filter { $0.lastPathComponent != Self.entitiesFolderName }
+        return all.filter { $0.lastPathComponent != Self.entitiesFolderName && $0.lastPathComponent != Self.userNotesFolderName }
+    }
+
+    // MARK: - User Notes
+
+    func ensureUserNotesFolder() -> URL {
+        try? FileManager.default.createDirectory(at: userNotesURL, withIntermediateDirectories: true)
+        return userNotesURL
+    }
+
+    func listUserNoteFiles() -> [URL] {
+        let files = (try? FileManager.default.contentsOfDirectory(at: userNotesURL, includingPropertiesForKeys: nil)) ?? []
+        return files.filter { $0.pathExtension == "md" }
+    }
+
+    func listUserNotes() -> [(slug: String, title: String)] {
+        let files = listUserNoteFiles()
+        return files.compactMap { url -> (String, String)? in
+            let slug = url.deletingPathExtension().lastPathComponent
+            let body = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+            let title = parseFrontmatter(body)["title"] ?? slug
+            return (slug, title)
+        }
+    }
+
+    @discardableResult
+    func writeUserNote(slug: String, title: String, body: String) -> URL {
+        _ = ensureUserNotesFolder()
+        let fileURL = userNotesURL.appendingPathComponent("\(slug).md")
+        let content = """
+        ---
+        title: \(escapeFrontmatter(title))
+        kind: userNote
+        slug: \(slug)
+        created: \(ISO8601DateFormatter().string(from: Date()))
+        ---
+
+        # \(title)
+
+        \(body)
+
+        <!-- tada:related:start -->
+        <!-- tada:related:end -->
+
+        ---
+        Back to [[../../index.md|Knowledge Base index]]
+        """
+        try? content.write(to: fileURL, atomically: true, encoding: .utf8)
+        return fileURL
     }
 
     // MARK: - Entities
@@ -140,6 +192,7 @@ final actor KnowledgeBaseFilesystem {
                     title: title,
                     isOverview: isOverview,
                     isEntity: false,
+                    isUserNote: false,
                     folderRelativePath: folderRel,
                     body: raw,
                     taskId: meta["taskId"]
@@ -159,23 +212,44 @@ final actor KnowledgeBaseFilesystem {
                 title: title,
                 isOverview: false,
                 isEntity: true,
+                isUserNote: false,
                 folderRelativePath: entitiesFolderRel,
                 body: raw,
                 taskId: meta["taskId"]
             ))
         }
 
+        // User notes.
+        let userNotesFolderRel = "notes/\(Self.userNotesFolderName)"
+        let userNoteFiles = listUserNoteFiles()
+        for url in userNoteFiles {
+            guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            let meta = Self.parseFrontmatter(raw)
+            let title = meta["title"] ?? url.deletingPathExtension().lastPathComponent
+            inputs.append(.init(
+                relativePath: relativePath(from: rootURL, to: url),
+                title: title,
+                isOverview: false,
+                isEntity: false,
+                isUserNote: true,
+                folderRelativePath: userNotesFolderRel,
+                body: raw,
+                taskId: nil
+            ))
+        }
+
         return inputs
     }
 
-    /// Scans every task-folder note for wikilinks to the entity at `slug` and returns the backlinks
+    /// Scans every task-folder note and entity file for wikilinks to the entity at `slug` and returns the backlinks
     /// in title-sorted order. Used by the wiki view to render an entity note's "Backlinks" section.
     func backlinks(toEntitySlug slug: String) -> [KnowledgeBaseEntityLinker.Backlink] {
-        let folders = listTaskFolders()
         var results: [KnowledgeBaseEntityLinker.Backlink] = []
+
+        // Scan task folders
+        let folders = listTaskFolders()
         for folder in folders {
             let files = listNoteFiles(in: folder)
-            // The overview file holds the task title that we'll attribute backlinks to.
             let overviewURL = folder.appendingPathComponent("_overview.md")
             let overviewBody = (try? String(contentsOf: overviewURL, encoding: .utf8)) ?? ""
             let taskTitle = Self.parseFrontmatter(overviewBody)["title"]
@@ -188,6 +262,19 @@ final actor KnowledgeBaseFilesystem {
                 results.append(.init(fileURL: url, noteTitle: noteTitle, taskTitle: taskTitle))
             }
         }
+
+        // Scan entity files (for entity-to-entity links)
+        let entityFiles = listEntityFiles()
+        for url in entityFiles {
+            // Skip the entity itself
+            if url.deletingPathExtension().lastPathComponent == slug { continue }
+            guard let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            if !KnowledgeBaseEntityLinker.bodyContainsEntityLink(raw, entitySlug: slug) { continue }
+            let meta = Self.parseFrontmatter(raw)
+            let noteTitle = meta["title"] ?? url.deletingPathExtension().lastPathComponent
+            results.append(.init(fileURL: url, noteTitle: noteTitle, taskTitle: nil))
+        }
+
         return results.sorted { $0.noteTitle.localizedCaseInsensitiveCompare($1.noteTitle) == .orderedAscending }
     }
 

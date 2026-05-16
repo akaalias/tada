@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var showingNewTaskSheet = false
     @State private var apiKeyValid: Bool = APIKeyManager.hasValidAPIKey
     @State private var focusedTaskId: UUID?
+    @State private var showCoachPanel: Bool = false
+    @State private var coachContext = CoachContext()
+    @State private var coachViewModel: CoachViewModel?
     @Query private var allTasks: [TodoTask]
 
     private var focusedTask: TodoTask? {
@@ -16,10 +19,31 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            Sidebar(selection: $selectedView)
-        } detail: {
-            detailView
+        HStack(spacing: 0) {
+            NavigationSplitView {
+                Sidebar(selection: $selectedView)
+            } detail: {
+                detailView
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showCoachPanel.toggle()
+                                }
+                            } label: {
+                                Image(systemName: showCoachPanel ? "sparkles.rectangle.stack.fill" : "sparkles.rectangle.stack")
+                            }
+                            .help(showCoachPanel ? "Hide Coach" : "Show Coach")
+                            .accessibilityIdentifier("toolbar.toggleCoach")
+                        }
+                    }
+            }
+
+            if showCoachPanel, let vm = coachViewModel {
+                Divider()
+                CoachChatView(viewModel: vm)
+                    .transition(.move(edge: .trailing))
+            }
         }
         .sheet(isPresented: $showingNewTaskSheet) {
             NewTaskSheet()
@@ -27,6 +51,10 @@ struct ContentView: View {
         .onAppear {
             // Back-fill wiki pages for tasks created before the wiki feature existed.
             appServices?.knowledgeBase.reconcile(tasks: allTasks)
+            // Initialize coach view model
+            if coachViewModel == nil {
+                coachViewModel = CoachViewModel(context: coachContext)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .newTask)) { _ in
             showingNewTaskSheet = true
@@ -39,13 +67,39 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionItems)) { _ in
             selectedView = .actionItems
         }
-        .onChange(of: selectedView) { _, _ in
+        .onChange(of: selectedView) { _, newView in
             focusedTaskId = nil
+            updateCoachContext(for: newView)
+        }
+        .onChange(of: focusedTaskId) { _, newTaskId in
+            if let taskId = newTaskId {
+                coachContext.currentView = .focusedTask(taskId: taskId)
+                coachContext.selectedTaskId = taskId
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in
             apiKeyValid = APIKeyManager.hasValidAPIKey
         }
         .frame(minWidth: 800, minHeight: 500)
+    }
+
+    private func updateCoachContext(for view: SidebarItem) {
+        switch view {
+        case .allTasks:
+            coachContext.currentView = .allTasks
+        case .actionItems:
+            coachContext.currentView = .actionItems
+        case .completed:
+            coachContext.currentView = .completed
+        case .knowledge:
+            coachContext.currentView = .knowledgeBase(currentNote: nil)
+        case .console:
+            coachContext.currentView = .console
+        case .settings:
+            coachContext.currentView = .settings
+        }
+        coachContext.selectedTaskId = nil
+        coachContext.selectedSubTaskId = nil
     }
 
     @ViewBuilder
@@ -70,7 +124,7 @@ struct ContentView: View {
                 case .completed:
                     CompletedTasksView()
                 case .knowledge:
-                    KnowledgeBaseView()
+                    KnowledgeBaseView(coachContext: coachContext)
                 case .console:
                     ConsoleView()
                 case .settings:

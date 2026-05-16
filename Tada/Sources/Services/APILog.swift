@@ -5,12 +5,14 @@ enum AIRole: String, Codable, Sendable, CaseIterable {
     case planner
     case executive
     case knowledge
+    case coach
 
     var displayName: String {
         switch self {
         case .planner: "Planning Agent"
         case .executive: "Executive Agent"
         case .knowledge: "Knowledge Base Agent"
+        case .coach: "Productivity Coach"
         }
     }
 }
