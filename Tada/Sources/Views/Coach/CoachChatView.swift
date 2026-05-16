@@ -185,7 +185,7 @@ private struct MessageBubble: View {
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
-                Text(message.content)
+                Text(markdownContent)
                     .font(.system(size: 13))
                     .foregroundColor(message.role == .user ? .white : .primary)
                     .padding(.horizontal, 12)
@@ -206,6 +206,11 @@ private struct MessageBubble: View {
                 Spacer()
             }
         }
+    }
+
+    private var markdownContent: AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: message.content, options: options)) ?? AttributedString(message.content)
     }
 
     private var bubbleBackground: Color {
