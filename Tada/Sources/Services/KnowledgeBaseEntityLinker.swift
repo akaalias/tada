@@ -118,7 +118,6 @@ enum KnowledgeBaseEntityLinker {
         }
         let bodySlice = raw[titleEndStringIdx..<bodyEnd]
         let trimmed = bodySlice.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
         return (trimmed, titleEndStringIdx..<bodyEnd)
     }
 

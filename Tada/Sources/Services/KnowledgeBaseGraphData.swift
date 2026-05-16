@@ -130,6 +130,17 @@ enum KnowledgeGraphBuilder {
                 }
             }
 
+            // Entity-to-entity links: within entity notes, links are just `[[slug.md|...]]`.
+            if input.isEntity {
+                for slug in entityToEntitySlugs(in: input.body) {
+                    let target = "notes/_entities/\(slug).md"
+                    if nodeIds.contains(target) && target != input.relativePath {
+                        addLink(source: input.relativePath, target: target, kind: "entity",
+                                links: &links, keys: &linkKeys)
+                    }
+                }
+            }
+
             // Related links: pulled from the `## Related` section's wikilinks (cross-link discovery).
             for relative in relatedTargets(in: input.body) {
                 let resolved = resolve(relativeLink: relative, from: input.folderRelativePath)
@@ -174,6 +185,22 @@ enum KnowledgeGraphBuilder {
         return matches.compactMap { match in
             guard match.range(at: 1).location != NSNotFound else { return nil }
             return ns.substring(with: match.range(at: 1))
+        }
+    }
+
+    private static func entityToEntitySlugs(in body: String) -> [String] {
+        // Matches `[[<slug>.md|...]]` for links within entity notes to other entities.
+        // Excludes links with path separators and special files like index.md.
+        let pattern = #"\[\[([a-z0-9-]+)\.md(?:\|[^\]]+)?\]\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let ns = body as NSString
+        let matches = regex.matches(in: body, range: NSRange(location: 0, length: ns.length))
+        return matches.compactMap { match in
+            guard match.range(at: 1).location != NSNotFound else { return nil }
+            let slug = ns.substring(with: match.range(at: 1))
+            // Exclude index and other special files
+            if slug == "index" { return nil }
+            return slug
         }
     }
 

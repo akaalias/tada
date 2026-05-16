@@ -474,8 +474,10 @@ final class CoachViewModel {
             return (false, "Knowledge base not available")
         }
 
+        let body = content?.isEmpty == false ? content! : "Knowledge base entry for \(name)."
+
         do {
-            try await knowledgeBase.createEntity(name: name, body: content ?? "")
+            try await knowledgeBase.createEntity(name: name, body: body)
             return (true, "Created entity: \(name)")
         } catch {
             return (false, error.localizedDescription)
