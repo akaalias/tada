@@ -255,3 +255,16 @@ struct FieldTypeButton: View {
     }
 }
 
+extension View {
+    /// Standard input-field chrome: a filled, rounded background with a hairline border.
+    func fieldChrome(_ fill: Color) -> some View {
+        self
+            .background(fill)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+    }
+}
+

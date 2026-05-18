@@ -95,12 +95,7 @@ struct OrderedListRenderer: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(phaseColor.opacity(draggingItem == item ? 0.45 : 0.25))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-        )
+        .fieldChrome(phaseColor.opacity(draggingItem == item ? 0.45 : 0.25))
         .opacity(draggingItem == item ? 0.5 : 1.0)
     }
 

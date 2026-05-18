@@ -14,12 +14,7 @@ struct NumberFieldRenderer: View {
                 .textFieldStyle(.plain)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 14)
-                .background(phaseColor.opacity(0.25))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
+                .fieldChrome(phaseColor.opacity(0.25))
                 .frame(width: 150)
 
             if let validation = field.validation {
