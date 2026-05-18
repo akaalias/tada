@@ -346,7 +346,7 @@ final class KnowledgeBaseService: ObservableObject {
         beginWork()
         defer { endWork() }
 
-        let slug = KnowledgeBaseFilesystem.entitySlug(from: name)
+        let slug = KnowledgeBaseFilesystem.slug(from: name)
         let created = await filesystem.writeEntityNote(slug: slug, displayName: name, body: body)
 
         if created {
@@ -366,9 +366,7 @@ final class KnowledgeBaseService: ObservableObject {
 
         var content = try String(contentsOf: url, encoding: .utf8)
 
-        let slug = targetEntity.lowercased()
-            .replacingOccurrences(of: " ", with: "-")
-            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
 
         let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
         let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
@@ -403,9 +401,7 @@ final class KnowledgeBaseService: ObservableObject {
             throw KnowledgeBaseError.textNotFound
         }
 
-        let slug = targetEntity.lowercased()
-            .replacingOccurrences(of: " ", with: "-")
-            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
+        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
 
         let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
         let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
@@ -486,12 +482,9 @@ final class KnowledgeBaseService: ObservableObject {
         beginWork()
         defer { endWork() }
 
-        let slug = title.lowercased()
-            .replacingOccurrences(of: " ", with: "-")
-            .filter { $0.isLetter || $0.isNumber || $0 == "-" }
-            .prefix(48)
+        let slug = KnowledgeBaseFilesystem.slug(from: title)
 
-        let url = await filesystem.writeUserNote(slug: String(slug), title: title, body: body)
+        let url = await filesystem.writeUserNote(slug: slug, title: title, body: body)
         await indexer.regenerateGlobalIndex()
         NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         return url

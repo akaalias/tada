@@ -26,7 +26,7 @@ enum KnowledgeBaseEntityLinker {
         var finalNew: [FinalEntity] = []
         var seenCanonical: Set<String> = []
         for e in newEntities {
-            let canonical = KnowledgeBaseFilesystem.entitySlug(from: e.displayName)
+            let canonical = KnowledgeBaseFilesystem.slug(from: e.displayName)
             guard !canonical.isEmpty else { continue }
             aiSlugToCanonical[e.slug] = canonical
             if !seenCanonical.contains(canonical) && !existingSlugs.contains(canonical) {
@@ -133,7 +133,7 @@ enum KnowledgeBaseEntityLinker {
         // If the AI's slug maps to one of our canonical new entities, use canonical.
         if let canonical = aiSlugMap[aiSlug] { return canonical }
         // Otherwise compute canonical from the display name as a fallback.
-        let fromDisplay = KnowledgeBaseFilesystem.entitySlug(from: display)
+        let fromDisplay = KnowledgeBaseFilesystem.slug(from: display)
         return fromDisplay.isEmpty ? aiSlug : fromDisplay
     }
 }
