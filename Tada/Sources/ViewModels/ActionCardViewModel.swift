@@ -83,11 +83,17 @@ final class ActionCardViewModel {
         let currentText = actionResponse.values.compactMap { _, value -> String? in
             switch value {
             case .string(let s):
-                if s.hasPrefix("data:image") { return nil }
                 return s.isEmpty ? nil : s
             case .number(let n): return String(format: "%.0f", n)
             case .stringArray(let arr): return arr.joined(separator: "\n")
-            default: return nil
+            case .range(let lower, let upper): return String(format: "%g - %g", lower, upper)
+            case .tree(let nodes):
+                guard !nodes.isEmpty else { return nil }
+                return nodes.map { String(repeating: "  ", count: $0.depth) + $0.label }
+                    .joined(separator: "\n")
+            case .table(let table): return table.summary
+            case .image(_, let description): return description.isEmpty ? nil : description
+            case .boolean, .date: return nil
             }
         }.joined(separator: "\n")
 

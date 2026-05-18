@@ -330,53 +330,23 @@ struct ItemTableRenderer: View {
             columns.first.map { row.values[$0.id]?.isEmpty == false } ?? false
         }
 
-        var parts: [String] = []
-        for row in filledRows {
-            let rowParts = columns.compactMap { col -> String? in
-                guard let val = row.values[col.id], !val.isEmpty else { return nil }
-                switch col.type {
-                case .currency:
-                    return "€\(val)"
-                default:
-                    return val
-                }
-            }
-            if !rowParts.isEmpty {
-                parts.append(rowParts.joined(separator: " - "))
-            }
-        }
-
-        var summary = parts.joined(separator: "; ")
-        if hasCurrencyColumn {
-            summary += " (Total: €\(Int(totalAmount)))"
-        }
-        response[field.id] = .string(summary.isEmpty ? "No items" : summary)
-
-        // Also persist a structured representation so the wiki renderer can show a real markdown
-        // table and the AI can format numbers properly.
-        let columnPayloads: [[String: String]] = columns.map { col in
-            var dict: [String: String] = ["id": col.id, "label": col.label]
+        let tableColumns = columns.map { col -> TableData.Column in
+            let typeString: String
             switch col.type {
-            case .text: dict["type"] = "text"
-            case .currency: dict["type"] = "currency"
-            case .category: dict["type"] = "category"
-            case .select: dict["type"] = "select"
+            case .text: typeString = "text"
+            case .currency: typeString = "currency"
+            case .category: typeString = "category"
+            case .select: typeString = "select"
             }
-            return dict
+            return TableData.Column(id: col.id, label: col.label, type: typeString)
         }
-        let rowPayloads: [[String: String]] = filledRows.map { $0.values }
-        let payload: [String: Any] = [
-            "columns": columnPayloads,
-            "rows": rowPayloads,
-            "total": hasCurrencyColumn ? Int(totalAmount) : 0,
-            "hasCurrency": hasCurrencyColumn
-        ]
-        if let data = try? JSONSerialization.data(withJSONObject: payload),
-           let json = String(data: data, encoding: .utf8) {
-            response[field.id + "_table"] = .string("__tada_table__\(json)")
-        } else {
-            response[field.id + "_table"] = nil
-        }
+
+        response[field.id] = .table(TableData(
+            columns: tableColumns,
+            rows: filledRows.map { $0.values },
+            total: hasCurrencyColumn ? Int(totalAmount) : 0,
+            hasCurrency: hasCurrencyColumn
+        ))
     }
 }
 

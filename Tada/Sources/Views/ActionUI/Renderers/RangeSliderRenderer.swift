@@ -128,9 +128,9 @@ struct RangeSliderRenderer: View {
     }
 
     private func updateResponse() {
-        let lower = Int(roundToStep(lowerValue))
-        let upper = Int(roundToStep(upperValue))
-        response[field.id] = .string("\(lower) - \(upper)")
+        let lower = roundToStep(lowerValue)
+        let upper = roundToStep(upperValue)
+        response[field.id] = .range(lower: lower, upper: upper)
     }
 }
 

@@ -13,7 +13,6 @@ enum KnowledgeResponseExtractor {
         let parts = response.values.compactMap { _, value -> String? in
             switch value {
             case .string(let s):
-                if s.hasPrefix("data:image") { return "(drawing)" }
                 return s.isEmpty ? nil : s
             case .number(let n):
                 return String(format: "%g", n)
@@ -23,6 +22,14 @@ enum KnowledgeResponseExtractor {
                 return arr.isEmpty ? nil : arr.joined(separator: ", ")
             case .date(let d):
                 return d.formatted(date: .abbreviated, time: .omitted)
+            case .range(let lower, let upper):
+                return String(format: "%g - %g", lower, upper)
+            case .tree(let nodes):
+                return nodes.isEmpty ? nil : nodes.map(\.label).joined(separator: ", ")
+            case .table(let table):
+                return table.summary
+            case .image(_, let description):
+                return description.isEmpty ? "(drawing)" : description
             }
         }
         return parts.isEmpty ? "(no response recorded)" : parts.joined(separator: "; ")
@@ -38,8 +45,6 @@ enum KnowledgeResponseExtractor {
         let parts = response.values.compactMap { _, value -> String? in
             switch value {
             case .string(let s):
-                if s.hasPrefix("data:image") { return nil }
-                if s.hasPrefix("__tada_table__") { return nil }
                 return s.isEmpty ? nil : s
             case .number(let n):
                 return String(format: "%g", n)
@@ -49,6 +54,15 @@ enum KnowledgeResponseExtractor {
                 return arr.isEmpty ? nil : arr.joined(separator: ", ")
             case .date(let d):
                 return d.formatted(date: .abbreviated, time: .omitted)
+            case .range(let lower, let upper):
+                return String(format: "%g - %g", lower, upper)
+            case .tree(let nodes):
+                guard !nodes.isEmpty else { return nil }
+                return nodes.map { String(repeating: "  ", count: $0.depth) + $0.label }
+                    .joined(separator: "\n")
+            case .table, .image:
+                // Tables and drawings are preserved separately as markdown / PNG.
+                return nil
             }
         }
         return parts.isEmpty ? nil : parts.joined(separator: "; ")
@@ -60,9 +74,8 @@ enum KnowledgeResponseExtractor {
             return nil
         }
         for (_, value) in response.values {
-            if case .string(let s) = value, s.hasPrefix("data:image/png;base64,") {
-                let base64 = String(s.dropFirst("data:image/png;base64,".count))
-                return Data(base64Encoded: base64)
+            if case .image(let png, _) = value {
+                return png
             }
         }
         return nil
@@ -74,34 +87,8 @@ enum KnowledgeResponseExtractor {
             return nil
         }
         for (_, value) in response.values {
-            if case .string(let s) = value, s.hasPrefix("__tada_table__") {
-                let json = String(s.dropFirst("__tada_table__".count))
-                guard let jsonData = json.data(using: .utf8),
-                      let dict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                      let columns = dict["columns"] as? [[String: String]],
-                      let rows = dict["rows"] as? [[String: String]],
-                      !columns.isEmpty else { return nil }
-
-                let header = "| " + columns.map { $0["label"] ?? "" }.joined(separator: " | ") + " |"
-                let separator = "| " + columns.map { _ in "---" }.joined(separator: " | ") + " |"
-                let rowLines = rows.map { row -> String in
-                    let cells = columns.map { col -> String in
-                        let id = col["id"] ?? ""
-                        let raw = row[id] ?? ""
-                        if col["type"] == "currency" && !raw.isEmpty {
-                            return "€\(raw)"
-                        }
-                        return raw
-                    }
-                    return "| " + cells.joined(separator: " | ") + " |"
-                }
-                var table = ([header, separator] + rowLines).joined(separator: "\n")
-                if let total = dict["total"] as? Int,
-                   let hasCurrency = dict["hasCurrency"] as? Bool,
-                   hasCurrency && total > 0 {
-                    table += "\n\n_Total: €\(total)_"
-                }
-                return table
+            if case .table(let table) = value, !table.columns.isEmpty {
+                return table.markdown
             }
         }
         return nil
