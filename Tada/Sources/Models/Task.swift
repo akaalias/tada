@@ -94,4 +94,21 @@ final class TodoTask {
         subTask.order = subTasks.count
         subTasks.append(subTask)
     }
+
+    /// Builds and inserts discovery sub-tasks from a freshly generated plan,
+    /// capped at `AppConstants.maxDiscoveryQuestions` and marking the first one current.
+    func addDiscoverySubTasks(from plan: TaskPlan, into context: ModelContext) {
+        for (index, subTaskPlan) in plan.subTasks.prefix(AppConstants.maxDiscoveryQuestions).enumerated() {
+            let subTask = SubTask(
+                title: subTaskPlan.title,
+                description: subTaskPlan.description,
+                order: index
+            )
+            if index == 0 {
+                subTask.markCurrent()
+            }
+            addSubTask(subTask)
+            context.insert(subTask)
+        }
+    }
 }

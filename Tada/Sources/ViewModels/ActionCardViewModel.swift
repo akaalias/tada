@@ -632,18 +632,8 @@ final class ActionCardViewModel {
                     task.title = plan.title
                     task.taskDescription = plan.description
 
-                    let cappedSubTasks = Array(plan.subTasks.prefix(7))
-                    for (index, subTaskPlan) in cappedSubTasks.enumerated() {
-                        let subTask = SubTask(
-                            title: subTaskPlan.title,
-                            description: subTaskPlan.description,
-                            order: index
-                        )
-                        if index == 0 {
-                            subTask.markCurrent()
-                        }
-                        task.addSubTask(subTask)
-                        modelContext?.insert(subTask)
+                    if let modelContext {
+                        task.addDiscoverySubTasks(from: plan, into: modelContext)
                     }
 
                     task.planningStatus = .idle
