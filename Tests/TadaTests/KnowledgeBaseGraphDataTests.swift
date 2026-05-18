@@ -9,6 +9,7 @@ private func input(
     title: String,
     overview: Bool = false,
     entity: Bool = false,
+    userNote: Bool = false,
     folder: String,
     body: String = "",
     taskId: String? = nil
@@ -18,6 +19,7 @@ private func input(
         title: title,
         isOverview: overview,
         isEntity: entity,
+        isUserNote: userNote,
         folderRelativePath: folder,
         body: body,
         taskId: taskId

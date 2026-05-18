@@ -10,6 +10,7 @@ actor ClaudeAPIClient {
     private let defaultPhase: APIRequestPhase
     private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
     private let model: String
+    private static let anthropicVersion = "2023-06-01"
 
     init(apiKey: String, role: AIRole, phase: APIRequestPhase) {
         self.apiKey = apiKey
@@ -46,6 +47,45 @@ actor ClaudeAPIClient {
         }
     }
 
+    /// Builds a POST request to the messages endpoint with all required headers and the JSON body.
+    private func makeRequest(body: [String: Any]) throws -> URLRequest {
+        var request = URLRequest(url: baseURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue(Self.anthropicVersion, forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = AppConstants.requestTimeout
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    /// Extracts the `error.message` string from an Anthropic error response body, if present.
+    private func apiErrorMessage(in data: Data) -> String? {
+        guard let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let error = body["error"] as? [String: Any],
+              let message = error["message"] as? String else {
+            return nil
+        }
+        return message
+    }
+
+    /// Throws `.apiError` if the body is an error response, regardless of HTTP status.
+    private func throwIfAPIError(in data: Data) throws {
+        if let message = apiErrorMessage(in: data) {
+            throw ClaudeAPIError.apiError(message)
+        }
+    }
+
+    /// Throws `.apiError`/`.httpError` for any non-200 response.
+    private func validateStatus(_ httpResponse: HTTPURLResponse, data: Data) throws {
+        guard httpResponse.statusCode == 200 else {
+            if let message = apiErrorMessage(in: data) {
+                throw ClaudeAPIError.apiError(message)
+            }
+            throw ClaudeAPIError.httpError(httpResponse.statusCode)
+        }
+    }
+
     func sendMessage(
         systemPrompt: String,
         userMessage: String,
@@ -53,13 +93,6 @@ actor ClaudeAPIClient {
         phase: APIRequestPhase? = nil,
         taskTitle: String? = nil
     ) async throws -> String {
-        var request = URLRequest(url: baseURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = AppConstants.requestTimeout
-
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -69,18 +102,9 @@ actor ClaudeAPIClient {
             ]
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
+        let request = try makeRequest(body: body)
         let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase, taskTitle: taskTitle)
-
-        guard httpResponse.statusCode == 200 else {
-            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let error = errorBody["error"] as? [String: Any],
-               let message = error["message"] as? String {
-                throw ClaudeAPIError.apiError(message)
-            }
-            throw ClaudeAPIError.httpError(httpResponse.statusCode)
-        }
+        try validateStatus(httpResponse, data: data)
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let content = json["content"] as? [[String: Any]],
@@ -101,14 +125,7 @@ actor ClaudeAPIClient {
         phase: APIRequestPhase? = nil,
         taskTitle: String? = nil
     ) async throws -> T {
-        // Use tool_use for guaranteed structured output
-        var request = URLRequest(url: baseURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = AppConstants.requestTimeout
-
+        // Use tool_use for guaranteed structured output.
         // Define the tool schema based on the response type name
         let toolSchema = getToolSchema(for: String(describing: responseType))
 
@@ -142,26 +159,12 @@ actor ClaudeAPIClient {
             ]
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
+        let request = try makeRequest(body: body)
         let (data, httpResponse) = try await performLoggedRequest(request, phase: phase ?? defaultPhase, taskTitle: taskTitle)
 
         // Check for API errors in the response body (works for any status code)
-        if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let errorType = errorBody["type"] as? String, errorType == "error",
-           let error = errorBody["error"] as? [String: Any],
-           let message = error["message"] as? String {
-            throw ClaudeAPIError.apiError(message)
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let error = errorBody["error"] as? [String: Any],
-               let message = error["message"] as? String {
-                throw ClaudeAPIError.apiError(message)
-            }
-            throw ClaudeAPIError.httpError(httpResponse.statusCode)
-        }
+        try throwIfAPIError(in: data)
+        try validateStatus(httpResponse, data: data)
 
         // Parse tool use response
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -216,7 +219,7 @@ actor ClaudeAPIClient {
         case "ActionSchema":
             return [
                 "name": "generate_action_ui",
-                "description": "Generate a UI schema for user interaction. IMPORTANT: field type must be exactly one of: text, number, multiSelect, singleSelect, yesNo, date, textarea, drawing, slider. For yes/no questions use yesNo not radio.",
+                "description": "Generate a UI schema for user interaction. IMPORTANT: field type must be exactly one of: text, number, multiSelect, singleSelect, yesNo, date, textarea, drawing, slider, rangeSlider, countSelector, itemTable, orderedList, hierarchicalList. For yes/no questions use yesNo not radio.",
                 "input_schema": [
                     "type": "object",
                     "properties": [
@@ -237,8 +240,8 @@ actor ClaudeAPIClient {
                                     "id": ["type": "string", "description": "Unique field identifier"],
                                     "type": [
                                         "type": "string",
-                                        "enum": ["text", "number", "multiSelect", "singleSelect", "yesNo", "date", "textarea", "drawing", "slider", "itemTable", "orderedList", "hierarchicalList"],
-                                        "description": "Field type. Use yesNo for yes/no questions, singleSelect for picking one option, multiSelect for multiple options, textarea for long text, drawing for sketches, slider for numeric ranges, itemTable for tables with custom columns (define columns via options: each option is a column with id, label, and description for type - use 'currency' for amounts or 'select:Choice1,Choice2' for dropdowns), orderedList for drag-and-drop reorderable lists (provide the items to be reordered via options - each option's label becomes a draggable row), hierarchicalList for drag-and-drop trees where users can nest items as children (seed via prefillRows with each row holding 'item' label and 'depth' as a string number: '0' root, '1' child, '2' grandchild)"
+                                        "enum": ["text", "number", "multiSelect", "singleSelect", "yesNo", "date", "textarea", "drawing", "slider", "rangeSlider", "countSelector", "itemTable", "orderedList", "hierarchicalList"],
+                                        "description": "Field type. Use yesNo for yes/no questions, singleSelect for picking one option, multiSelect for multiple options, textarea for long text, drawing for sketches, slider for a single numeric value, rangeSlider for a min-max range (use for all budget/price questions), countSelector for small whole-number counts 1-5+ (passengers, tickets, rooms), itemTable for tables with custom columns (define columns via options: each option is a column with id, label, and description for type - use 'currency' for amounts or 'select:Choice1,Choice2' for dropdowns), orderedList for drag-and-drop reorderable lists (provide the items to be reordered via options - each option's label becomes a draggable row), hierarchicalList for drag-and-drop trees where users can nest items as children (seed via prefillRows with each row holding 'item' label and 'depth' as a string number: '0' root, '1' child, '2' grandchild)"
                                     ],
                                     "label": ["type": "string", "description": "Field label shown to user"],
                                     "placeholder": ["type": "string", "description": "Placeholder text"],
@@ -457,24 +460,9 @@ actor ClaudeAPIClient {
 
     /// Sends a request body and returns the raw JSON response. Used by CoachService.
     func sendRequest(body: [String: Any], phase: APIRequestPhase, taskTitle: String?) async throws -> [String: Any] {
-        var request = URLRequest(url: baseURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = AppConstants.requestTimeout
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
+        let request = try makeRequest(body: body)
         let (data, httpResponse) = try await performLoggedRequest(request, phase: phase, taskTitle: taskTitle)
-
-        guard httpResponse.statusCode == 200 else {
-            if let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let error = errorBody["error"] as? [String: Any],
-               let message = error["message"] as? String {
-                throw ClaudeAPIError.apiError(message)
-            }
-            throw ClaudeAPIError.httpError(httpResponse.statusCode)
-        }
+        try validateStatus(httpResponse, data: data)
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ClaudeAPIError.invalidResponse
@@ -489,7 +477,6 @@ enum ClaudeAPIError: LocalizedError {
     case httpError(Int)
     case apiError(String)
     case jsonParsingError(Error)
-    case missingAPIKey
 
     var errorDescription: String? {
         switch self {
@@ -502,8 +489,6 @@ enum ClaudeAPIError: LocalizedError {
             return message
         case .jsonParsingError:
             return "Failed to understand AI response. Please try again."
-        case .missingAPIKey:
-            return "API key not configured. Go to Settings to add your Claude API key."
         }
     }
 }

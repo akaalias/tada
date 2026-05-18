@@ -49,10 +49,6 @@ final actor KnowledgeBaseIndexer {
         return entries.sorted { $0.completedAt > $1.completedAt }
     }
 
-    func loadNoteContent(at url: URL) -> String {
-        (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-    }
-
     func regenerateGlobalIndex() async {
         let entries = await loadAllEntries()
         let dateFormatter = DateFormatter()

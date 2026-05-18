@@ -20,13 +20,11 @@ struct ActionUIRenderer: View {
     var onHelp: (() -> Void)?
     var onChangeFieldType: ((ActionField.FieldType, [FieldOption]?) -> Void)?
 
-    @State private var isValid = false
     @State private var useCustomInput = false
     @State private var customText = ""
-    @State private var showingFieldTypePicker = false
 
     private var phaseColor: Color {
-        isDiscovery ? .orange : .blue
+        isDiscovery ? Theme.discovery : Theme.execution
     }
 
     var body: some View {
@@ -254,6 +252,19 @@ struct FieldTypeButton: View {
         } label: {
             Label(label, systemImage: icon)
         }
+    }
+}
+
+extension View {
+    /// Standard input-field chrome: a filled, rounded background with a hairline border.
+    func fieldChrome(_ fill: Color) -> some View {
+        self
+            .background(fill)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
     }
 }
 

@@ -23,12 +23,7 @@ struct TextFieldRenderer: View {
                 .padding(.horizontal, 14)
                 .accessibilityIdentifier("actionUI.field.\(field.id)")
         }
-        .background(phaseColor.opacity(0.25))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-        )
+        .fieldChrome(phaseColor.opacity(0.25))
         .onChange(of: text) { _, newValue in
             response[field.id] = .string(newValue)
         }

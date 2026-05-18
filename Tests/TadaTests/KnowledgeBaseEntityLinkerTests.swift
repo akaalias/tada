@@ -5,19 +5,19 @@ import Testing
 // MARK: - KnowledgeBaseEntityLinker Tests
 
 @Test func entitySlug_lowercases_and_hyphenates() {
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: "Tada.app") == "tada-app")
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: "Human Agency") == "human-agency")
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: "OpenAI") == "openai")
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: "June 1, 2026") == "june-1-2026")
+    #expect(KnowledgeBaseFilesystem.slug(from: "Tada.app") == "tada-app")
+    #expect(KnowledgeBaseFilesystem.slug(from: "Human Agency") == "human-agency")
+    #expect(KnowledgeBaseFilesystem.slug(from: "OpenAI") == "openai")
+    #expect(KnowledgeBaseFilesystem.slug(from: "June 1, 2026") == "june-1-2026")
 }
 
 @Test func entitySlug_collapses_multiple_separators() {
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: "AI / ML & Research") == "ai-ml-research")
+    #expect(KnowledgeBaseFilesystem.slug(from: "AI / ML & Research") == "ai-ml-research")
 }
 
 @Test func entitySlug_truncates_to_48_chars() {
     let long = String(repeating: "a", count: 100)
-    #expect(KnowledgeBaseFilesystem.entitySlug(from: long).count == 48)
+    #expect(KnowledgeBaseFilesystem.slug(from: long).count == 48)
 }
 
 @Test func canonicalize_rewrites_entity_links_to_relative_path() {

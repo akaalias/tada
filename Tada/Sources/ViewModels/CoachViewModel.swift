@@ -270,18 +270,7 @@ final class CoachViewModel {
                             task.title = plan.title
                             task.taskDescription = plan.description
 
-                            for (index, subTaskPlan) in plan.subTasks.prefix(AppConstants.maxDiscoveryQuestions).enumerated() {
-                                let subTask = SubTask(
-                                    title: subTaskPlan.title,
-                                    description: subTaskPlan.description,
-                                    order: index
-                                )
-                                if index == 0 {
-                                    subTask.markCurrent()
-                                }
-                                task.addSubTask(subTask)
-                                modelContext.insert(subTask)
-                            }
+                            task.addDiscoverySubTasks(from: plan, into: modelContext)
 
                             task.planningStatus = .idle
                             try? modelContext.save()
@@ -403,18 +392,7 @@ final class CoachViewModel {
             task.title = plan.title
             task.taskDescription = plan.description
 
-            for (index, subTaskPlan) in plan.subTasks.prefix(AppConstants.maxDiscoveryQuestions).enumerated() {
-                let subTask = SubTask(
-                    title: subTaskPlan.title,
-                    description: subTaskPlan.description,
-                    order: index
-                )
-                if index == 0 {
-                    subTask.markCurrent()
-                }
-                task.addSubTask(subTask)
-                modelContext.insert(subTask)
-            }
+            task.addDiscoverySubTasks(from: plan, into: modelContext)
 
             task.planningStatus = .idle
             try modelContext.save()

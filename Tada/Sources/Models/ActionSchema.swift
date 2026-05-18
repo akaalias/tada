@@ -1,5 +1,12 @@
 import Foundation
 
+private extension KeyedDecodingContainer {
+    /// Decodes a value for `key`, falling back to `defaultValue` when the key is absent or null.
+    func decode<T: Decodable>(_ key: Key, default defaultValue: @autoclosure () -> T) throws -> T {
+        try decodeIfPresent(T.self, forKey: key) ?? defaultValue()
+    }
+}
+
 /// Defines the structure of a dynamically generated action UI
 struct ActionSchema: Codable, Equatable {
     let type: ActionType
@@ -27,8 +34,8 @@ struct ActionSchema: Codable, Equatable {
         self.title = try container.decode(String.self, forKey: .title)
         self.description = try container.decodeIfPresent(String.self, forKey: .description)
         self.fields = try container.decode([ActionField].self, forKey: .fields)
-        self.submitLabel = try container.decodeIfPresent(String.self, forKey: .submitLabel) ?? "Continue"
-        self.requiresExternalAction = try container.decodeIfPresent(Bool.self, forKey: .requiresExternalAction) ?? false
+        self.submitLabel = try container.decode(.submitLabel, default: "Continue")
+        self.requiresExternalAction = try container.decode(.requiresExternalAction, default: false)
     }
 
     init(
@@ -84,11 +91,11 @@ struct ActionField: Codable, Identifiable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        self.id = try container.decode(.id, default: UUID().uuidString)
         self.type = try container.decode(FieldType.self, forKey: .type)
-        self.label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+        self.label = try container.decode(.label, default: "")
         self.placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
-        self.required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? true
+        self.required = try container.decode(.required, default: true)
         self.options = try container.decodeIfPresent([FieldOption].self, forKey: .options)
         self.validation = try container.decodeIfPresent(FieldValidation.self, forKey: .validation)
         self.defaultValue = try container.decodeIfPresent(String.self, forKey: .defaultValue)
@@ -129,7 +136,7 @@ struct FieldOption: Codable, Identifiable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        self.id = try container.decode(.id, default: UUID().uuidString)
         self.label = try container.decode(String.self, forKey: .label)
         self.description = try container.decodeIfPresent(String.self, forKey: .description)
     }

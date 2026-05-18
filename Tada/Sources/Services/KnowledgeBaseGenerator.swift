@@ -327,7 +327,7 @@ final actor KnowledgeBaseGenerator {
                 noteBody: note.body
             )
             let augmented = GeneratedKnowledgeNote(title: note.title, body: entityLinkedBody)
-            let filename = "00-\(slugify(note.title)).md"
+            let filename = "00-\(KnowledgeBaseFilesystem.slug(from: note.title)).md"
             await filesystem.writeNote(
                 augmented,
                 filename: filename,
@@ -345,13 +345,4 @@ final actor KnowledgeBaseGenerator {
         }
     }
 
-    private func slugify(_ s: String) -> String {
-        let lowered = s.lowercased()
-        let allowed = lowered.map { ch -> Character in
-            if ch.isLetter || ch.isNumber { return ch }
-            return "-"
-        }
-        let collapsed = String(allowed).split(separator: "-", omittingEmptySubsequences: true).joined(separator: "-")
-        return String(collapsed.prefix(48))
-    }
 }

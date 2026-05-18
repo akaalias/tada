@@ -37,9 +37,7 @@ final class ActionCardViewModel {
 
     // MARK: - Computed
 
-    var phaseColor: Color {
-        task.isDiscoveryPhase ? .orange : .blue
-    }
+    var phaseColor: Color { task.phaseColor }
 
     var isTransitioningToExecution: Bool {
         task.isDiscoveryPhase &&
@@ -551,8 +549,7 @@ final class ActionCardViewModel {
                 let revision = try await plannerAI.revisePlan(
                     originalTask: task.title,
                     completedSubTasks: completedInfo,
-                    remainingSubTasks: remainingTitles,
-                    latestResponse: [:]
+                    remainingSubTasks: remainingTitles
                 )
 
                 await MainActor.run {
@@ -635,18 +632,8 @@ final class ActionCardViewModel {
                     task.title = plan.title
                     task.taskDescription = plan.description
 
-                    let cappedSubTasks = Array(plan.subTasks.prefix(7))
-                    for (index, subTaskPlan) in cappedSubTasks.enumerated() {
-                        let subTask = SubTask(
-                            title: subTaskPlan.title,
-                            description: subTaskPlan.description,
-                            order: index
-                        )
-                        if index == 0 {
-                            subTask.markCurrent()
-                        }
-                        task.addSubTask(subTask)
-                        modelContext?.insert(subTask)
+                    if let modelContext {
+                        task.addDiscoverySubTasks(from: plan, into: modelContext)
                     }
 
                     task.planningStatus = .idle

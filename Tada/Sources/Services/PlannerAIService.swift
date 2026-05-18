@@ -185,8 +185,7 @@ actor PlannerAIService {
     func revisePlan(
         originalTask: String,
         completedSubTasks: [CompletedSubTaskInfo],
-        remainingSubTasks: [String],
-        latestResponse: [String: Any]
+        remainingSubTasks: [String]
     ) async throws -> PlanRevision {
         let completedSummary = completedSubTasks.map { "- \($0.title): \($0.response)" }.joined(separator: "\n")
         let remainingSummary = remainingSubTasks.map { "- \($0)" }.joined(separator: "\n")

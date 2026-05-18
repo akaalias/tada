@@ -53,7 +53,8 @@ import Testing
         subTaskDescription: currentSubTask.subTaskDescription,
         taskContext: task.title,
         previousResponses: [],
-        taskMemory: ""
+        taskMemory: "",
+        phase: currentSubTask.phase
     )
 
     // Create response and save it
@@ -143,7 +144,7 @@ import Testing
     var response1 = ActionResponse()
     if let schema = try? await container.appServices.executiveAI.generateActionUI(
         subTask: firstSubTask.title, subTaskDescription: "", taskContext: task.title,
-        previousResponses: [], taskMemory: "") {
+        previousResponses: [], taskMemory: "", phase: firstSubTask.phase) {
         if let field = schema.fields.first { response1.values[field.id] = .string("June") }
     }
     if let data = try? JSONEncoder().encode(response1) { firstSubTask.actionResponseData = data }
@@ -155,7 +156,7 @@ import Testing
     var response2 = ActionResponse()
     if let schema = try? await container.appServices.executiveAI.generateActionUI(
         subTask: secondSubTask.title, subTaskDescription: "", taskContext: task.title,
-        previousResponses: [["subTask": "When?", "field_text": "June"]], taskMemory: "") {
+        previousResponses: [["subTask": "When?", "field_text": "June"]], taskMemory: "", phase: secondSubTask.phase) {
         if let field = schema.fields.first { response2.values[field.id] = .string("500") }
     }
     if let data = try? JSONEncoder().encode(response2) { secondSubTask.actionResponseData = data }

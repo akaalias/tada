@@ -1,13 +1,14 @@
 import Foundation
 
 /// Formats a single `ResponseValue` into its display string representation.
-func formatResponseValue(_ value: ResponseValue) -> String {
+/// When `abbreviatedDate` is true, dates render as an abbreviated date with no time component.
+func formatResponseValue(_ value: ResponseValue, abbreviatedDate: Bool = false) -> String {
     switch value {
     case .string(let s): return s
     case .number(let n): return String(n)
     case .boolean(let b): return b ? "Yes" : "No"
     case .stringArray(let arr): return arr.joined(separator: ", ")
-    case .date(let d): return d.formatted()
+    case .date(let d): return abbreviatedDate ? d.formatted(date: .abbreviated, time: .omitted) : d.formatted()
     }
 }
 
@@ -21,13 +22,7 @@ func formatResponseValues(_ response: ActionResponse) -> String {
 func actionResponseToDict(_ response: ActionResponse) -> [String: String] {
     var dict: [String: String] = [:]
     for (key, value) in response.values {
-        switch value {
-        case .string(let s): dict[key] = s
-        case .number(let n): dict[key] = String(n)
-        case .boolean(let b): dict[key] = b ? "Yes" : "No"
-        case .date(let d): dict[key] = d.formatted(date: .abbreviated, time: .omitted)
-        case .stringArray(let arr): dict[key] = arr.joined(separator: ", ")
-        }
+        dict[key] = formatResponseValue(value, abbreviatedDate: true)
     }
     return dict
 }

@@ -45,7 +45,7 @@ import Testing
 
     let schema = try await container.appServices.executiveAI.generateActionUI(
         subTask: currentStep.title, subTaskDescription: "", taskContext: currentTask.title,
-        previousResponses: [], taskMemory: "")
+        previousResponses: [], taskMemory: "", phase: currentStep.phase)
 
     var response = ActionResponse()
     if let field = schema.fields.first { response.values[field.id] = .string("Done") }
@@ -114,7 +114,7 @@ import Testing
     var responseA = ActionResponse()
     if let schema = try? await container.appServices.executiveAI.generateActionUI(
         subTask: stepA.title, subTaskDescription: "", taskContext: currentTask.title,
-        previousResponses: [], taskMemory: "") {
+        previousResponses: [], taskMemory: "", phase: stepA.phase) {
         if let field = schema.fields.first { responseA.values[field.id] = .string("Done A") }
     }
     if let data = try? JSONEncoder().encode(responseA) { stepA.actionResponseData = data }
@@ -126,7 +126,7 @@ import Testing
     var responseB = ActionResponse()
     if let schema = try? await container.appServices.executiveAI.generateActionUI(
         subTask: stepB.title, subTaskDescription: "", taskContext: currentTask.title,
-        previousResponses: [["subTask": "Step A", "text": "Done A"]], taskMemory: "") {
+        previousResponses: [["subTask": "Step A", "text": "Done A"]], taskMemory: "", phase: stepB.phase) {
         if let field = schema.fields.first { responseB.values[field.id] = .string("Done B") }
     }
     if let data = try? JSONEncoder().encode(responseB) { stepB.actionResponseData = data }
@@ -169,12 +169,12 @@ import Testing
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
-    container.mockPlanner.revisionProvider = { _, _, _, _ in
+    container.mockPlanner.revisionProvider = { _, _, _ in
         PlanRevision(revised: false, reason: "Plan is optimal", subTasks: nil)
     }
 
     let revision = try await container.appServices.plannerAI.revisePlan(
-        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Step 1"], latestResponse: [:])
+        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Step 1"])
 
     #expect(revision.revised == false)
     #expect(revision.reason == "Plan is optimal")
@@ -187,7 +187,7 @@ import Testing
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
-    container.mockPlanner.revisionProvider = { _, _, _, _ in
+    container.mockPlanner.revisionProvider = { _, _, _ in
         PlanRevision(
             revised: true,
             reason: "Splitting compound steps",
@@ -199,7 +199,7 @@ import Testing
     }
 
     let revision = try await container.appServices.plannerAI.revisePlan(
-        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Old step"], latestResponse: [:])
+        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Old step"])
 
     #expect(revision.revised == true)
     #expect(revision.reason == "Splitting compound steps")

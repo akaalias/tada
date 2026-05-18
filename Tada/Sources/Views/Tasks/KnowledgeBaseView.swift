@@ -11,7 +11,6 @@ struct KnowledgeBaseView: View {
     @State private var pageStack: [URL] = []
     @State private var refreshTick: Int = 0
     @State private var showingGraph: Bool = false
-    @State private var cleanupResult: (taskFolders: Int, entities: Int)?
     @State private var showingNoteEditor: Bool = false
     @State private var existingNotes: [(slug: String, title: String)] = []
     // Observed directly so the toolbar spinner reacts the moment work starts/stops — the
@@ -151,7 +150,7 @@ struct KnowledgeBaseView: View {
                     Button {
                         Task {
                             let taskIds = Set(allTasks.map(\.id))
-                            cleanupResult = await kb?.cleanupOrphanedNotes(existingTaskIds: taskIds)
+                            _ = await kb?.cleanupOrphanedNotes(existingTaskIds: taskIds)
                             refreshTick &+= 1
                         }
                     } label: {

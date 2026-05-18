@@ -108,8 +108,8 @@ final actor KnowledgeBaseFilesystem {
         return entitiesURL
     }
 
-    /// Canonical slug for an entity display name: lowercase, alphanumeric, hyphen-separated, max 48 chars.
-    nonisolated static func entitySlug(from displayName: String) -> String {
+    /// Canonical slug for a title or display name: lowercase, alphanumeric, hyphen-separated, max 48 chars.
+    nonisolated static func slug(from displayName: String) -> String {
         let lowered = displayName.lowercased()
         let allowed = lowered.map { ch -> Character in
             if ch.isLetter || ch.isNumber { return ch }
@@ -445,27 +445,17 @@ final actor KnowledgeBaseFilesystem {
     // MARK: - Private helpers
 
     private func folderName(taskId: UUID, title: String) -> String {
-        let slug = slugify(title)
+        let slug = Self.slug(from: title)
         return "\(taskId.uuidString)__\(slug.isEmpty ? "task" : slug)"
     }
 
     private func subtaskFilename(_ order: Int, _ title: String) -> String {
         // order is 0-based across both phases; +1 keeps "00-" reserved for the task overview note.
-        return String(format: "%02d-%@.md", order + 1, slugify(title))
+        return String(format: "%02d-%@.md", order + 1, Self.slug(from: title))
     }
 
     private func imageFilename(for order: Int, _ title: String) -> String {
-        return String(format: "%02d-%@.png", order + 1, slugify(title))
-    }
-
-    private func slugify(_ s: String) -> String {
-        let lowered = s.lowercased()
-        let allowed = lowered.map { ch -> Character in
-            if ch.isLetter || ch.isNumber { return ch }
-            return "-"
-        }
-        let collapsed = String(allowed).split(separator: "-", omittingEmptySubsequences: true).joined(separator: "-")
-        return String(collapsed.prefix(48))
+        return String(format: "%02d-%@.png", order + 1, Self.slug(from: title))
     }
 
     private func escapeFrontmatter(_ s: String) -> String {
