@@ -266,10 +266,20 @@ import Testing
     #expect(markdown?.contains("_Total:") == false)
 }
 
-@Test func originalTextInput_returns_nil_for_drawing_only() {
+@Test func originalTextInput_returns_description_for_drawing() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["sketch"] = .image(png: Data([0x89]), description: "Drawing with 2 lines")
+    response["sketch"] = .image(png: Data([0x89]), description: "Drawing with 2 lines. Labels: North wall")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "Drawing with 2 lines. Labels: North wall")
+}
+
+@Test func originalTextInput_returns_nil_for_drawing_without_description() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .image(png: Data([0x89]), description: "")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
@@ -303,13 +313,15 @@ import Testing
     #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
 }
 
-@Test func originalTextInput_excludes_drawing_keeps_text() {
+@Test func originalTextInput_includes_drawing_description_alongside_text() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["sketch"] = .image(png: Data([0x89]), description: "A sketch")
+    response["sketch"] = .image(png: Data([0x89]), description: "Sketch with labels: North wall")
     response["caption"] = .string("Layout for the kitchen")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
-    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "Layout for the kitchen")
+    let result = KnowledgeResponseExtractor.originalTextInput(for: subTask)
+    #expect(result?.contains("Sketch with labels: North wall") == true)
+    #expect(result?.contains("Layout for the kitchen") == true)
 }

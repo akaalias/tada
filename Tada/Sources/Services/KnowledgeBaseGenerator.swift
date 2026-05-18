@@ -35,8 +35,10 @@ enum KnowledgeResponseExtractor {
         return parts.isEmpty ? "(no response recorded)" : parts.joined(separator: "; ")
     }
 
-    /// Returns the user's raw text input for a sub-task — excluding drawings and structured tables,
-    /// which are already preserved separately as PNG/markdown alongside the AI-rewritten note.
+    /// Returns the user's raw text input for a sub-task. Structured tables are excluded — they are
+    /// preserved separately as markdown. Drawing/brainstorm answers contribute their text
+    /// description (the labels and terms the user wrote), so those entities can be mined and
+    /// linked; the flattened PNG is still embedded separately.
     static func originalTextInput(for subTask: SubTask) -> String? {
         guard let data = subTask.actionResponseData,
               let response = try? JSONDecoder().decode(ActionResponse.self, from: data) else {
@@ -60,8 +62,12 @@ enum KnowledgeResponseExtractor {
                 guard !nodes.isEmpty else { return nil }
                 return nodes.map { String(repeating: "  ", count: $0.depth) + $0.label }
                     .joined(separator: "\n")
-            case .table, .image:
-                // Tables and drawings are preserved separately as markdown / PNG.
+            case .image(_, let description):
+                // The flattened PNG is embedded separately; the description carries the
+                // labels/terms the user wrote, which are worth mining for entities.
+                return description.isEmpty ? nil : description
+            case .table:
+                // Tables are preserved separately as markdown.
                 return nil
             }
         }
