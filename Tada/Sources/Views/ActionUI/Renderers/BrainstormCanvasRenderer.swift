@@ -55,7 +55,7 @@ struct BrainstormBoard: Equatable {
     var labels: [BrainstormLabel] = []
 
     @discardableResult
-    mutating func addLabel(_ text: String, at position: CGPoint, color: BrainstormLabelColor) -> Bool {
+    mutating func addLabel(_ text: String, at position: CGPoint, color: BrainstormLabelColor = .yellow) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
         labels.append(BrainstormLabel(text: trimmed, position: position, color: color))
