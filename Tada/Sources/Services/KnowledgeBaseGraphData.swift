@@ -16,7 +16,8 @@ struct KnowledgeGraphData: Codable, Equatable {
         let id: String           // relative path from the wiki root, e.g. "notes/<folder>/01-foo.md"
         let title: String
         let kind: String         // "topLevelTask" | "subTask" | "entity"
-        let taskId: String?      // owning task's UUID string — set on topLevelTask nodes, nil otherwise
+        let taskId: String?      // owning task's UUID string — set on task & sub-task nodes, nil otherwise
+        let subtaskTitle: String?  // originating sub-task's title (from frontmatter); used to resolve phase
     }
 
     struct Link: Codable, Equatable, Hashable {
@@ -84,6 +85,7 @@ enum KnowledgeGraphBuilder {
         let folderRelativePath: String  // e.g. "notes/<folder>" or "notes/_entities"
         let body: String           // raw file content (frontmatter+body), used to find wikilinks
         let taskId: String?        // owning task's UUID string, from the `taskId` frontmatter field
+        var subtaskTitle: String? = nil  // sub-task notes only, from the `subtaskTitle` frontmatter field
     }
 
     static func build(from inputs: [NoteInput]) -> KnowledgeGraphData {
@@ -106,7 +108,8 @@ enum KnowledgeGraphBuilder {
             else { kind = "subTask" }
             let node = KnowledgeGraphData.Node(
                 id: input.relativePath.precomposedStringWithCanonicalMapping,
-                title: input.title, kind: kind, taskId: input.taskId)
+                title: input.title, kind: kind, taskId: input.taskId,
+                subtaskTitle: input.subtaskTitle)
             if nodeIds.insert(node.id).inserted {
                 nodes.append(node)
             }

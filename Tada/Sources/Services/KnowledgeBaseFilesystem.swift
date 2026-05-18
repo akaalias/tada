@@ -203,7 +203,8 @@ final actor KnowledgeBaseFilesystem {
                     isUserNote: false,
                     folderRelativePath: folderRel,
                     body: raw,
-                    taskId: meta["taskId"]
+                    taskId: meta["taskId"],
+                    subtaskTitle: meta["subtaskTitle"]
                 ))
             }
         }

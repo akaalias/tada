@@ -14,6 +14,7 @@ struct KnowledgeGraphView: View {
     @Query private var allTasks: [TodoTask]
     @State private var dataJSON: String? = nil
     @State private var taskStatesJSON: String = "{}"
+    @State private var nodePhasesJSON: String = "{}"
     @State private var refreshTick: Int = 0
 
     let onNodeClick: (String) -> Void
@@ -22,6 +23,7 @@ struct KnowledgeGraphView: View {
         ZStack {
             if let json = dataJSON {
                 GraphWebView(dataJSON: json, taskStatesJSON: taskStatesJSON,
+                             nodePhasesJSON: nodePhasesJSON,
                              refreshTick: refreshTick, onNodeClick: onNodeClick)
             } else {
                 ProgressView("Building graph…")
@@ -43,15 +45,33 @@ struct KnowledgeGraphView: View {
         let data = await kb.buildGraphData().keepingTasks(in: liveTaskIds)
         // Top-level task node colour reflects the owning task's live state.
         var states: [String: String] = [:]
+        // Sub-task note colour reflects its originating sub-task's phase, looked up live:
+        // taskId → (sub-task title → "discovery" | "execution").
+        var phaseByTask: [String: [String: String]] = [:]
         for task in allTasks {
             states[task.id.uuidString] = GraphTaskState(task: task).rawValue
+            phaseByTask[task.id.uuidString] = Dictionary(
+                task.subTasks.map { ($0.title, $0.phase.rawValue) },
+                uniquingKeysWith: { _, last in last })
+        }
+        // Resolve each sub-task node's phase by joining its frontmatter (taskId + subtaskTitle)
+        // to the live sub-task. Notes that can't be matched (e.g. the 00-overview note) are
+        // left out and fall back to the completed colour in the renderer.
+        var nodePhases: [String: String] = [:]
+        for node in data.nodes where node.kind == "subTask" {
+            guard let taskId = node.taskId, let subtitle = node.subtaskTitle,
+                  let phase = phaseByTask[taskId]?[subtitle] else { continue }
+            nodePhases[node.id] = phase
         }
         guard let dataBytes = try? JSONEncoder().encode(data),
               let dataStr = String(data: dataBytes, encoding: .utf8),
               let statesBytes = try? JSONEncoder().encode(states),
-              let statesStr = String(data: statesBytes, encoding: .utf8) else { return }
+              let statesStr = String(data: statesBytes, encoding: .utf8),
+              let phasesBytes = try? JSONEncoder().encode(nodePhases),
+              let phasesStr = String(data: phasesBytes, encoding: .utf8) else { return }
         dataJSON = dataStr
         taskStatesJSON = statesStr
+        nodePhasesJSON = phasesStr
         refreshTick &+= 1
     }
 }
@@ -61,6 +81,7 @@ struct KnowledgeGraphView: View {
 private struct GraphWebView: NSViewRepresentable {
     let dataJSON: String
     let taskStatesJSON: String
+    let nodePhasesJSON: String
     let refreshTick: Int
     let onNodeClick: (String) -> Void
 
@@ -89,6 +110,7 @@ private struct GraphWebView: NSViewRepresentable {
         let html = Self.htmlTemplate
             .replacingOccurrences(of: "__TADA_DATA_JSON__", with: dataJSON)
             .replacingOccurrences(of: "__TADA_TASK_STATES_JSON__", with: taskStatesJSON)
+            .replacingOccurrences(of: "__TADA_NODE_PHASES_JSON__", with: nodePhasesJSON)
         webView.loadHTMLString(html, baseURL: URL(string: "https://tada.local/"))
     }
 
@@ -179,6 +201,8 @@ private struct GraphWebView: NSViewRepresentable {
         const data = __TADA_DATA_JSON__;
         // Map of task UUID → state key: "discovery" | "execution" | "completed".
         const taskStates = __TADA_TASK_STATES_JSON__;
+        // Map of sub-task note id (path) → phase key: "discovery" | "execution".
+        const nodePhases = __TADA_NODE_PHASES_JSON__;
         const el = document.getElementById('graph');
         const readPalette = () => {
           const cs = getComputedStyle(document.documentElement);
@@ -206,15 +230,20 @@ private struct GraphWebView: NSViewRepresentable {
           document.body.appendChild(empty);
         } else {
           // Colour reflects state: a top-level task takes the colour of its
-          // owning task's live state; sub-tasks are always completed (emerald)
-          // for now; entities are a neutral grey.
+          // owning task's live state (discovery → execution → completed); a
+          // sub-task note takes its sub-task's phase colour (discovery or
+          // execution) and never turns green; entities are a neutral grey.
           const stateColor = (s) => s === 'discovery' ? palette.discovery
                                   : s === 'execution' ? palette.execution
                                   : palette.completed;
           const nodeColor = (n) => {
             if (n.kind === 'entity') return palette.entity;
             if (n.kind === 'userNote') return palette.userNote;
-            if (n.kind === 'subTask') return palette.completed;
+            if (n.kind === 'subTask') {
+              const phase = nodePhases[n.id];
+              // Unmatched sub-task notes (e.g. the AI task-overview note) fall back to completed.
+              return phase ? stateColor(phase) : palette.completed;
+            }
             const state = taskStates[n.taskId];
             return state ? stateColor(state) : palette.entity;
           };

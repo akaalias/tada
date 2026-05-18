@@ -12,7 +12,8 @@ private func input(
     userNote: Bool = false,
     folder: String,
     body: String = "",
-    taskId: String? = nil
+    taskId: String? = nil,
+    subtaskTitle: String? = nil
 ) -> KnowledgeGraphBuilder.NoteInput {
     .init(
         relativePath: path,
@@ -22,8 +23,33 @@ private func input(
         isUserNote: userNote,
         folderRelativePath: folder,
         body: body,
-        taskId: taskId
+        taskId: taskId,
+        subtaskTitle: subtaskTitle
     )
+}
+
+@Test func graph_subtask_node_carries_subtask_title_for_phase_lookup() {
+    let inputs = [
+        input("notes/A/_overview.md", title: "Task A", overview: true, folder: "notes/A"),
+        input("notes/A/01-foo.md", title: "Foo Note", folder: "notes/A",
+              taskId: "T1", subtaskTitle: "Answer the first question")
+    ]
+    let g = KnowledgeGraphBuilder.build(from: inputs)
+    let subNode = g.nodes.first { $0.kind == "subTask" }
+
+    #expect(subNode?.subtaskTitle == "Answer the first question")
+    #expect(subNode?.taskId == "T1")
+}
+
+@Test func graph_non_subtask_nodes_have_nil_subtask_title() {
+    let inputs = [
+        input("notes/A/_overview.md", title: "Task A", overview: true, folder: "notes/A"),
+        input("notes/_entities/openai.md", title: "OpenAI", entity: true, folder: "notes/_entities")
+    ]
+    let g = KnowledgeGraphBuilder.build(from: inputs)
+
+    #expect(g.nodes.first { $0.kind == "topLevelTask" }?.subtaskTitle == nil)
+    #expect(g.nodes.first { $0.kind == "entity" }?.subtaskTitle == nil)
 }
 
 @Test func graph_builds_nodes_with_kinds() {
