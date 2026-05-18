@@ -24,7 +24,7 @@ struct ActionUIRenderer: View {
     @State private var customText = ""
 
     private var phaseColor: Color {
-        isDiscovery ? .orange : .blue
+        isDiscovery ? Theme.discovery : Theme.execution
     }
 
     var body: some View {

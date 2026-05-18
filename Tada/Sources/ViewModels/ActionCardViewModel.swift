@@ -37,9 +37,7 @@ final class ActionCardViewModel {
 
     // MARK: - Computed
 
-    var phaseColor: Color {
-        task.isDiscoveryPhase ? .orange : .blue
-    }
+    var phaseColor: Color { task.phaseColor }
 
     var isTransitioningToExecution: Bool {
         task.isDiscoveryPhase &&

@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension TodoTask {
+    /// Accent color reflecting the task's current phase.
+    var phaseColor: Color { isDiscoveryPhase ? Theme.discovery : Theme.execution }
+}
+
 /// The trailing control shown in a task card's header.
 enum TaskCardAccessory {
     /// Chevron that toggles the card's expansion (default).
@@ -18,9 +23,7 @@ struct TaskCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @State private var isExpanded: Bool = false
 
-    private var phaseColor: Color {
-        task.isDiscoveryPhase ? .orange : .blue
-    }
+    private var phaseColor: Color { task.phaseColor }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -58,9 +61,7 @@ struct TaskHeaderView: View {
     @Binding var isExpanded: Bool
     var accessory: TaskCardAccessory = .expandChevron
 
-    private var phaseColor: Color {
-        task.isDiscoveryPhase ? .orange : .blue
-    }
+    private var phaseColor: Color { task.phaseColor }
 
     private var phaseLabel: String {
         if task.status == TaskStatus.completed {
@@ -272,11 +273,11 @@ struct SubTaskListContent: View {
                     CollapsibleSection(
                         title: "Discovery",
                         icon: discoveryComplete ? "checkmark.circle.fill" : "circle",
-                        color: .orange,
+                        color: Theme.discovery,
                         isExpanded: $discoveryExpanded
                     ) {
                         ForEach(task.discoverySubTasks) { subTask in
-                            SubTaskRowView(subTask: subTask, phaseColor: .orange)
+                            SubTaskRowView(subTask: subTask, phaseColor: Theme.discovery)
                         }
                     }
                 }
@@ -286,11 +287,11 @@ struct SubTaskListContent: View {
                     CollapsibleSection(
                         title: "Execution",
                         icon: executionComplete ? "checkmark.circle.fill" : "circle",
-                        color: .blue,
+                        color: Theme.execution,
                         isExpanded: $executionExpanded
                     ) {
                         ForEach(task.executionSubTasks) { subTask in
-                            SubTaskRowView(subTask: subTask, phaseColor: .blue)
+                            SubTaskRowView(subTask: subTask, phaseColor: Theme.execution)
                         }
                     }
                     .padding(.top, 8)

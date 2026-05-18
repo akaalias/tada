@@ -45,4 +45,8 @@ enum Theme {
     static let badgeFontSize: CGFloat = 10
     static let circleSize: CGFloat = 18
     static let externalActionColor = Color(red: 0.25, green: 0.4, blue: 0.65)
+    /// Accent color for the discovery phase.
+    static let discovery = Color.orange
+    /// Accent color for the execution phase.
+    static let execution = Color.blue
 }
