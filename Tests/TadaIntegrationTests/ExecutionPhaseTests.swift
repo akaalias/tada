@@ -169,12 +169,12 @@ import Testing
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
-    container.mockPlanner.revisionProvider = { _, _, _, _ in
+    container.mockPlanner.revisionProvider = { _, _, _ in
         PlanRevision(revised: false, reason: "Plan is optimal", subTasks: nil)
     }
 
     let revision = try await container.appServices.plannerAI.revisePlan(
-        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Step 1"], latestResponse: [:])
+        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Step 1"])
 
     #expect(revision.revised == false)
     #expect(revision.reason == "Plan is optimal")
@@ -187,7 +187,7 @@ import Testing
     let container = IntegrationTestContainer()
 
     try! APIKeyManager.setAPIKey(testAPIKey)
-    container.mockPlanner.revisionProvider = { _, _, _, _ in
+    container.mockPlanner.revisionProvider = { _, _, _ in
         PlanRevision(
             revised: true,
             reason: "Splitting compound steps",
@@ -199,7 +199,7 @@ import Testing
     }
 
     let revision = try await container.appServices.plannerAI.revisePlan(
-        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Old step"], latestResponse: [:])
+        originalTask: "Test", completedSubTasks: [], remainingSubTasks: ["Old step"])
 
     #expect(revision.revised == true)
     #expect(revision.reason == "Splitting compound steps")

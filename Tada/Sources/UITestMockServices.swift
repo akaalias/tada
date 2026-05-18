@@ -44,8 +44,7 @@ final class UITestPlannerAIService: PlannerAIServiceProtocol {
     func revisePlan(
         originalTask: String,
         completedSubTasks: [CompletedSubTaskInfo],
-        remainingSubTasks: [String],
-        latestResponse: [String: Any]
+        remainingSubTasks: [String]
     ) async throws -> PlanRevision {
         PlanRevision(revised: false, reason: nil, subTasks: nil)
     }

@@ -177,7 +177,7 @@ final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
 protocol PlannerAIServiceProtocol {
     func generateDiscoveryQuestions(for task: String) async throws -> TaskPlan
     func createExecutionPlan(originalTask: String, discoveryAnswers: [CompletedSubTaskInfo]) async throws -> TaskPlan
-    func revisePlan(originalTask: String, completedSubTasks: [CompletedSubTaskInfo], remainingSubTasks: [String], latestResponse: [String: Any]) async throws -> PlanRevision
+    func revisePlan(originalTask: String, completedSubTasks: [CompletedSubTaskInfo], remainingSubTasks: [String]) async throws -> PlanRevision
     func breakDownStep(stepTitle: String, stepDescription: String, taskContext: String, discoveryContext: String, executionProgress: String) async throws -> [SubTaskPlan]
     func generateLearning(badStepTitle: String, taskContext: String, discoveryContext: String, executionProgress: String) async throws -> String
 }
@@ -200,10 +200,10 @@ final class PlannerAIServiceAdapter: PlannerAIServiceProtocol {
         return try await planner.createExecutionPlan(originalTask: originalTask, discoveryAnswers: discoveryAnswers)
     }
 
-    func revisePlan(originalTask: String, completedSubTasks: [CompletedSubTaskInfo], remainingSubTasks: [String], latestResponse: [String: Any]) async throws -> PlanRevision {
-        if let testMock { return try await testMock.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks, latestResponse: latestResponse) }
+    func revisePlan(originalTask: String, completedSubTasks: [CompletedSubTaskInfo], remainingSubTasks: [String]) async throws -> PlanRevision {
+        if let testMock { return try await testMock.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks) }
         let planner = PlannerAIService(apiKey: APIKeyManager.getAPIKey() ?? "")
-        return try await planner.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks, latestResponse: latestResponse)
+        return try await planner.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks)
     }
 
     func breakDownStep(stepTitle: String, stepDescription: String, taskContext: String, discoveryContext: String, executionProgress: String) async throws -> [SubTaskPlan] {

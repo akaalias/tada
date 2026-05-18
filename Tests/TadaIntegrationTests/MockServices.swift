@@ -9,7 +9,7 @@ final class MockPlannerAIService: PlannerAIServiceProtocol {
     /// Optional callback to customize responses per call.
     var discoveryQuestionsProvider: ((String) -> TaskPlan)?
     var executionPlanProvider: ((String, [CompletedSubTaskInfo]) -> TaskPlan)?
-    var revisionProvider: ((String, [CompletedSubTaskInfo], [String], [String: Any]) -> PlanRevision)?
+    var revisionProvider: ((String, [CompletedSubTaskInfo], [String]) -> PlanRevision)?
     var breakdownProvider: ((String, String, String, String, String) -> [SubTaskPlan])?
     var learningProvider: ((String, String, String, String) -> String)?
 
@@ -51,11 +51,10 @@ final class MockPlannerAIService: PlannerAIServiceProtocol {
     func revisePlan(
         originalTask: String,
         completedSubTasks: [CompletedSubTaskInfo],
-        remainingSubTasks: [String],
-        latestResponse: [String: Any]
+        remainingSubTasks: [String]
     ) async throws -> PlanRevision {
         if let provider = revisionProvider {
-            return provider(originalTask, completedSubTasks, remainingSubTasks, latestResponse)
+            return provider(originalTask, completedSubTasks, remainingSubTasks)
         }
         // Default: no revision needed
         return PlanRevision(revised: false, reason: nil, subTasks: nil)

@@ -551,8 +551,7 @@ final class ActionCardViewModel {
                 let revision = try await plannerAI.revisePlan(
                     originalTask: task.title,
                     completedSubTasks: completedInfo,
-                    remainingSubTasks: remainingTitles,
-                    latestResponse: [:]
+                    remainingSubTasks: remainingTitles
                 )
 
                 await MainActor.run {
