@@ -147,16 +147,17 @@ final actor KnowledgeBaseGenerator {
                         )
 
                         // Run a second AI pass that extracts high-signal entities into atomic sub-notes
-                        // and rewrites the body with first-occurrence wikilinks to them.
-                        let entityLinkedBody = await self.runEntityPass(
+                        // and rewrites the body — and the user's verbatim input — with wikilinks.
+                        let linked = await self.runEntityPass(
                             service: service,
                             noteTitle: note.title,
                             noteBody: note.body,
+                            originalInput: KnowledgeResponseExtractor.originalTextInput(for: snap.subTask),
                             phase: requestPhase
                         )
 
                         // Append the image and/or table to the body so they render on the wiki page.
-                        var body = entityLinkedBody
+                        var body = linked.body
                         if let imageMarkdown {
                             body += "\n\n\(imageMarkdown)"
                         }
@@ -173,7 +174,7 @@ final actor KnowledgeBaseGenerator {
                             parentTitle: taskTitle,
                             folderURL: folderURL,
                             sourceSubtaskTitle: snap.title,
-                            originalInput: KnowledgeResponseExtractor.originalTextInput(for: snap.subTask)
+                            originalInput: linked.originalInput
                         )
                         print("[KnowledgeBase] Wrote sub-task note: \(filename)")
                         return folderURL.appendingPathComponent(filename)
@@ -193,26 +194,32 @@ final actor KnowledgeBaseGenerator {
     }
 
     /// Runs the entity-extraction pass: reads the current entity list, asks the AI to identify
-    /// entities + rewrite the body, canonicalises slugs/paths, and writes any new entity notes.
-    /// Returns the rewritten body. On error returns the original body unchanged.
+    /// entities + rewrite the body (and the verbatim user input, when present), canonicalises
+    /// slugs/paths, and writes any new entity notes. Returns the rewritten body and original
+    /// input. On error returns both inputs unchanged.
     private func runEntityPass(
         service: KnowledgeAIService,
         noteTitle: String,
         noteBody: String,
+        originalInput: String?,
         phase: APIRequestPhase = .knowledge
-    ) async -> String {
+    ) async -> (body: String, originalInput: String?) {
         let existing = await filesystem.listEntities()
         let refs = existing.map { ExistingEntityRef(slug: $0.slug, title: $0.title) }
         do {
             let result = try await service.extractEntitiesAndLink(
                 noteTitle: noteTitle,
                 noteBody: noteBody,
+                originalInput: originalInput,
                 existingEntities: refs,
                 phase: phase
             )
             let existingSlugs = Set(existing.map { $0.slug })
             let canonicalized = KnowledgeBaseEntityLinker.canonicalize(
                 linkedBody: result.linkedBody,
+                // Fall back to the raw input if the AI omitted the linked version, so the
+                // section is never dropped.
+                linkedOriginalInput: result.linkedOriginalInput ?? originalInput,
                 newEntities: result.newEntities,
                 existingSlugs: existingSlugs
             )
@@ -226,10 +233,10 @@ final actor KnowledgeBaseGenerator {
                     print("[KnowledgeBase] Wrote entity note: _entities/\(entity.slug).md")
                 }
             }
-            return canonicalized.body
+            return (canonicalized.body, canonicalized.originalInput ?? originalInput)
         } catch {
             print("[KnowledgeBase] Entity extraction failed; keeping unlinked body: \(AppError.userMessage(from: error))")
-            return noteBody
+            return (noteBody, originalInput)
         }
     }
 
@@ -308,12 +315,13 @@ final actor KnowledgeBaseGenerator {
                 taskDescription: taskDescription,
                 subtaskSummaries: subtaskSummaries
             )
-            let entityLinkedBody = await runEntityPass(
+            let linked = await runEntityPass(
                 service: service,
                 noteTitle: note.title,
-                noteBody: note.body
+                noteBody: note.body,
+                originalInput: originalInput
             )
-            let augmented = GeneratedKnowledgeNote(title: note.title, body: entityLinkedBody)
+            let augmented = GeneratedKnowledgeNote(title: note.title, body: linked.body)
             let filename = "00-\(KnowledgeBaseFilesystem.slug(from: note.title)).md"
             await filesystem.writeNote(
                 augmented,
@@ -322,7 +330,7 @@ final actor KnowledgeBaseGenerator {
                 parentTitle: taskTitle,
                 folderURL: folderURL,
                 sourceSubtaskTitle: nil,
-                originalInput: originalInput
+                originalInput: linked.originalInput
             )
             print("[KnowledgeBase] Wrote task overview note")
             return folderURL.appendingPathComponent(filename)
