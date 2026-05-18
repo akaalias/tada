@@ -355,8 +355,8 @@ final class KnowledgeBaseService: ObservableObject {
         NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
-    /// Adds a wikilink to the target entity at the end of a note.
-    func addLinkToNote(at url: URL, targetEntity: String) async throws {
+    /// Reads a note, applies `transform`, and writes it back — posting an update only if it changed.
+    private func mutateNote(at url: URL, _ transform: (inout String) throws -> Void) throws {
         beginWork()
         defer { endWork() }
 
@@ -365,52 +365,45 @@ final class KnowledgeBaseService: ObservableObject {
         }
 
         var content = try String(contentsOf: url, encoding: .utf8)
-
-        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
-
-        let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
-        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
-        let wikilink = "[[\(linkPath)|\(targetEntity)]]"
-
-        if content.contains(wikilink) {
-            return
-        }
-
-        if content.contains("## Related") {
-            content = content.replacingOccurrences(of: "## Related", with: "## Related\n\n- \(wikilink)")
-        } else {
-            content += "\n\n## Related\n\n- \(wikilink)"
-        }
+        let original = content
+        try transform(&content)
+        guard content != original else { return }
 
         try content.write(to: url, atomically: true, encoding: .utf8)
         NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
+    /// Builds a wikilink to an entity note, with the path relative to whether `noteURL` itself sits
+    /// inside the entities folder.
+    private func entityWikilink(for targetEntity: String, from noteURL: URL) -> String {
+        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
+        let isInEntitiesFolder = noteURL.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
+        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
+        return "[[\(linkPath)|\(targetEntity)]]"
+    }
+
+    /// Adds a wikilink to the target entity at the end of a note.
+    func addLinkToNote(at url: URL, targetEntity: String) async throws {
+        let wikilink = entityWikilink(for: targetEntity, from: url)
+        try mutateNote(at: url) { content in
+            guard !content.contains(wikilink) else { return }
+            if content.contains("## Related") {
+                content = content.replacingOccurrences(of: "## Related", with: "## Related\n\n- \(wikilink)")
+            } else {
+                content += "\n\n## Related\n\n- \(wikilink)"
+            }
+        }
+    }
+
     /// Finds text in a note and replaces it with a wikilink to the target entity.
     func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws {
-        beginWork()
-        defer { endWork() }
-
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw KnowledgeBaseError.noteNotFound
+        let wikilink = entityWikilink(for: targetEntity, from: url)
+        try mutateNote(at: url) { content in
+            guard content.contains(textToFind) else {
+                throw KnowledgeBaseError.textNotFound
+            }
+            content = content.replacingOccurrences(of: textToFind, with: wikilink)
         }
-
-        var content = try String(contentsOf: url, encoding: .utf8)
-
-        guard content.contains(textToFind) else {
-            throw KnowledgeBaseError.textNotFound
-        }
-
-        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
-
-        let isInEntitiesFolder = url.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
-        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
-        let wikilink = "[[\(linkPath)|\(targetEntity)]]"
-
-        content = content.replacingOccurrences(of: textToFind, with: wikilink)
-
-        try content.write(to: url, atomically: true, encoding: .utf8)
-        NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
     /// Edits the body content of a note, preserving frontmatter and structural sections.
