@@ -250,10 +250,6 @@ final class KnowledgeBaseService: ObservableObject {
         await indexer.loadAllEntries()
     }
 
-    func loadNoteContent(at url: URL) -> String {
-        (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-    }
-
     // MARK: - Link discovery
 
     /// Runs single-note link discovery for one note on demand (the "Discover Related Notes"

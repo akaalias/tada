@@ -1,9 +1,5 @@
 import SwiftUI
 
-enum DIError: Error {
-    case missingPlanner
-}
-
 /// Container holding all injected service protocols for the app.
 @Observable
 @MainActor

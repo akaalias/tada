@@ -20,10 +20,8 @@ struct ActionUIRenderer: View {
     var onHelp: (() -> Void)?
     var onChangeFieldType: ((ActionField.FieldType, [FieldOption]?) -> Void)?
 
-    @State private var isValid = false
     @State private var useCustomInput = false
     @State private var customText = ""
-    @State private var showingFieldTypePicker = false
 
     private var phaseColor: Color {
         isDiscovery ? .orange : .blue

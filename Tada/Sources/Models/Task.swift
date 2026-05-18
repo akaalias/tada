@@ -52,10 +52,6 @@ final class TodoTask {
         phase = .execution
     }
 
-    var isActive: Bool {
-        status == .active
-    }
-
     var isCompleted: Bool {
         status.isCompleted
     }

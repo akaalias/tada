@@ -489,7 +489,6 @@ enum ClaudeAPIError: LocalizedError {
     case httpError(Int)
     case apiError(String)
     case jsonParsingError(Error)
-    case missingAPIKey
 
     var errorDescription: String? {
         switch self {
@@ -502,8 +501,6 @@ enum ClaudeAPIError: LocalizedError {
             return message
         case .jsonParsingError:
             return "Failed to understand AI response. Please try again."
-        case .missingAPIKey:
-            return "API key not configured. Go to Settings to add your Claude API key."
         }
     }
 }

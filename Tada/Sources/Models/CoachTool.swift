@@ -20,28 +20,6 @@ enum CoachTool: String, CaseIterable, Codable {
     case splitSubTask = "split_subtask"
     case updateSubTask = "update_subtask"
 
-    var displayName: String {
-        switch self {
-        case .captureInboxItem: return "Capture inbox item"
-        case .createTask: return "Create a new task"
-        case .searchTasks: return "Search tasks"
-        case .getSubtasks: return "Get task subtasks"
-        case .updateDiscoveryQuestions: return "Update discovery questions"
-        case .replanExecution: return "Replan execution steps"
-        case .readNote: return "Read note content"
-        case .createKnowledgeEntity: return "Create knowledge entity"
-        case .linkKnowledgeEntities: return "Link knowledge entities"
-        case .replaceTextWithLink: return "Replace text with wiki link"
-        case .editNote: return "Edit note content"
-        case .generateKnowledgeSummary: return "Generate knowledge summary"
-        case .searchNotes: return "Search knowledge base notes"
-        case .completeSubTask: return "Complete current step"
-        case .skipSubTask: return "Skip current step"
-        case .splitSubTask: return "Split step into smaller steps"
-        case .updateSubTask: return "Update step title or description"
-        }
-    }
-
     var description: String {
         switch self {
         case .captureInboxItem:
