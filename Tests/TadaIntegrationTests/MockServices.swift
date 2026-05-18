@@ -102,7 +102,8 @@ final class MockExecutiveAIService: ExecutiveAIServiceProtocol {
         subTaskDescription: String,
         taskContext: String,
         previousResponses: [[String: String]],
-        taskMemory: String
+        taskMemory: String,
+        phase: TaskPhase
     ) async throws -> ActionSchema {
         if let provider = schemaProvider {
             return provider(subTask, subTaskDescription, taskContext, previousResponses, taskMemory)
@@ -131,6 +132,7 @@ final class MockExecutiveAIService: ExecutiveAIServiceProtocol {
 // MARK: - Mock Knowledge Base Service
 
 /// Captures all file writes for verification without touching the real filesystem.
+@MainActor
 final class MockKnowledgeBaseService: KnowledgeBaseServiceProtocol {
 
     var rootURL: URL = URL(fileURLWithPath: "/tmp/mock-kb")
@@ -200,6 +202,36 @@ final class MockKnowledgeBaseService: KnowledgeBaseServiceProtocol {
     func runLinkDiscoveryForNote(_ url: URL) async {
         // No-op for mock
     }
+
+    func runEntityExtractionForCurrentNote(_ url: URL) async {}
+
+    func backlinks(toEntitySlug slug: String) async -> [KnowledgeBaseEntityLinker.Backlink] { [] }
+
+    func buildGraphData() async -> KnowledgeGraphData {
+        KnowledgeGraphData(nodes: [], links: [])
+    }
+
+    func cleanupOrphanedNotes(existingTaskIds: Set<UUID>) async -> (taskFolders: Int, entities: Int) {
+        (0, 0)
+    }
+
+    func createEntity(name: String, body: String) async throws {}
+
+    func addLinkToNote(at url: URL, targetEntity: String) async throws {}
+
+    func replaceTextWithLink(at url: URL, textToFind: String, targetEntity: String) async throws {}
+
+    func editNoteBody(at url: URL, newBody: String) async throws {}
+
+    func generateSummary() async throws -> String { "Mock knowledge base summary" }
+
+    func createUserNote(title: String, body: String) async -> URL {
+        rootURL.appendingPathComponent("notes/_notes/\(slugify(title)).md")
+    }
+
+    func listUserNotes() async -> [(slug: String, title: String)] { [] }
+
+    func searchNotes(query: String) async -> [(name: String, path: String, kind: String)] { [] }
 
     private func slugify(_ text: String) -> String {
         return text.lowercased()

@@ -80,7 +80,7 @@ import Testing
     for subTask in currentTask.discoverySubTasks {
         let schema = try await container.appServices.executiveAI.generateActionUI(
             subTask: subTask.title, subTaskDescription: "", taskContext: currentTask.title,
-            previousResponses: previousResponses, taskMemory: "")
+            previousResponses: previousResponses, taskMemory: "", phase: subTask.phase)
 
         var response = ActionResponse()
         if let field = schema.fields.first {
@@ -166,7 +166,7 @@ import Testing
     for subTask in execTask.executionSubTasks {
         let schema = try await container.appServices.executiveAI.generateActionUI(
             subTask: subTask.title, subTaskDescription: "", taskContext: execTask.title,
-            previousResponses: [], taskMemory: "")
+            previousResponses: [], taskMemory: "", phase: subTask.phase)
 
         var response = ActionResponse()
         if let field = schema.fields.first { response.values[field.id] = .string("Done") }
@@ -264,7 +264,7 @@ import Testing
     for subTask in currentTask.discoverySubTasks {
         let schema = try await container.appServices.executiveAI.generateActionUI(
             subTask: subTask.title, subTaskDescription: "", taskContext: currentTask.title,
-            previousResponses: [], taskMemory: "")
+            previousResponses: [], taskMemory: "", phase: subTask.phase)
         var response = ActionResponse()
         if let field = schema.fields.first { response.values[field.id] = .string("PDF") }
         if let data = try? JSONEncoder().encode(response) { subTask.actionResponseData = data }
@@ -306,7 +306,7 @@ import Testing
     for subTask in execTask.executionSubTasks {
         let schema = try await container.appServices.executiveAI.generateActionUI(
             subTask: subTask.title, subTaskDescription: "", taskContext: execTask.title,
-            previousResponses: [], taskMemory: "")
+            previousResponses: [], taskMemory: "", phase: subTask.phase)
         var response = ActionResponse()
         if let field = schema.fields.first { response.values[field.id] = .string("Done") }
         if let data = try? JSONEncoder().encode(response) { subTask.actionResponseData = data }
