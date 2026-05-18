@@ -247,3 +247,20 @@ import Testing
     #expect((await fs.imageFilename(for: 0, title: "Sketch")).hasSuffix(".png"))
     #expect((await fs.imageFilename(for: 9, title: "Drawing")).hasSuffix(".png"))
 }
+
+// MARK: - entityWikilink
+
+@Test func entityWikilink_from_task_note_uses_parent_relative_prefix() {
+    // Task notes live at notes/<taskFolder>/<file>.md; entities at notes/_entities/<slug>.md,
+    // so the link must climb one level with `../`.
+    let link = KnowledgeBaseFilesystem.entityWikilink(
+        targetEntity: "AI-centered Humans", noteIsInEntitiesFolder: false)
+    #expect(link == "[[../_entities/ai-centered-humans.md|AI-centered Humans]]")
+}
+
+@Test func entityWikilink_from_entity_note_uses_bare_filename() {
+    // Entity-to-entity links are siblings in the same folder.
+    let link = KnowledgeBaseFilesystem.entityWikilink(
+        targetEntity: "AI-centered Humans", noteIsInEntitiesFolder: true)
+    #expect(link == "[[ai-centered-humans.md|AI-centered Humans]]")
+}

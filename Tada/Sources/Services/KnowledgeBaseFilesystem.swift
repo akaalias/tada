@@ -173,6 +173,14 @@ final actor KnowledgeBaseFilesystem {
     /// Task notes live at `notes/<taskFolder>/<file>.md`; entities live at `notes/_entities/<slug>.md`.
     nonisolated static let entityLinkPrefix = "../\(KnowledgeBaseFilesystem.entitiesFolderName)/"
 
+    /// Builds a wikilink to an entity note. Every non-entity note (task notes, overviews, user
+    /// notes) lives one folder deep under `notes/`, so the link climbs one level with
+    /// `entityLinkPrefix`. From a sibling entity note it's just the bare filename.
+    nonisolated static func entityWikilink(targetEntity: String, noteIsInEntitiesFolder: Bool) -> String {
+        let prefix = noteIsInEntitiesFolder ? "" : entityLinkPrefix
+        return "[[\(prefix)\(slug(from: targetEntity)).md|\(targetEntity)]]"
+    }
+
     /// Walks every note in the wiki and returns the inputs needed to build the graph payload.
     /// One pass over the disk: cheaper than iterating per-folder from outside the actor.
     func collectGraphInputs() -> [KnowledgeGraphBuilder.NoteInput] {

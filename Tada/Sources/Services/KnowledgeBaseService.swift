@@ -373,13 +373,10 @@ final class KnowledgeBaseService: ObservableObject {
         NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
     }
 
-    /// Builds a wikilink to an entity note, with the path relative to whether `noteURL` itself sits
-    /// inside the entities folder.
+    /// Builds a wikilink to an entity note, with the path relative to where `noteURL` itself sits.
     private func entityWikilink(for targetEntity: String, from noteURL: URL) -> String {
-        let slug = KnowledgeBaseFilesystem.slug(from: targetEntity)
         let isInEntitiesFolder = noteURL.deletingLastPathComponent().lastPathComponent == KnowledgeBaseFilesystem.entitiesFolderName
-        let linkPath = isInEntitiesFolder ? "\(slug).md" : "_entities/\(slug).md"
-        return "[[\(linkPath)|\(targetEntity)]]"
+        return KnowledgeBaseFilesystem.entityWikilink(targetEntity: targetEntity, noteIsInEntitiesFolder: isInEntitiesFolder)
     }
 
     /// Adds a wikilink to the target entity at the end of a note.
