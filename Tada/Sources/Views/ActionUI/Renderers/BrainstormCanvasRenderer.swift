@@ -328,16 +328,15 @@ struct BrainstormCanvasRenderer: View {
     // MARK: Persistence
 
     private func saveBoard() {
-        response[field.id] = .string(board.summary)
-        if board.labels.isEmpty {
-            response[field.id + "_image"] = nil
-        } else if let dataURL = renderBoardPNG() {
-            response[field.id + "_image"] = .string(dataURL)
+        if !board.labels.isEmpty, let png = renderBoardPNG() {
+            response[field.id] = .image(png: png, description: board.summary)
+        } else {
+            response[field.id] = .string(board.summary)
         }
     }
 
     @MainActor
-    private func renderBoardPNG() -> String? {
+    private func renderBoardPNG() -> Data? {
         let snapshot = BrainstormBoardSnapshot(labels: board.labels)
         let renderer = ImageRenderer(content: snapshot)
         renderer.scale = 2.0
@@ -347,7 +346,7 @@ struct BrainstormCanvasRenderer: View {
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
             return nil
         }
-        return "data:image/png;base64,\(pngData.base64EncodedString())"
+        return pngData
     }
 }
 

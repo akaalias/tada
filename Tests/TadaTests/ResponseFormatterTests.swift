@@ -37,6 +37,36 @@ import Testing
     #expect(!formatted.isEmpty)
 }
 
+@Test func formatResponseValue_range_formats_bounds() {
+    #expect(formatResponseValue(.range(lower: 25, upper: 75)) == "25 - 75")
+}
+
+@Test func formatResponseValue_tree_joins_labels() {
+    let tree: ResponseValue = .tree([
+        TreeNode(label: "Parent", depth: 0),
+        TreeNode(label: "Child", depth: 1)
+    ])
+    #expect(formatResponseValue(tree) == "Parent, Child")
+}
+
+@Test func formatResponseValue_table_uses_summary() {
+    let table: ResponseValue = .table(TableData(
+        columns: [
+            TableData.Column(id: "item", label: "Item", type: "text"),
+            TableData.Column(id: "amount", label: "Amount", type: "currency")
+        ],
+        rows: [["item": "Apples", "amount": "5"]],
+        total: 5,
+        hasCurrency: true
+    ))
+    #expect(formatResponseValue(table) == "Apples - €5 (Total: €5)")
+}
+
+@Test func formatResponseValue_image_returns_description() {
+    let image: ResponseValue = .image(png: Data([0x89]), description: "Drawing with 2 lines")
+    #expect(formatResponseValue(image) == "Drawing with 2 lines")
+}
+
 // MARK: - formatResponseValues Tests
 
 @Test func formatResponseValues_empty_returns_placeholder() {

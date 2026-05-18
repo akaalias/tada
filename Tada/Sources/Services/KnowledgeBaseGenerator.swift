@@ -13,7 +13,6 @@ enum KnowledgeResponseExtractor {
         let parts = response.values.compactMap { _, value -> String? in
             switch value {
             case .string(let s):
-                if s.hasPrefix("data:image") { return "(drawing)" }
                 return s.isEmpty ? nil : s
             case .number(let n):
                 return String(format: "%g", n)
@@ -23,13 +22,23 @@ enum KnowledgeResponseExtractor {
                 return arr.isEmpty ? nil : arr.joined(separator: ", ")
             case .date(let d):
                 return d.formatted(date: .abbreviated, time: .omitted)
+            case .range(let lower, let upper):
+                return String(format: "%g - %g", lower, upper)
+            case .tree(let nodes):
+                return nodes.isEmpty ? nil : nodes.map(\.label).joined(separator: ", ")
+            case .table(let table):
+                return table.summary
+            case .image(_, let description):
+                return description.isEmpty ? "(drawing)" : description
             }
         }
         return parts.isEmpty ? "(no response recorded)" : parts.joined(separator: "; ")
     }
 
-    /// Returns the user's raw text input for a sub-task — excluding drawings and structured tables,
-    /// which are already preserved separately as PNG/markdown alongside the AI-rewritten note.
+    /// Returns the user's raw text input for a sub-task. Structured tables are excluded — they are
+    /// preserved separately as markdown. Drawing/brainstorm answers contribute their text
+    /// description (the labels and terms the user wrote), so those entities can be mined and
+    /// linked; the flattened PNG is still embedded separately.
     static func originalTextInput(for subTask: SubTask) -> String? {
         guard let data = subTask.actionResponseData,
               let response = try? JSONDecoder().decode(ActionResponse.self, from: data) else {
@@ -38,8 +47,6 @@ enum KnowledgeResponseExtractor {
         let parts = response.values.compactMap { _, value -> String? in
             switch value {
             case .string(let s):
-                if s.hasPrefix("data:image") { return nil }
-                if s.hasPrefix("__tada_table__") { return nil }
                 return s.isEmpty ? nil : s
             case .number(let n):
                 return String(format: "%g", n)
@@ -49,6 +56,19 @@ enum KnowledgeResponseExtractor {
                 return arr.isEmpty ? nil : arr.joined(separator: ", ")
             case .date(let d):
                 return d.formatted(date: .abbreviated, time: .omitted)
+            case .range(let lower, let upper):
+                return String(format: "%g - %g", lower, upper)
+            case .tree(let nodes):
+                guard !nodes.isEmpty else { return nil }
+                return nodes.map { String(repeating: "  ", count: $0.depth) + $0.label }
+                    .joined(separator: "\n")
+            case .image(_, let description):
+                // The flattened PNG is embedded separately; the description carries the
+                // labels/terms the user wrote, which are worth mining for entities.
+                return description.isEmpty ? nil : description
+            case .table:
+                // Tables are preserved separately as markdown.
+                return nil
             }
         }
         return parts.isEmpty ? nil : parts.joined(separator: "; ")
@@ -60,9 +80,8 @@ enum KnowledgeResponseExtractor {
             return nil
         }
         for (_, value) in response.values {
-            if case .string(let s) = value, s.hasPrefix("data:image/png;base64,") {
-                let base64 = String(s.dropFirst("data:image/png;base64,".count))
-                return Data(base64Encoded: base64)
+            if case .image(let png, _) = value {
+                return png
             }
         }
         return nil
@@ -74,34 +93,8 @@ enum KnowledgeResponseExtractor {
             return nil
         }
         for (_, value) in response.values {
-            if case .string(let s) = value, s.hasPrefix("__tada_table__") {
-                let json = String(s.dropFirst("__tada_table__".count))
-                guard let jsonData = json.data(using: .utf8),
-                      let dict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                      let columns = dict["columns"] as? [[String: String]],
-                      let rows = dict["rows"] as? [[String: String]],
-                      !columns.isEmpty else { return nil }
-
-                let header = "| " + columns.map { $0["label"] ?? "" }.joined(separator: " | ") + " |"
-                let separator = "| " + columns.map { _ in "---" }.joined(separator: " | ") + " |"
-                let rowLines = rows.map { row -> String in
-                    let cells = columns.map { col -> String in
-                        let id = col["id"] ?? ""
-                        let raw = row[id] ?? ""
-                        if col["type"] == "currency" && !raw.isEmpty {
-                            return "€\(raw)"
-                        }
-                        return raw
-                    }
-                    return "| " + cells.joined(separator: " | ") + " |"
-                }
-                var table = ([header, separator] + rowLines).joined(separator: "\n")
-                if let total = dict["total"] as? Int,
-                   let hasCurrency = dict["hasCurrency"] as? Bool,
-                   hasCurrency && total > 0 {
-                    table += "\n\n_Total: €\(total)_"
-                }
-                return table
+            if case .table(let table) = value, !table.columns.isEmpty {
+                return table.markdown
             }
         }
         return nil
@@ -160,16 +153,17 @@ final actor KnowledgeBaseGenerator {
                         )
 
                         // Run a second AI pass that extracts high-signal entities into atomic sub-notes
-                        // and rewrites the body with first-occurrence wikilinks to them.
-                        let entityLinkedBody = await self.runEntityPass(
+                        // and rewrites the body — and the user's verbatim input — with wikilinks.
+                        let linked = await self.runEntityPass(
                             service: service,
                             noteTitle: note.title,
                             noteBody: note.body,
+                            originalInput: KnowledgeResponseExtractor.originalTextInput(for: snap.subTask),
                             phase: requestPhase
                         )
 
                         // Append the image and/or table to the body so they render on the wiki page.
-                        var body = entityLinkedBody
+                        var body = linked.body
                         if let imageMarkdown {
                             body += "\n\n\(imageMarkdown)"
                         }
@@ -186,7 +180,7 @@ final actor KnowledgeBaseGenerator {
                             parentTitle: taskTitle,
                             folderURL: folderURL,
                             sourceSubtaskTitle: snap.title,
-                            originalInput: KnowledgeResponseExtractor.originalTextInput(for: snap.subTask)
+                            originalInput: linked.originalInput
                         )
                         print("[KnowledgeBase] Wrote sub-task note: \(filename)")
                         return folderURL.appendingPathComponent(filename)
@@ -206,26 +200,32 @@ final actor KnowledgeBaseGenerator {
     }
 
     /// Runs the entity-extraction pass: reads the current entity list, asks the AI to identify
-    /// entities + rewrite the body, canonicalises slugs/paths, and writes any new entity notes.
-    /// Returns the rewritten body. On error returns the original body unchanged.
+    /// entities + rewrite the body (and the verbatim user input, when present), canonicalises
+    /// slugs/paths, and writes any new entity notes. Returns the rewritten body and original
+    /// input. On error returns both inputs unchanged.
     private func runEntityPass(
         service: KnowledgeAIService,
         noteTitle: String,
         noteBody: String,
+        originalInput: String?,
         phase: APIRequestPhase = .knowledge
-    ) async -> String {
+    ) async -> (body: String, originalInput: String?) {
         let existing = await filesystem.listEntities()
         let refs = existing.map { ExistingEntityRef(slug: $0.slug, title: $0.title) }
         do {
             let result = try await service.extractEntitiesAndLink(
                 noteTitle: noteTitle,
                 noteBody: noteBody,
+                originalInput: originalInput,
                 existingEntities: refs,
                 phase: phase
             )
             let existingSlugs = Set(existing.map { $0.slug })
             let canonicalized = KnowledgeBaseEntityLinker.canonicalize(
                 linkedBody: result.linkedBody,
+                // Fall back to the raw input if the AI omitted the linked version, so the
+                // section is never dropped.
+                linkedOriginalInput: result.linkedOriginalInput ?? originalInput,
                 newEntities: result.newEntities,
                 existingSlugs: existingSlugs
             )
@@ -239,10 +239,10 @@ final actor KnowledgeBaseGenerator {
                     print("[KnowledgeBase] Wrote entity note: _entities/\(entity.slug).md")
                 }
             }
-            return canonicalized.body
+            return (canonicalized.body, canonicalized.originalInput ?? originalInput)
         } catch {
             print("[KnowledgeBase] Entity extraction failed; keeping unlinked body: \(AppError.userMessage(from: error))")
-            return noteBody
+            return (noteBody, originalInput)
         }
     }
 
@@ -321,12 +321,13 @@ final actor KnowledgeBaseGenerator {
                 taskDescription: taskDescription,
                 subtaskSummaries: subtaskSummaries
             )
-            let entityLinkedBody = await runEntityPass(
+            let linked = await runEntityPass(
                 service: service,
                 noteTitle: note.title,
-                noteBody: note.body
+                noteBody: note.body,
+                originalInput: originalInput
             )
-            let augmented = GeneratedKnowledgeNote(title: note.title, body: entityLinkedBody)
+            let augmented = GeneratedKnowledgeNote(title: note.title, body: linked.body)
             let filename = "00-\(KnowledgeBaseFilesystem.slug(from: note.title)).md"
             await filesystem.writeNote(
                 augmented,
@@ -335,7 +336,7 @@ final actor KnowledgeBaseGenerator {
                 parentTitle: taskTitle,
                 folderURL: folderURL,
                 sourceSubtaskTitle: nil,
-                originalInput: originalInput
+                originalInput: linked.originalInput
             )
             print("[KnowledgeBase] Wrote task overview note")
             return folderURL.appendingPathComponent(filename)

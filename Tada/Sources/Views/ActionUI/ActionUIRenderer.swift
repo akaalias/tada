@@ -230,7 +230,11 @@ struct ActionUIRenderer: View {
                     if s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
                 case .stringArray(let arr):
                     if arr.isEmpty { return false }
-                case .number, .boolean, .date:
+                case .tree(let nodes):
+                    if nodes.isEmpty { return false }
+                case .table(let table):
+                    if table.rows.isEmpty { return false }
+                case .number, .boolean, .date, .range, .image:
                     break // These have values if set
                 }
             }

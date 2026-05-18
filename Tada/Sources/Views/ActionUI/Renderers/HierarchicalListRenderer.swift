@@ -256,8 +256,7 @@ struct HierarchicalListRenderer: View {
             }
         }
 
-        let encoded = items.map { String(repeating: "  ", count: $0.depth) + $0.label }
-        response[field.id] = .stringArray(encoded)
+        response[field.id] = .tree(items.map { TreeNode(label: $0.label, depth: $0.depth) })
     }
 }
 

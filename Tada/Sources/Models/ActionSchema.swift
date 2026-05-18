@@ -170,6 +170,64 @@ struct FieldValidation: Codable, Equatable {
     }
 }
 
+// MARK: - Structured Response Payloads
+
+/// A single node in a `hierarchicalList` answer. `depth` is the nesting level (0 = top level).
+struct TreeNode: Codable, Equatable {
+    let label: String
+    let depth: Int
+}
+
+/// A structured `itemTable` answer — columns, rows keyed by column id, and currency totals.
+struct TableData: Codable, Equatable {
+    struct Column: Codable, Equatable {
+        let id: String
+        let label: String
+        /// "text" | "currency" | "category" | "select"
+        let type: String
+    }
+
+    var columns: [Column]
+    var rows: [[String: String]]
+    var total: Int
+    var hasCurrency: Bool
+
+    /// Human-readable one-line summary, e.g. "Apples - €5; Oranges - €10 (Total: €15)".
+    var summary: String {
+        let parts = rows.compactMap { row -> String? in
+            let cells = columns.compactMap { col -> String? in
+                guard let val = row[col.id], !val.isEmpty else { return nil }
+                return col.type == "currency" ? "€\(val)" : val
+            }
+            return cells.isEmpty ? nil : cells.joined(separator: " - ")
+        }
+        var summary = parts.joined(separator: "; ")
+        if hasCurrency && total > 0 {
+            summary += " (Total: €\(total))"
+        }
+        return summary.isEmpty ? "No items" : summary
+    }
+
+    /// Markdown table rendering for wiki notes.
+    var markdown: String {
+        guard !columns.isEmpty else { return "" }
+        let header = "| " + columns.map(\.label).joined(separator: " | ") + " |"
+        let separator = "| " + columns.map { _ in "---" }.joined(separator: " | ") + " |"
+        let rowLines = rows.map { row -> String in
+            let cells = columns.map { col -> String in
+                let raw = row[col.id] ?? ""
+                return (col.type == "currency" && !raw.isEmpty) ? "€\(raw)" : raw
+            }
+            return "| " + cells.joined(separator: " | ") + " |"
+        }
+        var table = ([header, separator] + rowLines).joined(separator: "\n")
+        if hasCurrency && total > 0 {
+            table += "\n\n_Total: €\(total)_"
+        }
+        return table
+    }
+}
+
 // MARK: - Response Types
 
 struct ActionResponse: Codable {
@@ -191,6 +249,14 @@ enum ResponseValue: Codable, Equatable {
     case boolean(Bool)
     case date(Date)
     case stringArray([String])
+    /// A `rangeSlider` answer.
+    case range(lower: Double, upper: Double)
+    /// A `hierarchicalList` answer — an ordered list of nodes carrying explicit depth.
+    case tree([TreeNode])
+    /// An `itemTable` answer.
+    case table(TableData)
+    /// A `drawing` or `brainstorm` answer — flattened PNG plus a text description.
+    case image(png: Data, description: String)
 
     var stringValue: String? {
         if case .string(let value) = self { return value }
@@ -214,6 +280,26 @@ enum ResponseValue: Codable, Equatable {
 
     var stringArrayValue: [String]? {
         if case .stringArray(let value) = self { return value }
+        return nil
+    }
+
+    var rangeValue: (lower: Double, upper: Double)? {
+        if case .range(let lower, let upper) = self { return (lower, upper) }
+        return nil
+    }
+
+    var treeValue: [TreeNode]? {
+        if case .tree(let value) = self { return value }
+        return nil
+    }
+
+    var tableValue: TableData? {
+        if case .table(let value) = self { return value }
+        return nil
+    }
+
+    var imageValue: (png: Data, description: String)? {
+        if case .image(let png, let description) = self { return (png, description) }
         return nil
     }
 }

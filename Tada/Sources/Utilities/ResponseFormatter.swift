@@ -9,6 +9,10 @@ func formatResponseValue(_ value: ResponseValue, abbreviatedDate: Bool = false) 
     case .boolean(let b): return b ? "Yes" : "No"
     case .stringArray(let arr): return arr.joined(separator: ", ")
     case .date(let d): return abbreviatedDate ? d.formatted(date: .abbreviated, time: .omitted) : d.formatted()
+    case .range(let lower, let upper): return String(format: "%g - %g", lower, upper)
+    case .tree(let nodes): return nodes.map(\.label).joined(separator: ", ")
+    case .table(let table): return table.summary
+    case .image(_, let description): return description
     }
 }
 

@@ -357,3 +357,64 @@ import Testing
     #expect(ResponseValue.number(1) == ResponseValue.number(1))
     #expect(ResponseValue.boolean(true) != ResponseValue.boolean(false))
 }
+
+@Test func responseValue_range_roundtrip() {
+    let value: ResponseValue = .range(lower: 10, upper: 90)
+
+    #expect(value.rangeValue?.lower == 10)
+    #expect(value.rangeValue?.upper == 90)
+    #expect(value.stringValue == nil)
+}
+
+@Test func responseValue_tree_roundtrip() {
+    let nodes = [TreeNode(label: "A", depth: 0), TreeNode(label: "B", depth: 1)]
+    let value: ResponseValue = .tree(nodes)
+
+    #expect(value.treeValue == nodes)
+    #expect(value.stringArrayValue == nil)
+}
+
+@Test func responseValue_table_roundtrip() {
+    let table = TableData(
+        columns: [TableData.Column(id: "item", label: "Item", type: "text")],
+        rows: [["item": "Widget"]],
+        total: 0,
+        hasCurrency: false
+    )
+    let value: ResponseValue = .table(table)
+
+    #expect(value.tableValue == table)
+    #expect(value.stringValue == nil)
+}
+
+@Test func responseValue_image_roundtrip() {
+    let png = Data([0x89, 0x50, 0x4E, 0x47])
+    let value: ResponseValue = .image(png: png, description: "Sketch")
+
+    #expect(value.imageValue?.png == png)
+    #expect(value.imageValue?.description == "Sketch")
+    #expect(value.stringValue == nil)
+}
+
+@Test func responseValue_codable_roundtrip_structured_cases() async throws {
+    let values: [ResponseValue] = [
+        .range(lower: 5, upper: 50),
+        .tree([TreeNode(label: "Root", depth: 0), TreeNode(label: "Leaf", depth: 1)]),
+        .table(TableData(
+            columns: [TableData.Column(id: "c", label: "C", type: "currency")],
+            rows: [["c": "12"]],
+            total: 12,
+            hasCurrency: true
+        )),
+        .image(png: Data([0x01, 0x02, 0x03]), description: "Diagram")
+    ]
+
+    let encoder = JSONEncoder()
+    let decoder = JSONDecoder()
+
+    for value in values {
+        let data = try encoder.encode(value)
+        let decoded = try decoder.decode(ResponseValue.self, from: data)
+        #expect(decoded == value)
+    }
+}

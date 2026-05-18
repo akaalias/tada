@@ -263,10 +263,10 @@ actor ExecutiveAIService {
         )
     }
 
-    /// Renders prior sub-task answers as prompt text. Drawing fields store their
-    /// image as a `data:image/png;base64,…` URL — that blob is useless as text
-    /// and costs thousands of tokens, so it is dropped here. The companion
-    /// `field_drawing` text description is kept, so the model still has context.
+    /// Renders prior sub-task answers as prompt text. Drawing/brainstorm answers
+    /// contribute only their text description (the flattened PNG is held separately
+    /// in the typed `.image` case, never as text). The `data:image` guard remains
+    /// as cheap defence against any legacy data-URL string slipping through.
     nonisolated static func formatPreviousResponses(_ responses: [[String: String]]) -> String {
         responses.map { dict in
             dict

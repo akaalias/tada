@@ -23,6 +23,9 @@ struct ExtractedEntity: Codable {
 
 struct EntityExtractionResult: Codable {
     let linkedBody: String
+    /// The verbatim user input, rewritten with first-occurrence wikilinks. Nil when the note
+    /// had no original-input block to link.
+    let linkedOriginalInput: String?
     let newEntities: [ExtractedEntity]
 }
 
@@ -205,18 +208,21 @@ actor KnowledgeAIService {
 
     INPUT:
     - The note's title and body.
+    - Optionally, the ORIGINAL USER INPUT — the user's own verbatim words for this sub-task.
     - A list of entities that already exist in the wiki: { slug, title }.
 
     OUTPUT:
     - `linkedBody`: the note body rewritten as Obsidian-style wikilinks around entity mentions. For every entity (existing OR new), wrap its FIRST occurrence as [[<slug>.md|<Display Name>]]. Leave subsequent occurrences as plain text. Preserve all other text verbatim — same line breaks, same paragraphs, same punctuation.
+    - `linkedOriginalInput`: ONLY if ORIGINAL USER INPUT was given, return it rewritten with first-occurrence wikilinks the SAME way. Treat it as its own independent block: link an entity's first occurrence within this block even if that entity was already linked in the body. Preserve the user's exact wording, line breaks, and punctuation otherwise. Omit this field entirely when no original input was provided.
     - `newEntities`: entities that are NOT in the existing list, each with { slug, displayName, body }. Body: 1-2 short sentences distilling the durable concept, written first person, no emojis, no filler.
 
     RULES:
     - Prefer linking to EXISTING entities. Only create a new entity when the mention is high-signal AND not already covered.
     - High-signal = a proper noun, named concept/movement, specific company/person/place, calendar date that anchors a deadline, or domain-specific term. SKIP generic verbs, adjectives, and common nouns.
+    - The ORIGINAL USER INPUT is a prime entity source — proper nouns the user typed themselves are high-signal. Mine entities from it as thoroughly as from the body, even concepts the body's paraphrase dropped.
     - Slug format: lowercase ASCII, hyphenated separator, alphanumerics only, max 48 chars. Examples: "tada-app", "human-agency", "openai", "june-1-2026".
     - For an existing entity, use its existing slug verbatim — do not invent a new variant.
-    - Never invent entities the body doesn't mention.
+    - Never invent entities the input doesn't mention.
     - Aim for 3-10 entities per note; quality over quantity.
     - The new entity's `body` should NOT itself contain wikilinks. Entity bodies are leaf nodes.
     """
@@ -224,6 +230,7 @@ actor KnowledgeAIService {
     func extractEntitiesAndLink(
         noteTitle: String,
         noteBody: String,
+        originalInput: String? = nil,
         existingEntities: [ExistingEntityRef],
         phase: APIRequestPhase = .knowledge
     ) async throws -> EntityExtractionResult {
@@ -231,16 +238,24 @@ actor KnowledgeAIService {
             ? "(none yet)"
             : existingEntities.map { "- slug: \($0.slug) | title: \($0.title)" }.joined(separator: "\n")
 
+        let trimmedInput = originalInput?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let originalSection = trimmedInput.isEmpty
+            ? ""
+            : "\n\nORIGINAL USER INPUT:\n\(trimmedInput)"
+        let closingInstruction = trimmedInput.isEmpty
+            ? "Rewrite the body with first-occurrence wikilinks and emit any new high-signal entities."
+            : "Rewrite both the body and the original user input with first-occurrence wikilinks, and emit any new high-signal entities found in either."
+
         let userMessage = """
         NOTE TITLE: \(noteTitle)
 
         NOTE BODY:
-        \(noteBody)
+        \(noteBody)\(originalSection)
 
         EXISTING ENTITIES:
         \(existingList)
 
-        Rewrite the body with first-occurrence wikilinks and emit any new high-signal entities.
+        \(closingInstruction)
         """
 
         return try await client.sendStructuredMessage(

@@ -97,6 +97,58 @@ import Testing
     #expect(result.finalNewEntities.count == 3)
 }
 
+@Test func canonicalize_rewrites_links_in_original_input() {
+    let body = "The note body mentions [[openai.md|OpenAI]]."
+    let original = "I emailed [[openai.md|OpenAI]] about the role yesterday."
+    let newEntities = [ExtractedEntity(slug: "openai", displayName: "OpenAI", body: "An AI lab.")]
+    let result = KnowledgeBaseEntityLinker.canonicalize(
+        linkedBody: body,
+        linkedOriginalInput: original,
+        newEntities: newEntities,
+        existingSlugs: []
+    )
+
+    #expect(result.body.contains("[[../_entities/openai.md|OpenAI]]"))
+    #expect(result.originalInput?.contains("[[../_entities/openai.md|OpenAI]]") == true)
+}
+
+@Test func canonicalize_original_input_nil_when_not_provided() {
+    let result = KnowledgeBaseEntityLinker.canonicalize(
+        linkedBody: "Body text.",
+        newEntities: [],
+        existingSlugs: []
+    )
+
+    #expect(result.originalInput == nil)
+}
+
+@Test func canonicalize_original_input_corrects_ai_slug_variant() {
+    let original = "We ship with [[TadaApp.md|Tada.app]] every day."
+    let newEntities = [ExtractedEntity(slug: "TadaApp", displayName: "Tada.app", body: "An AI-native app.")]
+    let result = KnowledgeBaseEntityLinker.canonicalize(
+        linkedBody: "",
+        linkedOriginalInput: original,
+        newEntities: newEntities,
+        existingSlugs: []
+    )
+
+    #expect(result.originalInput?.contains("[[../_entities/tada-app.md|Tada.app]]") == true)
+}
+
+@Test func canonicalize_original_input_preserves_structural_links() {
+    let original = "Back to [[_overview.md|Parent Task]] and [[02-step.md|Step Two]]."
+    let result = KnowledgeBaseEntityLinker.canonicalize(
+        linkedBody: "",
+        linkedOriginalInput: original,
+        newEntities: [],
+        existingSlugs: []
+    )
+
+    #expect(result.originalInput?.contains("[[_overview.md|Parent Task]]") == true)
+    #expect(result.originalInput?.contains("[[02-step.md|Step Two]]") == true)
+    #expect(result.originalInput?.contains("../_entities/") == false)
+}
+
 // MARK: - Backlink Detection
 
 @Test func bodyContainsEntityLink_matches_canonical_link() {

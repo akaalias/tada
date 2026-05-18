@@ -420,21 +420,17 @@ struct DrawingCanvasRenderer: View {
             description += ". Labels: \(labels)"
         }
 
-        // Save text description so AI can read the labels
-        response[field.id] = .string(description)
-
         // Snapshot the canvas as PNG so the wiki can embed the image and the AI can see it.
-        if !elements.isEmpty || !textAnnotations.isEmpty {
-            if let dataURL = renderCanvasPNG() {
-                response[field.id + "_image"] = .string(dataURL)
-            }
+        // The text description rides along inside the .image case so the AI can read the labels.
+        if (!elements.isEmpty || !textAnnotations.isEmpty), let png = renderCanvasPNG() {
+            response[field.id] = .image(png: png, description: description)
         } else {
-            response[field.id + "_image"] = nil
+            response[field.id] = .string(description)
         }
     }
 
     @MainActor
-    private func renderCanvasPNG() -> String? {
+    private func renderCanvasPNG() -> Data? {
         // Use the actual size the user was drawing on so element coordinates line up perfectly,
         // and clip so anything pulled past the edges (e.g. dragged labels) isn't captured.
         let width = max(canvasSize.width, 100)
@@ -458,7 +454,7 @@ struct DrawingCanvasRenderer: View {
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
             return nil
         }
-        return "data:image/png;base64,\(pngData.base64EncodedString())"
+        return pngData
     }
 }
 

@@ -76,14 +76,62 @@ import Testing
     #expect(result == "value")
 }
 
-@Test func responseString_drawing_replaced_with_placeholder() {
+@Test func responseString_image_uses_description() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["sketch"] = .string("data:image/png;base64,abc123")
+    response["sketch"] = .image(png: Data([0x89, 0x50]), description: "Drawing with 2 lines")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.responseString(for: subTask) == "Drawing with 2 lines")
+}
+
+@Test func responseString_image_without_description_uses_placeholder() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .image(png: Data([0x89, 0x50]), description: "")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
     #expect(KnowledgeResponseExtractor.responseString(for: subTask) == "(drawing)")
+}
+
+@Test func responseString_range_formatted() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["budget"] = .range(lower: 25, upper: 75)
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.responseString(for: subTask) == "25 - 75")
+}
+
+@Test func responseString_tree_joins_labels() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["outline"] = .tree([
+        TreeNode(label: "Parent", depth: 0),
+        TreeNode(label: "Child", depth: 1)
+    ])
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.responseString(for: subTask) == "Parent, Child")
+}
+
+@Test func responseString_table_uses_summary() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["items"] = .table(TableData(
+        columns: [TableData.Column(id: "item", label: "Item", type: "text")],
+        rows: [["item": "Widget"]],
+        total: 0,
+        hasCurrency: false
+    ))
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.responseString(for: subTask) == "Widget")
 }
 
 @Test func responseString_number_formatted() {
@@ -100,11 +148,6 @@ import Testing
 @Test func responseString_date_formatted() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .none
-    formatter.locale = Locale(identifier: "en_US")
 
     let date = Date(timeIntervalSince1970: 1700000000)
     response["date"] = .date(date)
@@ -134,32 +177,17 @@ import Testing
     #expect(KnowledgeResponseExtractor.extractPNG(from: subTask) == nil)
 }
 
-@Test func extractPNG_valid_png_data() {
+@Test func extractPNG_returns_image_png() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
 
-    // Create minimal PNG data
-    let pngData = Data(base64Encoded: "iVBORw0KGgo=") ?? Data()
-    let base64 = pngData.base64EncodedString()
-
+    let pngData = Data([0x89, 0x50, 0x4E, 0x47])
     var response = ActionResponse()
-    response["sketch"] = .string("data:image/png;base64,\(base64)")
+    response["sketch"] = .image(png: pngData, description: "A sketch")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
     let extracted = KnowledgeResponseExtractor.extractPNG(from: subTask)
-    #expect(extracted != nil)
     #expect(extracted == pngData)
-}
-
-@Test func extractPNG_invalid_base64_returns_nil() {
-    let subTask = SubTask(title: "Test Step", description: "", order: 0)
-
-    var response = ActionResponse()
-    response["sketch"] = .string("data:image/png;base64,invalid!!!")
-
-    subTask.actionResponseData = try? JSONEncoder().encode(response)
-
-    #expect(KnowledgeResponseExtractor.extractPNG(from: subTask) == nil)
 }
 
 @Test func extractTableMarkdown_no_table_data() {
@@ -174,17 +202,13 @@ import Testing
 
 @Test func extractTableMarkdown_valid_table() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
-
-    let tableData = [
-        "columns": [["id": "item", "label": "Item", "type": "text"]],
-        "rows": [["item": "Widget"], ["item": "Gadget"]]
-    ] as [String: Any]
-
-    let json = try! JSONSerialization.data(withJSONObject: tableData)
-    let jsonString = "__tada_table__\(String(data: json, encoding: .utf8)!)"
-
     var response = ActionResponse()
-    response["table"] = .string(jsonString)
+    response["table"] = .table(TableData(
+        columns: [TableData.Column(id: "item", label: "Item", type: "text")],
+        rows: [["item": "Widget"], ["item": "Gadget"]],
+        total: 0,
+        hasCurrency: false
+    ))
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
@@ -196,17 +220,13 @@ import Testing
 
 @Test func extractTableMarkdown_empty_rows() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
-
-    let tableData = [
-        "columns": [["id": "item", "label": "Item"]],
-        "rows": [] as [[String: String]]
-    ] as [String: Any]
-
-    let json = try! JSONSerialization.data(withJSONObject: tableData)
-    let jsonString = "__tada_table__\(String(data: json, encoding: .utf8)!)"
-
     var response = ActionResponse()
-    response["table"] = .string(jsonString)
+    response["table"] = .table(TableData(
+        columns: [TableData.Column(id: "item", label: "Item", type: "text")],
+        rows: [],
+        total: 0,
+        hasCurrency: false
+    ))
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
@@ -216,19 +236,13 @@ import Testing
 
 @Test func extractTableMarkdown_with_currency_total() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
-
-    let tableData = [
-        "columns": [["id": "price", "label": "Price", "type": "currency"]],
-        "rows": [["price": "10"], ["price": "20"]],
-        "total": 30,
-        "hasCurrency": true
-    ] as [String: Any]
-
-    let json = try! JSONSerialization.data(withJSONObject: tableData)
-    let jsonString = "__tada_table__\(String(data: json, encoding: .utf8)!)"
-
     var response = ActionResponse()
-    response["table"] = .string(jsonString)
+    response["table"] = .table(TableData(
+        columns: [TableData.Column(id: "price", label: "Price", type: "currency")],
+        rows: [["price": "10"], ["price": "20"]],
+        total: 30,
+        hasCurrency: true
+    ))
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
@@ -236,20 +250,46 @@ import Testing
     #expect(markdown?.contains("_Total: €30_") == true)
 }
 
-@Test func originalTextInput_returns_nil_for_drawing_only() {
+@Test func extractTableMarkdown_no_total_when_zero() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["sketch"] = .string("data:image/png;base64,abc123")
+    response["table"] = .table(TableData(
+        columns: [TableData.Column(id: "price", label: "Price", type: "currency")],
+        rows: [["price": "10"]],
+        total: 0,
+        hasCurrency: true
+    ))
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    let markdown = KnowledgeResponseExtractor.extractTableMarkdown(from: subTask)
+    #expect(markdown?.contains("_Total:") == false)
+}
+
+@Test func originalTextInput_returns_description_for_drawing() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .image(png: Data([0x89]), description: "Drawing with 2 lines. Labels: North wall")
+
+    subTask.actionResponseData = try? JSONEncoder().encode(response)
+
+    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "Drawing with 2 lines. Labels: North wall")
+}
+
+@Test func originalTextInput_returns_nil_for_drawing_without_description() {
+    let subTask = SubTask(title: "Test Step", description: "", order: 0)
+    var response = ActionResponse()
+    response["sketch"] = .image(png: Data([0x89]), description: "")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
     #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
 }
 
-@Test func originalTextInput_returns_nil_for_table_blob() {
+@Test func originalTextInput_returns_nil_for_table() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["table"] = .string("__tada_table__{\"columns\":[],\"rows\":[]}")
+    response["table"] = .table(TableData(columns: [], rows: [], total: 0, hasCurrency: false))
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
@@ -273,35 +313,15 @@ import Testing
     #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == nil)
 }
 
-@Test func originalTextInput_excludes_drawing_keeps_text() {
+@Test func originalTextInput_includes_drawing_description_alongside_text() {
     let subTask = SubTask(title: "Test Step", description: "", order: 0)
     var response = ActionResponse()
-    response["sketch"] = .string("data:image/png;base64,abc")
+    response["sketch"] = .image(png: Data([0x89]), description: "Sketch with labels: North wall")
     response["caption"] = .string("Layout for the kitchen")
 
     subTask.actionResponseData = try? JSONEncoder().encode(response)
 
-    #expect(KnowledgeResponseExtractor.originalTextInput(for: subTask) == "Layout for the kitchen")
-}
-
-@Test func extractTableMarkdown_no_total_when_zero() {
-    let subTask = SubTask(title: "Test Step", description: "", order: 0)
-
-    let tableData = [
-        "columns": [["id": "price", "label": "Price", "type": "currency"]],
-        "rows": [["price": "10"]],
-        "total": 0,
-        "hasCurrency": true
-    ] as [String: Any]
-
-    let json = try! JSONSerialization.data(withJSONObject: tableData)
-    let jsonString = "__tada_table__\(String(data: json, encoding: .utf8)!)"
-
-    var response = ActionResponse()
-    response["table"] = .string(jsonString)
-
-    subTask.actionResponseData = try? JSONEncoder().encode(response)
-
-    let markdown = KnowledgeResponseExtractor.extractTableMarkdown(from: subTask)
-    #expect(markdown?.contains("_Total:") == false)
+    let result = KnowledgeResponseExtractor.originalTextInput(for: subTask)
+    #expect(result?.contains("Sketch with labels: North wall") == true)
+    #expect(result?.contains("Layout for the kitchen") == true)
 }
