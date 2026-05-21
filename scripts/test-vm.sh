@@ -8,8 +8,11 @@ set -euo pipefail
 # goes to a VM-local DerivedData path so nothing pollutes the host checkout.
 #
 # Usage:
-#   scripts/test-vm.sh                 # run all three schemes (unit, integration, UI)
+#   scripts/test-vm.sh                 # run all three schemes (unit, integration, UI), headless
 #   scripts/test-vm.sh TadaUITests     # run just one scheme
+#   TADA_VM_GUI=1 scripts/test-vm.sh   # boot the VM head-full so you can WATCH the run
+#                                        in a VM desktop window (interactions stay inside
+#                                        that window — they don't touch your real desktop)
 #
 # Prereqs (installed once): brew install cirruslabs/cli/tart esolitos/ipa/sshpass
 
@@ -39,8 +42,16 @@ if ! tart list --quiet 2>/dev/null | grep -qx "$VM_NAME"; then
   tart clone "$IMAGE" "$VM_NAME"
 fi
 
-echo "==> Booting VM (headless, repo mounted)"
-tart run "$VM_NAME" --no-graphics --dir="${MOUNT_NAME}:${REPO_ROOT}" >/tmp/tada-vm-run.log 2>&1 &
+# Head-full (TADA_VM_GUI=1) opens a VM desktop window so the run is observable;
+# default is headless (--no-graphics) for unattended/CI-style runs.
+if [ "${TADA_VM_GUI:-0}" = "1" ]; then
+  GRAPHICS_ARGS=()
+  echo "==> Booting VM (head-full — a VM desktop window will open, repo mounted)"
+else
+  GRAPHICS_ARGS=(--no-graphics)
+  echo "==> Booting VM (headless, repo mounted)"
+fi
+tart run "$VM_NAME" "${GRAPHICS_ARGS[@]}" --dir="${MOUNT_NAME}:${REPO_ROOT}" >/tmp/tada-vm-run.log 2>&1 &
 RUN_PID=$!
 
 cleanup() {
