@@ -1,10 +1,15 @@
 import XCTest
 
-/// End-to-end happy path: create a task → answer 1 discovery question
-/// from the unified "Action Items" view → watch the task transition to
-/// "Planning Execution" in-place (no sheet) → complete the first
-/// execution step from the same view → verify the task lands in
-/// Completed AND the knowledge base has the expected notes on disk.
+/// End-to-end happy path: create a task → open it from the "Action Items"
+/// view via its "Take Action" button → answer 1 discovery question in the
+/// focused single-task view → watch the task transition to "Planning
+/// Execution" → complete the first execution step → return to the list →
+/// verify the task lands in Completed AND the knowledge base has the
+/// expected notes on disk.
+///
+/// Reflects the current UI: Action Items cards are not expanded in place;
+/// each card has a "Take Action" button that opens the focused task view
+/// where the action card is rendered.
 ///
 /// Backed by deterministic mocks wired in under `-UITestMode 1`. The mocks
 /// write structural KB notes to a stable temp directory so this test process
@@ -49,48 +54,61 @@ final class TadaUITests: XCTestCase {
         XCTAssertTrue(create.isEnabled)
         create.click()
 
-        // 2. Navigate to the unified "Action Items" view and answer the
-        //    discovery question.
+        // 2. Navigate to the "Action Items" view. Each actionable task is shown
+        //    as a collapsed card with a "Take Action" button (no inline expand).
         let actionItemsRow = app.buttons["sidebar.Action Items"]
         XCTAssertTrue(actionItemsRow.waitForExistence(timeout: 10))
         actionItemsRow.click()
 
-        submitTextResponse(in: app, answer: "next weekend", phase: "discovery")
-
-        // 3. The task stays in Action Items and surfaces a "Planning
-        //    Execution:" indicator until the first execution sub-task is
-        //    ready. We must check for this immediately, because the mock's
-        //    planning window is brief.
+        let takeAction = app.buttons["taskCard.takeAction"].firstMatch
         XCTAssertTrue(
-            app.staticTexts["Planning Execution:"].waitForExistence(timeout: 5),
-            "Task should show 'Planning Execution:' state in Action Items after last discovery answer"
+            takeAction.waitForExistence(timeout: 10),
+            "Action Items should show a 'Take Action' button for the task"
+        )
+        takeAction.click()
+
+        // 3. The focused single-task view opens with the action card expanded.
+        XCTAssertTrue(
+            app.buttons["focusedTask.back"].waitForExistence(timeout: 5),
+            "Take Action should open the focused task view"
         )
 
-        // 4. The first execution step appears in the same Action Items view.
-        //    No sheet ever interrupts — if one had, this submit would fail.
+        // 4. Answer the discovery question in the focused view.
+        submitTextResponse(in: app, answer: "next weekend", phase: "discovery")
+
+        // 5. After the last discovery answer the task transitions to execution;
+        //    the focused card surfaces a "Planning Execution:" indicator while
+        //    the mock plans (a brief window).
+        XCTAssertTrue(
+            app.staticTexts["Planning Execution:"].waitForExistence(timeout: 8),
+            "Focused card should show 'Planning Execution:' after the last discovery answer"
+        )
+
+        // 6. The first execution step appears in the same focused view.
         submitTextResponse(in: app, answer: "booked", phase: "execution")
 
-        // 5. Task should land in Completed.
+        // 7. Once the task completes, return to the list and confirm it landed
+        //    in Completed.
+        let back = app.buttons["focusedTask.back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        back.click()
+
         app.buttons["sidebar.Completed"].click()
         let completedCard = app.staticTexts["Plan a weekend trip to Paris"]
         XCTAssertTrue(completedCard.waitForExistence(timeout: 10))
 
-        // 6. Knowledge Base: navigate through the wiki UI and verify each
+        // 8. Knowledge Base: navigate through the wiki UI and verify each
         // expected note is reachable and renders.
         verifyKnowledgeBaseNotesInUI(app)
     }
 
-    /// Ensures the task card is expanded (the Action Required view starts
-    /// collapsed) then types an answer and clicks Submit.
+    /// Types an answer into the focused task's action card and clicks Submit.
+    /// The focused view renders the card expanded, so the submit button and
+    /// text field are present without any expand step.
     @MainActor
     private func submitTextResponse(in app: XCUIApplication, answer: String, phase: String) {
         let submit = app.buttons["actionUI.submit"]
-        if !submit.waitForExistence(timeout: 3) {
-            let chevron = app.buttons["taskCard.toggleExpand"].firstMatch
-            XCTAssertTrue(chevron.waitForExistence(timeout: 5), "No expand chevron (\(phase) phase)")
-            chevron.click()
-            XCTAssertTrue(submit.waitForExistence(timeout: 10), "Submit not visible after expanding (\(phase) phase)")
-        }
+        XCTAssertTrue(submit.waitForExistence(timeout: 10), "Submit not visible (\(phase) phase)")
 
         let field = app.textFields["actionUI.field.field_text"]
         XCTAssertTrue(field.waitForExistence(timeout: 5), "Missing text field (\(phase) phase)")
