@@ -25,7 +25,11 @@ VM_USER="admin"
 VM_PASS="admin"
 MOUNT_NAME="tada"
 VM_REPO="/Volumes/My Shared Files/${MOUNT_NAME}"
-SCHEMES=("${@:-TadaTests TadaIntegrationTests TadaUITests}")
+if [ "$#" -gt 0 ]; then
+  SCHEMES=("$@")
+else
+  SCHEMES=(TadaTests TadaIntegrationTests TadaUITests)
+fi
 
 ssh_vm() {
   sshpass -p "$VM_PASS" ssh \
@@ -85,7 +89,7 @@ echo "==> Xcode in VM: $(ssh_vm 'xcodebuild -version | tr "\n" " "')"
 SIGN_ARGS="CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES DEVELOPMENT_TEAM='' ENABLE_HARDENED_RUNTIME=NO"
 
 FAIL=0
-for scheme in $SCHEMES; do
+for scheme in "${SCHEMES[@]}"; do
   echo ""
   echo "==> Running scheme: $scheme (inside VM)"
   # Capture the REAL xcodebuild exit code via a sentinel (a piped grep would
