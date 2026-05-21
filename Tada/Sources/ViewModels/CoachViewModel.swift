@@ -90,7 +90,8 @@ final class CoachViewModel {
         isLoading = false
     }
 
-    private func buildTaskSummary() -> String? {
+    /// Internal (not private) so unit tests can exercise summary building directly.
+    func buildTaskSummary() -> String? {
         guard let modelContext else { return nil }
 
         let descriptor = FetchDescriptor<TodoTask>(
@@ -111,7 +112,8 @@ final class CoachViewModel {
         }.joined(separator: "\n")
     }
 
-    private func executeToolCalls(_ toolCalls: [ToolCall]) async -> [CoachMessage.ToolResult] {
+    /// Internal (not private) so unit tests can drive tool dispatch without the live CoachService.
+    func executeToolCalls(_ toolCalls: [ToolCall]) async -> [CoachMessage.ToolResult] {
         var results: [CoachMessage.ToolResult] = []
 
         for call in toolCalls {
@@ -137,7 +139,8 @@ final class CoachViewModel {
         return results
     }
 
-    private func executeTool(_ tool: CoachTool, arguments: [String: String]) async -> (success: Bool, message: String) {
+    /// Internal (not private) so unit tests can exercise each tool implementation directly.
+    func executeTool(_ tool: CoachTool, arguments: [String: String]) async -> (success: Bool, message: String) {
         switch tool {
         case .captureInboxItem:
             return await captureInboxItem(content: arguments["content"] ?? "")
