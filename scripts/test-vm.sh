@@ -80,18 +80,28 @@ ssh_vm "echo ready" >/dev/null 2>&1 || { echo "SSH never came up"; exit 1; }
 
 echo "==> Xcode in VM: $(ssh_vm 'xcodebuild -version | tr "\n" " "')"
 
+# The VM has no developer certificate for the project's team, so build with
+# ad-hoc signing and hardened-runtime off — enough to launch & test locally.
+SIGN_ARGS="CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES DEVELOPMENT_TEAM='' ENABLE_HARDENED_RUNTIME=NO"
+
 FAIL=0
 for scheme in $SCHEMES; do
   echo ""
   echo "==> Running scheme: $scheme (inside VM)"
-  if ! ssh_vm "cd '$VM_REPO' && xcodebuild test \
+  # Capture the REAL xcodebuild exit code via a sentinel (a piped grep would
+  # mask it). Shared DerivedData so the app builds once and is reused.
+  OUT=$(ssh_vm "cd '$VM_REPO' && xcodebuild test \
       -project Tada.xcodeproj -scheme '$scheme' \
       -destination 'platform=macOS' \
-      -derivedDataPath /Users/${VM_USER}/dd-${scheme} \
-      -resultBundlePath /Users/${VM_USER}/result-${scheme}.xcresult 2>&1 | \
-      grep -E 'Test run with|Executed|TEST (SUCCEEDED|FAILED)|error:|✘' | tail -30"; then
-    echo "    scheme $scheme reported failures"
+      -derivedDataPath /Users/${VM_USER}/dd \
+      $SIGN_ARGS 2>&1; echo \"__XCB_EXIT__:\$?\"")
+  printf '%s\n' "$OUT" | grep -E 'Test run with|Executed [0-9]|TEST (SUCCEEDED|FAILED)|error:|Testing failed|✘' | tail -40
+  CODE=$(printf '%s\n' "$OUT" | grep -oE '__XCB_EXIT__:[0-9]+' | tail -1 | cut -d: -f2)
+  if [ "${CODE:-1}" != "0" ]; then
+    echo "    ❌ scheme $scheme FAILED (xcodebuild exit ${CODE:-unknown})"
     FAIL=1
+  else
+    echo "    ✅ scheme $scheme passed"
   fi
 done
 
