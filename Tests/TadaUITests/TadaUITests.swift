@@ -27,7 +27,11 @@ final class TadaUITests: XCTestCase {
     @MainActor
     func testFullTaskJourney() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-UITestMode", "1"]
+        // -UITestMode routes services to deterministic mocks. -claude-api-key
+        // injects a dummy key (via the UserDefaults argument domain) so the
+        // app's "has API key" gates open without depending on a key persisted
+        // on the host machine — makes the test hermetic (host, VM, or CI).
+        app.launchArguments = ["-UITestMode", "1", "-claude-api-key", uiTestAPIKey]
         // The test process (sandboxed) and the launched app (not sandboxed) see
         // different NSTemporaryDirectory paths, so we hand the app the test's
         // tmp dir explicitly. The app's mock KB writes there; the test reads

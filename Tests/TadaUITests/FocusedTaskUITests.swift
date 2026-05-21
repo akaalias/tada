@@ -12,7 +12,9 @@ final class FocusedTaskUITests: XCTestCase {
     @MainActor
     func testClickingCurrentSubTaskOpensFocusedView() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-UITestMode", "1"]
+        // -claude-api-key injects a dummy key so the app's "has API key" gates
+        // open in a fresh environment (VM/CI) without a host-persisted key.
+        app.launchArguments = ["-UITestMode", "1", "-claude-api-key", uiTestAPIKey]
         app.launch()
 
         XCTAssertTrue(
