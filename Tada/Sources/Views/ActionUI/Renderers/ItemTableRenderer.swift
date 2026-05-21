@@ -24,7 +24,7 @@ struct ItemTableRenderer: View {
                 TableColumn(
                     id: option.id,
                     label: option.label,
-                    type: parseColumnType(option.description)
+                    type: Self.parseColumnType(option.description)
                 )
             }
         }
@@ -48,7 +48,8 @@ struct ItemTableRenderer: View {
         case category
     }
 
-    private func parseColumnType(_ description: String?) -> ColumnType {
+    /// Static + internal so the column-type parsing can be unit-tested without rendering.
+    static func parseColumnType(_ description: String?) -> ColumnType {
         guard let desc = description?.lowercased() else { return .text }
         if desc == "currency" || desc == "amount" || desc == "price" || desc == "cost" {
             return .currency
