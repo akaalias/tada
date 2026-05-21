@@ -227,13 +227,14 @@ struct HierarchicalListRenderer: View {
         } else if let options = field.options, !options.isEmpty {
             items = options.map { TreeItem(label: $0.label, depth: 0) }
         } else if let defaultValue = field.defaultValue, !defaultValue.isEmpty {
-            items = parseIndentedText(defaultValue)
+            items = Self.parseIndentedText(defaultValue)
         }
 
         normalizeAndSave()
     }
 
-    private func parseIndentedText(_ text: String) -> [TreeItem] {
+    /// Static + internal so the indent parsing can be unit-tested without rendering.
+    static func parseIndentedText(_ text: String) -> [TreeItem] {
         text.components(separatedBy: "\n").compactMap { rawLine in
             let leading = rawLine.prefix(while: { $0 == " " || $0 == "\t" }).count
             let trimmed = rawLine.trimmingCharacters(in: .whitespaces)

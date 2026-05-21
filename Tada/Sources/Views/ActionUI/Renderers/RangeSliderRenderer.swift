@@ -23,7 +23,8 @@ struct RangeSliderRenderer: View {
         return 100
     }
 
-    private func roundToStep(_ value: Double) -> Double {
+    /// Internal (not private) so step-rounding can be unit-tested.
+    func roundToStep(_ value: Double) -> Double {
         (value / stepSize).rounded() * stepSize
     }
 

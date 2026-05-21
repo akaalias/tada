@@ -106,3 +106,36 @@ import Testing
     if case .text = ItemTableRenderer.parseColumnType(nil) {} else { Issue.record("nil should be text") }
     if case .text = ItemTableRenderer.parseColumnType("freeform note") {} else { Issue.record("unknown should be text") }
 }
+
+// MARK: - HierarchicalListRenderer.parseIndentedText
+
+@Test func hierarchical_parseIndentedText_assigns_depth_by_indent() {
+    let text = "Root\n  Child\n    Grandchild\nSecond root"
+    let items = HierarchicalListRenderer.parseIndentedText(text)
+    #expect(items.map(\.label) == ["Root", "Child", "Grandchild", "Second root"])
+    #expect(items.map(\.depth) == [0, 1, 2, 0]) // 2 spaces per depth level
+}
+
+@Test func hierarchical_parseIndentedText_skips_blank_lines() {
+    let items = HierarchicalListRenderer.parseIndentedText("A\n\n  \nB")
+    #expect(items.map(\.label) == ["A", "B"])
+}
+
+// MARK: - RangeSliderRenderer.roundToStep
+
+@MainActor
+@Test func rangeSlider_roundToStep_snaps_to_step_size() {
+    // range 100..2000 → step 100; 1000..2000 within <=1000? range is 1900 -> step 100.
+    let bigField = ActionField(id: "b", type: .rangeSlider, label: "Budget",
+                               validation: FieldValidation(minValue: 100, maxValue: 2000))
+    let big = RangeSliderRenderer(field: bigField, response: .constant(ActionResponse()))
+    #expect(big.roundToStep(1234) == 1200)
+    #expect(big.roundToStep(1250) == 1300)
+
+    // range 0..10 → step 1.
+    let smallField = ActionField(id: "s", type: .rangeSlider, label: "Rating",
+                                 validation: FieldValidation(minValue: 0, maxValue: 10))
+    let small = RangeSliderRenderer(field: smallField, response: .constant(ActionResponse()))
+    #expect(small.roundToStep(3.4) == 3)
+    #expect(small.roundToStep(3.6) == 4)
+}
