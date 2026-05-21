@@ -105,6 +105,7 @@ struct KnowledgeBaseView: View {
             }
             .disabled(pageStack.isEmpty)
             .help("Back")
+            .accessibilityIdentifier("kb.back")
 
             Button {
                 pageStack.removeAll()

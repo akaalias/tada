@@ -137,12 +137,17 @@ final class TadaUITests: XCTestCase {
         XCTAssertTrue(kbRow.waitForExistence(timeout: 5))
         kbRow.click()
 
+        // The toolbar shows the current note as "<parentFolder>/<filename>",
+        // so match the trailing filename rather than an exact string.
+        func toolbarShows(_ filename: String) -> Bool {
+            app.staticTexts.matching(
+                NSPredicate(format: "label ENDSWITH %@", "/\(filename)")
+            ).firstMatch.waitForExistence(timeout: 5)
+        }
+
         // 1. Index page renders with our task linked under "In progress" or
-        // "Completed". The label is the task title.
-        XCTAssertTrue(
-            app.staticTexts["index.md"].waitForExistence(timeout: 5),
-            "Toolbar should show 'index.md' on the KB landing page"
-        )
+        // "Completed". The toolbar path ends in "/index.md".
+        XCTAssertTrue(toolbarShows("index.md"), "KB landing page toolbar should end in '/index.md'")
         let taskLink = app.buttons.matching(
             NSPredicate(format: "identifier ENDSWITH %@", "_overview.md")
         ).firstMatch
@@ -154,12 +159,9 @@ final class TadaUITests: XCTestCase {
         XCTAssertEqual(taskLink.label, "Plan a weekend trip to Paris")
         taskLink.click()
 
-        // 2. Task overview renders. Toolbar shows _overview.md. Sub-task notes
-        // section lists one button per note.
-        XCTAssertTrue(
-            app.staticTexts["_overview.md"].waitForExistence(timeout: 5),
-            "Toolbar should show '_overview.md' after clicking the task link"
-        )
+        // 2. Task overview renders. Toolbar ends in "/_overview.md"; the
+        //    Sub-task notes section lists one button per note.
+        XCTAssertTrue(toolbarShows("_overview.md"), "Toolbar should end in '/_overview.md' after clicking the task link")
         XCTAssertTrue(
             app.staticTexts["Sub-task notes"].waitForExistence(timeout: 3),
             "Task overview should include the 'Sub-task notes' heading"
@@ -183,16 +185,17 @@ final class TadaUITests: XCTestCase {
         }
 
         // 3. Click each subtask note in turn and verify the page renders with
-        // the expected heading, then go back to the overview.
-        let backButton = app.buttons.matching(identifier: "chevron.left").firstMatch
+        // the expected toolbar path + recorded answer, then go back to the
+        // overview via the KB back button.
+        let backButton = app.buttons["kb.back"]
         for note in expectedNotes {
             let button = app.buttons["kb.link.\(note.filename)"]
             XCTAssertTrue(button.waitForExistence(timeout: 3))
             button.click()
 
             XCTAssertTrue(
-                app.staticTexts[note.filename].waitForExistence(timeout: 5),
-                "Toolbar should show '\(note.filename)' after clicking the note link"
+                toolbarShows(note.filename),
+                "Toolbar should end in '/\(note.filename)' after clicking the note link"
             )
             // The note's body must include the answer the user typed during
             // the journey. This is what proves we landed on the sub-task's
@@ -203,10 +206,9 @@ final class TadaUITests: XCTestCase {
             )
 
             // Back to overview for the next iteration.
-            if backButton.exists {
-                backButton.click()
-                XCTAssertTrue(app.staticTexts["_overview.md"].waitForExistence(timeout: 3))
-            }
+            XCTAssertTrue(backButton.waitForExistence(timeout: 3), "KB back button should exist")
+            backButton.click()
+            XCTAssertTrue(toolbarShows("_overview.md"), "Back should return to the task overview")
         }
     }
 }
