@@ -43,15 +43,15 @@ if ! tart list --quiet 2>/dev/null | grep -qx "$VM_NAME"; then
 fi
 
 # Head-full (TADA_VM_GUI=1) opens a VM desktop window so the run is observable;
-# default is headless (--no-graphics) for unattended/CI-style runs.
+# default is headless (--no-graphics) for unattended/CI-style runs. Two explicit
+# branches (no array) to stay compatible with macOS's bash 3.2 under `set -u`.
 if [ "${TADA_VM_GUI:-0}" = "1" ]; then
-  GRAPHICS_ARGS=()
   echo "==> Booting VM (head-full — a VM desktop window will open, repo mounted)"
+  tart run "$VM_NAME" --dir="${MOUNT_NAME}:${REPO_ROOT}" >/tmp/tada-vm-run.log 2>&1 &
 else
-  GRAPHICS_ARGS=(--no-graphics)
   echo "==> Booting VM (headless, repo mounted)"
+  tart run "$VM_NAME" --no-graphics --dir="${MOUNT_NAME}:${REPO_ROOT}" >/tmp/tada-vm-run.log 2>&1 &
 fi
-tart run "$VM_NAME" "${GRAPHICS_ARGS[@]}" --dir="${MOUNT_NAME}:${REPO_ROOT}" >/tmp/tada-vm-run.log 2>&1 &
 RUN_PID=$!
 
 cleanup() {
