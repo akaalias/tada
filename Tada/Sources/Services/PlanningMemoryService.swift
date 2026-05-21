@@ -21,14 +21,20 @@ class PlanningMemoryService {
 
     private let fileURL: URL
 
-    private init() {
+    private convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let appFolder = appSupport.appendingPathComponent("Tada", isDirectory: true)
 
         // Create directory if needed
         try? FileManager.default.createDirectory(at: appFolder, withIntermediateDirectories: true)
 
-        fileURL = appFolder.appendingPathComponent("planning_learnings.json")
+        self.init(fileURL: appFolder.appendingPathComponent("planning_learnings.json"))
+    }
+
+    /// Designated initializer. The shared instance stores under Application Support; tests pass a
+    /// temp file so they never touch the user's real learnings.
+    init(fileURL: URL) {
+        self.fileURL = fileURL
     }
 
     func loadLearnings() -> [PlanningLearning] {
