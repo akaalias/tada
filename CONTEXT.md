@@ -115,10 +115,14 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 4. ~~**Split KnowledgeBaseService**~~ — filesystem / AI orchestration / indexing / link discovery ✅
 5. ~~**Dependency injection** — protocols + AppServices environment key~~ ✅
 6. ~~**Extract utilities** — response formatting, constants, error handling~~ ✅
-7. ~~**Add tests**~~ — 136 tests across 8 test files ✅
+7. ~~**Add tests**~~ — ~478 tests; combined unit+integration app coverage ~30% (was ~10%), with the entire logic layer (models, view models, services, network) at ~95–100% ✅
    - `scripts/test` — run all tests (`xcodegen generate` + `xcodebuild test`)
-   - Tests cover: models (Task, SubTask, ActionSchema), utilities (ResponseFormatter, KnowledgeBaseFilesystem, frontmatter parsing), error handling, enums
-   - Integration tests: 25 tests covering full task lifecycle (discovery → execution → completion), knowledge base writes, external actions, collapsed card behavior
+   - `scripts/test-vm.sh` — run the suite (incl. UI tests) inside an isolated `tart` macOS VM so end-to-end tests never grab the host screen
+   - Unit (TadaTests, ~372): models (Task/SubTask/ActionSchema/Coach*), utilities, enums, error handling; services (KnowledgeBase indexer/coordinator/filesystem, PlanningMemory, ModelCatalog, UITest mocks); the full AI/network layer via a `URLProtocol` stub (`NetworkStub.swift`) that intercepts `URLSession.shared` — ClaudeAPIClient, Planner/Executive/Knowledge AI services, CoachService, ModelCatalog.fetchModels; renderer pure-logic helpers
+   - Integration (TadaIntegrationTests, ~104): full task lifecycle, ActionCardViewModel + CoachViewModel logic via protocol mocks, KB writes, external actions, collapsed cards
+   - UI/end-to-end (TadaUITests): create→discovery→execution→completion journey + KB navigation + focused-task view; run in the VM
+   - Remaining 0% is almost entirely SwiftUI view *bodies* (renderers/views), only reachable via the UI tests
+   - Test seams added (logic-only `private`→`internal`/`static`): CoachViewModel.executeTool/executeToolCalls/buildTaskSummary; KnowledgeBaseService.init(rootURL:); PlanningMemoryService.init(fileURL:); ItemTableRenderer.parseColumnType; HierarchicalListRenderer.parseIndentedText; RangeSliderRenderer.roundToStep
 
 ---
 
@@ -129,10 +133,14 @@ Every completed sub-task triggers AI-generated markdown notes on disk (`~/Applic
 ## Running Tests
 
 ```bash
-./scripts/test          # run all tests (regenerates project + runs xcodebuild)
+./scripts/test          # run all tests on the host (regenerates project + runs xcodebuild)
+./scripts/test-vm.sh    # run all tests inside an isolated tart macOS VM (UI tests don't grab the host screen)
+./scripts/test-vm.sh TadaUITests   # run just one scheme in the VM
 ```
 
 Tests are configured via xcodegen (`project.yml`) and run through `xcodebuild`. No `Package.swift` — this is an Xcode-only project.
+
+UI/end-to-end tests (XCUITest) drive the real app in the foreground, so running them on the host steals focus. `scripts/test-vm.sh` runs them inside a headless `tart` VM (`ghcr.io/cirruslabs/macos-tahoe-xcode:26.2`, matching the host's macOS 26 / Xcode 26.2) which has its own window-server session. Prereqs (install once): `brew install cirruslabs/cli/tart esolitos/ipa/sshpass`.
 
 ## Decisions Made
 
