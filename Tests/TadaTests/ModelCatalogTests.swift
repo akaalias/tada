@@ -30,6 +30,25 @@ import Testing
     #expect(ModelCatalog.parseModels(from: Data(#"{"has_more":false}"#.utf8)).isEmpty)
 }
 
+@Test func modelCatalog_sorts_missing_created_at_last() {
+    let json = """
+    {"data":[
+      {"id":"no-date","display_name":"No Date"},
+      {"id":"dated","display_name":"Dated","created_at":"2026-02-01T00:00:00Z"}
+    ]}
+    """.data(using: .utf8)!
+    let models = ModelCatalog.parseModels(from: json)
+    #expect(models.first?.id == "dated")
+    #expect(models.last?.id == "no-date")
+}
+
+@Test func claudeModel_codable_roundtrip() throws {
+    let model = ClaudeModel(id: "claude-x", displayName: "Claude X", createdAt: "2026-01-01T00:00:00Z")
+    let data = try JSONEncoder().encode(model)
+    let decoded = try JSONDecoder().decode(ClaudeModel.self, from: data)
+    #expect(decoded == model)
+}
+
 // MARK: - ModelPreference
 
 @Suite(.serialized)

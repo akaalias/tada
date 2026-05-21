@@ -20,10 +20,16 @@ final class KnowledgeBaseService: ObservableObject {
     let rootURL: URL
     let indexURL: URL
 
-    private init() {
+    private convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let appFolder = appSupport.appendingPathComponent("Tada", isDirectory: true)
-        rootURL = appFolder.appendingPathComponent("knowledge", isDirectory: true)
+        self.init(rootURL: appFolder.appendingPathComponent("knowledge", isDirectory: true))
+    }
+
+    /// Designated initializer. The shared instance points at Application Support; tests pass a
+    /// temp directory so the coordinator never touches the user's real wiki.
+    init(rootURL: URL) {
+        self.rootURL = rootURL
         let notesURL = rootURL.appendingPathComponent("notes", isDirectory: true)
         indexURL = rootURL.appendingPathComponent("index.md")
 
