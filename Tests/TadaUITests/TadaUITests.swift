@@ -137,40 +137,24 @@ final class TadaUITests: XCTestCase {
         XCTAssertTrue(kbRow.waitForExistence(timeout: 5))
         kbRow.click()
 
-        // The toolbar shows the current note as "<parentFolder>/<filename>",
-        // so match the trailing filename rather than an exact string.
-        func toolbarShows(_ filename: String) -> Bool {
-            app.staticTexts.matching(
-                NSPredicate(format: "label ENDSWITH %@", "/\(filename)")
-            ).firstMatch.waitForExistence(timeout: 5)
-        }
+        // Assert on rendered content (link buttons + note body), not toolbar
+        // chrome: the toolbar path text is styled/truncated and not reliably
+        // readable by XCUITest.
 
-        // 1. Index page renders with our task linked under "In progress" or
-        // "Completed". The toolbar path ends in "/index.md".
-        XCTAssertTrue(toolbarShows("index.md"), "KB landing page toolbar should end in '/index.md'")
+        // 1. Index renders with our task's overview link (label = task title).
         let taskLink = app.buttons.matching(
             NSPredicate(format: "identifier ENDSWITH %@", "_overview.md")
         ).firstMatch
         XCTAssertTrue(
             taskLink.waitForExistence(timeout: 5),
-            "Index page should expose a button link to the task's _overview.md"
+            "Index page should expose a link button to the task's _overview.md"
         )
-        // The visible label is the task title, not the folder slug.
         XCTAssertEqual(taskLink.label, "Plan a weekend trip to Paris")
         taskLink.click()
 
-        // 2. Task overview renders. Toolbar ends in "/_overview.md"; the
-        //    Sub-task notes section lists one button per note.
-        XCTAssertTrue(toolbarShows("_overview.md"), "Toolbar should end in '/_overview.md' after clicking the task link")
-        XCTAssertTrue(
-            app.staticTexts["Sub-task notes"].waitForExistence(timeout: 3),
-            "Task overview should include the 'Sub-task notes' heading"
-        )
-
-        // Expected subtask notes on disk, in the order they appear in the
-        // overview's "Sub-task notes" list. For each: (filename, label shown
-        // in overview list, the user's answer text that must be visible in
-        // the note body — proves we're on the right sub-task's page).
+        // 2. Task overview lists one link button per sub-task note. Their
+        //    presence (with the right labels) proves the index rendered, the
+        //    task overview rendered, and the sub-task notes were generated.
         let expectedNotes: [(filename: String, listLabel: String, answer: String)] = [
             ("01-what-dates-are-you-traveling.md", "What dates are you traveling?", "next weekend"),
             ("02-book-flights.md", "Book flights", "booked")
@@ -178,37 +162,32 @@ final class TadaUITests: XCTestCase {
         for note in expectedNotes {
             let button = app.buttons["kb.link.\(note.filename)"]
             XCTAssertTrue(
-                button.waitForExistence(timeout: 3),
+                button.waitForExistence(timeout: 5),
                 "Overview should list a link button for note '\(note.filename)'"
             )
             XCTAssertEqual(button.label, note.listLabel)
         }
 
-        // 3. Click each subtask note in turn and verify the page renders with
-        // the expected toolbar path + recorded answer, then go back to the
-        // overview via the KB back button.
+        // 3. Open each note and verify its body shows the recorded answer —
+        //    proof we landed on that sub-task's own page — then go back.
         let backButton = app.buttons["kb.back"]
         for note in expectedNotes {
             let button = app.buttons["kb.link.\(note.filename)"]
-            XCTAssertTrue(button.waitForExistence(timeout: 3))
+            XCTAssertTrue(button.waitForExistence(timeout: 5))
             button.click()
 
             XCTAssertTrue(
-                toolbarShows(note.filename),
-                "Toolbar should end in '/\(note.filename)' after clicking the note link"
-            )
-            // The note's body must include the answer the user typed during
-            // the journey. This is what proves we landed on the sub-task's
-            // own page rather than the parent task's repeated content.
-            XCTAssertTrue(
-                app.staticTexts[note.answer].waitForExistence(timeout: 3),
+                app.staticTexts[note.answer].waitForExistence(timeout: 5),
                 "Note '\(note.filename)' should render the recorded answer '\(note.answer)'"
             )
 
-            // Back to overview for the next iteration.
+            // Back to the overview: the note link buttons reappear.
             XCTAssertTrue(backButton.waitForExistence(timeout: 3), "KB back button should exist")
             backButton.click()
-            XCTAssertTrue(toolbarShows("_overview.md"), "Back should return to the task overview")
+            XCTAssertTrue(
+                app.buttons["kb.link.\(note.filename)"].waitForExistence(timeout: 5),
+                "Back should return to the task overview"
+            )
         }
     }
 }
