@@ -121,6 +121,22 @@ import Testing
     #expect(items.map(\.label) == ["A", "B"])
 }
 
+// MARK: - HierarchicalListRenderer.normalizeDepths
+
+// Switching a field's input type to "tree list" mounts an empty renderer,
+// which normalizes immediately. Empty input must not crash. (regression)
+@Test func hierarchical_normalizeDepths_handles_empty_list() {
+    #expect(HierarchicalListRenderer.normalizeDepths([]).isEmpty)
+}
+
+@Test func hierarchical_normalizeDepths_clamps_root_and_over_indent() {
+    let input = [
+        HierarchicalListRenderer.TreeItem(label: "A", depth: 3), // root forced to 0
+        HierarchicalListRenderer.TreeItem(label: "B", depth: 5), // clamped to parent + 1
+    ]
+    #expect(HierarchicalListRenderer.normalizeDepths(input).map(\.depth) == [0, 1])
+}
+
 // MARK: - RangeSliderRenderer.roundToStep
 
 @MainActor

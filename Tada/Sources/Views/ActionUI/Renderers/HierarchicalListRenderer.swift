@@ -244,9 +244,15 @@ struct HierarchicalListRenderer: View {
     }
 
     private func normalizeAndSave() {
-        if !items.isEmpty {
-            items[0].depth = 0
-        }
+        items = Self.normalizeDepths(items)
+        response[field.id] = .tree(items.map { TreeNode(label: $0.label, depth: $0.depth) })
+    }
+
+    /// Static + internal so depth normalization can be unit-tested without rendering.
+    static func normalizeDepths(_ items: [TreeItem]) -> [TreeItem] {
+        guard !items.isEmpty else { return items }
+        var items = items
+        items[0].depth = 0
         for i in 1..<items.count {
             let maxAllowed = items[i - 1].depth + 1
             if items[i].depth > maxAllowed {
@@ -256,8 +262,7 @@ struct HierarchicalListRenderer: View {
                 items[i].depth = 0
             }
         }
-
-        response[field.id] = .tree(items.map { TreeNode(label: $0.label, depth: $0.depth) })
+        return items
     }
 }
 
