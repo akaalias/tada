@@ -22,6 +22,7 @@ struct CoachChatView: View {
             inputArea
         }
         .frame(minWidth: 300, idealWidth: 350, maxWidth: 400)
+        .accessibilityIdentifier("coach.panel")
         .task {
             viewModel.modelContext = modelContext
             viewModel.knowledgeBase = appServices?.knowledgeBase

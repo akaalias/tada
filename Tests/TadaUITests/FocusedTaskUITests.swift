@@ -62,4 +62,54 @@ final class FocusedTaskUITests: XCTestCase {
             "Going back should return to the All Tasks list"
         )
     }
+
+    /// The action card's "Help" button reveals the coach chat sidebar rather
+    /// than presenting the blocker-selection sheet.
+    @MainActor
+    func testHelpButtonRevealsCoachPanel() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITestMode", "1", "-claude-api-key", uiTestAPIKey]
+        app.launch()
+
+        XCTAssertTrue(
+            app.windows.firstMatch.waitForExistence(timeout: 5),
+            "App window did not appear after launch"
+        )
+
+        // Create a task and open its focused action card.
+        let addButton = app.buttons["allTasks.emptyState.addTask"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+        addButton.click()
+
+        let input = app.textViews["newTaskSheet.input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 3))
+        input.click()
+        input.typeText("Plan a weekend trip to Paris")
+        app.buttons["newTaskSheet.create"].click()
+
+        let currentRow = app.descendants(matching: .any)
+            .matching(identifier: "subTaskRow.current").firstMatch
+        XCTAssertTrue(currentRow.waitForExistence(timeout: 10))
+        currentRow.click()
+
+        // The action card renders with a Help button; the coach panel is hidden.
+        let help = app.buttons["actionUI.help"]
+        XCTAssertTrue(
+            help.waitForExistence(timeout: 10),
+            "Action card should expose a Help button"
+        )
+        let coachPanel = app.otherElements["coach.panel"]
+        XCTAssertFalse(
+            coachPanel.exists,
+            "Coach panel should be hidden before Help is clicked"
+        )
+
+        help.click()
+
+        // Help reveals the coach sidebar instead of the blocker sheet.
+        XCTAssertTrue(
+            coachPanel.waitForExistence(timeout: 5),
+            "Help should reveal the coach chat sidebar"
+        )
+    }
 }

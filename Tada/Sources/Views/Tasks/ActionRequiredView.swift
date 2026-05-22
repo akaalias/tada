@@ -368,8 +368,7 @@ struct ActionCard: View {
                 ActionUIRenderer(schema: schema, response: $vm.actionResponse, isDiscovery: task.isDiscoveryPhase, showTitle: false) {
                     viewModel.completeSubTaskWithResponse(subTask)
                 } onHelp: {
-                    viewModel.pendingSubTask = subTask
-                    viewModel.showingBlockerSelection = true
+                    NotificationCenter.default.post(name: .revealCoach, object: nil)
                 } onChangeFieldType: { newType, options in
                     viewModel.changeFieldType(to: newType, options: options, for: subTask)
                 }

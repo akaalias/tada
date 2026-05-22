@@ -67,6 +67,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToTaskInActionItems)) { _ in
             selectedView = .actionItems
         }
+        .onReceive(NotificationCenter.default.publisher(for: .revealCoach)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showCoachPanel = true
+            }
+        }
         .onChange(of: selectedView) { _, newView in
             focusedTaskId = nil
             updateCoachContext(for: newView)

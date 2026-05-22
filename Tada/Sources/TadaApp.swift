@@ -38,6 +38,8 @@ extension Notification.Name {
     /// Posted with the task's `UUID` as `object` to open the focused single-task view.
     static let focusTask = Notification.Name("focusTask")
     static let navigateToTaskInActionItems = Notification.Name("navigateToTaskInActionItems")
+    /// Posted to reveal the coach chat sidebar (e.g. from an action card's Help button).
+    static let revealCoach = Notification.Name("revealCoach")
 }
 
 enum Theme {

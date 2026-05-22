@@ -160,6 +160,7 @@ struct ActionUIRenderer: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
+                        .accessibilityIdentifier("actionUI.help")
                     }
 
                     Button(action: onSubmit) {
