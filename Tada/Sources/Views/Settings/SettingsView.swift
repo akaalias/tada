@@ -3,6 +3,11 @@ import SwiftUI
 struct SettingsView: View {
     var body: some View {
         TabView {
+            EngineSettingsView()
+                .tabItem {
+                    Label("Engine", systemImage: "cpu")
+                }
+
             APIKeySettingsView()
                 .tabItem {
                     Label("API Key", systemImage: "key.fill")
@@ -285,6 +290,49 @@ private struct ModelPickerView: View {
             loadError = AppError.userMessage(from: error)
         }
         isLoading = false
+    }
+}
+
+// MARK: - Engine Tab
+
+/// Lets the user switch between the remote Claude API and Apple's on-device model.
+private struct EngineSettingsView: View {
+    @State private var backend: AIBackend = AIBackendPreference.selected
+    private let onDeviceAvailable = FoundationModelsAvailability.isAvailable
+    private let unavailableReason = FoundationModelsAvailability.unavailableReason
+
+    var body: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("AI Engine")
+                        .font(.headline)
+
+                    Text("Choose which engine powers task planning and action UI generation. On-device runs privately and offline; Claude is more capable for complex plans.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Picker("Engine", selection: $backend) {
+                        ForEach(AIBackend.allCases, id: \.self) { backend in
+                            Text(backend.displayName).tag(backend)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+                    .labelsHidden()
+                    .onChange(of: backend) { _, newValue in
+                        AIBackendPreference.selected = newValue
+                    }
+
+                    if backend == .onDevice, !onDeviceAvailable {
+                        Label(unavailableReason ?? "On-device model unavailable; Claude will be used instead.", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                .padding()
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 

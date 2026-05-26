@@ -1,41 +1,35 @@
-import XCTest
+import Testing
+import Foundation
 @testable import Tada
 
-final class AIBackendTests: XCTestCase {
-    private var defaults: UserDefaults!
-    private let suiteName = "AIBackendTests"
-
-    override func setUp() {
-        super.setUp()
-        defaults = UserDefaults(suiteName: suiteName)
-        defaults.removePersistentDomain(forName: suiteName)
+@Suite(.serialized)
+struct AIBackendTests {
+    @Test func defaults_to_claude() {
+        let defaults = UserDefaults(suiteName: "ai-backend-\(UUID())")!
         AIBackendPreference._setTestingStorage(defaults)
+        #expect(AIBackendPreference.selected == .claude)
     }
 
-    override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
-        AIBackendPreference._setTestingStorage(.standard)
-        super.tearDown()
-    }
-
-    func test_defaultBackend_isClaude() {
-        XCTAssertEqual(AIBackendPreference.selected, .claude)
-    }
-
-    func test_selection_persists() {
+    @Test func persists_selection() {
+        let defaults = UserDefaults(suiteName: "ai-backend-\(UUID())")!
+        AIBackendPreference._setTestingStorage(defaults)
         AIBackendPreference.selected = .onDevice
-        XCTAssertEqual(AIBackendPreference.selected, .onDevice)
+        #expect(AIBackendPreference.selected == .onDevice)
     }
 
-    func test_resolved_claudeStaysClaude_regardlessOfAvailability() {
+    @Test func claude_stays_claude_regardless_of_availability() {
+        let defaults = UserDefaults(suiteName: "ai-backend-\(UUID())")!
+        AIBackendPreference._setTestingStorage(defaults)
         AIBackendPreference.selected = .claude
-        XCTAssertEqual(AIBackendPreference.resolved(isOnDeviceAvailable: true), .claude)
-        XCTAssertEqual(AIBackendPreference.resolved(isOnDeviceAvailable: false), .claude)
+        #expect(AIBackendPreference.resolved(isOnDeviceAvailable: true) == .claude)
+        #expect(AIBackendPreference.resolved(isOnDeviceAvailable: false) == .claude)
     }
 
-    func test_resolved_onDeviceFallsBackToClaude_whenUnavailable() {
+    @Test func onDevice_falls_back_to_claude_when_unavailable() {
+        let defaults = UserDefaults(suiteName: "ai-backend-\(UUID())")!
+        AIBackendPreference._setTestingStorage(defaults)
         AIBackendPreference.selected = .onDevice
-        XCTAssertEqual(AIBackendPreference.resolved(isOnDeviceAvailable: true), .onDevice)
-        XCTAssertEqual(AIBackendPreference.resolved(isOnDeviceAvailable: false), .claude)
+        #expect(AIBackendPreference.resolved(isOnDeviceAvailable: true) == .onDevice)
+        #expect(AIBackendPreference.resolved(isOnDeviceAvailable: false) == .claude)
     }
 }

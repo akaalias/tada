@@ -1,53 +1,54 @@
-import XCTest
+import Testing
+import Foundation
 import FoundationModels
 @testable import Tada
 
 /// Tests the pure mapping from on-device guided-generation DTOs to the app's
 /// domain types. The model I/O itself is verified manually; this locks down the
 /// translation layer so a backend swap can't silently corrupt plans or schemas.
-final class FMGenerableMappingTests: XCTestCase {
-    func test_taskPlan_mapsToDomain() {
+@Suite struct FMGenerableMappingTests {
+    @Test func taskPlan_mapsToDomain() {
         let gen = GenTaskPlan(title: "Sort Taxes", description: "Do the thing", subTasks: [
             GenSubTask(title: "Call accountant", description: "Phone them", requiresExternalAction: true),
             GenSubTask(title: "Record income", description: "Enter it", requiresExternalAction: false)
         ])
         let domain = gen.toDomain()
-        XCTAssertEqual(domain.title, "Sort Taxes")
-        XCTAssertEqual(domain.description, "Do the thing")
-        XCTAssertEqual(domain.subTasks.count, 2)
-        XCTAssertEqual(domain.subTasks[0].requiresExternalAction, true)
-        XCTAssertEqual(domain.subTasks[1].requiresExternalAction, false)
+        #expect(domain.title == "Sort Taxes")
+        #expect(domain.description == "Do the thing")
+        #expect(domain.subTasks.count == 2)
+        #expect(domain.subTasks[0].requiresExternalAction == true)
+        #expect(domain.subTasks[1].requiresExternalAction == false)
     }
 
-    func test_planRevision_notRevised_dropsSubtasksAndReason() {
+    @Test func planRevision_notRevised_dropsSubtasksAndReason() {
         let gen = GenPlanRevision(revised: false, reason: "", subTasks: [])
         let domain = gen.toDomain()
-        XCTAssertFalse(domain.revised)
-        XCTAssertNil(domain.reason)
-        XCTAssertNil(domain.subTasks)
+        #expect(domain.revised == false)
+        #expect(domain.reason == nil)
+        #expect(domain.subTasks == nil)
     }
 
-    func test_planRevision_revised_keepsSubtasksAndReason() {
+    @Test func planRevision_revised_keepsSubtasksAndReason() {
         let gen = GenPlanRevision(revised: true, reason: "Split compounds", subTasks: [
             GenSubTask(title: "A", description: "", requiresExternalAction: false)
         ])
         let domain = gen.toDomain()
-        XCTAssertTrue(domain.revised)
-        XCTAssertEqual(domain.reason, "Split compounds")
-        XCTAssertEqual(domain.subTasks?.count, 1)
+        #expect(domain.revised == true)
+        #expect(domain.reason == "Split compounds")
+        #expect(domain.subTasks?.count == 1)
     }
 
-    func test_microSteps_mapToSubTaskPlans() {
+    @Test func microSteps_mapToSubTaskPlans() {
         let gen = GenMicroSteps(microSteps: [
             GenSubTask(title: "Buy bamboo", description: "", requiresExternalAction: true),
             GenSubTask(title: "Buy daybed", description: "", requiresExternalAction: true)
         ])
         let domain = gen.toDomain()
-        XCTAssertEqual(domain.count, 2)
-        XCTAssertEqual(domain[0].title, "Buy bamboo")
+        #expect(domain.count == 2)
+        #expect(domain[0].title == "Buy bamboo")
     }
 
-    func test_actionSchema_mapsSingleFieldAndType() {
+    @Test func actionSchema_mapsSingleFieldAndType() {
         let gen = GenActionSchema(
             title: "What's your budget?",
             description: "",
@@ -62,25 +63,25 @@ final class FMGenerableMappingTests: XCTestCase {
             )
         )
         let domain = gen.toDomain()
-        XCTAssertEqual(domain.type, .form)
-        XCTAssertEqual(domain.title, "What's your budget?")
-        XCTAssertNil(domain.description)          // empty string -> nil
-        XCTAssertEqual(domain.fields.count, 1)    // single field -> one-element array
-        XCTAssertEqual(domain.fields[0].type, .rangeSlider)
-        XCTAssertEqual(domain.fields[0].validation?.minValue, 100)
-        XCTAssertEqual(domain.fields[0].validation?.maxValue, 3000)
+        #expect(domain.type == .form)
+        #expect(domain.title == "What's your budget?")
+        #expect(domain.description == nil)          // empty string -> nil
+        #expect(domain.fields.count == 1)           // single field -> one-element array
+        #expect(domain.fields[0].type == .rangeSlider)
+        #expect(domain.fields[0].validation?.minValue == 100)
+        #expect(domain.fields[0].validation?.maxValue == 3000)
     }
 
-    func test_actionField_emptyIdAndOptionsDefaulted() {
+    @Test func actionField_emptyIdAndOptionsDefaulted() {
         let gen = GenActionField(id: "", type: .text, label: "Name", options: [], validation: nil)
         let domain = gen.toDomain()
-        XCTAssertEqual(domain.id, "answer")  // empty id defaulted
-        XCTAssertNil(domain.options)         // empty options -> nil
-        XCTAssertNil(domain.validation)
-        XCTAssertEqual(domain.type, .text)
+        #expect(domain.id == "answer")  // empty id defaulted
+        #expect(domain.options == nil)  // empty options -> nil
+        #expect(domain.validation == nil)
+        #expect(domain.type == .text)
     }
 
-    func test_actionField_optionsMap() {
+    @Test func actionField_optionsMap() {
         let gen = GenActionField(
             id: "cabin",
             type: .singleSelect,
@@ -92,13 +93,13 @@ final class FMGenerableMappingTests: XCTestCase {
             validation: nil
         )
         let domain = gen.toDomain()
-        XCTAssertEqual(domain.options?.count, 2)
-        XCTAssertEqual(domain.options?[0].label, "Economy")
-        XCTAssertNil(domain.options?[0].description)        // empty -> nil
-        XCTAssertEqual(domain.options?[1].description, "More legroom")
+        #expect(domain.options?.count == 2)
+        #expect(domain.options?[0].label == "Economy")
+        #expect(domain.options?[0].description == nil)        // empty -> nil
+        #expect(domain.options?[1].description == "More legroom")
     }
 
-    func test_allGenFieldTypes_haveMatchingDomainMapping() {
+    @Test func allGenFieldTypes_haveMatchingDomainMapping() {
         let pairs: [(GenFieldType, ActionField.FieldType)] = [
             (.text, .text), (.number, .number), (.multiSelect, .multiSelect),
             (.singleSelect, .singleSelect), (.yesNo, .yesNo), (.date, .date),
@@ -108,7 +109,7 @@ final class FMGenerableMappingTests: XCTestCase {
             (.hierarchicalList, .hierarchicalList)
         ]
         for (gen, expected) in pairs {
-            XCTAssertEqual(gen.domain, expected)
+            #expect(gen.domain == expected)
         }
     }
 }
