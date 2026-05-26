@@ -327,7 +327,7 @@ struct ActionCard: View {
 
                 Spacer()
 
-                if APIKeyManager.hasAPIKey && !viewModel.isLoadingSchema {
+                if FoundationModelsAvailability.isAvailable && !viewModel.isLoadingSchema {
                     Button {
                         viewModel.regenerateActionUI(for: subTask)
                     } label: {
@@ -410,7 +410,7 @@ struct ActionCard: View {
                     }
 
                     HStack {
-                        if APIKeyManager.hasAPIKey {
+                        if FoundationModelsAvailability.isAvailable {
                             Button("Generate Action UI") {
                                 viewModel.loadOrGenerateActionUI(for: subTask)
                             }
@@ -434,7 +434,7 @@ struct ActionCard: View {
                 .background(Color(.controlBackgroundColor))
                 .cornerRadius(8)
                 .task(id: subTask.id) {
-                    if APIKeyManager.hasAPIKey && viewModel.actionSchema == nil && !viewModel.isLoadingSchema {
+                    if FoundationModelsAvailability.isAvailable && viewModel.actionSchema == nil && !viewModel.isLoadingSchema {
                         viewModel.loadOrGenerateActionUI(for: subTask)
                     }
                 }
@@ -452,7 +452,7 @@ struct ActionCard: View {
                     showingSubTaskSheet = true
                 }
 
-                if APIKeyManager.hasAPIKey {
+                if FoundationModelsAvailability.isAvailable {
                     Button("Plan with AI") {
                         viewModel.planWithAI()
                     }

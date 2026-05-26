@@ -169,7 +169,7 @@ final class ActionCardViewModel {
     }
 
     func generateActionUI(for subTask: SubTask) {
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         clearProgressLog()
         addProgressMessage("Creating a custom UI for \(subTask.title)")
@@ -357,7 +357,7 @@ final class ActionCardViewModel {
         let remainingStepsList = executionSteps.filter { $0.isPending && $0.id != subTask.id }.map { "- [TODO] \($0.title)" }
         let executionProgress = (completedSteps + currentStep + remainingStepsList).joined(separator: "\n")
 
-        if APIKeyManager.hasAPIKey {
+        if FoundationModelsAvailability.isAvailable {
             Task {
                 do {
                     let lesson = try await plannerAI.generateLearning(
@@ -403,7 +403,7 @@ final class ActionCardViewModel {
     }
 
     private func breakDownOverwhelmingStep(_ subTask: SubTask) {
-        guard APIKeyManager.hasAPIKey else {
+        guard FoundationModelsAvailability.isAvailable else {
             addProgressMessage("Unable to generate steps")
             pendingSubTask = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
@@ -514,7 +514,7 @@ final class ActionCardViewModel {
         actionSchema = nil
         actionResponse = ActionResponse()
         if let currentSubTask = task.sortedSubTasks.first(where: { $0.isCurrent }),
-           APIKeyManager.hasAPIKey {
+           FoundationModelsAvailability.isAvailable {
             loadOrGenerateActionUI(for: currentSubTask)
         }
     }
@@ -533,7 +533,7 @@ final class ActionCardViewModel {
     }
 
     private func revisePlanIfNeeded(remainingSteps: [SubTask]) {
-        guard APIKeyManager.hasAPIKey else {
+        guard FoundationModelsAvailability.isAvailable else {
             moveToNextStep(remainingSteps)
             return
         }
@@ -625,7 +625,7 @@ final class ActionCardViewModel {
     // MARK: - Planning
 
     func planWithAI() {
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         task.planningStatus = .planningDiscovery
         try? modelContext?.save()
@@ -657,7 +657,7 @@ final class ActionCardViewModel {
     }
 
     func transitionToExecutionPhase() {
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         task.planningStatus = .planningExecution
         submissionState = .revising

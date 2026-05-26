@@ -7,12 +7,10 @@ import Testing
 
 @MainActor
 @Test func task_created_with_planning_discovery_status() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     defer { container.resetMocks() }
 
     // Set API key so planning can proceed
-    try! APIKeyManager.setAPIKey(testAPIKey)
 
     // Configure mock to return 3 discovery questions
     container.mockPlanner.discoveryQuestionsProvider = { task in
@@ -99,11 +97,9 @@ import Testing
 
 @MainActor
 @Test func task_created_without_api_key_stays_idle() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     // No API key set — planning should not proceed
-    APIKeyManager.deleteAPIKey()
 
     let task = TodoTask(title: "Test Task Without Key", originalInput: "Test")
     container.modelContext.insert(task)
@@ -123,10 +119,8 @@ import Testing
 
 @MainActor
 @Test func task_creation_triggers_knowledge_base_notification() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
-    try! APIKeyManager.setAPIKey(testAPIKey)
     container.mockPlanner.discoveryQuestionsProvider = { _ in
         TaskPlan(title: "Test", description: "", subTasks: [])
     }
@@ -144,10 +138,8 @@ import Testing
 
 @MainActor
 @Test func task_with_no_discovery_questions_stays_in_discovery_phase() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
-    try! APIKeyManager.setAPIKey(testAPIKey)
     // Return empty subtasks — task is clear enough
     container.mockPlanner.discoveryQuestionsProvider = { _ in
         TaskPlan(title: "Quick Note", description: "", subTasks: [])

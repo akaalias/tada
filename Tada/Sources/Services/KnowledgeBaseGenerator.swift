@@ -120,8 +120,8 @@ final actor KnowledgeBaseGenerator {
         taskTitle: String,
         folderURL: URL
     ) async -> [URL] {
-        guard !snapshots.isEmpty, let apiKey = APIKeyManager.getAPIKey() else { return [] }
-        let service = KnowledgeAIService(apiKey: apiKey)
+        guard !snapshots.isEmpty, FoundationModelsAvailability.isAvailable else { return [] }
+        let service = KnowledgeAIService()
 
         // Run notes in parallel for speed.
         return await withTaskGroup(of: URL?.self) { group in
@@ -251,11 +251,11 @@ final actor KnowledgeBaseGenerator {
     /// returns false without an AI call if the note already contains entity wikilinks.
     @discardableResult
     func runEntityExtraction(for url: URL) async -> Bool {
-        guard let apiKey = APIKeyManager.getAPIKey() else {
-            print("[KnowledgeBase] Entity extraction skipped: no API key configured")
+        guard FoundationModelsAvailability.isAvailable else {
+            print("[KnowledgeBase] Entity extraction skipped: on-device model unavailable")
             return false
         }
-        let service = KnowledgeAIService(apiKey: apiKey)
+        let service = KnowledgeAIService()
         return await backfillSingleNote(url: url, service: service)
     }
 
@@ -312,9 +312,9 @@ final actor KnowledgeBaseGenerator {
         subtaskSummaries: [(title: String, response: String, filename: String)],
         folderURL: URL
     ) async -> URL? {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return nil }
+        guard FoundationModelsAvailability.isAvailable else { return nil }
         do {
-            let service = KnowledgeAIService(apiKey: apiKey)
+            let service = KnowledgeAIService()
             let note = try await service.generateTaskOverviewNote(
                 taskTitle: taskTitle,
                 originalInput: originalInput,

@@ -18,9 +18,7 @@ final class CoachViewModel {
 
     init(context: CoachContext) {
         self.context = context
-        if let apiKey = APIKeyManager.getAPIKey() {
-            self.coachService = CoachService(apiKey: apiKey)
-        }
+        self.coachService = CoachService()
         addWelcomeMessage()
     }
 
@@ -254,7 +252,7 @@ final class CoachViewModel {
 
         let task = TodoTask(title: description, originalInput: description)
 
-        if APIKeyManager.hasAPIKey {
+        if FoundationModelsAvailability.isAvailable {
             task.planningStatus = .planningDiscovery
         }
 
@@ -264,7 +262,7 @@ final class CoachViewModel {
             try modelContext.save()
             knowledgeBase?.handleTaskCreatedOrUpdated(task)
 
-            if APIKeyManager.hasAPIKey, let plannerAI {
+            if FoundationModelsAvailability.isAvailable, let plannerAI {
                 Task {
                     do {
                         let plan = try await plannerAI.generateDiscoveryQuestions(for: description)

@@ -27,7 +27,7 @@ final actor KnowledgeBaseLinkDiscovery {
     /// Runs link discovery for one note: asks the AI which existing notes belong in this
     /// note's Related section, then writes the links two-way.
     func discoverLinks(forNoteAt url: URL) async {
-        guard let apiKey = APIKeyManager.getAPIKey() else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         let all = await collectNotesForDiscovery(rootURL: filesystem.rootURL)
         guard let newNote = all.first(where: {
@@ -51,7 +51,7 @@ final actor KnowledgeBaseLinkDiscovery {
             // a strong signal that two entities belong together.
             let mentions = Self.entityMentionMap(in: all)
             do {
-                let service = KnowledgeAIService(apiKey: apiKey)
+                let service = KnowledgeAIService()
                 let result = try await service.discoverLinksForNote(
                     note: (newNote.relPath, newNote.title, newNote.body, Self.mentionContext(for: newNote, mentions: mentions)),
                     candidates: candidates.map {

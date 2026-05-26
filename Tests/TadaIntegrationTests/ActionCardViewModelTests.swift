@@ -51,8 +51,6 @@ private func makeExecutionTask(_ container: IntegrationTestContainer, count: Int
 }
 
 private func setTestKey() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    try? APIKeyManager.setAPIKey(testAPIKey)
 }
 
 /// Executive mock that always throws — for error-path coverage.
@@ -100,19 +98,6 @@ private final class ThrowingExecutiveAIService: ExecutiveAIServiceProtocol {
     #expect(vm.actionSchema?.title == "Q0")
     #expect(vm.isLoadingSchema == false)
     #expect(sub.actionSchemaData != nil)
-}
-
-@MainActor
-@Test func acvm_generateActionUI_without_apikey_noops() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    APIKeyManager.deleteAPIKey()
-    let container = IntegrationTestContainer()
-    let task = makeDiscoveryTask(container, count: 1)
-    let vm = makeVM(container, task: task)
-
-    vm.generateActionUI(for: task.currentSubTask!)
-    #expect(vm.actionSchema == nil)
-    #expect(vm.isLoadingSchema == false)
 }
 
 @MainActor
@@ -550,8 +535,6 @@ private final class ThrowingExecutiveAIService: ExecutiveAIServiceProtocol {
 @MainActor
 @Test func acvm_blocker_doesntMakeSense_deletes_step_without_apikey() async {
     // No API key → skips learning generation (avoids touching real PlanningMemoryService).
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    APIKeyManager.deleteAPIKey()
     let container = IntegrationTestContainer()
     let task = makeExecutionTask(container, count: 2)
     let first = task.executionSubTasks[0]
@@ -590,21 +573,6 @@ private final class ThrowingExecutiveAIService: ExecutiveAIServiceProtocol {
     #expect(ok)
 }
 
-@MainActor
-@Test func acvm_blocker_overwhelming_without_apikey_logs_and_clears() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    APIKeyManager.deleteAPIKey()
-    let container = IntegrationTestContainer()
-    let task = makeExecutionTask(container, count: 1)
-    let vm = makeVM(container, task: task)
-    vm.pendingSubTask = task.executionSubTasks[0]
-
-    vm.handleBlockerSelection(.needsBreakingDown)
-
-    #expect(vm.progressLog.contains { $0.contains("Unable to generate steps") })
-    #expect(vm.pendingSubTask == nil)
-}
-
 // MARK: - Planning
 
 @MainActor
@@ -634,8 +602,6 @@ private final class ThrowingExecutiveAIService: ExecutiveAIServiceProtocol {
 
 @MainActor
 @Test func acvm_planWithAI_without_apikey_noops() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    APIKeyManager.deleteAPIKey()
     let container = IntegrationTestContainer()
     let task = TodoTask(title: "raw", originalInput: "raw")
     container.modelContext.insert(task)

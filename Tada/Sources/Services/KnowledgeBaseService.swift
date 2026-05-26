@@ -115,7 +115,7 @@ final class KnowledgeBaseService: ObservableObject {
             NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         }
 
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         Task {
             let folder = await filesystem.ensureTaskFolder(taskId: parent.id, title: parent.title)
@@ -199,7 +199,7 @@ final class KnowledgeBaseService: ObservableObject {
             NotificationCenter.default.post(name: .knowledgeBaseUpdated, object: nil)
         }
 
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         Task {
             let folder = await filesystem.ensureTaskFolder(taskId: taskId, title: taskTitle)

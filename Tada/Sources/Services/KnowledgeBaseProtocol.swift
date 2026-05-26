@@ -140,6 +140,7 @@ protocol ExecutiveAIServiceProtocol {
 /// returns a deterministic text-field schema instead of hitting Claude.
 final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
     private let testMock: UITestExecutiveAIService? = UITestSupport.isActive ? UITestExecutiveAIService() : nil
+    private let onDevice = FoundationModelsExecutiveService()
 
     func generateActionUI(
         subTask: String,
@@ -159,18 +160,7 @@ final class ExecutiveAIServiceAdapter: ExecutiveAIServiceProtocol {
                 phase: phase
             )
         }
-        if AIBackendPreference.resolved(isOnDeviceAvailable: FoundationModelsAvailability.isAvailable) == .onDevice {
-            return try await FoundationModelsExecutiveService().generateActionUI(
-                subTask: subTask,
-                subTaskDescription: subTaskDescription,
-                taskContext: taskContext,
-                previousResponses: previousResponses,
-                taskMemory: taskMemory,
-                phase: phase
-            )
-        }
-        let executive = ExecutiveAIService(apiKey: APIKeyManager.getAPIKey() ?? "")
-        return try await executive.generateActionUI(
+        return try await onDevice.generateActionUI(
             subTask: subTask,
             subTaskDescription: subTaskDescription,
             taskContext: taskContext,
@@ -199,42 +189,28 @@ final class PlannerAIServiceAdapter: PlannerAIServiceProtocol {
     private let testMock: UITestPlannerAIService? = UITestSupport.isActive ? UITestPlannerAIService() : nil
     private let onDevice = FoundationModelsPlannerService()
 
-    /// Routes to the on-device model when the user selected it and the device can run it.
-    private var useOnDevice: Bool {
-        AIBackendPreference.resolved(isOnDeviceAvailable: FoundationModelsAvailability.isAvailable) == .onDevice
-    }
-
-    private func claude() -> PlannerAIService {
-        PlannerAIService(apiKey: APIKeyManager.getAPIKey() ?? "")
-    }
-
     func generateDiscoveryQuestions(for task: String) async throws -> TaskPlan {
         if let testMock { return try await testMock.generateDiscoveryQuestions(for: task) }
-        if useOnDevice { return try await onDevice.generateDiscoveryQuestions(for: task) }
-        return try await claude().generateDiscoveryQuestions(for: task)
+        return try await onDevice.generateDiscoveryQuestions(for: task)
     }
 
     func createExecutionPlan(originalTask: String, discoveryAnswers: [CompletedSubTaskInfo]) async throws -> TaskPlan {
         if let testMock { return try await testMock.createExecutionPlan(originalTask: originalTask, discoveryAnswers: discoveryAnswers) }
-        if useOnDevice { return try await onDevice.createExecutionPlan(originalTask: originalTask, discoveryAnswers: discoveryAnswers) }
-        return try await claude().createExecutionPlan(originalTask: originalTask, discoveryAnswers: discoveryAnswers)
+        return try await onDevice.createExecutionPlan(originalTask: originalTask, discoveryAnswers: discoveryAnswers)
     }
 
     func revisePlan(originalTask: String, completedSubTasks: [CompletedSubTaskInfo], remainingSubTasks: [String]) async throws -> PlanRevision {
         if let testMock { return try await testMock.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks) }
-        if useOnDevice { return try await onDevice.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks) }
-        return try await claude().revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks)
+        return try await onDevice.revisePlan(originalTask: originalTask, completedSubTasks: completedSubTasks, remainingSubTasks: remainingSubTasks)
     }
 
     func breakDownStep(stepTitle: String, stepDescription: String, taskContext: String, discoveryContext: String, executionProgress: String) async throws -> [SubTaskPlan] {
         if let testMock { return try await testMock.breakDownStep(stepTitle: stepTitle, stepDescription: stepDescription, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress) }
-        if useOnDevice { return try await onDevice.breakDownStep(stepTitle: stepTitle, stepDescription: stepDescription, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress) }
-        return try await claude().breakDownStep(stepTitle: stepTitle, stepDescription: stepDescription, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress)
+        return try await onDevice.breakDownStep(stepTitle: stepTitle, stepDescription: stepDescription, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress)
     }
 
     func generateLearning(badStepTitle: String, taskContext: String, discoveryContext: String, executionProgress: String) async throws -> String {
         if let testMock { return try await testMock.generateLearning(badStepTitle: badStepTitle, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress) }
-        if useOnDevice { return try await onDevice.generateLearning(badStepTitle: badStepTitle, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress) }
-        return try await claude().generateLearning(badStepTitle: badStepTitle, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress)
+        return try await onDevice.generateLearning(badStepTitle: badStepTitle, taskContext: taskContext, discoveryContext: discoveryContext, executionProgress: executionProgress)
     }
 }

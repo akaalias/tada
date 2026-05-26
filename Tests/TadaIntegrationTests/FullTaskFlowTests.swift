@@ -7,16 +7,11 @@ import Testing
 
 @MainActor
 @Test func full_journey_create_task_through_completion() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
     // ── Step 1: Fresh install — no API key ──
-    APIKeyManager.deleteAPIKey()
-    #expect(APIKeyManager.hasAPIKey == false)
 
     // ── Step 2: User sets API key in Settings ──
-    try! APIKeyManager.setAPIKey(testAPIKey)
-    #expect(APIKeyManager.hasAPIKey == true)
 
     // ── Step 3: User creates a task ──
     container.mockPlanner.discoveryQuestionsProvider = { _ in
@@ -213,10 +208,8 @@ import Testing
 
 @MainActor
 @Test func full_journey_with_external_action_step() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
 
-    try! APIKeyManager.setAPIKey(testAPIKey)
     container.mockPlanner.discoveryQuestionsProvider = { _ in
         TaskPlan(title: "Send Client Report", description: "", subTasks: [
             SubTaskPlan(title: "What report format?", description: "", requiresExternalAction: false)

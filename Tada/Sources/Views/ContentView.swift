@@ -6,7 +6,6 @@ struct ContentView: View {
     @Environment(\.appServices) private var appServices
     @State private var selectedView: SidebarItem = .allTasks
     @State private var showingNewTaskSheet = false
-    @State private var apiKeyValid: Bool = APIKeyManager.hasValidAPIKey
     @State private var focusedTaskId: UUID?
     @State private var showCoachPanel: Bool = false
     @State private var coachContext = CoachContext()
@@ -90,9 +89,6 @@ struct ContentView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .apiKeyChanged)) { _ in
-            apiKeyValid = APIKeyManager.hasValidAPIKey
-        }
         .frame(minWidth: 800, minHeight: 500)
     }
 
@@ -118,12 +114,6 @@ struct ContentView: View {
     @ViewBuilder
     private var detailView: some View {
         VStack(spacing: 16) {
-            if !apiKeyValid {
-                APIKeyBanner()
-                    .padding(.horizontal)
-                    .padding(.top, 16)
-            }
-
             if let focusedTask {
                 FocusedTaskView(task: focusedTask) {
                     focusedTaskId = nil

@@ -54,11 +54,11 @@ struct NewTaskSheet: View {
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
 
-            if !APIKeyManager.hasAPIKey {
+            if !FoundationModelsAvailability.isAvailable {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundColor(.orange)
-                    Text("Configure API key in Settings to enable AI planning.")
+                    Text("On-device model unavailable. Enable Apple Intelligence to use AI planning.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -91,7 +91,7 @@ struct NewTaskSheet: View {
         // Create task immediately with planning status
         let task = TodoTask(title: trimmedInput, originalInput: trimmedInput)
 
-        if APIKeyManager.hasAPIKey {
+        if FoundationModelsAvailability.isAvailable {
             task.planningStatus = PlanningStatus.planningDiscovery
         }
 
@@ -101,7 +101,7 @@ struct NewTaskSheet: View {
         dismiss()
 
         // Plan in background if API key available
-        if APIKeyManager.hasAPIKey {
+        if FoundationModelsAvailability.isAvailable {
             let plannerAI = appServices?.plannerAI ?? PlannerAIServiceAdapter()
             Task {
                 do {

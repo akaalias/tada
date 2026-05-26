@@ -33,7 +33,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_starts_with_welcome_message() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext())
     #expect(vm.messages.count == 1)
     #expect(vm.messages.first?.role == .coach)
@@ -41,7 +40,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_clearChat_resets_to_welcome() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext())
     vm.messages.append(CoachMessage(role: .user, content: "hi"))
     vm.error = "boom"
@@ -54,35 +52,22 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_sendMessage_empty_input_does_nothing() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext())
     vm.inputText = "   "
     await vm.sendMessage()
     #expect(vm.messages.count == 1) // only welcome
 }
 
-@MainActor
-@Test func coachVM_sendMessage_without_apikey_sets_error() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    APIKeyManager.deleteAPIKey()
-    let vm = CoachViewModel(context: CoachContext())
-    vm.inputText = "Do something"
-    await vm.sendMessage()
-    #expect(vm.error == "API key not configured")
-}
-
 // MARK: - buildTaskSummary
 
 @MainActor
 @Test func coachVM_buildTaskSummary_nil_without_context() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext())
     #expect(vm.buildTaskSummary() == nil)
 }
 
 @MainActor
 @Test func coachVM_buildTaskSummary_nil_when_no_active_tasks() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "Done task")
     task.markCompleted()
@@ -93,7 +78,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_buildTaskSummary_lists_active_tasks() {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     _ = insertTask(container, title: "Active One", subtasks: [("step", .discovery)])
     let vm = makeCoachVM(container)
@@ -107,7 +91,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_executeToolCalls_unknown_tool_reports_failure() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
 
@@ -120,7 +103,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_executeToolCalls_wraps_results_with_ids() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
 
@@ -135,7 +117,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_captureInboxItem_creates_task() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
 
@@ -149,7 +130,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_captureInboxItem_fails_without_context() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext()) // no modelContext
     let (ok, msg) = await vm.executeTool(.captureInboxItem, arguments: ["content": "x"])
     #expect(!ok)
@@ -158,8 +138,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_createTask_creates_and_plans() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
-    try? APIKeyManager.setAPIKey(testAPIKey)
     let container = IntegrationTestContainer()
     container.mockPlanner.discoveryQuestionsProvider = { _ in
         TaskPlan(title: "Planned", description: "d", subTasks: [
@@ -184,7 +162,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_searchTasks_finds_by_word() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     _ = insertTask(container, title: "Plan birthday party")
     let vm = makeCoachVM(container)
@@ -196,7 +173,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_searchTasks_no_match() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     _ = insertTask(container, title: "Taxes")
     let vm = makeCoachVM(container)
@@ -208,7 +184,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_getSubtasks_invalid_id() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.getSubtasks, arguments: ["task_id": "not-a-uuid"])
@@ -218,7 +193,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_getSubtasks_lists_steps() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("Step A", .discovery), ("Step B", .discovery)])
     let vm = makeCoachVM(container)
@@ -232,7 +206,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_getSubtasks_empty_task() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "Empty")
     let vm = makeCoachVM(container)
@@ -243,7 +216,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_getSubtasks_task_not_found() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.getSubtasks, arguments: ["task_id": UUID().uuidString])
@@ -255,7 +227,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_updateDiscoveryQuestions_regenerates() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     container.mockPlanner.discoveryQuestionsProvider = { _ in
         TaskPlan(title: "Reframed", description: "d", subTasks: [
@@ -276,7 +247,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_replanExecution_regenerates_execution_steps() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     container.mockPlanner.executionPlanProvider = { _, _ in
         TaskPlan(title: "Replanned", description: "d", subTasks: [
@@ -301,7 +271,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_replanExecution_invalid_id() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, _) = await vm.executeTool(.replanExecution, arguments: ["task_id": "bad"])
@@ -312,7 +281,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_completeSubTask_marks_done_and_advances() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("A", .discovery), ("B", .discovery)])
     let a = task.sortedSubTasks[0]
@@ -330,7 +298,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_skipSubTask_marks_skipped() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("A", .discovery), ("B", .discovery)])
     let a = task.sortedSubTasks[0]
@@ -346,7 +313,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_completeSubTask_invalid_id() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.completeSubTask, arguments: ["task_id": "x", "subtask_id": "y"])
@@ -356,7 +322,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_splitSubTask_replaces_with_new_steps() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("Big step", .execution), ("Later", .execution)])
     task.transitionToExecution()
@@ -378,7 +343,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_splitSubTask_invalid_json() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("Step", .discovery)])
     let st = task.sortedSubTasks[0]
@@ -393,7 +357,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_updateSubTask_changes_title_and_description() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("Old title", .discovery)])
     let st = task.sortedSubTasks[0]
@@ -410,7 +373,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_updateSubTask_requires_a_field() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let task = insertTask(container, title: "T", subtasks: [("S", .discovery)])
     let st = task.sortedSubTasks[0]
@@ -427,7 +389,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_createKnowledgeEntity_succeeds() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.createKnowledgeEntity, arguments: ["name": "Dr. Smith"])
@@ -437,7 +398,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_generateKnowledgeSummary_succeeds() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.generateKnowledgeSummary, arguments: [:])
@@ -447,7 +407,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_searchNotes_no_results() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.searchNotes, arguments: ["query": "anything"])
@@ -457,7 +416,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_readNote_not_found() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.readNote, arguments: ["note_path": "/tmp/does-not-exist-\(UUID()).md"])
@@ -467,7 +425,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_readNote_reads_existing_file() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let url = container.kbTempDir.appendingPathComponent("note.md")
     try "# Hello\n\nbody".write(to: url, atomically: true, encoding: .utf8)
@@ -480,7 +437,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_editNote_and_replaceTextWithLink_on_existing_file() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let url = container.kbTempDir.appendingPathComponent("editable.md")
     try "original text".write(to: url, atomically: true, encoding: .utf8)
@@ -497,7 +453,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_linkKnowledgeEntities_source_not_found() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     let vm = makeCoachVM(container)
     let (ok, msg) = await vm.executeTool(.linkKnowledgeEntities, arguments: [
@@ -509,7 +464,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_linkKnowledgeEntities_with_existing_entity_file() async throws {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let container = IntegrationTestContainer()
     // Create the entity file under rootURL/notes/_entities/<slug>.md
     let entitiesDir = container.mockKnowledgeBase.rootURL.appendingPathComponent("notes/_entities")
@@ -526,7 +480,6 @@ private func insertTask(_ container: IntegrationTestContainer, title: String, su
 
 @MainActor
 @Test func coachVM_knowledge_tools_fail_without_knowledgeBase() async {
-    APIKeyManager._setTestingStorage(testUserDefaults())
     let vm = CoachViewModel(context: CoachContext()) // no knowledgeBase
     let (ok, msg) = await vm.executeTool(.generateKnowledgeSummary, arguments: [:])
     #expect(!ok)

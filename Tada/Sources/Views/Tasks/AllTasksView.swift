@@ -126,7 +126,7 @@ struct AllTasksView: View {
     }
 
     private func replanDiscovery(_ task: TodoTask) {
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         // Clear all subtasks and set planning status
         for subTask in task.subTasks {
@@ -175,7 +175,7 @@ struct AllTasksView: View {
     }
 
     private func replanExecution(_ task: TodoTask) {
-        guard APIKeyManager.hasAPIKey else { return }
+        guard FoundationModelsAvailability.isAvailable else { return }
 
         // Clear only execution subtasks and set planning status
         for subTask in task.executionSubTasks {
