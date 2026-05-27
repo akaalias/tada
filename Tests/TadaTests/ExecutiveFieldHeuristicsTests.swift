@@ -42,6 +42,13 @@ import Testing
         #expect(ExecutiveFieldHeuristics.correctedType(title: "Preferred travel date", label: "", choice: .singleSelect) == .singleSelect)
     }
 
+    @Test func fallbackType_infersFromTitle() {
+        #expect(ExecutiveFieldHeuristics.fallbackType(title: "Determine travel dates") == .date)
+        #expect(ExecutiveFieldHeuristics.fallbackType(title: "When do you leave?") == .date)
+        #expect(ExecutiveFieldHeuristics.fallbackType(title: "What's your budget?") == .rangeSlider)
+        #expect(ExecutiveFieldHeuristics.fallbackType(title: "Describe your goals") == .textarea)
+    }
+
     @Test func correctingSchema_dropsStaleValidation() {
         let schema = ActionSchema(
             type: .form,

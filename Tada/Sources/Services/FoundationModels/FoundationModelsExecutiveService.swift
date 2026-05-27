@@ -21,8 +21,6 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
         taskMemory: String,
         phase: TaskPhase
     ) async throws -> ActionSchema {
-        let session = LanguageModelSession { Self.instructions }
-
         var prompt = "Task: \(taskContext)\n\nSub-task to complete: \(subTask)"
         if !subTaskDescription.isEmpty { prompt += "\nDetails: \(subTaskDescription)" }
         let prev = ExecutiveAIService.formatPreviousResponses(previousResponses)
@@ -30,12 +28,37 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
         if !taskMemory.isEmpty { prompt += "\n\nUSER'S INSTRUCTIONS (follow strictly):\n\(taskMemory)" }
         prompt += "\n\nUse \"\(subTask)\" as the title — do not invent a different one."
 
-        let response = try await session.respond(
-            to: prompt,
-            generating: GenActionSchema.self,
-            options: GenerationOptions(temperature: 0.4, maximumResponseTokens: 600)
+        // Guided generation intermittently fails to produce a decodable object on the
+        // on-device model. Try twice (a fresh session each time, cooler on the retry),
+        // then fall back to a deterministic schema so the user is never blocked.
+        for attempt in 0..<2 {
+            do {
+                let session = LanguageModelSession { Self.instructions }
+                let response = try await session.respond(
+                    to: prompt,
+                    generating: GenActionSchema.self,
+                    options: GenerationOptions(temperature: attempt == 0 ? 0.4 : 0.2, maximumResponseTokens: 1024)
+                )
+                return ExecutiveFieldHeuristics.corrected(response.content.toDomain())
+            } catch {
+                continue
+            }
+        }
+        return Self.fallbackSchema(subTask: subTask)
+    }
+
+    /// Deterministic schema used when guided generation can't produce a valid object.
+    /// Picks a sensible single field from the sub-task title so the step stays usable.
+    private static func fallbackSchema(subTask: String) -> ActionSchema {
+        let type = ExecutiveFieldHeuristics.fallbackType(title: subTask)
+        let field = ActionField(
+            id: "answer",
+            type: type,
+            label: subTask,
+            required: true,
+            validation: type == .rangeSlider ? FieldValidation(minValue: 0, maxValue: 1000) : nil
         )
-        return ExecutiveFieldHeuristics.corrected(response.content.toDomain())
+        return ActionSchema(type: .form, title: subTask, fields: [field], submitLabel: "Continue")
     }
 
     private static let instructions = """

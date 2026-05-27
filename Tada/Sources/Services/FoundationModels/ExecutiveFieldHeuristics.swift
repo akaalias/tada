@@ -58,6 +58,15 @@ enum ExecutiveFieldHeuristics {
         )
     }
 
+    /// A deterministic field type to use when guided generation fails entirely,
+    /// inferred from the question title alone. Defaults to free text.
+    static func fallbackType(title: String) -> ActionField.FieldType {
+        let text = title.lowercased()
+        if mentionsDate(text) { return .date }
+        if mentionsMoney(text) { return .rangeSlider }
+        return .textarea
+    }
+
     private static func mentionsDate(_ text: String) -> Bool {
         let tokens = ["date", "deadline", "depart", "arriv", "check-in", "checkin",
                       "check-out", "checkout", "when", "what day", "which day"]
