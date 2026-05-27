@@ -54,10 +54,10 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
                     generating: GenActionSchema.self,
                     options: GenerationOptions(temperature: attempt == 0 ? 0.4 : 0.2, maximumResponseTokens: 1024)
                 )
-                // The @Guide on the type property improves the model's choice but doesn't
-                // make it reliable — the 3B model still stamps options-bearing fields as
-                // text/number. The correction layer is the deterministic backstop.
-                let schema = ExecutiveFieldHeuristics.corrected(response.content.toDomain())
+                // The model's field type is authoritative: GenField is an enum with
+                // associated values, so options only exist on selection cases. No
+                // heuristic coercion — the type the model chose is the type used.
+                let schema = response.content.toDomain()
                 await APILog.shared.complete(
                     id: callID,
                     output: APILog.describe(schema),

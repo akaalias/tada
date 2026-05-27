@@ -48,19 +48,13 @@ import FoundationModels
         #expect(domain[0].title == "Buy bamboo")
     }
 
-    @Test func actionSchema_mapsSingleFieldAndType() {
+    @Test func actionSchema_rangeSlider_mapsValidation() {
         let gen = GenActionSchema(
             title: "What's your budget?",
             description: "",
             submitLabel: "Continue",
             requiresExternalAction: false,
-            field: GenActionField(
-                id: "answer",
-                type: .rangeSlider,
-                label: "Budget range",
-                options: [],
-                validation: GenFieldValidation(minValue: 100, maxValue: 3000)
-            )
+            field: .rangeSlider(label: "Budget range", minValue: 100, maxValue: 3000)
         )
         let domain = gen.toDomain()
         #expect(domain.type == .form)
@@ -72,44 +66,43 @@ import FoundationModels
         #expect(domain.fields[0].validation?.maxValue == 3000)
     }
 
-    @Test func actionField_emptyIdAndOptionsDefaulted() {
-        let gen = GenActionField(id: "", type: .text, label: "Name", options: [], validation: nil)
+    @Test func textField_hasNoOptionsAndDefaultId() {
+        // A text case has no options slot at all — options-on-text is unrepresentable.
+        let gen = GenActionSchema(title: "Name", description: "", submitLabel: "Save",
+                                  requiresExternalAction: false, field: .text(label: "Your name"))
         let domain = gen.toDomain()
-        #expect(domain.id == "answer")  // empty id defaulted
-        #expect(domain.options == nil)  // empty options -> nil
-        #expect(domain.validation == nil)
-        #expect(domain.type == .text)
+        #expect(domain.fields[0].type == .text)
+        #expect(domain.fields[0].options == nil)
+        #expect(domain.fields[0].id == "answer")
     }
 
-    @Test func actionField_optionsMap() {
-        let gen = GenActionField(
-            id: "cabin",
-            type: .singleSelect,
-            label: "Cabin class",
-            options: [
+    @Test func singleSelect_mapsOptions() {
+        let gen = GenActionSchema(
+            title: "Cabin class", description: "", submitLabel: "Continue",
+            requiresExternalAction: false,
+            field: .singleSelect(label: "Cabin class", options: [
                 GenFieldOption(id: "eco", label: "Economy", description: ""),
                 GenFieldOption(id: "biz", label: "Business", description: "More legroom")
-            ],
-            validation: nil
+            ])
         )
         let domain = gen.toDomain()
-        #expect(domain.options?.count == 2)
-        #expect(domain.options?[0].label == "Economy")
-        #expect(domain.options?[0].description == nil)        // empty -> nil
-        #expect(domain.options?[1].description == "More legroom")
+        #expect(domain.fields[0].type == .singleSelect)
+        #expect(domain.fields[0].options?.count == 2)
+        #expect(domain.fields[0].options?[0].label == "Economy")
+        #expect(domain.fields[0].options?[0].description == nil)        // empty -> nil
+        #expect(domain.fields[0].options?[1].description == "More legroom")
     }
 
-    @Test func allGenFieldTypes_haveMatchingDomainMapping() {
-        let pairs: [(GenFieldType, ActionField.FieldType)] = [
-            (.text, .text), (.number, .number), (.multiSelect, .multiSelect),
-            (.singleSelect, .singleSelect), (.yesNo, .yesNo), (.date, .date),
-            (.textarea, .textarea), (.drawing, .drawing), (.slider, .slider),
-            (.rangeSlider, .rangeSlider), (.countSelector, .countSelector),
-            (.itemTable, .itemTable), (.orderedList, .orderedList),
-            (.hierarchicalList, .hierarchicalList)
-        ]
-        for (gen, expected) in pairs {
-            #expect(gen.domain == expected)
-        }
+    @Test func itemTable_mapsColumnsToOptions() {
+        let gen = GenActionSchema(
+            title: "Shopping list", description: "", submitLabel: "Save",
+            requiresExternalAction: false,
+            field: .itemTable(label: "Items", columns: [
+                GenFieldOption(id: "item", label: "Item", description: "")
+            ])
+        )
+        let domain = gen.toDomain()
+        #expect(domain.fields[0].type == .itemTable)
+        #expect(domain.fields[0].options?.count == 1)
     }
 }

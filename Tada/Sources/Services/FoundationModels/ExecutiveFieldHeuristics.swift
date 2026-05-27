@@ -1,77 +1,13 @@
 import Foundation
 
-/// Deterministic safety net over the on-device executive's field-type choice.
-/// Guided generation guarantees the output *shape*, not the *decision*, and the 3B
-/// model occasionally maps a question to a valid-but-wrong control (e.g. a range
-/// slider for "travel dates"). These high-precision corrections fix the clearest
-/// mismatches; the user can still override via "Change input type".
+/// Field-type inference used ONLY when guided generation fails to produce any
+/// decodable object (see `FoundationModelsExecutiveService.fallbackSchema`). This is
+/// a last resort when the model returned nothing usable — it does NOT override a
+/// successful response. The model's own field type is always authoritative.
 enum ExecutiveFieldHeuristics {
 
-    /// Field types that actually render an `options` array. Any other type carrying
-    /// options is a model mistake (options would be silently ignored).
-    private static let optionsConsumingTypes: Set<ActionField.FieldType> = [
-        .singleSelect, .multiSelect, .yesNo, .orderedList, .hierarchicalList, .itemTable, .checklist
-    ]
-
-    /// Returns the field type that should actually be used, given the question text
-    /// and the model's choice.
-    static func correctedType(
-        title: String,
-        label: String,
-        choice: ActionField.FieldType
-    ) -> ActionField.FieldType {
-        let text = (title + " " + label).lowercased()
-
-        // A date/timing question can never be a numeric or slider input.
-        let numericish: Set<ActionField.FieldType> = [.slider, .rangeSlider, .number, .countSelector]
-        if mentionsDate(text), numericish.contains(choice) {
-            return .date
-        }
-
-        // Money is a min–max range, not a single-value slider.
-        if mentionsMoney(text), choice == .slider {
-            return .rangeSlider
-        }
-
-        return choice
-    }
-
-    /// Applies `correctedType` to a generated schema's field, dropping numeric
-    /// validation when a field is coerced to a date.
-    static func corrected(_ schema: ActionSchema) -> ActionSchema {
-        let fields = schema.fields.map { field -> ActionField in
-            var newType = correctedType(title: schema.title, label: field.label, choice: field.type)
-            // The model populated selectable options but picked a type that ignores them
-            // (text, number, slider, …) — it meant a selection control, so the user isn't
-            // left with an empty box or a bare numeric input.
-            if let options = field.options, !options.isEmpty, !Self.optionsConsumingTypes.contains(newType) {
-                newType = .singleSelect
-            }
-            guard newType != field.type else { return field }
-            return ActionField(
-                id: field.id,
-                type: newType,
-                label: field.label,
-                placeholder: field.placeholder,
-                required: field.required,
-                options: field.options,
-                validation: newType == .date ? nil : field.validation,
-                defaultValue: field.defaultValue,
-                prefillRows: field.prefillRows
-            )
-        }
-        return ActionSchema(
-            type: schema.type,
-            title: schema.title,
-            description: schema.description,
-            fields: fields,
-            submitLabel: schema.submitLabel,
-            requiresExternalAction: schema.requiresExternalAction
-        )
-    }
-
-    /// A deterministic field type to use when guided generation fails entirely,
-    /// inferred from the question title alone. Defaults to free text.
+    /// A deterministic field type inferred from the question title, for the fallback
+    /// schema when generation fails entirely. Defaults to free text.
     static func fallbackType(title: String) -> ActionField.FieldType {
         let text = title.lowercased()
         if mentionsDate(text) { return .date }

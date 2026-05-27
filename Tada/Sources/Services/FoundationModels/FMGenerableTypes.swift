@@ -50,33 +50,6 @@ struct GenMicroSteps {
 
 // MARK: - Executive
 
-/// The valid field types, constrained by the schema. Replaces the long
-/// "field type must be exactly one of …" instruction in the Claude prompt.
-@Generable
-enum GenFieldType {
-    case text, number, multiSelect, singleSelect, yesNo, date, textarea
-    case drawing, slider, rangeSlider, countSelector, itemTable, orderedList, hierarchicalList
-
-    var domain: ActionField.FieldType {
-        switch self {
-        case .text: return .text
-        case .number: return .number
-        case .multiSelect: return .multiSelect
-        case .singleSelect: return .singleSelect
-        case .yesNo: return .yesNo
-        case .date: return .date
-        case .textarea: return .textarea
-        case .drawing: return .drawing
-        case .slider: return .slider
-        case .rangeSlider: return .rangeSlider
-        case .countSelector: return .countSelector
-        case .itemTable: return .itemTable
-        case .orderedList: return .orderedList
-        case .hierarchicalList: return .hierarchicalList
-        }
-    }
-}
-
 @Generable
 struct GenFieldOption {
     var id: String
@@ -85,26 +58,43 @@ struct GenFieldOption {
     var description: String
 }
 
+/// The activity/UI control for a sub-task, modeled as an enum with associated values
+/// so each type carries ONLY its valid payload. Options exist solely on selection
+/// cases — the model literally cannot attach choices to a free-text or numeric field,
+/// so the type it picks is always consistent with its data. To present choices it
+/// MUST choose a selection case; this is what makes the model commit to the right type
+/// instead of dumping options into a text field.
 @Generable
-struct GenFieldValidation {
-    @Guide(description: "Minimum numeric value, for slider/rangeSlider.")
-    var minValue: Double
-    @Guide(description: "Maximum numeric value, for slider/rangeSlider.")
-    var maxValue: Double
-}
-
-@Generable
-struct GenActionField {
-    @Guide(description: "Short field identifier, e.g. 'answer'.")
-    var id: String
-    @Guide(description: "The activity/UI control to present. Use yesNo for yes/no confirmations (especially external actions like calls, emails, research), singleSelect for picking ONE option, multiSelect for several, text for short answers, textarea for long text, date for a calendar date, number for a single numeric value, slider for a value on a scale (NOT budgets), rangeSlider for a min-max range (use for ALL budget/price questions), countSelector for small whole-number counts (passengers, tickets, rooms), itemTable for tables with columns (define columns via options), orderedList for drag-and-drop reordering (items via options), hierarchicalList for nestable trees (items via options), drawing for physical room layouts. If you enumerate choices — even numeric ones — use singleSelect or multiSelect; NEVER pair options with text/number/slider/date.")
-    var type: GenFieldType
-    @Guide(description: "Field label shown to the user.")
-    var label: String
-    @Guide(description: "Options for singleSelect/multiSelect/orderedList, or the two choices for yesNo. Empty for other types.")
-    var options: [GenFieldOption]
-    @Guide(description: "Min/max range for slider and rangeSlider only. Omit otherwise.")
-    var validation: GenFieldValidation?
+enum GenField {
+    /// Short free-form text: names, phone numbers, brief answers.
+    case text(label: String)
+    /// Longer free-form text: explanations, details, availability.
+    case textarea(label: String)
+    /// A single numeric value with units.
+    case number(label: String)
+    /// A single calendar date. Use for any date / "when" / travel-dates question.
+    case date(label: String)
+    /// A small whole-number count: passengers, tickets, rooms, guests.
+    case countSelector(label: String)
+    /// A physical room layout or floor plan. Physical/spatial only.
+    case drawing(label: String)
+    /// A single value on a scale (ratings 1-10, satisfaction). NEVER for budgets.
+    case slider(label: String, minValue: Double, maxValue: Double)
+    /// A min-max range with two handles. Use for ALL budget/price questions.
+    case rangeSlider(label: String, minValue: Double, maxValue: Double)
+    /// A yes/no confirmation — use for external actions (calls, emails, research).
+    /// Provide exactly two options: a "yes, I did it" and a "no, not yet".
+    case yesNo(label: String, options: [GenFieldOption])
+    /// Pick ONE option from a list. Use whenever you can enumerate the choices.
+    case singleSelect(label: String, options: [GenFieldOption])
+    /// Pick MULTIPLE options from a list.
+    case multiSelect(label: String, options: [GenFieldOption])
+    /// Drag-and-drop to put the given items in order (arrange / sort / prioritize).
+    case orderedList(label: String, options: [GenFieldOption])
+    /// Drag-and-drop to group or nest the given items (organize / outline / mind map).
+    case hierarchicalList(label: String, options: [GenFieldOption])
+    /// A table with up to 3 columns; each option defines one column.
+    case itemTable(label: String, columns: [GenFieldOption])
 }
 
 @Generable
@@ -117,8 +107,8 @@ struct GenActionSchema {
     var submitLabel: String
     @Guide(description: "True if the step requires real-world action outside the app.")
     var requiresExternalAction: Bool
-    @Guide(description: "Exactly ONE field — the best single input type for this sub-task.")
-    var field: GenActionField
+    @Guide(description: "The single best input control for this sub-task.")
+    var field: GenField
 }
 
 // MARK: - Mapping to domain types
@@ -161,25 +151,35 @@ extension GenFieldOption {
     }
 }
 
-extension GenFieldValidation {
-    func toDomain() -> FieldValidation {
-        FieldValidation(minValue: minValue, maxValue: maxValue)
-    }
-}
-
-extension GenActionField {
+extension GenField {
     func toDomain() -> ActionField {
-        ActionField(
-            id: id.isEmpty ? "answer" : id,
-            type: type.domain,
-            label: label,
-            placeholder: nil,
-            required: true,
-            options: options.isEmpty ? nil : options.map { $0.toDomain() },
-            validation: validation?.toDomain(),
-            defaultValue: nil,
-            prefillRows: nil
-        )
+        func field(_ type: ActionField.FieldType, _ label: String, options: [GenFieldOption] = [], validation: FieldValidation? = nil) -> ActionField {
+            let mapped = options.map { $0.toDomain() }
+            return ActionField(
+                id: "answer",
+                type: type,
+                label: label,
+                required: true,
+                options: mapped.isEmpty ? nil : mapped,
+                validation: validation
+            )
+        }
+        switch self {
+        case .text(let label): return field(.text, label)
+        case .textarea(let label): return field(.textarea, label)
+        case .number(let label): return field(.number, label)
+        case .date(let label): return field(.date, label)
+        case .countSelector(let label): return field(.countSelector, label)
+        case .drawing(let label): return field(.drawing, label)
+        case .slider(let label, let mn, let mx): return field(.slider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
+        case .rangeSlider(let label, let mn, let mx): return field(.rangeSlider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
+        case .yesNo(let label, let options): return field(.yesNo, label, options: options)
+        case .singleSelect(let label, let options): return field(.singleSelect, label, options: options)
+        case .multiSelect(let label, let options): return field(.multiSelect, label, options: options)
+        case .orderedList(let label, let options): return field(.orderedList, label, options: options)
+        case .hierarchicalList(let label, let options): return field(.hierarchicalList, label, options: options)
+        case .itemTable(let label, let columns): return field(.itemTable, label, options: columns)
+        }
     }
 }
 
