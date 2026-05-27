@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Developer console: a chronological log of every Claude API request/response.
+/// Developer console: a chronological log of every on-device Foundation Models call.
 struct ConsoleView: View {
     @State private var log = APILog.shared
 
@@ -30,12 +30,12 @@ struct ConsoleView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Console")
                     .font(.system(size: 20, weight: .semibold))
-                Text("API requests and responses")
+                Text("On-device model calls")
                     .font(.system(size: Theme.fontSize))
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("\(log.entries.count) request\(log.entries.count == 1 ? "" : "s")")
+            Text("\(log.entries.count) call\(log.entries.count == 1 ? "" : "s")")
                 .font(.system(size: Theme.fontSize))
                 .foregroundStyle(.secondary)
             Button("Clear") { log.clear() }
@@ -49,10 +49,10 @@ struct ConsoleView: View {
             Image(systemName: "terminal")
                 .font(.system(size: 32))
                 .foregroundStyle(.tertiary)
-            Text("No API requests yet")
+            Text("No model calls yet")
                 .font(.system(size: Theme.fontSize))
                 .foregroundStyle(.secondary)
-            Text("Requests appear here as the app talks to Claude.")
+            Text("Calls appear here as the app's agents run on the on-device model.")
                 .font(.system(size: Theme.fontSize))
                 .foregroundStyle(.tertiary)
         }
@@ -102,12 +102,8 @@ private struct APILogEntryRow: View {
 
     private var summary: some View {
         HStack(spacing: 12) {
-            Group {
-                if let role = entry.aiRole {
-                    roleBadge(role)
-                }
-            }
-            .frame(width: Self.roleColumnWidth, alignment: .leading)
+            roleBadge(entry.role)
+                .frame(width: Self.roleColumnWidth, alignment: .leading)
 
             Group {
                 if let taskTitle = entry.taskTitle {
@@ -117,18 +113,10 @@ private struct APILogEntryRow: View {
             .frame(width: Self.taskColumnWidth, alignment: .leading)
             .clipped()
 
-            if let summary = entry.requestSummary {
-                Text(summary)
-                    .font(.system(size: Theme.fontSize))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            } else {
-                Text(entry.url)
-                    .font(.system(size: Theme.fontSize, design: .monospaced))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(.secondary)
-            }
+            Text(entry.operation)
+                .font(.system(size: Theme.fontSize))
+                .lineLimit(1)
+                .truncationMode(.tail)
             Spacer()
             if let durationText {
                 Text(durationText)
@@ -138,8 +126,6 @@ private struct APILogEntryRow: View {
             Text(Self.timeFormatter.string(from: entry.timestamp))
                 .font(.system(size: Theme.fontSize))
                 .foregroundStyle(.secondary)
-            Text(entry.method)
-                .font(.system(size: Theme.fontSize, weight: .semibold, design: .monospaced))
             statusBadge
             Image(systemName: expanded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
@@ -147,8 +133,8 @@ private struct APILogEntryRow: View {
         }
     }
 
-    /// Human-readable elapsed time: seconds once a request runs past 1s,
-    /// milliseconds below that. `nil` until the request completes.
+    /// Human-readable elapsed time: seconds once a call runs past 1s,
+    /// milliseconds below that. `nil` until the call completes.
     private var durationText: String? {
         guard let ms = entry.durationMS else { return nil }
         return ms >= 1000 ? String(format: "%.1fs", Double(ms) / 1000) : "\(ms) ms"
@@ -165,9 +151,9 @@ private struct APILogEntryRow: View {
             .modifier(PendingPulse(active: isPending))
     }
 
-    /// True while a request is in flight — no status code and no error yet.
+    /// True while a call is in flight — no output and no error yet.
     private var isPending: Bool {
-        entry.statusCode == nil && entry.errorMessage == nil
+        !entry.isComplete
     }
 
     private func roleBadge(_ role: AIRole) -> some View {
@@ -180,8 +166,8 @@ private struct APILogEntryRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
-    /// The task or sub-task this request serves. Hugs its text; the enclosing
-    /// fixed-width column keeps it from crowding out the request summary.
+    /// The task or sub-task this call serves. Hugs its text; the enclosing
+    /// fixed-width column keeps it from crowding out the operation.
     private func taskTitleBadge(_ title: String) -> some View {
         Text(title)
             .font(.system(size: Theme.badgeFontSize, weight: .medium))
@@ -194,7 +180,7 @@ private struct APILogEntryRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
-    /// Colour for the task phase this request serves; tints the whole entry to
+    /// Colour for the task phase this call serves; tints the whole entry to
     /// match the app's phase palette — discovery (orange), execution (blue),
     /// knowledge work on completed tasks (emerald). Grey when phase is unknown.
     private var phaseColor: Color {
@@ -210,22 +196,20 @@ private struct APILogEntryRow: View {
 
     private var details: some View {
         VStack(alignment: .leading, spacing: 16) {
-            section("Request Headers", dictionary: entry.requestHeaders)
-            if let body = entry.requestBody {
-                section("Request Body", text: body)
+            if let temperature = entry.temperature {
+                section("Temperature", text: String(format: "%.2f", temperature))
             }
+            if let outputType = entry.outputType {
+                section("Output Type", text: outputType)
+            }
+            section("Instructions", text: entry.instructions)
+            section("Prompt", text: entry.prompt)
 
             if let error = entry.errorMessage {
                 section("Error", text: error, tint: .red)
             }
-            if let status = entry.statusCode {
-                section("Response Status", text: "\(status)")
-            }
-            if let headers = entry.responseHeaders, !headers.isEmpty {
-                section("Response Headers", dictionary: headers)
-            }
-            if let body = entry.responseBody {
-                section("Response Body", text: body)
+            if let output = entry.output {
+                section("Output", text: output)
             }
             if !entry.isComplete {
                 Text("Awaiting response…")
@@ -251,34 +235,24 @@ private struct APILogEntryRow: View {
         }
     }
 
-    @ViewBuilder
-    private func section(_ title: String, dictionary: [String: String]) -> some View {
-        let joined = dictionary.sorted { $0.key < $1.key }
-            .map { "\($0.key): \($0.value)" }
-            .joined(separator: "\n")
-        section(title, text: joined.isEmpty ? "(none)" : joined)
-    }
-
     // MARK: Status styling
 
     private var statusColor: Color {
         if entry.errorMessage != nil { return .red }
-        guard let status = entry.statusCode else { return .orange }
-        return entry.isSuccess ? .green : .red
+        return entry.isComplete ? .green : .orange
     }
 
     private var statusText: String {
         if entry.errorMessage != nil { return "FAILED" }
-        if let status = entry.statusCode { return "\(status)" }
-        return "PENDING"
+        return entry.isComplete ? "OK" : "RUNNING"
     }
 }
 
 // MARK: - Pending pulse
 
-/// Gently pulses the opacity of a view while `active`, so an in-flight
-/// request is easy to spot in the console list. Settles back to fully
-/// opaque once the request resolves.
+/// Gently pulses the opacity of a view while `active`, so an in-flight call is
+/// easy to spot in the console list. Settles back to fully opaque once the call
+/// resolves.
 private struct PendingPulse: ViewModifier {
     let active: Bool
     @State private var dimmed = false

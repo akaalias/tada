@@ -24,13 +24,34 @@ actor CoachService {
         if let taskSummary { prompt += "\n\nACTIVE TASKS:\n\(taskSummary)" }
         prompt += "\n\nCONVERSATION:\n\(Self.transcript(conversationHistory))"
         prompt += "\n\nReply to the user. If an action is clearly needed, set one tool; otherwise tool = none."
+        let temperature = 0.4
 
-        let result = try await session.respond(
-            to: prompt,
-            generating: GenCoachTurn.self,
-            options: GenerationOptions(temperature: 0.4)
-        )
-        return result.content.toChatResponse()
+        return try await APILog.shared.record(
+            role: .coach,
+            operation: "Coach chat",
+            instructions: Self.instructions,
+            prompt: prompt,
+            temperature: temperature,
+            outputType: "CoachTurn"
+        ) {
+            let result = try await session.respond(
+                to: prompt,
+                generating: GenCoachTurn.self,
+                options: GenerationOptions(temperature: temperature)
+            )
+            let response = result.content.toChatResponse()
+            return (response, Self.render(response))
+        }
+    }
+
+    /// Renders a coach turn for the Console: the reply text, plus any tool call.
+    private static func render(_ response: CoachChatResponse) -> String {
+        var text = response.message
+        for call in response.toolCalls ?? [] {
+            let args = call.arguments.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+            text += "\n\n→ \(call.name)(\(args))"
+        }
+        return text
     }
 
     /// Renders recent history (including tool calls and their results) as plain text.

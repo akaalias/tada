@@ -28,9 +28,24 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
         if !taskMemory.isEmpty { prompt += "\n\nUSER'S INSTRUCTIONS (follow strictly):\n\(taskMemory)" }
         prompt += "\n\nUse \"\(subTask)\" as the title — do not invent a different one."
 
+        // Logged as one Console entry for the whole operation: completed with the
+        // generated schema, or failed (with the fallback noted) if both attempts miss.
+        let callID = await APILog.shared.begin(
+            role: .executive,
+            operation: "Action UI",
+            instructions: Self.instructions,
+            prompt: prompt,
+            temperature: 0.4,
+            outputType: "ActionSchema",
+            phase: APIRequestPhase(phase),
+            taskTitle: taskContext
+        )
+        let start = Date()
+
         // Guided generation intermittently fails to produce a decodable object on the
         // on-device model. Try twice (a fresh session each time, cooler on the retry),
         // then fall back to a deterministic schema so the user is never blocked.
+        var lastError: Error?
         for attempt in 0..<2 {
             do {
                 let session = LanguageModelSession { Self.instructions }
@@ -39,11 +54,23 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
                     generating: GenActionSchema.self,
                     options: GenerationOptions(temperature: attempt == 0 ? 0.4 : 0.2, maximumResponseTokens: 1024)
                 )
-                return ExecutiveFieldHeuristics.corrected(response.content.toDomain())
+                let schema = ExecutiveFieldHeuristics.corrected(response.content.toDomain())
+                await APILog.shared.complete(
+                    id: callID,
+                    output: APILog.describe(schema),
+                    durationMS: Int(Date().timeIntervalSince(start) * 1000)
+                )
+                return schema
             } catch {
+                lastError = error
                 continue
             }
         }
+        await APILog.shared.fail(
+            id: callID,
+            error: "Guided generation failed twice; used deterministic fallback. \(lastError.map { String(describing: $0) } ?? "")",
+            durationMS: Int(Date().timeIntervalSince(start) * 1000)
+        )
         return Self.fallbackSchema(subTask: subTask)
     }
 

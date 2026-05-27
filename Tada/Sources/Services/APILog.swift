@@ -1,6 +1,6 @@
 import Foundation
 
-/// The agentic role responsible for a Claude API request.
+/// The on-device agent responsible for a Foundation Models call.
 enum AIRole: String, Codable, Sendable, CaseIterable {
     case planner
     case executive
@@ -17,17 +17,16 @@ enum AIRole: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// The task-lifecycle phase a request serves. Drives the Console's colour
-/// coding, matching the app's phase palette: discovery (orange), execution
-/// (blue), knowledge work on completed tasks (emerald).
+/// The task-lifecycle phase a call serves. Drives the Console's colour coding,
+/// matching the app's phase palette: discovery (orange), execution (blue),
+/// knowledge work on completed tasks (emerald).
 enum APIRequestPhase: String, Codable, Sendable {
     case discovery
     case execution
     case knowledge
 
-    /// Maps a task-lifecycle phase to the request phase it corresponds to, so a
-    /// request inherits the colour of the work item it serves — a request for a
-    /// discovery sub-task reads as discovery even when issued by another agent.
+    /// Maps a task-lifecycle phase to the call phase it corresponds to, so a
+    /// call inherits the colour of the work item it serves.
     init(_ taskPhase: TaskPhase) {
         switch taskPhase {
         case .discovery: self = .discovery
@@ -36,81 +35,58 @@ enum APIRequestPhase: String, Codable, Sendable {
     }
 }
 
-/// One recorded HTTP request/response pair to the Claude API.
+/// One recorded on-device Foundation Models call: the instructions and prompt
+/// we sent, and the rendered output (or failure) we got back. Replaces the old
+/// HTTP request/response pair now that the app runs entirely on-device.
 struct APILogEntry: Identifiable, Sendable, Codable {
     let id: UUID
     let timestamp: Date
-    let method: String
-    let url: String
-    let requestHeaders: [String: String]
-    let requestBody: String?
-    /// Which AI agent issued the request, if known.
-    let aiRole: AIRole?
-    /// The task phase this request serves, if known.
+    /// Which on-device agent issued the call.
+    let role: AIRole
+    /// Plain-language name of the operation, e.g. "Discovery questions".
+    let operation: String
+    /// The session instructions (system prompt) for this call.
+    let instructions: String
+    /// The user prompt sent to the model.
+    let prompt: String
+    /// Sampling temperature, if one was set.
+    let temperature: Double?
+    /// The `@Generable` output type the model was asked to produce; `nil` for
+    /// free-form text responses.
+    let outputType: String?
+    /// The task phase this call serves, if known.
     let phase: APIRequestPhase?
-    /// The task or sub-task title this request serves, if known. Shown as a
-    /// badge in the Console so each request is traceable to its work item.
+    /// The task or sub-task title this call serves, if known. Shown as a badge
+    /// in the Console so each call is traceable to its work item.
     let taskTitle: String?
 
-    var statusCode: Int?
-    var responseHeaders: [String: String]?
-    var responseBody: String?
+    /// The model's rendered output: pretty JSON for guided generation, plain
+    /// text otherwise. `nil` until the call completes.
+    var output: String?
     var errorMessage: String?
     var durationMS: Int?
 
-    /// True once a response or failure has been recorded.
-    var isComplete: Bool { statusCode != nil || errorMessage != nil }
+    /// True once an output or failure has been recorded.
+    var isComplete: Bool { output != nil || errorMessage != nil }
 
-    /// True only for a completed request with a 2xx status code.
-    var isSuccess: Bool {
-        guard let statusCode else { return false }
-        return (200..<300).contains(statusCode)
-    }
-
-    /// A plain-language, phase-aware summary of what the request is for, derived
-    /// from the tool it invokes. `nil` for plain (non-tool) messages.
-    var requestSummary: String? {
-        guard let requestBody,
-              let data = requestBody.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tools = json["tools"] as? [[String: Any]],
-              let toolName = tools.first?["name"] as? String
-        else { return nil }
-
-        switch toolName {
-        case "generate_action_ui":        return "Generating an interactive step"
-        case "create_task_plan":
-            switch phase {
-            case .discovery: return "Creating a task plan for discovery"
-            case .execution: return "Creating a task plan for execution"
-            default:         return "Creating a task plan"
-            }
-        case "revise_plan":               return "Revising the execution task plan"
-        case "break_down_step":           return "Breaking a step into micro-steps"
-        case "save_related_notes":        return "Discovering related notes"
-        case "save_atomic_note":          return "Writing a knowledge note"
-        case "extract_entities_and_link": return "Extracting entities and wikilinks"
-        default:                          return nil
-        }
-    }
+    /// True for a completed call that produced output without error.
+    var isSuccess: Bool { isComplete && errorMessage == nil }
 }
 
-/// Log of Claude API traffic, surfaced in the Console view.
-/// Holds the most recent `maxEntries` requests, newest first, and persists
-/// them to disk so they survive relaunches and rebuilds.
+/// Log of on-device Foundation Models traffic, surfaced in the Console view.
+/// Holds the most recent `maxEntries` calls, newest first, and persists them to
+/// disk so they survive relaunches and rebuilds.
 @Observable
 @MainActor
 final class APILog {
     static let shared = APILog(fileURL: APILog.defaultFileURL)
 
     static let maxEntries = 100
-    static let redactedValue = "••••••••"
-    private static let sensitiveHeaders = ["x-api-key", "authorization"]
 
     private(set) var entries: [APILogEntry] = []
 
-    /// True while any logged request has not yet received a response or
-    /// failure. Drives the Console sidebar spinner.
+    /// True while any logged call has not yet produced output or a failure.
+    /// Drives the Console sidebar spinner.
     var hasPendingRequests: Bool {
         entries.contains { !$0.isComplete }
     }
@@ -123,27 +99,39 @@ final class APILog {
         load()
     }
 
-    /// `~/Library/Application Support/Tada/console/api-log.json`.
+    /// `~/Library/Application Support/Tada/console/model-calls.json`.
     static var defaultFileURL: URL {
         let appSupport = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Tada/console", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("api-log.json")
+        return dir.appendingPathComponent("model-calls.json")
     }
 
-    /// Records an outgoing request and returns its id for later completion.
+    // MARK: - Logging
+
+    /// Records an outgoing call and returns its id for later completion.
     @discardableResult
-    func logRequest(_ request: URLRequest, role: AIRole? = nil, phase: APIRequestPhase? = nil, taskTitle: String? = nil) -> UUID {
+    func begin(
+        role: AIRole,
+        operation: String,
+        instructions: String,
+        prompt: String,
+        temperature: Double? = nil,
+        outputType: String? = nil,
+        phase: APIRequestPhase? = nil,
+        taskTitle: String? = nil
+    ) -> UUID {
         let id = UUID()
         let entry = APILogEntry(
             id: id,
             timestamp: Date(),
-            method: request.httpMethod ?? "GET",
-            url: request.url?.absoluteString ?? "",
-            requestHeaders: Self.redact(request.allHTTPHeaderFields ?? [:]),
-            requestBody: request.httpBody.map { Self.prettyJSON($0) ?? Self.utf8($0) },
-            aiRole: role,
+            role: role,
+            operation: operation,
+            instructions: instructions,
+            prompt: prompt,
+            temperature: temperature,
+            outputType: outputType,
             phase: phase,
             taskTitle: taskTitle
         )
@@ -155,18 +143,16 @@ final class APILog {
         return id
     }
 
-    /// Completes an entry with a received response.
-    func logResponse(id: UUID, statusCode: Int, headers: [String: String] = [:], body: Data, durationMS: Int) {
+    /// Completes an entry with the model's rendered output.
+    func complete(id: UUID, output: String, durationMS: Int) {
         update(id) {
-            $0.statusCode = statusCode
-            $0.responseHeaders = Self.redact(headers)
-            $0.responseBody = Self.prettyJSON(body) ?? Self.utf8(body)
+            $0.output = output
             $0.durationMS = durationMS
         }
     }
 
-    /// Completes an entry with a transport/decoding failure.
-    func logFailure(id: UUID, error: String, durationMS: Int) {
+    /// Completes an entry with a failure.
+    func fail(id: UUID, error: String, durationMS: Int) {
         update(id) {
             $0.errorMessage = error
             $0.durationMS = durationMS
@@ -176,6 +162,44 @@ final class APILog {
     func clear() {
         entries.removeAll()
         persist()
+    }
+
+    /// Times a single model call: logs the instructions + prompt, runs `perform`,
+    /// then records its rendered output or the failure with elapsed time. Returns
+    /// the call's value; rethrows any error after logging it.
+    ///
+    /// `perform` runs off the main actor (this method is `nonisolated`); only the
+    /// log mutations hop to the main actor.
+    nonisolated func record<Value>(
+        role: AIRole,
+        operation: String,
+        instructions: String,
+        prompt: String,
+        temperature: Double?,
+        outputType: String? = nil,
+        phase: APIRequestPhase? = nil,
+        taskTitle: String? = nil,
+        perform: () async throws -> (value: Value, output: String)
+    ) async throws -> Value {
+        let id = await begin(
+            role: role,
+            operation: operation,
+            instructions: instructions,
+            prompt: prompt,
+            temperature: temperature,
+            outputType: outputType,
+            phase: phase,
+            taskTitle: taskTitle
+        )
+        let start = Date()
+        do {
+            let (value, output) = try await perform()
+            await complete(id: id, output: output, durationMS: Self.elapsedMS(since: start))
+            return value
+        } catch {
+            await fail(id: id, error: String(describing: error), durationMS: Self.elapsedMS(since: start))
+            throw error
+        }
     }
 
     private func update(_ id: UUID, _ mutate: (inout APILogEntry) -> Void) {
@@ -193,12 +217,12 @@ final class APILog {
         else { return }
         entries = decoded
 
-        // A request still pending in a freshly loaded log was interrupted by
-        // app termination — it cannot still be running. Mark it cancelled so
-        // its spinner doesn't reappear on the next launch.
+        // A call still pending in a freshly loaded log was interrupted by app
+        // termination — it cannot still be running. Mark it cancelled so its
+        // spinner doesn't reappear on the next launch.
         let interrupted = entries.indices.filter { !entries[$0].isComplete }
         for index in interrupted {
-            entries[index].errorMessage = "Request interrupted — app closed before it completed"
+            entries[index].errorMessage = "Call interrupted — app closed before it completed"
         }
         if !interrupted.isEmpty { persist() }
     }
@@ -210,37 +234,18 @@ final class APILog {
 
     // MARK: - Helpers
 
-    /// Masks secret-bearing headers (api key, authorization) regardless of casing.
-    private static func redact(_ headers: [String: String]) -> [String: String] {
-        var result = headers
-        for key in headers.keys where sensitiveHeaders.contains(key.lowercased()) {
-            result[key] = mask(headers[key] ?? "")
+    nonisolated private static func elapsedMS(since start: Date) -> Int {
+        Int(Date().timeIntervalSince(start) * 1000)
+    }
+
+    /// Renders a generated DTO as pretty JSON for display, falling back to its
+    /// reflective description if it isn't JSON-encodable.
+    nonisolated static func describe<T: Encodable>(_ value: T) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        if let data = try? encoder.encode(value), let string = String(data: data, encoding: .utf8) {
+            return string
         }
-        return result
-    }
-
-    /// Partially masks a secret: keeps the first 16 and last 8 characters
-    /// visible so the key can be identified, hiding the middle. Values short
-    /// enough that this would reveal most of the secret (≤24 chars) are fully
-    /// redacted instead.
-    static func mask(_ value: String) -> String {
-        guard value.count > 24 else { return redactedValue }
-        return "\(value.prefix(16))...\(value.suffix(8))"
-    }
-
-    /// Pretty-prints JSON data, or returns nil if the data is not valid JSON.
-    nonisolated static func prettyJSON(_ data: Data) -> String? {
-        guard !data.isEmpty,
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let pretty = try? JSONSerialization.data(
-                withJSONObject: object,
-                options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-              )
-        else { return nil }
-        return String(data: pretty, encoding: .utf8)
-    }
-
-    private static func utf8(_ data: Data) -> String {
-        String(data: data, encoding: .utf8) ?? "<\(data.count) bytes of non-text data>"
+        return String(describing: value)
     }
 }

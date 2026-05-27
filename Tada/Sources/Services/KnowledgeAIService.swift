@@ -96,14 +96,13 @@ actor KnowledgeAIService {
         phase: APIRequestPhase
     ) async throws -> GeneratedKnowledgeNote {
         let tableSection = tableMarkdown.map { "\n\nSTRUCTURED TABLE DATA:\n\($0)" } ?? ""
-        let session = LanguageModelSession {
-            """
+        let instructions = """
             You distil a single completed sub-task into ONE atomic markdown note for a personal \
             wiki. Capture concrete details from the user's answer (names, numbers, dates, places, \
             preferences); don't restate the question. The title reflects the durable insight, not \
             the question. First person, no emojis.
             """
-        }
+        let session = LanguageModelSession { instructions }
         let userMessage = """
         PARENT TASK: \(taskTitle)
 
@@ -111,12 +110,26 @@ actor KnowledgeAIService {
         \(subtaskDescription.isEmpty ? "" : "Details: \(subtaskDescription)\n")
         USER RESPONSE: \(response)\(tableSection)
         """
-        let result = try await session.respond(
-            to: userMessage,
-            generating: GenKnowledgeNote.self,
-            options: GenerationOptions(temperature: 0.4)
-        )
-        return GeneratedKnowledgeNote(title: result.content.title, body: result.content.body)
+        let temperature = 0.4
+
+        return try await APILog.shared.record(
+            role: .knowledge,
+            operation: "Knowledge note",
+            instructions: instructions,
+            prompt: userMessage,
+            temperature: temperature,
+            outputType: "GeneratedKnowledgeNote",
+            phase: phase,
+            taskTitle: taskTitle
+        ) {
+            let result = try await session.respond(
+                to: userMessage,
+                generating: GenKnowledgeNote.self,
+                options: GenerationOptions(temperature: temperature)
+            )
+            let note = GeneratedKnowledgeNote(title: result.content.title, body: result.content.body)
+            return (note, APILog.describe(note))
+        }
     }
 
     func discoverLinksForNote(
@@ -154,14 +167,28 @@ actor KnowledgeAIService {
 
         Which candidates belong in the new note's Related section?
         """
-        let result = try await session.respond(
-            to: userMessage,
-            generating: GenNoteLinks.self,
-            options: GenerationOptions(temperature: 0.3)
-        )
-        return NoteLinkSuggestions(links: result.content.links.map {
-            SuggestedRelatedNote(targetPath: $0.targetPath, targetTitle: $0.targetTitle, reason: $0.reason)
-        })
+        let temperature = 0.3
+
+        return try await APILog.shared.record(
+            role: .knowledge,
+            operation: "Discover related notes",
+            instructions: instructions,
+            prompt: userMessage,
+            temperature: temperature,
+            outputType: "NoteLinkSuggestions",
+            phase: .knowledge,
+            taskTitle: note.title
+        ) {
+            let result = try await session.respond(
+                to: userMessage,
+                generating: GenNoteLinks.self,
+                options: GenerationOptions(temperature: temperature)
+            )
+            let suggestions = NoteLinkSuggestions(links: result.content.links.map {
+                SuggestedRelatedNote(targetPath: $0.targetPath, targetTitle: $0.targetTitle, reason: $0.reason)
+            })
+            return (suggestions, APILog.describe(suggestions))
+        }
     }
 
     func extractEntitiesAndLink(
@@ -178,15 +205,14 @@ actor KnowledgeAIService {
         let trimmedInput = originalInput?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let originalSection = trimmedInput.isEmpty ? "" : "\n\nORIGINAL USER INPUT:\n\(trimmedInput)"
 
-        let session = LanguageModelSession {
-            """
+        let instructions = """
             You identify high-signal entities (proper nouns, named concepts, companies, people, \
             places, dates anchoring deadlines, domain terms) in a wiki note and rewrite the body \
             with first-occurrence Obsidian wikilinks [[<slug>.md|<Name>]]. Prefer existing \
             entities; only create a new entity when the mention is high-signal and not already \
             covered. Preserve all other text verbatim. Entity bodies contain no wikilinks. No emojis.
             """
-        }
+        let session = LanguageModelSession { instructions }
         let userMessage = """
         NOTE TITLE: \(noteTitle)
 
@@ -198,19 +224,33 @@ actor KnowledgeAIService {
 
         Rewrite with first-occurrence wikilinks and emit any new high-signal entities.
         """
-        let result = try await session.respond(
-            to: userMessage,
-            generating: GenEntityExtraction.self,
-            options: GenerationOptions(temperature: 0.3)
-        )
-        let content = result.content
-        return EntityExtractionResult(
-            linkedBody: content.linkedBody,
-            linkedOriginalInput: content.linkedOriginalInput.isEmpty ? nil : content.linkedOriginalInput,
-            newEntities: content.newEntities.map {
-                ExtractedEntity(slug: $0.slug, displayName: $0.displayName, body: $0.body)
-            }
-        )
+        let temperature = 0.3
+
+        return try await APILog.shared.record(
+            role: .knowledge,
+            operation: "Extract entities and wikilinks",
+            instructions: instructions,
+            prompt: userMessage,
+            temperature: temperature,
+            outputType: "EntityExtractionResult",
+            phase: phase,
+            taskTitle: noteTitle
+        ) {
+            let result = try await session.respond(
+                to: userMessage,
+                generating: GenEntityExtraction.self,
+                options: GenerationOptions(temperature: temperature)
+            )
+            let content = result.content
+            let extraction = EntityExtractionResult(
+                linkedBody: content.linkedBody,
+                linkedOriginalInput: content.linkedOriginalInput.isEmpty ? nil : content.linkedOriginalInput,
+                newEntities: content.newEntities.map {
+                    ExtractedEntity(slug: $0.slug, displayName: $0.displayName, body: $0.body)
+                }
+            )
+            return (extraction, APILog.describe(extraction))
+        }
     }
 
     func generateTaskOverviewNote(
@@ -223,14 +263,13 @@ actor KnowledgeAIService {
             "\(idx + 1). [[\(st.filename)|\(st.title)]] — \(st.response)"
         }.joined(separator: "\n")
 
-        let session = LanguageModelSession {
-            """
+        let instructions = """
             You distil a completed task into ONE atomic overview note. Synthesise the goal, the \
             key decisions, and how it concluded — do not regurgitate every sub-task. You may \
             reference per-sub-task notes by filename as [[02-some-slug.md|Some Title]]. First \
             person, no emojis.
             """
-        }
+        let session = LanguageModelSession { instructions }
         let userMessage = """
         TASK TITLE: \(taskTitle)
 
@@ -240,11 +279,25 @@ actor KnowledgeAIService {
         COMPLETED SUB-TASKS (with their on-disk filenames):
         \(formatted)
         """
-        let result = try await session.respond(
-            to: userMessage,
-            generating: GenKnowledgeNote.self,
-            options: GenerationOptions(temperature: 0.4)
-        )
-        return GeneratedKnowledgeNote(title: result.content.title, body: result.content.body)
+        let temperature = 0.4
+
+        return try await APILog.shared.record(
+            role: .knowledge,
+            operation: "Task overview note",
+            instructions: instructions,
+            prompt: userMessage,
+            temperature: temperature,
+            outputType: "GeneratedKnowledgeNote",
+            phase: .knowledge,
+            taskTitle: taskTitle
+        ) {
+            let result = try await session.respond(
+                to: userMessage,
+                generating: GenKnowledgeNote.self,
+                options: GenerationOptions(temperature: temperature)
+            )
+            let note = GeneratedKnowledgeNote(title: result.content.title, body: result.content.body)
+            return (note, APILog.describe(note))
+        }
     }
 }
