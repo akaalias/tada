@@ -42,6 +42,52 @@ import Testing
         #expect(ExecutiveFieldHeuristics.correctedType(title: "Preferred travel date", label: "", choice: .singleSelect) == .singleSelect)
     }
 
+    @Test func optionsWithTextType_becomeSingleSelect() {
+        // The model populated month options but mislabeled the field as `text`,
+        // which ignores options and renders as an empty box.
+        let schema = ActionSchema(
+            type: .form,
+            title: "Research the best time to visit Paris",
+            fields: [ActionField(
+                type: .text,
+                label: "Preferred month",
+                options: [FieldOption(id: "July", label: "July"), FieldOption(id: "August", label: "August")]
+            )],
+            submitLabel: "Continue"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .singleSelect)
+    }
+
+    @Test func optionsWithTextarea_becomeSingleSelect() {
+        let schema = ActionSchema(
+            type: .form,
+            title: "Pick a plan",
+            fields: [ActionField(type: .textarea, label: "Plan", options: [FieldOption(id: "a", label: "A")])],
+            submitLabel: "Continue"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .singleSelect)
+    }
+
+    @Test func noOptions_textStaysText() {
+        let schema = ActionSchema(
+            type: .form,
+            title: "Enter your name",
+            fields: [ActionField(type: .text, label: "Name")],
+            submitLabel: "Continue"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .text)
+    }
+
+    @Test func optionsWithSingleSelect_unchanged() {
+        let schema = ActionSchema(
+            type: .form,
+            title: "Pick one",
+            fields: [ActionField(type: .singleSelect, label: "X", options: [FieldOption(id: "a", label: "A")])],
+            submitLabel: "Continue"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .singleSelect)
+    }
+
     @Test func fallbackType_infersFromTitle() {
         #expect(ExecutiveFieldHeuristics.fallbackType(title: "Determine travel dates") == .date)
         #expect(ExecutiveFieldHeuristics.fallbackType(title: "When do you leave?") == .date)

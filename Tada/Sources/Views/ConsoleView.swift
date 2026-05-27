@@ -202,14 +202,14 @@ private struct APILogEntryRow: View {
             if let outputType = entry.outputType {
                 section("Output Type", text: outputType)
             }
-            section("Instructions", text: entry.instructions)
-            section("Prompt", text: entry.prompt)
+            section("Instructions", text: entry.instructions, tokens: entry.instructionsTokens)
+            section("Prompt", text: entry.prompt, tokens: entry.promptTokens)
 
             if let error = entry.errorMessage {
                 section("Error", text: error, tint: .red)
             }
             if let output = entry.output {
-                section("Output", text: output)
+                section("Output", text: output, tokens: entry.outputTokens)
             }
             if !entry.isComplete {
                 Text("Awaiting response…")
@@ -220,10 +220,28 @@ private struct APILogEntryRow: View {
     }
 
     @ViewBuilder
-    private func section(_ title: String, text: String, tint: Color? = nil) -> some View {
+    private func section(_ title: String, text: String, tokens: Int? = nil, tint: Color? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: Theme.fontSize, weight: .semibold))
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: Theme.fontSize, weight: .semibold))
+                if let tokens {
+                    Text("≈\(tokens) tokens")
+                        .font(.system(size: Theme.badgeFontSize))
+                        .foregroundStyle(.secondary)
+                        .help("Approximate token count (~4 chars/token); exact counts need Xcode 26.4+")
+                }
+                Spacer()
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(text, forType: .string)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.borderless)
+                .help("Copy \(title.lowercased())")
+            }
             Text(text)
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(tint ?? .primary)

@@ -66,6 +66,13 @@ struct APILogEntry: Identifiable, Sendable, Codable {
     var errorMessage: String?
     var durationMS: Int?
 
+    /// Token counts measured with Apple's `SystemLanguageModel.tokenCount(for:)`,
+    /// so they match what the on-device model actually sees against its 4,096-token
+    /// budget. Computed asynchronously; `nil` until measured (or on OS < 26.4).
+    var instructionsTokens: Int?
+    var promptTokens: Int?
+    var outputTokens: Int?
+
     /// True once an output or failure has been recorded.
     var isComplete: Bool { output != nil || errorMessage != nil }
 
@@ -140,6 +147,11 @@ final class APILog {
             entries.removeLast(entries.count - Self.maxEntries)
         }
         persist()
+        Task {
+            let i = await Self.tokenCount(of: instructions)
+            let p = await Self.tokenCount(of: prompt)
+            update(id) { $0.instructionsTokens = i; $0.promptTokens = p }
+        }
         return id
     }
 
@@ -148,6 +160,10 @@ final class APILog {
         update(id) {
             $0.output = output
             $0.durationMS = durationMS
+        }
+        Task {
+            let o = await Self.tokenCount(of: output)
+            update(id) { $0.outputTokens = o }
         }
     }
 
@@ -236,6 +252,18 @@ final class APILog {
 
     nonisolated private static func elapsedMS(since start: Date) -> Int {
         Int(Date().timeIntervalSince(start) * 1000)
+    }
+
+    /// Approximate token count for display against the model's 4,096-token window.
+    ///
+    /// Apple's exact tokenizer — `SystemLanguageModel.tokenCount(for:)` — ships in the
+    /// 26.4 SDK, which this build's toolchain (Xcode 26.2) predates, so we estimate at
+    /// ~4 characters per token (close to the model's BPE tokenizer). Once on Xcode
+    /// 26.4+, replace the body with:
+    ///   `if #available(macOS 26.4, *) { return try? await SystemLanguageModel.default.tokenCount(for: Prompt(text)) }`
+    nonisolated static func tokenCount(of text: String) async -> Int? {
+        guard !text.isEmpty else { return 0 }
+        return Int((Double(text.count) / 4.0).rounded())
     }
 
     /// Renders a generated DTO as pretty JSON for display, falling back to its

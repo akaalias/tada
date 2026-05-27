@@ -34,7 +34,13 @@ enum ExecutiveFieldHeuristics {
     /// validation when a field is coerced to a date.
     static func corrected(_ schema: ActionSchema) -> ActionSchema {
         let fields = schema.fields.map { field -> ActionField in
-            let newType = correctedType(title: schema.title, label: field.label, choice: field.type)
+            var newType = correctedType(title: schema.title, label: field.label, choice: field.type)
+            // The model populated selectable options but picked a free-text type that
+            // ignores them — it meant a selection control, so the user isn't left with
+            // an empty box.
+            if let options = field.options, !options.isEmpty, (newType == .text || newType == .textarea) {
+                newType = .singleSelect
+            }
             guard newType != field.type else { return field }
             return ActionField(
                 id: field.id,
