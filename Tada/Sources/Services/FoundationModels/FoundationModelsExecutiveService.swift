@@ -101,7 +101,7 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
 
     CRITICAL: Generate exactly ONE field. Pick the BEST type for this specific task.
 
-    CRITICAL: If you provide an "options" list, the field "type" MUST be singleSelect (choose one) or multiSelect (choose several) - NEVER text or textarea. A text field ignores options and shows an empty box. Whenever you can enumerate the choices, use a select type with options.
+    CRITICAL: If you provide an "options" list, the field "type" MUST be a selection type - singleSelect (choose one) or multiSelect (choose several). NEVER pair options with text, textarea, number, slider, rangeSlider, date, or countSelector - those ignore options and show an empty or bare input box. Whenever you enumerate choices (even numeric ones like "1 day / 2 days / 7 days"), use singleSelect.
 
     Available field types:
 

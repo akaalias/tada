@@ -7,6 +7,12 @@ import Foundation
 /// mismatches; the user can still override via "Change input type".
 enum ExecutiveFieldHeuristics {
 
+    /// Field types that actually render an `options` array. Any other type carrying
+    /// options is a model mistake (options would be silently ignored).
+    private static let optionsConsumingTypes: Set<ActionField.FieldType> = [
+        .singleSelect, .multiSelect, .yesNo, .orderedList, .hierarchicalList, .itemTable, .checklist
+    ]
+
     /// Returns the field type that should actually be used, given the question text
     /// and the model's choice.
     static func correctedType(
@@ -35,10 +41,10 @@ enum ExecutiveFieldHeuristics {
     static func corrected(_ schema: ActionSchema) -> ActionSchema {
         let fields = schema.fields.map { field -> ActionField in
             var newType = correctedType(title: schema.title, label: field.label, choice: field.type)
-            // The model populated selectable options but picked a free-text type that
-            // ignores them — it meant a selection control, so the user isn't left with
-            // an empty box.
-            if let options = field.options, !options.isEmpty, (newType == .text || newType == .textarea) {
+            // The model populated selectable options but picked a type that ignores them
+            // (text, number, slider, …) — it meant a selection control, so the user isn't
+            // left with an empty box or a bare numeric input.
+            if let options = field.options, !options.isEmpty, !Self.optionsConsumingTypes.contains(newType) {
                 newType = .singleSelect
             }
             guard newType != field.type else { return field }

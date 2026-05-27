@@ -58,6 +58,48 @@ import Testing
         #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .singleSelect)
     }
 
+    @Test func optionsWithNumberType_becomeSingleSelect() {
+        // The model enumerated day-options but mislabeled the field as `number`,
+        // which ignores options and renders a numeric box.
+        let schema = ActionSchema(
+            type: .form,
+            title: "Determine the duration of the trip",
+            fields: [ActionField(
+                type: .number,
+                label: "Duration of the trip (days)",
+                options: [FieldOption(id: "1", label: "1 day"), FieldOption(id: "2", label: "2 days")],
+                validation: FieldValidation(minValue: 1, maxValue: 21)
+            )],
+            submitLabel: "Confirm"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .singleSelect)
+    }
+
+    @Test func optionsWithYesNo_unchanged() {
+        // yesNo legitimately uses its options (the two choices) — leave it alone.
+        let schema = ActionSchema(
+            type: .form,
+            title: "Have you booked?",
+            fields: [ActionField(type: .yesNo, label: "Booked", options: [
+                FieldOption(id: "yes", label: "Yes"), FieldOption(id: "no", label: "No")
+            ])],
+            submitLabel: "Confirm"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .yesNo)
+    }
+
+    @Test func optionsWithOrderedList_unchanged() {
+        let schema = ActionSchema(
+            type: .form,
+            title: "Put these in order",
+            fields: [ActionField(type: .orderedList, label: "Steps", options: [
+                FieldOption(id: "a", label: "A"), FieldOption(id: "b", label: "B")
+            ])],
+            submitLabel: "Continue"
+        )
+        #expect(ExecutiveFieldHeuristics.corrected(schema).fields.first?.type == .orderedList)
+    }
+
     @Test func optionsWithTextarea_becomeSingleSelect() {
         let schema = ActionSchema(
             type: .form,
