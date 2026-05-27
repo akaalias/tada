@@ -97,6 +97,7 @@ struct GenFieldValidation {
 struct GenActionField {
     @Guide(description: "Short field identifier, e.g. 'answer'.")
     var id: String
+    @Guide(description: "The activity/UI control to present. Use yesNo for yes/no confirmations (especially external actions like calls, emails, research), singleSelect for picking ONE option, multiSelect for several, text for short answers, textarea for long text, date for a calendar date, number for a single numeric value, slider for a value on a scale (NOT budgets), rangeSlider for a min-max range (use for ALL budget/price questions), countSelector for small whole-number counts (passengers, tickets, rooms), itemTable for tables with columns (define columns via options), orderedList for drag-and-drop reordering (items via options), hierarchicalList for nestable trees (items via options), drawing for physical room layouts. If you enumerate choices — even numeric ones — use singleSelect or multiSelect; NEVER pair options with text/number/slider/date.")
     var type: GenFieldType
     @Guide(description: "Field label shown to the user.")
     var label: String
