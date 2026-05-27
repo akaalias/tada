@@ -51,10 +51,11 @@ import FoundationModels
     @Test func actionSchema_rangeSlider_mapsValidation() {
         let gen = GenActionSchema(
             title: "What's your budget?",
-            description: "",
-            submitLabel: "Continue",
+            typeReasoning: "budget question -> rangeSlider",
+            field: .rangeSlider(label: "Budget range", minValue: 100, maxValue: 3000),
             requiresExternalAction: false,
-            field: .rangeSlider(label: "Budget range", minValue: 100, maxValue: 3000)
+            submitLabel: "Continue",
+            description: ""
         )
         let domain = gen.toDomain()
         #expect(domain.type == .form)
@@ -68,8 +69,9 @@ import FoundationModels
 
     @Test func textField_hasNoOptionsAndDefaultId() {
         // A text case has no options slot at all — options-on-text is unrepresentable.
-        let gen = GenActionSchema(title: "Name", description: "", submitLabel: "Save",
-                                  requiresExternalAction: false, field: .text(label: "Your name"))
+        let gen = GenActionSchema(title: "Name", typeReasoning: "short answer -> text",
+                                  field: .text(label: "Your name"), requiresExternalAction: false,
+                                  submitLabel: "Save", description: "")
         let domain = gen.toDomain()
         #expect(domain.fields[0].type == .text)
         #expect(domain.fields[0].options == nil)
@@ -78,12 +80,15 @@ import FoundationModels
 
     @Test func singleSelect_mapsOptions() {
         let gen = GenActionSchema(
-            title: "Cabin class", description: "", submitLabel: "Continue",
-            requiresExternalAction: false,
+            title: "Cabin class",
+            typeReasoning: "enumerable choices -> singleSelect",
             field: .singleSelect(label: "Cabin class", options: [
                 GenFieldOption(id: "eco", label: "Economy", description: ""),
                 GenFieldOption(id: "biz", label: "Business", description: "More legroom")
-            ])
+            ]),
+            requiresExternalAction: false,
+            submitLabel: "Continue",
+            description: ""
         )
         let domain = gen.toDomain()
         #expect(domain.fields[0].type == .singleSelect)
@@ -95,11 +100,14 @@ import FoundationModels
 
     @Test func itemTable_mapsColumnsToOptions() {
         let gen = GenActionSchema(
-            title: "Shopping list", description: "", submitLabel: "Save",
-            requiresExternalAction: false,
+            title: "Shopping list",
+            typeReasoning: "shopping list -> itemTable",
             field: .itemTable(label: "Items", columns: [
                 GenFieldOption(id: "item", label: "Item", description: "")
-            ])
+            ]),
+            requiresExternalAction: false,
+            submitLabel: "Save",
+            description: ""
         )
         let domain = gen.toDomain()
         #expect(domain.fields[0].type == .itemTable)

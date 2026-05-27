@@ -99,16 +99,20 @@ enum GenField {
 
 @Generable
 struct GenActionSchema {
-    @Guide(description: "Clear question or prompt for the user. Use the exact sub-task title provided.")
+    @Guide(description: "Use the EXACT sub-task title provided.")
     var title: String
+    /// Decoded BEFORE `field` so the model commits to a reasoned type choice first
+    /// (chain-of-thought), instead of picking a type as an afterthought.
+    @Guide(description: "FIRST decide the single best control for THIS sub-task and say why in one short sentence. Is it an EXTERNAL action — make a call, send an email, book, arrange, research/compare options online? -> yesNo. A date or a 'when' question? -> date. A budget / price / 'how much'? -> rangeSlider. A small whole-number count (passengers, nights)? -> countSelector. Can you list the choices (even numeric, like '1 day / 2 days')? -> singleSelect for one, multiSelect for several. A rating on a scale? -> slider. Arrange/sort? -> orderedList. Group/nest? -> hierarchicalList. A shopping/expense list? -> itemTable. Otherwise short text, or textarea for longer text.")
+    var typeReasoning: String
+    @Guide(description: "The control you chose in your reasoning; its data must match.")
+    var field: GenField
+    @Guide(description: "True for real-world actions outside the app (calls, emails, calendar, travel, talking to someone, researching online); false for in-app data entry.")
+    var requiresExternalAction: Bool
+    @Guide(description: "Button label: Confirm (yesNo), Save (entering info), Continue (selection), Complete (final). Never 'Done'.")
+    var submitLabel: String
     @Guide(description: "Optional helpful context. Empty string if none.")
     var description: String
-    @Guide(description: "Button label: Continue, Save, Confirm, or Complete. Never generic 'Done'.")
-    var submitLabel: String
-    @Guide(description: "True if the step requires real-world action outside the app.")
-    var requiresExternalAction: Bool
-    @Guide(description: "The single best input control for this sub-task.")
-    var field: GenField
 }
 
 // MARK: - Mapping to domain types

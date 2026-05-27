@@ -55,13 +55,14 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
                     generating: GenActionSchema.self,
                     options: GenerationOptions(temperature: attempt == 0 ? 0.4 : 0.2, maximumResponseTokens: 1024)
                 )
-                // The model's field type is authoritative: GenField is an enum with
-                // associated values, so options only exist on selection cases. No
-                // heuristic coercion — the type the model chose is the type used.
-                let schema = response.content.toDomain()
+                // The model's field type is authoritative: it reasons about the control
+                // first (typeReasoning), then commits to a GenField case whose payload is
+                // structurally consistent. No heuristic coercion — the chosen type is used.
+                let content = response.content
+                let schema = content.toDomain()
                 await APILog.shared.complete(
                     id: callID,
-                    output: APILog.describe(schema),
+                    output: "Type reasoning: \(content.typeReasoning)\n\n\(APILog.describe(schema))",
                     durationMS: Int(Date().timeIntervalSince(start) * 1000)
                 )
                 return schema
@@ -92,31 +93,18 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
         return ActionSchema(type: .form, title: subTask, fields: [field], submitLabel: "Continue")
     }
 
-    // Lean selection guidance. The GenField enum already enforces valid structure (and
-    // makes options-on-text impossible), so this only needs to help the model choose the
-    // right case — not enumerate field shapes. Kept small to stay well under 4,096 tokens.
+    // Lean instructions: the per-type selection guidance now lives on the schema's
+    // `typeReasoning` guide (decoded before the field), so this only sets the framing.
     private static let instructions = """
-    You design ONE input control for a single sub-task. Use the EXACT sub-task title given.
+    You design ONE input control for a single sub-task.
 
-    Choose the single best control:
-    - date — any date / "when" / travel dates / departure / deadline (a date is NEVER a slider).
-    - rangeSlider — ALL budget / price / "how much" questions. Set a sensible min-max (flights 100-3000, groceries 50-500).
-    - slider — a rating or score on a scale (NOT budgets).
-    - countSelector — a small whole-number count (passengers, tickets, rooms, guests).
-    - singleSelect — pick ONE from choices you can enumerate. multiSelect — pick several.
-      Whenever you can list options (even numeric, like "1 day / 2 days / 7 days"), use one of these.
-    - orderedList — arrange / sort / prioritize a set of items.
-    - hierarchicalList — group / nest / outline / mind-map a set of items.
-    - itemTable — a shopping or expense list (each option defines one column; max 3 columns).
-    - textarea — open-ended longer text (availability, preferences, notes). text — short answers (names, numbers).
-    - drawing — a physical room layout only.
-    - yesNo — confirm an EXTERNAL action (make a call, send an email, add to calendar, go somewhere,
-      research or compare options online). Provide two options: "Yes, I've done it" and "No, not yet".
+    Focus ONLY on the current sub-task. Previous responses are background — use them to
+    pre-fill the user's own exact words where relevant, but NEVER let an earlier question's
+    topic (like travel dates) become this field's label or type. The label must describe
+    THIS sub-task.
 
-    requiresExternalAction = true for real-world actions outside the app (calls, emails, calendar,
-    travel, talking to someone, researching/comparing online); false for in-app data entry.
-
-    Submit label: yesNo -> "Confirm"; entering info -> "Save"; selection -> "Continue"; final -> "Complete".
-    Use the user's EXACT words from previous responses; never invent items they didn't mention. No emojis.
+    Reason about the best control first, then produce it (see the field guidance). Provide
+    two options for yesNo: "Yes, I've done it" and "No, not yet". For selection types, give
+    3-6 thoughtful options. No emojis.
     """
 }
