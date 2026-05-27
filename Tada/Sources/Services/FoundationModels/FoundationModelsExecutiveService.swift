@@ -3,14 +3,14 @@ import FoundationModels
 
 /// On-device executive. Generates ONE UI control per sub-task via guided generation.
 /// The `GenActionSchema` type enforces "exactly one field" and a valid field type
-/// structurally; these instructions carry the task->UI mapping and field-population
-/// rules (restored from the original prompt, minus the literal JSON example which the
-/// `@Generable` shape now guarantees). `ExecutiveFieldHeuristics` is a deterministic
-/// backstop for the type mistakes the on-device model still makes.
+/// structurally, so these instructions are kept lean: the high-value `MATCH THE UI
+/// TO THE TASK` mapping plus the few population rules the type can't express.
+/// `ExecutiveFieldHeuristics` is a deterministic backstop for the type mistakes the
+/// on-device model still makes, so the prompt doesn't have to be exhaustive.
 struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
 
     /// Cap on prior-response text injected into the prompt, to protect the
-    /// 4,096-token context window on long tasks.
+    /// 4,096-token context window (and prefill latency) on long tasks.
     private static let maxPreviousResponsesChars = 1200
 
     func generateActionUI(
@@ -33,72 +33,44 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
         let response = try await session.respond(
             to: prompt,
             generating: GenActionSchema.self,
-            options: GenerationOptions(temperature: 0.4)
+            options: GenerationOptions(temperature: 0.4, maximumResponseTokens: 600)
         )
         return ExecutiveFieldHeuristics.corrected(response.content.toDomain())
     }
 
     private static let instructions = """
-    You create ONE appropriate UI control for a single sub-task. Use the EXACT sub-task \
-    title provided. Generate exactly ONE field — pick the BEST type for this task.
-
-    FIELD TYPES:
-    Selection (when you can enumerate options):
-    - singleSelect: pick ONE from a list. Provide 3-6 thoughtful options.
-    - multiSelect: pick MULTIPLE from a list.
-    - yesNo: a yes/no confirmation. ALWAYS provide two descriptive options, e.g. \
-      {id:"yes", label:"Yes, I have made the call"} / {id:"no", label:"No, not yet"}.
-    - orderedList: drag-and-drop to put items in sequence. Use for arrange / sort / order / \
-      prioritize / put in sequence. Provide the items via options (each option's label is one row).
-    - hierarchicalList: drag-and-drop tree the user can nest. Use for organize into categories / \
-      group / outline / hierarchy / mind map / parent-child. Provide the items via options.
-
-    Input (when you need specific information):
-    - text: short free-form text (names, phone numbers, brief answers).
-    - textarea: longer text (explanations, lists, availability, details).
-    - number: a specific numeric value with units.
-    - countSelector: small whole-number counts 1-5+ (passengers, tickets, rooms, guests).
-    - slider: a single value on a scale (ratings 1-10, satisfaction). NEVER for budgets or dates.
-    - rangeSlider: a min-max range with two handles. Use for ALL budget/price questions. Set \
-      validation.minValue / maxValue to a sensible range (flights 100-3000, groceries 50-500).
-    - date: a single calendar date.
-    - itemTable: a table with custom columns (MAX 3). Only for shopping lists, expense tracking, \
-      or inventories. Each option defines one column (option.description: "currency" for € amounts, \
-      "select:A,B,C" for a dropdown, omit for text). Never for research findings.
-
-    Visual (ONLY physical/spatial things):
-    - drawing: ONLY room layouts, floor plans, physical dimensions, diagrams. NEVER for schedules, \
-      availability, lists, preferences, or anything non-physical.
+    You create ONE UI control for a single sub-task. Use the EXACT sub-task title given.
 
     MATCH THE UI TO THE TASK:
-    - "When do you need to…?" / "When is the trip?" / "When should we schedule?" -> date
-    - "Choose travel dates" / "Departure date" / "Return date" / "date range" / any DATE question -> date
-      (a date is NEVER a slider or rangeSlider, even when it says "range")
-    - "Which mornings are you free?" / "What's your availability?" / "Preferred times?" -> textarea
-    - "What's your budget?" / "Max budget?" / "How much do you want to spend?" -> rangeSlider
-    - "Create a shopping list" / "List items to buy" / "Budget breakdown" -> itemTable (item + amount, 2 cols)
-    - "Track purchases" -> itemTable (item + price + status, 3 cols max)
+    - "When …?" / "Choose travel dates" / "Departure date" / any date or "date range" -> date \
+      (a date is NEVER a slider, even when it says "range")
+    - "What's your availability?" / "Preferred times?" / "Which mornings?" -> textarea
+    - "What's your budget?" / "Max budget?" / "How much to spend?" -> rangeSlider
+    - "Create a shopping list" / "List items to buy" / "Budget breakdown" -> itemTable (2 cols)
+    - "Track purchases" -> itemTable (3 cols max)
     - "How many passengers/tickets/rooms/guests?" -> countSelector
+    - "Rate / score …" (1-10, satisfaction) -> slider
     - "How do you want to use the space?" -> multiSelect
-    - "Arrange / sort / prioritize these" / "What's the order?" -> orderedList
-    - "Organize into categories" / "Group these" / "Build an outline" / "mind map" -> hierarchicalList
-    - "Preferred cabin class?" -> singleSelect with options
-    - "Describe the room layout" -> drawing (physical space only)
+    - "Arrange / sort / prioritize / what's the order?" -> orderedList
+    - "Organize into categories / group / outline / mind map" -> hierarchicalList
+    - "Preferred cabin class?" and other pick-one questions -> singleSelect
+    - "Describe the room layout" (physical space only) -> drawing
+    - Make a call / send email / add to calendar / go somewhere / research / compare online \
+      -> yesNo confirmation ("Have you …?")
 
-    EXTERNAL ACTIONS use yesNo (and requiresExternalAction = true):
-    Making a call, sending an email, adding to calendar, going somewhere, talking to someone, \
-    waiting for a response, researching / looking up / comparing options online -> yesNo \
-    confirmation ("Have you …?"). Do NOT ask the user to fill out tables for research findings.
+    FIELD RULES:
+    - yesNo: ALWAYS two options, e.g. {id:"yes", label:"Yes, I've done it"} / {id:"no", label:"No, not yet"}.
+    - rangeSlider: set validation.minValue / maxValue to a sensible range (flights 100-3000, groceries 50-500).
+    - slider: NEVER for budgets or dates.
+    - itemTable: each option defines one column (option.description "currency" for €, "select:A,B,C" for a dropdown).
+    - orderedList / hierarchicalList: provide the items to arrange via options.
+    - singleSelect / multiSelect: provide 3-6 thoughtful options.
 
-    requiresExternalAction = true whenever the step needs real-world action outside the app; \
-    false for pure in-app data entry (answering preferences, entering info they already know).
+    requiresExternalAction = true for any real-world action outside the app (calls, emails, \
+    calendar, travel, talking to someone, researching/comparing online); false for pure in-app entry.
 
-    SUBMIT LABEL: yesNo -> "Confirm"; entering info -> "Save"; selection -> "Continue"; final -> \
-    "Complete". Never generic "Done".
-
-    PREFILLING: use the user's EXACT words from previous responses. Never interpret, embellish, or \
-    add items the user did not mention.
-
-    No emojis. ONE field only.
+    Use the user's EXACT words from previous responses — never interpret, embellish, or add items \
+    they didn't mention. Submit label: yesNo -> "Confirm"; entering info -> "Save"; selection -> \
+    "Continue"; final -> "Complete". No emojis. ONE field only.
     """
 }
