@@ -70,12 +70,40 @@ import FoundationModels
     @Test func textField_hasNoOptionsAndDefaultId() {
         // A text case has no options slot at all — options-on-text is unrepresentable.
         let gen = GenActionSchema(title: "Name", typeReasoning: "short answer -> text",
-                                  field: .text(label: "Your name"), requiresExternalAction: false,
-                                  submitLabel: "Save", description: "")
+                                  field: .text(label: "Your name", placeholder: "e.g. Jane Doe", defaultValue: "Alex"),
+                                  requiresExternalAction: false, submitLabel: "Save", description: "")
         let domain = gen.toDomain()
         #expect(domain.fields[0].type == .text)
         #expect(domain.fields[0].options == nil)
         #expect(domain.fields[0].id == "answer")
+        #expect(domain.fields[0].placeholder == "e.g. Jane Doe")   // placeholder restored
+        #expect(domain.fields[0].defaultValue == "Alex")           // prefill restored
+    }
+
+    @Test func textField_emptyPlaceholderAndDefault_mapToNil() {
+        let gen = GenActionSchema(title: "Notes", typeReasoning: "open text -> textarea",
+                                  field: .textarea(label: "Notes", placeholder: "", defaultValue: ""),
+                                  requiresExternalAction: false, submitLabel: "Save", description: "")
+        let domain = gen.toDomain()
+        #expect(domain.fields[0].placeholder == nil)
+        #expect(domain.fields[0].defaultValue == nil)
+    }
+
+    @Test func hierarchicalList_seedsPrefillRowsWithDepth() {
+        let gen = GenActionSchema(
+            title: "Organize", typeReasoning: "group/nest -> hierarchicalList",
+            field: .hierarchicalList(label: "Outline", items: [
+                GenTreeItem(label: "Transport", depth: 0),
+                GenTreeItem(label: "Flights", depth: 1)
+            ]),
+            requiresExternalAction: false, submitLabel: "Continue", description: ""
+        )
+        let domain = gen.toDomain()
+        #expect(domain.fields[0].type == .hierarchicalList)
+        #expect(domain.fields[0].prefillRows?.count == 2)
+        #expect(domain.fields[0].prefillRows?[0]["item"] == "Transport")
+        #expect(domain.fields[0].prefillRows?[0]["depth"] == "0")
+        #expect(domain.fields[0].prefillRows?[1]["depth"] == "1")
     }
 
     @Test func singleSelect_mapsOptions() {

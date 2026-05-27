@@ -103,8 +103,18 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
     topic (like travel dates) become this field's label or type. The label must describe
     THIS sub-task.
 
-    Reason about the best control first, then produce it (see the field guidance). Provide
-    two options for yesNo: "Yes, I've done it" and "No, not yet". For selection types, give
-    3-6 thoughtful options. No emojis.
+    Reason about the best control first, then produce it (see the field guidance). Then fill
+    its data:
+    - text / textarea / number: add a short placeholder showing an example answer. For text
+      and textarea, set defaultValue to the user's own exact prior words when one applies
+      (prefill); otherwise leave it empty.
+    - yesNo: provide two options — "Yes, I've done it" and "No, not yet".
+    - singleSelect / multiSelect / orderedList: provide 3-6 thoughtful options.
+    - itemTable: define 2-3 columns via options; a column's description is "currency" for
+      money, "select:A,B,C" for a dropdown, or empty for text.
+    - hierarchicalList: seed items with their nesting depth (0 top-level, 1 child).
+    - slider / rangeSlider: set a sensible min and max.
+
+    No emojis. Never invent items the user didn't mention.
     """
 }

@@ -54,8 +54,16 @@ struct GenMicroSteps {
 struct GenFieldOption {
     var id: String
     var label: String
-    @Guide(description: "Optional short helper text. Empty string if none.")
+    @Guide(description: "Optional helper text. For an itemTable column, set this to the column TYPE: 'currency' for money amounts, 'select:A,B,C' for a dropdown, or leave empty for plain text.")
     var description: String
+}
+
+/// One row of a hierarchicalList's seeded starter tree.
+@Generable
+struct GenTreeItem {
+    var label: String
+    @Guide(description: "Nesting depth: 0 = top level, 1 = child, 2 = grandchild.")
+    var depth: Int
 }
 
 /// The activity/UI control for a sub-task, modeled as an enum with associated values
@@ -66,12 +74,13 @@ struct GenFieldOption {
 /// instead of dumping options into a text field.
 @Generable
 enum GenField {
-    /// Short free-form text: names, phone numbers, brief answers.
-    case text(label: String)
+    /// Short free-form text: names, phone numbers, brief answers. placeholder = an
+    /// example answer; defaultValue = pre-filled from the user's prior exact words.
+    case text(label: String, placeholder: String, defaultValue: String)
     /// Longer free-form text: explanations, details, availability.
-    case textarea(label: String)
-    /// A single numeric value with units.
-    case number(label: String)
+    case textarea(label: String, placeholder: String, defaultValue: String)
+    /// A single numeric value with units. placeholder = an example value.
+    case number(label: String, placeholder: String)
     /// A single calendar date. Use for any date / "when" / travel-dates question.
     case date(label: String)
     /// A small whole-number count: passengers, tickets, rooms, guests.
@@ -91,8 +100,9 @@ enum GenField {
     case multiSelect(label: String, options: [GenFieldOption])
     /// Drag-and-drop to put the given items in order (arrange / sort / prioritize).
     case orderedList(label: String, options: [GenFieldOption])
-    /// Drag-and-drop to group or nest the given items (organize / outline / mind map).
-    case hierarchicalList(label: String, options: [GenFieldOption])
+    /// Drag-and-drop to group or nest items (organize / outline / mind map). Seed the
+    /// starter tree with `items`, each carrying its nesting depth.
+    case hierarchicalList(label: String, items: [GenTreeItem])
     /// A table with up to 3 columns; each option defines one column.
     case itemTable(label: String, columns: [GenFieldOption])
 }
@@ -157,32 +167,45 @@ extension GenFieldOption {
 
 extension GenField {
     func toDomain() -> ActionField {
-        func field(_ type: ActionField.FieldType, _ label: String, options: [GenFieldOption] = [], validation: FieldValidation? = nil) -> ActionField {
+        func make(
+            _ type: ActionField.FieldType,
+            _ label: String,
+            placeholder: String = "",
+            defaultValue: String = "",
+            options: [GenFieldOption] = [],
+            validation: FieldValidation? = nil,
+            prefillRows: [[String: String]]? = nil
+        ) -> ActionField {
             let mapped = options.map { $0.toDomain() }
             return ActionField(
                 id: "answer",
                 type: type,
                 label: label,
+                placeholder: placeholder.isEmpty ? nil : placeholder,
                 required: true,
                 options: mapped.isEmpty ? nil : mapped,
-                validation: validation
+                validation: validation,
+                defaultValue: defaultValue.isEmpty ? nil : defaultValue,
+                prefillRows: prefillRows
             )
         }
         switch self {
-        case .text(let label): return field(.text, label)
-        case .textarea(let label): return field(.textarea, label)
-        case .number(let label): return field(.number, label)
-        case .date(let label): return field(.date, label)
-        case .countSelector(let label): return field(.countSelector, label)
-        case .drawing(let label): return field(.drawing, label)
-        case .slider(let label, let mn, let mx): return field(.slider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
-        case .rangeSlider(let label, let mn, let mx): return field(.rangeSlider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
-        case .yesNo(let label, let options): return field(.yesNo, label, options: options)
-        case .singleSelect(let label, let options): return field(.singleSelect, label, options: options)
-        case .multiSelect(let label, let options): return field(.multiSelect, label, options: options)
-        case .orderedList(let label, let options): return field(.orderedList, label, options: options)
-        case .hierarchicalList(let label, let options): return field(.hierarchicalList, label, options: options)
-        case .itemTable(let label, let columns): return field(.itemTable, label, options: columns)
+        case .text(let label, let ph, let dv): return make(.text, label, placeholder: ph, defaultValue: dv)
+        case .textarea(let label, let ph, let dv): return make(.textarea, label, placeholder: ph, defaultValue: dv)
+        case .number(let label, let ph): return make(.number, label, placeholder: ph)
+        case .date(let label): return make(.date, label)
+        case .countSelector(let label): return make(.countSelector, label)
+        case .drawing(let label): return make(.drawing, label)
+        case .slider(let label, let mn, let mx): return make(.slider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
+        case .rangeSlider(let label, let mn, let mx): return make(.rangeSlider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
+        case .yesNo(let label, let options): return make(.yesNo, label, options: options)
+        case .singleSelect(let label, let options): return make(.singleSelect, label, options: options)
+        case .multiSelect(let label, let options): return make(.multiSelect, label, options: options)
+        case .orderedList(let label, let options): return make(.orderedList, label, options: options)
+        case .hierarchicalList(let label, let items):
+            let rows = items.map { ["item": $0.label, "depth": String($0.depth)] }
+            return make(.hierarchicalList, label, prefillRows: rows.isEmpty ? nil : rows)
+        case .itemTable(let label, let columns): return make(.itemTable, label, options: columns)
         }
     }
 }
