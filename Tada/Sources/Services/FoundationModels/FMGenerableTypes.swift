@@ -32,6 +32,28 @@ struct GenTaskPlan {
     var subTasks: [GenSubTask]
 }
 
+/// Discovery uses a QUESTION-framed type — distinct from the step-framed GenTaskPlan —
+/// because the schema's field guides drive the on-device model harder than the system
+/// prompt does. A "step"-worded guide (or a requiresExternalAction field) makes it emit
+/// action items; this type makes it emit clarifying questions.
+@Generable
+struct GenQuestion {
+    @Guide(description: "A complete clarifying QUESTION the user answers, e.g. 'How many people are traveling?', 'What's your budget for this trip?', 'Where will you be travelling from?'. It is a QUESTION that gathers information — never an action step like 'Book accommodations' or 'Research attractions'.")
+    var title: String
+    @Guide(description: "Optional one-line context for the question. Empty if none.")
+    var description: String
+}
+
+@Generable
+struct GenDiscoveryPlan {
+    @Guide(description: "The name of the USER'S task in their own terms (4-9 words). Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task itself.")
+    var description: String
+    @Guide(description: "1-7 clarifying questions that gather the information needed to understand the task before planning.")
+    var questions: [GenQuestion]
+}
+
 @Generable
 struct GenPlanRevision {
     @Guide(description: "True only if the plan needs revising into atomic, concrete steps.")
@@ -136,6 +158,17 @@ extension GenSubTask {
 extension GenTaskPlan {
     func toDomain() -> TaskPlan {
         TaskPlan(title: title, description: description, subTasks: subTasks.map { $0.toDomain() })
+    }
+}
+
+extension GenDiscoveryPlan {
+    func toDomain() -> TaskPlan {
+        TaskPlan(
+            title: title,
+            description: description,
+            // Discovery questions are in-app prompts, never external actions.
+            subTasks: questions.map { SubTaskPlan(title: $0.title, description: $0.description, requiresExternalAction: false) }
+        )
     }
 }
 

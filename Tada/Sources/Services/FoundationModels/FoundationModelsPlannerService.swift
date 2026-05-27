@@ -49,7 +49,7 @@ struct FoundationModelsPlannerService: PlannerAIServiceProtocol {
         ) {
             let plan = try await session.respond(
                 to: prompt,
-                generating: GenTaskPlan.self,
+                generating: GenDiscoveryPlan.self,
                 options: GenerationOptions(temperature: temperature)
             ).content.toDomain()
             return (plan, APILog.describe(plan))
