@@ -126,6 +126,21 @@ import FoundationModels
         #expect(domain.fields[0].options?[1].description == "More legroom")
     }
 
+    @Test func brainstorm_mapsToDomain() {
+        let gen = GenActionSchema(
+            title: "Coaching topics",
+            typeReasoning: "open-ended idea generation -> brainstorm",
+            field: .brainstorm(label: "Topics to cover"),
+            requiresExternalAction: false,
+            submitLabel: "Save",
+            description: ""
+        )
+        let domain = gen.toDomain()
+        #expect(domain.fields[0].type == .brainstorm)
+        #expect(domain.fields[0].label == "Topics to cover")
+        #expect(domain.fields[0].options == nil)
+    }
+
     @Test func itemTable_mapsColumnsToOptions() {
         let gen = GenActionSchema(
             title: "Shopping list",

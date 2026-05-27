@@ -109,6 +109,10 @@ enum GenField {
     case countSelector(label: String)
     /// A physical room layout or floor plan. Physical/spatial only.
     case drawing(label: String)
+    /// A canvas to freely generate and group several short ideas/terms. Use for
+    /// OPEN-ENDED questions that invite listing or brainstorming (topics, themes,
+    /// things to try) — not a single written answer, and not a fixed set of choices.
+    case brainstorm(label: String)
     /// A single value on a scale (ratings 1-10, satisfaction). NEVER for budgets.
     case slider(label: String, minValue: Double, maxValue: Double)
     /// A min-max range with two handles. Use for ALL budget/price questions.
@@ -135,7 +139,7 @@ struct GenActionSchema {
     var title: String
     /// Decoded BEFORE `field` so the model commits to a reasoned type choice first
     /// (chain-of-thought), instead of picking a type as an afterthought.
-    @Guide(description: "FIRST decide the single best control for THIS sub-task and say why in one short sentence. Is it an EXTERNAL action — make a call, send an email, book, arrange, research/compare options online? -> yesNo. A date or a 'when' question? -> date. A budget / price / 'how much'? -> rangeSlider. A small whole-number count (passengers, nights)? -> countSelector. Can you list the choices (even numeric, like '1 day / 2 days')? -> singleSelect for one, multiSelect for several. A rating on a scale? -> slider. Arrange/sort? -> orderedList. Group/nest? -> hierarchicalList. A shopping/expense list? -> itemTable. Otherwise short text, or textarea for longer text.")
+    @Guide(description: "FIRST decide the single best control for THIS sub-task and say why in one short sentence. Decide from the QUESTION ITSELF, not from factors it merely mentions. Is it an EXTERNAL action — make a call, send an email, book, arrange, research/compare options online? -> yesNo. A 'where'/which-place/venue/location question? -> singleSelect of the likely places (or text); NEVER a slider. A date or a 'when' question? -> date. A question that ITSELF asks for a budget/price/amount (NOT one that merely lists cost as a factor)? -> rangeSlider. A small whole-number count (passengers, nights)? -> countSelector. Can you list the choices (even numeric, like '1 day / 2 days')? -> singleSelect for one, multiSelect for several. A rating on a scale? -> slider. Arrange/sort? -> orderedList. Group/nest? -> hierarchicalList. A shopping/expense list? -> itemTable. An OPEN-ENDED question that asks the user to generate or list several ideas of their own (brainstorm topics/themes, 'list a few...', what could/should you...)? -> brainstorm. Otherwise short text, or textarea for a single longer written answer.")
     var typeReasoning: String
     @Guide(description: "The control you chose in your reasoning; its data must match.")
     var field: GenField
@@ -227,6 +231,7 @@ extension GenField {
         case .date(let label): return make(.date, label)
         case .countSelector(let label): return make(.countSelector, label)
         case .drawing(let label): return make(.drawing, label)
+        case .brainstorm(let label): return make(.brainstorm, label)
         case .slider(let label, let mn, let mx): return make(.slider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
         case .rangeSlider(let label, let mn, let mx): return make(.rangeSlider, label, validation: FieldValidation(minValue: mn, maxValue: mx))
         case .yesNo(let label, let options): return make(.yesNo, label, options: options)
