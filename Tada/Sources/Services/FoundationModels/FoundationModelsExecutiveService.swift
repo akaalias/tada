@@ -105,9 +105,9 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
 
     Reason about the best control first, then produce it (see the field guidance). Then fill
     its data:
-    - text / textarea / number: add a short placeholder showing an example answer. For text
-      and textarea, set defaultValue to the user's own exact prior words when one applies
-      (prefill); otherwise leave it empty.
+    - text / textarea / number: add a short placeholder — a gray HINT shown in the empty
+      field that tells the user what to type (e.g. "Start by listing a few attractions"). It
+      is a hint shown in the background, NOT pre-filled text the user has to delete.
     - yesNo: provide two options — "Yes, I've done it" and "No, not yet".
     - singleSelect / multiSelect / orderedList: provide 3-6 thoughtful options.
     - itemTable: define 2-3 columns via options; a column's description is "currency" for

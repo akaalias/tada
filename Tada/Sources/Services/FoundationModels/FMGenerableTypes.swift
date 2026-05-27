@@ -74,11 +74,11 @@ struct GenTreeItem {
 /// instead of dumping options into a text field.
 @Generable
 enum GenField {
-    /// Short free-form text: names, phone numbers, brief answers. placeholder = an
-    /// example answer; defaultValue = pre-filled from the user's prior exact words.
-    case text(label: String, placeholder: String, defaultValue: String)
-    /// Longer free-form text: explanations, details, availability.
-    case textarea(label: String, placeholder: String, defaultValue: String)
+    /// Short free-form text: names, phone numbers, brief answers. placeholder = a short
+    /// gray HINT shown in the empty field (what to type), NOT pre-filled content.
+    case text(label: String, placeholder: String)
+    /// Longer free-form text: explanations, details, availability. placeholder = a gray hint.
+    case textarea(label: String, placeholder: String)
     /// A single numeric value with units. placeholder = an example value.
     case number(label: String, placeholder: String)
     /// A single calendar date. Use for any date / "when" / travel-dates question.
@@ -171,7 +171,6 @@ extension GenField {
             _ type: ActionField.FieldType,
             _ label: String,
             placeholder: String = "",
-            defaultValue: String = "",
             options: [GenFieldOption] = [],
             validation: FieldValidation? = nil,
             prefillRows: [[String: String]]? = nil
@@ -185,13 +184,12 @@ extension GenField {
                 required: true,
                 options: mapped.isEmpty ? nil : mapped,
                 validation: validation,
-                defaultValue: defaultValue.isEmpty ? nil : defaultValue,
                 prefillRows: prefillRows
             )
         }
         switch self {
-        case .text(let label, let ph, let dv): return make(.text, label, placeholder: ph, defaultValue: dv)
-        case .textarea(let label, let ph, let dv): return make(.textarea, label, placeholder: ph, defaultValue: dv)
+        case .text(let label, let ph): return make(.text, label, placeholder: ph)
+        case .textarea(let label, let ph): return make(.textarea, label, placeholder: ph)
         case .number(let label, let ph): return make(.number, label, placeholder: ph)
         case .date(let label): return make(.date, label)
         case .countSelector(let label): return make(.countSelector, label)

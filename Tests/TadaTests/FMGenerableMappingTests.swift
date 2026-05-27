@@ -70,19 +70,19 @@ import FoundationModels
     @Test func textField_hasNoOptionsAndDefaultId() {
         // A text case has no options slot at all — options-on-text is unrepresentable.
         let gen = GenActionSchema(title: "Name", typeReasoning: "short answer -> text",
-                                  field: .text(label: "Your name", placeholder: "e.g. Jane Doe", defaultValue: "Alex"),
+                                  field: .text(label: "Your name", placeholder: "e.g. Jane Doe"),
                                   requiresExternalAction: false, submitLabel: "Save", description: "")
         let domain = gen.toDomain()
         #expect(domain.fields[0].type == .text)
         #expect(domain.fields[0].options == nil)
         #expect(domain.fields[0].id == "answer")
-        #expect(domain.fields[0].placeholder == "e.g. Jane Doe")   // placeholder restored
-        #expect(domain.fields[0].defaultValue == "Alex")           // prefill restored
+        #expect(domain.fields[0].placeholder == "e.g. Jane Doe")   // placeholder (gray hint) restored
+        #expect(domain.fields[0].defaultValue == nil)              // never pre-filled by the model
     }
 
-    @Test func textField_emptyPlaceholderAndDefault_mapToNil() {
+    @Test func textField_emptyPlaceholder_mapsToNil() {
         let gen = GenActionSchema(title: "Notes", typeReasoning: "open text -> textarea",
-                                  field: .textarea(label: "Notes", placeholder: "", defaultValue: ""),
+                                  field: .textarea(label: "Notes", placeholder: ""),
                                   requiresExternalAction: false, submitLabel: "Save", description: "")
         let domain = gen.toDomain()
         #expect(domain.fields[0].placeholder == nil)

@@ -18,8 +18,8 @@ each part is delivered on the local model, so we stop losing features one at a t
 
 | Field type | Required payload | Notes |
 |---|---|---|
-| `text` | label, **placeholder**, **defaultValue** | placeholder = example; defaultValue = prefill from prior answers |
-| `textarea` | label, **placeholder**, **defaultValue** | same |
+| `text` | label, **placeholder** | placeholder = a gray HINT in the empty field (what to type), never pre-filled content |
+| `textarea` | label, **placeholder** | same |
 | `number` | label, **placeholder** | example value |
 | `date` | label | single calendar date |
 | `countSelector` | label | small whole-number count |
@@ -52,7 +52,10 @@ ONLY its valid payload, so the model literally cannot produce a contradictory fi
 on a text box, a slider with choices). This makes every "wrong shape" bug unrepresentable and
 restores every per-type payload:
 
-- `text`/`textarea(label, placeholder, defaultValue)`, `number(label, placeholder)`
+- `text`/`textarea(label, placeholder)`, `number(label, placeholder)` — placeholder is a
+  gray hint only; the weak model can't reliably tell prefill from hint, so model-generated
+  `defaultValue` is intentionally NOT produced (it kept landing as content). Real prefill of
+  the user's prior answer is deferred to a deterministic app-side step.
 - `slider`/`rangeSlider(label, minValue, maxValue)`
 - `yesNo`/`singleSelect`/`multiSelect`/`orderedList(label, options)`
 - `hierarchicalList(label, items: [GenTreeItem{label, depth}])` → mapped to `prefillRows`
@@ -78,5 +81,8 @@ instructions. Kept small to fit the window.
 
 - `drawing` AI description (no image input) — sketch is still saved/embedded.
 - `itemTable` pre-filled rows (only columns are generated; the user fills the table).
+- `defaultValue` prefill of text/textarea from the user's prior answers — the on-device
+  model conflated it with the placeholder hint, so it's not model-generated; a future
+  deterministic app-side prefill can fill it from the actual previous response.
 - Per-call exact token counts in the Console use a ~4 chars/token approximation until the
   toolchain ships Apple's `SystemLanguageModel.tokenCount` (26.4 SDK).
