@@ -23,10 +23,9 @@ struct ExtractedEntity: Codable {
 }
 
 struct EntityExtractionResult: Codable {
-    let linkedBody: String
-    /// The verbatim user input, rewritten with first-occurrence wikilinks. Nil when the note
-    /// had no original-input block to link.
-    let linkedOriginalInput: String?
+    // The model only EXTRACTS entities; the wikilinks are inserted deterministically in code
+    // (KnowledgeBaseEntityLinker.insertEntityLinks), because the on-device model won't rewrite
+    // the body with [[...]] reliably — it returns the body verbatim.
     let newEntities: [ExtractedEntity]
 }
 
@@ -70,11 +69,7 @@ private struct GenExtractedEntity {
 
 @Generable
 private struct GenEntityExtraction {
-    @Guide(description: "The note body with first-occurrence wikilinks of the form [[<slug>.md|<Name>]] around each entity. All other text preserved verbatim.")
-    var linkedBody: String
-    @Guide(description: "The original user input rewritten with first-occurrence wikilinks the same way. Empty string if no original input was provided.")
-    var linkedOriginalInput: String
-    @Guide(description: "Entities not already in the existing list. Empty if none.")
+    @Guide(description: "The high-signal entities mentioned in the note. Empty if none.")
     var newEntities: [GenExtractedEntity]
 }
 
@@ -245,21 +240,21 @@ actor KnowledgeAIService {
         let originalSection = trimmedInput.isEmpty ? "" : "\n\nORIGINAL USER INPUT:\n\(trimmedInput)"
 
         let instructions = """
-        You analyse a wiki note and identify high-signal entities to extract into atomic sub-notes.
+        You analyse a wiki note and identify the high-signal entities it mentions. You ONLY list
+        entities — you do NOT rewrite the note (the wikilinks are inserted automatically afterwards).
 
         INPUT: the note's title and body; optionally the ORIGINAL USER INPUT (the user's verbatim words); and a list of entities that already exist: { slug, title }.
 
-        OUTPUT:
-        - linkedBody: the note body rewritten with Obsidian wikilinks around entity mentions. For every entity (existing OR new), wrap its FIRST occurrence as [[<slug>.md|<Display Name>]]; leave later occurrences plain. Preserve all other text verbatim — same line breaks, paragraphs, punctuation.
-        - linkedOriginalInput: ONLY if ORIGINAL USER INPUT was given, the same rewrite of that block (link an entity's first occurrence within this block even if already linked in the body). Empty string if no original input.
-        - newEntities: entities NOT in the existing list, each { slug, displayName, body }. body = 1-2 short sentences distilling the durable concept, first person, no emojis, no filler.
+        OUTPUT: newEntities — entities NOT already in the existing list, each { slug, displayName, body }.
+        - displayName: the entity's name EXACTLY as it appears in the text (e.g. "FELS Family Office GmbH", "Tobi"), so it can be matched and linked.
+        - body: 1-2 short sentences distilling the durable concept. First person, no emojis, no filler, no wikilinks.
 
         RULES:
-        - Prefer linking to EXISTING entities; only create a new one when the mention is high-signal AND not already covered.
+        - Only emit entities NOT already in the existing list (those are already linked).
         - High-signal = a proper noun, named concept/movement, specific company/person/place, a calendar date anchoring a deadline, or a domain-specific term. SKIP generic verbs, adjectives, common nouns.
         - The ORIGINAL USER INPUT is a prime entity source — mine the proper nouns the user typed as thoroughly as the body.
-        - Slug: lowercase ASCII, hyphenated, alphanumerics only, max 48 chars (e.g. "tada-app", "human-agency", "june-1-2026"). For an existing entity, reuse its slug verbatim.
-        - Never invent entities the input doesn't mention. Aim for 3-10 per note; quality over quantity. A new entity's body contains NO wikilinks.
+        - Slug: lowercase ASCII, hyphenated, alphanumerics only, max 48 chars (e.g. "tada-app", "human-agency", "june-1-2026").
+        - Never invent entities the input doesn't mention. Aim for 3-10 per note; quality over quantity.
         """
         let session = LanguageModelSession { instructions }
         let userMessage = """
@@ -271,7 +266,7 @@ actor KnowledgeAIService {
         EXISTING ENTITIES:
         \(existingList)
 
-        Rewrite with first-occurrence wikilinks and emit any new high-signal entities.
+        List the high-signal entities (new ones only).
         """
         let temperature = 0.3
 
@@ -290,11 +285,8 @@ actor KnowledgeAIService {
                 generating: GenEntityExtraction.self,
                 options: GenerationOptions(temperature: temperature)
             )
-            let content = result.content
             let extraction = EntityExtractionResult(
-                linkedBody: content.linkedBody,
-                linkedOriginalInput: content.linkedOriginalInput.isEmpty ? nil : content.linkedOriginalInput,
-                newEntities: content.newEntities.map {
+                newEntities: result.content.newEntities.map {
                     ExtractedEntity(slug: $0.slug, displayName: $0.displayName, body: $0.body)
                 }
             )

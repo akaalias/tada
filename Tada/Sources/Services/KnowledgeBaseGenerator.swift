@@ -220,14 +220,11 @@ final actor KnowledgeBaseGenerator {
                 existingEntities: refs,
                 phase: phase
             )
-            let existingSlugs = Set(existing.map { $0.slug })
+            // canonicalize dedupes the extracted entities and canonical-slugs them.
             let canonicalized = KnowledgeBaseEntityLinker.canonicalize(
-                linkedBody: result.linkedBody,
-                // Fall back to the raw input if the AI omitted the linked version, so the
-                // section is never dropped.
-                linkedOriginalInput: result.linkedOriginalInput ?? originalInput,
+                linkedBody: noteBody,
                 newEntities: result.newEntities,
-                existingSlugs: existingSlugs
+                existingSlugs: Set(existing.map { $0.slug })
             )
             for entity in canonicalized.finalNewEntities {
                 let created = await filesystem.writeEntityNote(
@@ -239,7 +236,13 @@ final actor KnowledgeBaseGenerator {
                     print("[KnowledgeBase] Wrote entity note: _entities/\(entity.slug).md")
                 }
             }
-            return (canonicalized.body, canonicalized.originalInput ?? originalInput)
+            // The model only lists entities; insert the wikilinks deterministically, for both
+            // existing entities and the newly extracted ones, into the raw body + original input.
+            let targets = refs.map { (slug: $0.slug, name: $0.title) }
+                + canonicalized.finalNewEntities.map { (slug: $0.slug, name: $0.displayName) }
+            let linkedBody = KnowledgeBaseEntityLinker.insertEntityLinks(into: noteBody, entities: targets)
+            let linkedOriginal = originalInput.map { KnowledgeBaseEntityLinker.insertEntityLinks(into: $0, entities: targets) }
+            return (linkedBody, linkedOriginal ?? originalInput)
         } catch {
             print("[KnowledgeBase] Entity extraction failed; keeping unlinked body: \(AppError.userMessage(from: error))")
             return (noteBody, originalInput)
@@ -276,7 +279,7 @@ final actor KnowledgeBaseGenerator {
                 existingEntities: refs
             )
             let canonicalized = KnowledgeBaseEntityLinker.canonicalize(
-                linkedBody: result.linkedBody,
+                linkedBody: region.body,
                 newEntities: result.newEntities,
                 existingSlugs: Set(existing.map { $0.slug })
             )
@@ -290,9 +293,13 @@ final actor KnowledgeBaseGenerator {
                     print("[KnowledgeBase] Backfill wrote entity: _entities/\(entity.slug).md")
                 }
             }
+            // Insert wikilinks deterministically (the model only lists entities).
+            let targets = refs.map { (slug: $0.slug, name: $0.title) }
+                + canonicalized.finalNewEntities.map { (slug: $0.slug, name: $0.displayName) }
+            let linkedBody = KnowledgeBaseEntityLinker.insertEntityLinks(into: region.body, entities: targets)
             // Splice the linked body back in, preserving surrounding whitespace.
             var updated = raw
-            updated.replaceSubrange(region.range, with: "\n" + canonicalized.body + "\n")
+            updated.replaceSubrange(region.range, with: "\n" + linkedBody + "\n")
             try? updated.write(to: url, atomically: true, encoding: .utf8)
             print("[KnowledgeBase] Backfill linked: \(url.lastPathComponent)")
             return true

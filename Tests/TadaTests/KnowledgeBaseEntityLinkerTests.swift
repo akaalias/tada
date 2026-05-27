@@ -326,3 +326,46 @@ import Testing
     #expect(folders.count == 1)
     #expect(!folders.contains { $0.lastPathComponent == "_entities" })
 }
+
+// MARK: - insertEntityLinks (deterministic linking)
+
+@Test func insertEntityLinks_wraps_first_occurrence() {
+    let body = "I work at FELS Family Office GmbH and Tobi helps me. FELS Family Office GmbH is fine."
+    let out = KnowledgeBaseEntityLinker.insertEntityLinks(into: body, entities: [
+        ("fels-family-office-gmbh", "FELS Family Office GmbH"),
+        ("tobi", "Tobi"),
+    ])
+    #expect(out.contains("[[../_entities/fels-family-office-gmbh.md|FELS Family Office GmbH]]"))
+    #expect(out.contains("[[../_entities/tobi.md|Tobi]]"))
+    // Only the FIRST occurrence is linked.
+    #expect(out.components(separatedBy: "fels-family-office-gmbh.md").count == 2)
+}
+
+@Test func insertEntityLinks_longest_name_wins_over_substring() {
+    let body = "FELS Family Office GmbH is the company."
+    let out = KnowledgeBaseEntityLinker.insertEntityLinks(into: body, entities: [
+        ("fels", "FELS"),
+        ("fels-family-office-gmbh", "FELS Family Office GmbH"),
+    ])
+    #expect(out.contains("[[../_entities/fels-family-office-gmbh.md|FELS Family Office GmbH]]"))
+    #expect(!out.contains("|FELS]]"))  // the short "FELS" did not grab the prefix
+}
+
+@Test func insertEntityLinks_skips_already_linked_slug() {
+    let body = "See [[../_entities/tobi.md|Tobi]] and Tobi again."
+    let out = KnowledgeBaseEntityLinker.insertEntityLinks(into: body, entities: [("tobi", "Tobi")])
+    #expect(out == body)  // already linked -> unchanged
+}
+
+@Test func insertEntityLinks_word_boundary_no_partial_match() {
+    let body = "Tobias is not Tobi."
+    let out = KnowledgeBaseEntityLinker.insertEntityLinks(into: body, entities: [("tobi", "Tobi")])
+    #expect(out.contains("Tobias is not [[../_entities/tobi.md|Tobi]]."))
+    #expect(out.hasPrefix("Tobias is not"))  // "Tobias" untouched
+}
+
+@Test func insertEntityLinks_no_match_leaves_text_unchanged() {
+    let body = "Nothing relevant here."
+    let out = KnowledgeBaseEntityLinker.insertEntityLinks(into: body, entities: [("openai", "OpenAI")])
+    #expect(out == body)
+}

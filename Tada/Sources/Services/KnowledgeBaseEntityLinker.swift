@@ -46,6 +46,46 @@ enum KnowledgeBaseEntityLinker {
         return (body, originalInput, finalNew)
     }
 
+    /// Deterministically wraps the FIRST unlinked occurrence of each entity's name in a canonical
+    /// `[[../_entities/<slug>.md|<surface text>]]` wikilink. The on-device model reliably EXTRACTS
+    /// entities but won't rewrite the body with wikilinks itself, so we insert them in code.
+    /// Longer names are linked first (so "FELS Family Office GmbH" wins over "FELS"); a name already
+    /// linked, or matched inside an existing `[[...]]`, is skipped.
+    static func insertEntityLinks(into text: String, entities: [(slug: String, name: String)]) -> String {
+        var result = text
+        let sorted = entities
+            .filter { !$0.slug.isEmpty && $0.name.trimmingCharacters(in: .whitespaces).count >= 2 }
+            .sorted { $0.name.count > $1.name.count }
+        for entity in sorted {
+            if bodyContainsEntityLink(result, entitySlug: entity.slug) { continue }
+            guard let range = firstUnlinkedOccurrence(of: entity.name, in: result) else { continue }
+            let surface = String(result[range])
+            result.replaceSubrange(range, with: "[[\(KnowledgeBaseFilesystem.entityLinkPrefix)\(entity.slug).md|\(surface)]]")
+        }
+        return result
+    }
+
+    /// First case-insensitive, word-bounded occurrence of `name` that isn't inside an existing
+    /// `[[...]]` wikilink.
+    private static func firstUnlinkedOccurrence(of name: String, in text: String) -> Range<String.Index>? {
+        let linkRanges = wikilinkRanges(in: text)
+        let escaped = NSRegularExpression.escapedPattern(for: name)
+        guard let regex = try? NSRegularExpression(pattern: "\\b\(escaped)\\b", options: [.caseInsensitive]) else { return nil }
+        let ns = text as NSString
+        for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            guard let r = Range(m.range, in: text) else { continue }
+            if linkRanges.contains(where: { $0.overlaps(r) }) { continue }
+            return r
+        }
+        return nil
+    }
+
+    private static func wikilinkRanges(in text: String) -> [Range<String.Index>] {
+        guard let regex = try? NSRegularExpression(pattern: #"\[\[[^\]]*\]\]"#) else { return [] }
+        let ns = text as NSString
+        return regex.matches(in: text, range: NSRange(location: 0, length: ns.length)).compactMap { Range($0.range, in: text) }
+    }
+
     /// Rewrites every `[[X.md|Y]]` wikilink in `text` to its canonical `../_entities/<slug>.md`
     /// form. Sub-task (`^\d{2}-`) and `_overview` links are left untouched.
     private static func rewriteEntityLinks(
