@@ -113,7 +113,10 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
     - itemTable: define 2-3 columns via options; a column's description is "currency" for
       money, "select:A,B,C" for a dropdown, or empty for text.
     - hierarchicalList: seed items with their nesting depth (0 top-level, 1 child).
-    - slider / rangeSlider: set a sensible min and max.
+    - slider / rangeSlider: set a min and max that match REAL amounts for this question, not
+      a huge round number. A whole trip/holiday budget: 0-10000. Flights: 100-3000. A hotel
+      per night: 50-500. Groceries: 50-500. A 1-10 rating: 1-10. Never use an absurd max like
+      100000 for a personal budget.
 
     No emojis. Never invent items the user didn't mention.
     """
