@@ -54,10 +54,10 @@ struct FoundationModelsExecutiveService: ExecutiveAIServiceProtocol {
                     generating: GenActionSchema.self,
                     options: GenerationOptions(temperature: attempt == 0 ? 0.4 : 0.2, maximumResponseTokens: 1024)
                 )
-                // TEMP: correction layer disabled to observe the LLM's raw field-type
-                // choice now that the @Guide schema guidance is in place. Re-enable with:
-                //   let schema = ExecutiveFieldHeuristics.corrected(response.content.toDomain())
-                let schema = response.content.toDomain()
+                // The @Guide on the type property improves the model's choice but doesn't
+                // make it reliable — the 3B model still stamps options-bearing fields as
+                // text/number. The correction layer is the deterministic backstop.
+                let schema = ExecutiveFieldHeuristics.corrected(response.content.toDomain())
                 await APILog.shared.complete(
                     id: callID,
                     output: APILog.describe(schema),
