@@ -141,6 +141,24 @@ import FoundationModels
         #expect(domain.fields[0].options == nil)
     }
 
+    @Test func checklist_mapsOptionsToDomain() {
+        let gen = GenActionSchema(
+            title: "Packing",
+            typeReasoning: "concrete items to tick off -> checklist",
+            field: .checklist(label: "Pack these", options: [
+                GenFieldOption(id: "passport", label: "Passport", description: ""),
+                GenFieldOption(id: "charger", label: "Charger", description: "")
+            ]),
+            requiresExternalAction: false,
+            submitLabel: "Complete",
+            description: ""
+        )
+        let domain = gen.toDomain()
+        #expect(domain.fields[0].type == .checklist)
+        #expect(domain.fields[0].options?.count == 2)
+        #expect(domain.fields[0].options?[0].label == "Passport")
+    }
+
     @Test func itemTable_mapsColumnsToOptions() {
         let gen = GenActionSchema(
             title: "Shopping list",

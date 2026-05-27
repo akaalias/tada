@@ -128,6 +128,7 @@ struct ActionUIRenderer: View {
                                 FieldTypeButton(type: .yesNo, label: "Yes/No", icon: "hand.thumbsup", onSelect: onChangeFieldType)
                                 FieldTypeButton(type: .singleSelect, label: "Single Choice", icon: "circle.inset.filled", onSelect: onChangeFieldType)
                                 FieldTypeButton(type: .multiSelect, label: "Multiple Choice", icon: "checklist", onSelect: onChangeFieldType)
+                                FieldTypeButton(type: .checklist, label: "Checklist (tick off)", icon: "checkmark.square", onSelect: onChangeFieldType)
                                 FieldTypeButton(type: .orderedList, label: "Ordered List (drag to reorder)", icon: "arrow.up.arrow.down", onSelect: onChangeFieldType)
                                 FieldTypeButton(type: .hierarchicalList, label: "Hierarchical Tree (drag + nest)", icon: "list.bullet.indent", onSelect: onChangeFieldType)
                             }

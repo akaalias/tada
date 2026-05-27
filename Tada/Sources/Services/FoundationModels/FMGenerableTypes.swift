@@ -124,6 +124,10 @@ enum GenField {
     case singleSelect(label: String, options: [GenFieldOption])
     /// Pick MULTIPLE options from a list.
     case multiSelect(label: String, options: [GenFieldOption])
+    /// A list of concrete items the user ticks off as DONE (progress tracking, with
+    /// strikethrough and an X/N counter). Use for a set of things to complete — a
+    /// packing list, prep steps — NOT for choosing which options apply (that's multiSelect).
+    case checklist(label: String, options: [GenFieldOption])
     /// Drag-and-drop to put the given items in order (arrange / sort / prioritize).
     case orderedList(label: String, options: [GenFieldOption])
     /// Drag-and-drop to group or nest items (organize / outline / mind map). Seed the
@@ -139,7 +143,7 @@ struct GenActionSchema {
     var title: String
     /// Decoded BEFORE `field` so the model commits to a reasoned type choice first
     /// (chain-of-thought), instead of picking a type as an afterthought.
-    @Guide(description: "FIRST decide the single best control for THIS sub-task and say why in one short sentence. Decide from the QUESTION ITSELF, not from factors it merely mentions. Is it an EXTERNAL action — make a call, send an email, book, arrange, research/compare options online? -> yesNo. A 'where'/which-place/venue/location question? -> singleSelect of the likely places (or text); NEVER a slider. A date or a 'when' question? -> date. A question that ITSELF asks for a budget/price/amount (NOT one that merely lists cost as a factor)? -> rangeSlider. A small whole-number count (passengers, nights)? -> countSelector. Can you list the choices (even numeric, like '1 day / 2 days')? -> singleSelect for one, multiSelect for several. A rating on a scale? -> slider. Arrange/sort? -> orderedList. Group/nest? -> hierarchicalList. A shopping/expense list? -> itemTable. An OPEN-ENDED question that asks the user to generate or list several ideas of their own (brainstorm topics/themes, 'list a few...', what could/should you...)? -> brainstorm. Otherwise short text, or textarea for a single longer written answer.")
+    @Guide(description: "FIRST decide the single best control for THIS sub-task and say why in one short sentence. Decide from the QUESTION ITSELF, not from factors it merely mentions. If the PREVIOUS RESPONSES already name the people or items this question is about (e.g. they said who is involved and the question asks who attends), present THOSE as ready-made options — multiSelect when several can apply, singleSelect for one — instead of a blank text box OR a yes/no confirmation. (yesNo is only for confirming a real-world action the user performed.) Is it an EXTERNAL action — make a call, send an email, book, arrange, research/compare options online? -> yesNo. A 'where'/which-place/venue/location question? -> singleSelect of the likely places (or text); NEVER a slider. A date or a 'when' question? -> date. A question that ITSELF asks for a budget/price/amount (NOT one that merely lists cost as a factor)? -> rangeSlider. A small whole-number count (passengers, nights)? -> countSelector. Can you list the choices (even numeric, like '1 day / 2 days')? -> singleSelect for one, multiSelect for several. A set of concrete items the user works through and ticks off as done (packing list, prep steps to complete)? -> checklist. A rating on a scale? -> slider. Arrange/sort? -> orderedList. Group/nest? -> hierarchicalList. A shopping/expense list? -> itemTable. An OPEN-ENDED question that asks the user to generate or list several ideas of their own (brainstorm topics/themes, 'list a few...', what could/should you...)? -> brainstorm. Otherwise short text, or textarea for a single longer written answer.")
     var typeReasoning: String
     @Guide(description: "The control you chose in your reasoning; its data must match.")
     var field: GenField
@@ -147,7 +151,7 @@ struct GenActionSchema {
     var requiresExternalAction: Bool
     @Guide(description: "Button label: Confirm (yesNo), Save (entering info), Continue (selection), Complete (final). Never 'Done'.")
     var submitLabel: String
-    @Guide(description: "Optional helpful context. Empty string if none.")
+    @Guide(description: "A short helper sentence addressed to the user about THIS specific question, or an empty string. Do not repeat this instruction.")
     var description: String
 }
 
@@ -237,6 +241,7 @@ extension GenField {
         case .yesNo(let label, let options): return make(.yesNo, label, options: options)
         case .singleSelect(let label, let options): return make(.singleSelect, label, options: options)
         case .multiSelect(let label, let options): return make(.multiSelect, label, options: options)
+        case .checklist(let label, let options): return make(.checklist, label, options: options)
         case .orderedList(let label, let options): return make(.orderedList, label, options: options)
         case .hierarchicalList(let label, let items):
             let rows = items.map { ["item": $0.label, "depth": String($0.depth)] }
@@ -251,10 +256,21 @@ extension GenActionSchema {
         ActionSchema(
             type: .form,
             title: title,
-            description: description.isEmpty ? nil : description,
+            description: Self.sanitizedDescription(description),
             fields: [field.toDomain()],
             submitLabel: submitLabel.isEmpty ? "Continue" : submitLabel,
             requiresExternalAction: requiresExternalAction
         )
+    }
+
+    /// Drops a description that's empty or that echoes the schema's own @Guide text
+    /// (the on-device model sometimes returns the field instruction verbatim).
+    private static func sanitizedDescription(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let lower = trimmed.lowercased()
+        let echoes = ["empty string if none", "do not repeat this instruction",
+                      "optional helpful context", "helper sentence addressed to the user"]
+        return echoes.contains(where: { lower.contains($0) }) ? nil : trimmed
     }
 }

@@ -119,7 +119,7 @@ final class ActionCardViewModel {
         }
 
         var seededOptions = options
-        if newType == .orderedList, seededOptions == nil {
+        if newType == .orderedList || newType == .checklist, seededOptions == nil {
             let lines = currentText
                 .components(separatedBy: "\n")
                 .map { $0.trimmingCharacters(in: .whitespaces) }
