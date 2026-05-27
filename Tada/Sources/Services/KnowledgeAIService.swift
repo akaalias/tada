@@ -86,6 +86,35 @@ private struct GenEntityExtraction {
 actor KnowledgeAIService {
     init() {}
 
+    /// Max candidate notes fed to link discovery, to stay within the 4,096-token window.
+    private static let maxLinkCandidates = 16
+
+    /// Link-discovery prompt when the new note is an ENTITY — generous thematic clustering.
+    private static let entityLinkPrompt = """
+    You maintain the entity graph of a personal knowledge wiki. The new note is an ENTITY (a person, company, lab, product, place, role, idea, movement, or deadline); the candidates are other entities.
+
+    GOAL: connect this entity to other entities in the SAME DOMAIN OR THEME so each topic forms a richly interlinked cluster. Link generously WITHIN a theme — a person and the organisations/fields/roles they belong to; companies, labs, or products in the same industry; concepts, methods, or movements within the same discipline.
+
+    DO NOT link across unrelated domains. The wiki spans several worlds (e.g. AI industry, a balcony renovation, tax filing, a cycling trip). An entity from one world has nothing to do with another. Stay strictly within the new entity's theme.
+
+    A `mentioned in:` line lists notes that reference an entity — shared mentions are a strong signal, but a shared theme alone is enough.
+
+    OUTPUT: `links` — the candidate entities that belong in the new entity's "Related" section, each { targetPath, targetTitle, reason }.
+    RULES: targetPath MUST be the EXACT verbatim `path` of a candidate from the list. Only suggest candidates from the list; never the new note itself. Aim for 3-8 links in a populated theme; fewer (or none) when the theme genuinely has few entities. `reason` names the shared theme in one sentence (internal hint, not shown to the user).
+    """
+
+    /// Link-discovery prompt when the new note is a TASK note — precise, non-obvious links.
+    private static let taskNoteLinkPrompt = """
+    You maintain the cross-links of a personal knowledge wiki.
+
+    INPUT: ONE new note (path, title, body) and a list of CANDIDATE notes (path, title, body). Some carry a `mentioned in:` line; when the new note and a candidate are mentioned by the same notes, that is a STRONG signal. The candidate list is already pruned of notes the new note is ALREADY connected to.
+
+    GOAL: surface NON-OBVIOUS connections — candidates sharing a genuine conceptual thread: the same theme or argument, a decision in one project that informs another, the same person/product/place/idea resurfacing across the user's work.
+
+    OUTPUT: `links` — the candidates that belong in the new note's "Related" section, each { targetPath, targetTitle, reason }.
+    RULES: targetPath MUST be the EXACT verbatim `path` of a candidate (including the "notes/<folder>/" prefix). Only suggest candidates from the list; never the new note itself. Quality over quantity — return 0-5 links; an empty list is fine, do NOT pad. Don't link on weak/generic overlap (both mention "decisions"); require a concrete shared entity, a specific shared idea, or genuine co-occurrence. `reason` names the specific shared thread in one sentence (internal hint).
+    """
+
     func generateSubtaskNote(
         taskTitle: String,
         subtaskTitle: String,
@@ -97,11 +126,19 @@ actor KnowledgeAIService {
     ) async throws -> GeneratedKnowledgeNote {
         let tableSection = tableMarkdown.map { "\n\nSTRUCTURED TABLE DATA:\n\($0)" } ?? ""
         let instructions = """
-            You distil a single completed sub-task into ONE atomic markdown note for a personal \
-            wiki. Capture concrete details from the user's answer (names, numbers, dates, places, \
-            preferences); don't restate the question. The title reflects the durable insight, not \
-            the question. First person, no emojis.
-            """
+        You distill a SINGLE completed sub-task into ONE atomic markdown note for a personal wiki.
+
+        INPUT: the parent task's title, the sub-task that was completed (its title is usually a question or a step), and the user's response.
+
+        OUTPUT: exactly one note with:
+        - title: short noun phrase (3-8 words), match-on-search friendly. Reflects the durable insight, NOT the question.
+        - body: 1-3 short paragraphs of concise markdown. First person.
+
+        RULES:
+        - Capture concrete details from the user's answer (names, numbers, dates, places, preferences). Don't restate the question.
+        - If the response is trivially "Yes/No" or empty, still produce a useful note about what was confirmed/denied and why it matters in context.
+        - No emojis. No filler. Tight.
+        """
         let session = LanguageModelSession { instructions }
         let userMessage = """
         PARENT TASK: \(taskTitle)
@@ -144,17 +181,18 @@ actor KnowledgeAIService {
             path: \(path)
             title: \(title)\(contextLine)
             ---
-            \(body.prefix(800))
+            \(body.prefix(350))
             """
         }
 
-        let candidateList = candidates
+        // The 4,096-token window can't hold the full prompt plus many full candidate bodies,
+        // so cap the candidate count and shorten each body. (A future embedding-based top-k
+        // would pick the MOST relevant candidates rather than the first N.)
+        let candidateList = candidates.prefix(Self.maxLinkCandidates)
             .map { block(path: $0.path, title: $0.title, body: $0.body, context: $0.context) }
             .joined(separator: "\n\n")
 
-        let instructions = newNoteIsEntity
-            ? "You maintain the entity graph of a personal wiki. Link the new entity to candidate entities in the SAME domain or theme. Never link across unrelated domains. Each link's targetPath MUST be the exact verbatim path of a candidate."
-            : "You maintain the cross-links of a personal wiki. Surface NON-OBVIOUS connections: candidates sharing a genuine conceptual thread with the new note. Quality over quantity; an empty list is fine. Each link's targetPath MUST be the exact verbatim path of a candidate."
+        let instructions = newNoteIsEntity ? Self.entityLinkPrompt : Self.taskNoteLinkPrompt
 
         let session = LanguageModelSession { instructions }
         let userMessage = """
@@ -206,12 +244,22 @@ actor KnowledgeAIService {
         let originalSection = trimmedInput.isEmpty ? "" : "\n\nORIGINAL USER INPUT:\n\(trimmedInput)"
 
         let instructions = """
-            You identify high-signal entities (proper nouns, named concepts, companies, people, \
-            places, dates anchoring deadlines, domain terms) in a wiki note and rewrite the body \
-            with first-occurrence Obsidian wikilinks [[<slug>.md|<Name>]]. Prefer existing \
-            entities; only create a new entity when the mention is high-signal and not already \
-            covered. Preserve all other text verbatim. Entity bodies contain no wikilinks. No emojis.
-            """
+        You analyse a wiki note and identify high-signal entities to extract into atomic sub-notes.
+
+        INPUT: the note's title and body; optionally the ORIGINAL USER INPUT (the user's verbatim words); and a list of entities that already exist: { slug, title }.
+
+        OUTPUT:
+        - linkedBody: the note body rewritten with Obsidian wikilinks around entity mentions. For every entity (existing OR new), wrap its FIRST occurrence as [[<slug>.md|<Display Name>]]; leave later occurrences plain. Preserve all other text verbatim — same line breaks, paragraphs, punctuation.
+        - linkedOriginalInput: ONLY if ORIGINAL USER INPUT was given, the same rewrite of that block (link an entity's first occurrence within this block even if already linked in the body). Empty string if no original input.
+        - newEntities: entities NOT in the existing list, each { slug, displayName, body }. body = 1-2 short sentences distilling the durable concept, first person, no emojis, no filler.
+
+        RULES:
+        - Prefer linking to EXISTING entities; only create a new one when the mention is high-signal AND not already covered.
+        - High-signal = a proper noun, named concept/movement, specific company/person/place, a calendar date anchoring a deadline, or a domain-specific term. SKIP generic verbs, adjectives, common nouns.
+        - The ORIGINAL USER INPUT is a prime entity source — mine the proper nouns the user typed as thoroughly as the body.
+        - Slug: lowercase ASCII, hyphenated, alphanumerics only, max 48 chars (e.g. "tada-app", "human-agency", "june-1-2026"). For an existing entity, reuse its slug verbatim.
+        - Never invent entities the input doesn't mention. Aim for 3-10 per note; quality over quantity. A new entity's body contains NO wikilinks.
+        """
         let session = LanguageModelSession { instructions }
         let userMessage = """
         NOTE TITLE: \(noteTitle)
@@ -264,11 +312,18 @@ actor KnowledgeAIService {
         }.joined(separator: "\n")
 
         let instructions = """
-            You distil a completed task into ONE atomic overview note. Synthesise the goal, the \
-            key decisions, and how it concluded — do not regurgitate every sub-task. You may \
-            reference per-sub-task notes by filename as [[02-some-slug.md|Some Title]]. First \
-            person, no emojis.
-            """
+        You distill a fully completed task into ONE atomic markdown note that serves as the entry's overview.
+
+        INPUT: the task, every sub-task that was completed, and a brief view of how each was answered.
+
+        OUTPUT: one note with:
+        - title: short noun phrase (3-8 words) summarising the task as a whole.
+        - body: 1-3 short paragraphs of concise markdown. First person. Synthesise the goal, the key decisions, and how the task concluded — do not regurgitate every sub-task; the per-sub-task notes already cover those.
+
+        CROSS-REFERENCES (optional): if natural, reference per-sub-task notes by their on-disk filename using Obsidian wikilinks, e.g. [[02-some-slug.md|Some Title]]. The filenames are provided.
+
+        No emojis.
+        """
         let session = LanguageModelSession { instructions }
         let userMessage = """
         TASK TITLE: \(taskTitle)
