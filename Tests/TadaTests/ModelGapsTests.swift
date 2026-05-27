@@ -16,11 +16,11 @@ import Testing
     let task = TodoTask(title: "Plan trip")
     context.insert(task)
 
-    // 7 questions, but cap is AppConstants.maxDiscoveryQuestions (5).
+    // 12 questions, but cap is AppConstants.maxDiscoveryQuestions (10).
     let plan = TaskPlan(
         title: "Plan trip",
         description: "",
-        subTasks: (1...7).map { SubTaskPlan(title: "Q\($0)", description: "d\($0)", requiresExternalAction: false) }
+        subTasks: (1...12).map { SubTaskPlan(title: "Q\($0)", description: "d\($0)", requiresExternalAction: false) }
     )
 
     task.addDiscoverySubTasks(from: plan, into: context)

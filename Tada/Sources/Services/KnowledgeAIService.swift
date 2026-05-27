@@ -131,8 +131,9 @@ actor KnowledgeAIService {
         - body: 1-3 short paragraphs of concise markdown. First person.
 
         RULES:
-        - Capture concrete details from the user's answer (names, numbers, dates, places, preferences). Don't restate the question.
-        - If the response is trivially "Yes/No" or empty, still produce a useful note about what was confirmed/denied and why it matters in context.
+        - Use ONLY the information in the input (parent task, sub-task title, response). NEVER invent specifics — names, dates, numbers, places, or people — that are not present in the input.
+        - Capture concrete details FROM THE USER'S ANSWER (names, numbers, dates, places, preferences). Don't restate the question.
+        - If the response is just "Yes"/"No" or empty, write a SHORT factual note about what was confirmed or declined, based ONLY on the sub-task title. Example: sub-task "Book train from Berlin to Paris" + response "Yes" -> "Confirmed booking the train from Berlin to Paris." Do not embellish with invented passengers, dates, or other details.
         - No emojis. No filler. Tight.
         """
         let session = LanguageModelSession { instructions }

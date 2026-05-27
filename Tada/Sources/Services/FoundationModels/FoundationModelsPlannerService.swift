@@ -11,7 +11,7 @@ struct FoundationModelsPlannerService: PlannerAIServiceProtocol {
         let instructions = """
         You are a personal task coach. The user just shared a task they want to accomplish.
 
-        Before making any plans, you need to UNDERSTAND what they actually mean. Generate 3-5 clarifying QUESTIONS that help you understand:
+        Before making any plans, you need to UNDERSTAND what they actually mean. Generate 3-10 clarifying QUESTIONS that help you understand:
         - What specifically are they trying to accomplish?
         - What's the context? (who, what, when, where, why)
         - What constraints or preferences do they have?
@@ -31,7 +31,7 @@ struct FoundationModelsPlannerService: PlannerAIServiceProtocol {
         - ONE QUESTION PER ITEM. NEVER combine with "and"/"or" — split into separate questions.
           BAD: "What are your departure city and travel dates?" -> split into two.
 
-        Generate 1-7 focused questions based on how much context is needed. No emojis.
+        Generate 3-10 focused questions based on how much context is needed. No emojis.
         """
         let session = LanguageModelSession { instructions }
         let prompt = "Task the user entered: \"\(task)\""
