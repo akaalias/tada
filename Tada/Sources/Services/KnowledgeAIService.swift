@@ -86,12 +86,13 @@ private struct GenEntityExtraction {
 actor KnowledgeAIService {
     init() {}
 
-    /// Max candidate notes fed to link discovery, to stay within the 4,096-token window.
-    private static let maxLinkCandidates = 16
+    /// Safety cap on candidate notes fed to link discovery. Candidates are title-only, so
+    /// this is rarely binding; it just bounds the 4,096-token window for very large wikis.
+    private static let maxLinkCandidates = 40
 
     /// Link-discovery prompt when the new note is an ENTITY — generous thematic clustering.
     private static let entityLinkPrompt = """
-    You maintain the entity graph of a personal knowledge wiki. The new note is an ENTITY (a person, company, lab, product, place, role, idea, movement, or deadline); the candidates are other entities.
+    You maintain the entity graph of a personal knowledge wiki. The new note is an ENTITY (a person, company, lab, product, place, role, idea, movement, or deadline) shown with its body; the candidate entities are given by title only.
 
     GOAL: connect this entity to other entities in the SAME DOMAIN OR THEME so each topic forms a richly interlinked cluster. Link generously WITHIN a theme — a person and the organisations/fields/roles they belong to; companies, labs, or products in the same industry; concepts, methods, or movements within the same discipline.
 
@@ -107,7 +108,7 @@ actor KnowledgeAIService {
     private static let taskNoteLinkPrompt = """
     You maintain the cross-links of a personal knowledge wiki.
 
-    INPUT: ONE new note (path, title, body) and a list of CANDIDATE notes (path, title, body). Some carry a `mentioned in:` line; when the new note and a candidate are mentioned by the same notes, that is a STRONG signal. The candidate list is already pruned of notes the new note is ALREADY connected to.
+    INPUT: ONE new note with its full body, and a list of CANDIDATE notes given by `path` and `title` only (judge relevance from the title against the new note's content). Some carry a `mentioned in:` line; when the new note and a candidate are mentioned by the same notes, that is a STRONG signal. The candidate list is already pruned of notes the new note is ALREADY connected to.
 
     GOAL: surface NON-OBVIOUS connections — candidates sharing a genuine conceptual thread: the same theme or argument, a decision in one project that informs another, the same person/product/place/idea resurfacing across the user's work.
 
@@ -174,33 +175,33 @@ actor KnowledgeAIService {
         candidates: [(path: String, title: String, body: String, context: String)],
         newNoteIsEntity: Bool
     ) async throws -> NoteLinkSuggestions {
-        func block(path: String, title: String, body: String, context: String) -> String {
-            let contextLine = context.isEmpty ? "" : "\n\(context)"
-            return """
-            ---
-            path: \(path)
-            title: \(title)\(contextLine)
-            ---
-            \(body.prefix(350))
-            """
-        }
+        // The new note keeps its full body — it's the single source we're linking FROM.
+        let newContext = note.context.isEmpty ? "" : "\n\(note.context)"
+        let newNoteBlock = """
+        path: \(note.path)
+        title: \(note.title)\(newContext)
+        ---
+        \(note.body.prefix(500))
+        """
 
-        // The 4,096-token window can't hold the full prompt plus many full candidate bodies,
-        // so cap the candidate count and shorten each body. (A future embedding-based top-k
-        // would pick the MOST relevant candidates rather than the first N.)
-        let candidateList = candidates.prefix(Self.maxLinkCandidates)
-            .map { block(path: $0.path, title: $0.title, body: $0.body, context: $0.context) }
-            .joined(separator: "\n\n")
+        // Candidates are given by TITLE only (plus path and any "mentioned in" line). Feeding
+        // full candidate bodies made the weak model link unrelated notes; titles give a clean
+        // topical signal, and being tiny they all fit the 4,096-token window. (On-device
+        // embedding similarity was evaluated and ranked unrelated notes as high as related
+        // ones, so titles + the model's judgment is the more accurate path here.)
+        let candidateList = candidates.prefix(Self.maxLinkCandidates).map { c -> String in
+            let ctx = c.context.isEmpty ? "" : "  (\(c.context))"
+            return "- path: \(c.path) | title: \(c.title)\(ctx)"
+        }.joined(separator: "\n")
 
         let instructions = newNoteIsEntity ? Self.entityLinkPrompt : Self.taskNoteLinkPrompt
 
         let session = LanguageModelSession { instructions }
         let userMessage = """
         NEW NOTE:
-        \(block(path: note.path, title: note.title, body: note.body, context: note.context))
+        \(newNoteBlock)
 
-        CANDIDATE NOTES:
-
+        CANDIDATE NOTES (path | title):
         \(candidateList)
 
         Which candidates belong in the new note's Related section?
