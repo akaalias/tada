@@ -40,6 +40,13 @@ actor ExecutiveAIService {
     - drawing: ONLY for room layouts, floor plans, physical dimensions, diagrams
       DO NOT use for: schedules, availability, lists, preferences, or anything non-physical
 
+    IDEATION (for open-ended creative exploration, especially in the discovery phase):
+    - brainstorm: A sticky-note canvas where the user drops colored labels, one per distinct idea.
+      PREFER this over textarea whenever the question is open-ended, explorative, and could yield several distinct ideas the user hasn't yet enumerated.
+      Strong cues: "main theses", "core principles", "key themes", "what defines X", "what to highlight", "possible angles", "what ideas come to mind", "what stands out", "brainstorm", any "What are your…?" / "What could…?" framing seeking multiple items.
+      Especially favor brainstorm when phase = discovery and the question invites generative thinking rather than recall.
+      DO NOT use brainstorm for: recalling a specific known answer (a name, date, number, address), a yes/no confirmation, or a single piece of prose (use textarea for that).
+
     MATCH THE UI TO THE TASK:
     - "When do you need to...?" → date (this is asking for a DATE, use calendar!)
     - "When is the trip?" → date
@@ -77,6 +84,12 @@ actor ExecutiveAIService {
     - "Add to calendar" / "Make the call" → yesNo confirmation
     - "Research X" / "Look up X" / "Compare X" → yesNo confirmation (it's external work!)
     - "Record the appointment date" → date
+    - "What are your main design theses?" → brainstorm (open-ended ideation, multiple ideas)
+    - "What core principles define X?" → brainstorm
+    - "What themes do you want to highlight?" → brainstorm
+    - "What ideas come to mind for X?" → brainstorm
+    - "What angles could we take on X?" → brainstorm
+    - "Brainstorm the key points" → brainstorm
 
     BUDGET QUESTIONS ALWAYS USE RANGE SLIDER (rangeSlider, NOT slider):
     Any question mentioning "budget", "how much", "max price", "spending limit", "price range" → rangeSlider
@@ -242,6 +255,7 @@ actor ExecutiveAIService {
 
         let contextMessage = """
         Task: \(taskContext)
+        Phase: \(phase.rawValue)
 
         Current sub-task to complete: \(subTask)
         \(subTaskDescription.isEmpty ? "" : "Details: \(subTaskDescription)")

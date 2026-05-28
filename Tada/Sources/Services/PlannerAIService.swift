@@ -64,7 +64,7 @@ actor PlannerAIService {
 
     IMPORTANT: Do NOT use emojis. Keep text clean and professional.
 
-    Generate 1-7 focused questions based on how much context is needed. If the task is clear, ask fewer questions. More atomic questions are better than fewer combined ones.
+    Generate EXACTLY 6 focused questions. Always 6 — no more, no fewer. Keep each question atomic (one thing only).
 
     The subTask "title" must BE the complete question.
     The "description" can provide additional context if needed.
@@ -76,9 +76,11 @@ actor PlannerAIService {
 
     IMPORTANT RULES:
 
-    1. AIM FOR 3-7 STEPS. Most tasks need 3-5. Be thoughtful, not exhaustive.
+    1. GENERATE EXACTLY 6 STEPS. Always 6 — no more, no fewer.
        - Prefer more atomic steps over fewer compound steps
        - "Purchase A" + "Purchase B" is BETTER than "Purchase A and B"
+       - If the task feels like it needs fewer, split compound steps into atomic ones to reach 6
+       - If it feels like it needs more, merge only when the result is still ONE atomic action
 
     2. NEVER INVENT ITEMS. Only use items the user explicitly mentioned.
        - If user said "bamboo and daybed", do NOT add "roses" or anything else
@@ -141,7 +143,7 @@ actor PlannerAIService {
         let prompt = """
         Task the user entered: "\(task)"
 
-        Generate 1-7 clarifying questions based on how much context is needed. If the task is already clear, ask fewer questions. Each question must ask about ONE thing only - never combine with "and" or "or".
+        Generate EXACTLY 6 clarifying questions. Always 6 — no more, no fewer. Each question must ask about ONE thing only - never combine with "and" or "or".
         """
 
         return try await client.sendStructuredMessage(
