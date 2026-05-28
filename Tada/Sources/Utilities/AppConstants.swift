@@ -6,7 +6,7 @@ enum AppConstants {
     static let autoAdvanceDelay: TimeInterval = 0.8
 
     /// Maximum number of discovery questions to show at once.
-    static let maxDiscoveryQuestions = 5
+    static let maxDiscoveryQuestions = 7
 
     /// Timeout for a single Claude API request (seconds). Large structured
     /// requests can take minutes, so this is generous.

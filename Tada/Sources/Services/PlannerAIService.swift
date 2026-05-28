@@ -64,7 +64,7 @@ actor PlannerAIService {
 
     IMPORTANT: Do NOT use emojis. Keep text clean and professional.
 
-    Generate EXACTLY 6 focused questions. Always 6 — no more, no fewer. Keep each question atomic (one thing only).
+    Generate EXACTLY 7 focused questions. Always 7 — no more, no fewer. Keep each question atomic (one thing only).
 
     The subTask "title" must BE the complete question.
     The "description" can provide additional context if needed.
@@ -143,7 +143,7 @@ actor PlannerAIService {
         let prompt = """
         Task the user entered: "\(task)"
 
-        Generate EXACTLY 6 clarifying questions. Always 6 — no more, no fewer. Each question must ask about ONE thing only - never combine with "and" or "or".
+        Generate EXACTLY 7 clarifying questions. Always 7 — no more, no fewer. Each question must ask about ONE thing only - never combine with "and" or "or".
         """
 
         return try await client.sendStructuredMessage(
