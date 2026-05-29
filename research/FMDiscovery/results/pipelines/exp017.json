@@ -1,0 +1,37 @@
+{
+  "summary": "RAG draft \u2192 deterministic filler/dupe detect \u2192 scoped refill",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task description"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Contrastive-RAG exemplar fetch (exp011 base)"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 Qs via contrastive-RAG prompt"
+    },
+    {
+      "kind": "post",
+      "text": "Swift detects filler phrases + Jaccard near-dupes"
+    },
+    {
+      "kind": "critique",
+      "text": "Scoped FM call refills wasted slots only",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Defensive re-check reverts filler/dupe refills"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp017"
+}

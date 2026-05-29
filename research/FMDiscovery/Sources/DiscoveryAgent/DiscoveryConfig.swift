@@ -22,6 +22,7 @@ public struct DiscoveryConfig: Sendable {
         case ragCorpusFewShot    // RAG few-shot drawn from the 100+ corpus bank (semantic retrieval, k=3) + the exp011 contrastive lesson, 1 call
         case ragDimensionalSchema // single call, but output schema is 7 typed per-dimension slots (goal/scope/who-for/budget/timeline/current-state/constraints) so guided generation STRUCTURALLY enforces coverage breadth
         case ragSequential       // generate questions ONE AT A TIME, each conditioned on the already-asked set (forced-novelty pushes generation off the modal generic cluster into the task-specific tail)
+        case ragFillerRepair     // contrastive RAG draft → deterministically detect wasted slots (filler phrases + Jaccard near-dupes) → one scoped call refills only those with concrete task-specific questions
     }
 
     public enum Sampling: Sendable {

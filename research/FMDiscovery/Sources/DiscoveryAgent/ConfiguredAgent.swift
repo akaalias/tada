@@ -57,7 +57,82 @@ public struct ConfiguredAgent: Sendable {
         case .ragCorpusFewShot:  return try await ragCorpusFewShot(input)
         case .ragDimensionalSchema: return try await ragDimensionalSchema(input)
         case .ragSequential:     return try await ragSequential(input)
+        case .ragFillerRepair:   return try await ragFillerRepair(input)
         }
+    }
+
+    /// EXP-017: filler/redundancy detect-and-repair on the contrastive RAG draft.
+    /// The judge's recurring complaint on the best config (exp011) is that redundant
+    /// near-duplicate clusters and vague catch-all questions "crowd out more valuable
+    /// questions" — i.e. the model often KNOWS task-specific unknowns but WASTES slots
+    /// on overlap/filler, so the critical ones never make the cut. Prior repair tries
+    /// failed for opposite reasons: exp005's FM auditor injected a UNIVERSAL checklist
+    /// (budget/timeline everywhere) and exp009's embedding gap-finder picked the wrong
+    /// gold question and re-duplicated. Here detection is purely DETERMINISTIC
+    /// (filler-phrase patterns + content-word Jaccard near-dupes), so it targets
+    /// exactly the wasted slots; we then make ONE scoped call that refills ONLY those
+    /// slots with concrete, task-specific questions — shown the kept set, told to be
+    /// specific, given NO universal-dimension list. Strong slots are returned verbatim
+    /// (atomicity/naturalness preserved); a defensive re-check keeps the original draft
+    /// question for any refill that is itself filler or duplicates a kept slot.
+    private func ragFillerRepair(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: contrastive RAG draft (= exp011, the current best base).
+        let draftSession = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let plan = try await draftSession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        let titles = questions.map { $0.title }
+        let weak = FillerDetector.weakIndices(titles)
+        guard !weak.isEmpty else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+
+        // Stage 2: ONE scoped call to refill only the wasted slots.
+        let kept = titles.enumerated().filter { !weak.contains($0.offset) }.map { $0.element }
+        let keptList = kept.enumerated().map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        let n = weak.count
+        let plural = n == 1 ? "" : "s"
+        let repairSystem = """
+        You are a personal task coach refining a set of clarifying questions for the \
+        user's task. The set already has \(kept.count) strong questions (below). It is \
+        MISSING \(n) sharp, task-specific question\(plural): the slots being replaced \
+        were generic catch-alls or near-duplicates that wasted space.
+
+        ── STRONG QUESTIONS ALREADY IN THE SET (do NOT repeat or overlap with these) ──
+        \(keptList)
+
+        ── YOUR JOB ──
+        Write exactly \(n) NEW clarifying question\(plural), each probing a CONCRETE, \
+        decision-critical specific of THIS task that none of the strong questions above \
+        cover — for example a concrete quantity or scale, who it is for, where or when, \
+        budget if money matters here, or the user's current situation / starting point. \
+        Be concrete and specific to THIS task. NEVER write a generic catch-all \
+        ("any other...", "anything else?", "any specific preferences?"). Each asks exactly \
+        ONE thing, 5-12 words, addressed to the user ("you"/"your"), no emojis.
+        """
+        let repairSession = LanguageModelSession { repairSystem }
+        let refilled = try await repairSession.respond(
+            to: "Task the user entered: \"\(input)\"\n\nWrite the \(n) new clarifying question\(plural).",
+            generating: FMQuestionList.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content.questions
+
+        // Fill wasted slots in order. Defensive: skip any refill that is itself filler
+        // or duplicates a kept slot — leave the original draft question in that case.
+        for (k, idx) in weak.enumerated() where k < refilled.count {
+            let cand = refilled[k].question
+            if FillerDetector.isFiller(cand) { continue }
+            if kept.contains(where: { FillerDetector.jaccard(cand, $0) >= 0.5 }) { continue }
+            questions[idx] = DiscoveryQuestion(title: cand, description: "",
+                                               requiresExternalAction: refilled[k].requiresExternalAction)
+        }
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
     }
 
     /// EXP-016: sequential, one-question-at-a-time generation. Every prior config
@@ -766,6 +841,14 @@ struct FMDimensionalPlan {
         return DiscoveryResult(taskTitle: title, taskDescription: summary,
                                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
     }
+}
+
+/// EXP-017: a variable-length list of refill questions (the wasted-slot count is
+/// only known at runtime, so the count cannot be a static `@Guide` constraint).
+@Generable
+struct FMQuestionList {
+    @Guide(description: "The requested new clarifying questions, each asking exactly one thing, specific to the task.")
+    var questions: [FMSingleQuestion]
 }
 
 @Generable

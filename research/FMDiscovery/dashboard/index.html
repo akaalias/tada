@@ -67,6 +67,8 @@
   .col-fm .col-head { color:#2563eb; }
   @media (max-width:760px){ .cmp { grid-template-columns:1fr; } }
   .pipe-sum { font-size:13px; font-weight:600; color:#334155; margin:2px 0 8px; }
+  .pipe-d3 { overflow-x:auto; padding-bottom:6px; }
+  .pipe-d3 svg text { font-family:-apple-system,system-ui,sans-serif; }
   .pipe { display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; margin-bottom:14px; }
   .stage { position:relative; border:1px solid var(--line); border-top:3px solid var(--sc,#64748b); border-radius:8px; padding:6px 9px 7px; min-width:104px; max-width:172px; background:#fff; }
   .stage .k { font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--sc,#64748b); text-transform:uppercase; }
@@ -76,6 +78,8 @@
   .stage .fm { position:absolute; top:5px; right:6px; font-size:9px; font-weight:800; color:#fff; background:var(--sc); border-radius:3px; padding:0 3px; }
   .fanstage { min-width:160px; max-width:240px; }
   .fancol { display:flex; flex-direction:column; gap:5px; margin-top:7px; padding-left:11px; border-left:2px dashed var(--sc); }
+  .fancol.seq { border-left-style:solid; }
+  .parnote { font-size:9px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); margin-left:6px; }
   .call { font-size:11.5px; color:#334155; background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:3px 7px; display:flex; align-items:center; gap:6px; }
   .call .fm { position:static; top:auto; right:auto; font-size:9px; }
   .call span:last-child { font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#475569; }
@@ -85,6 +89,7 @@
   details.trywrap { margin:4px 0 12px; }
   details.trywrap > summary { cursor:pointer; color:var(--muted); font-weight:600; font-size:13px; }
 </style>
+<script src="d3.v7.min.js"></script>
 </head>
 <body>
 <header>
@@ -243,34 +248,77 @@ async function fetchPipe(label){
     return j;
   } catch(e){ return null; }
 }
-function renderPipe(spec){
-  if (!spec || !spec.stages) return '';
-  const isAdapter=s=>/adapter|lora|fine-?tun/i.test(JSON.stringify(s.knobs||{}));
-  // Per-call labels for a parallel stage: if a knob is a comma-list matching n
-  // (e.g. temp=0.3,0.5,0.7,0.9), label each call by it; else #1..#n.
-  const callLabels=s=>{ const n=callCount(s), k=s.knobs||{};
-    for (const [key,val] of Object.entries(k)){ const p=String(val).split(',').map(x=>x.trim());
-      if (p.length===n && n>1) return p.map(x=>`${key}=${x}`); }
-    return Array.from({length:n},(_,i)=>`#${i+1}`); };
-  const blocks = spec.stages.map(s=>{
-    const c=KINDC[s.kind]||'#64748b';
-    const adapter=isAdapter(s), base=adapter?'LoRA':'FM', n=callCount(s);
-    const bstyle=adapter?' style="background:#ca8a04"':'';
-    // Only an ensemble is genuinely PARALLEL → a column of N call-boxes off a spine.
-    if (s.kind==='ensemble' && n>1) {
-      const calls=callLabels(s).map(l=>`<div class="call"><span class="fm"${bstyle}>${base}</span><span>${esc(l)}</span></div>`).join('');
-      return `<div class="stage fanstage" style="--sc:${c}"><div class="k">${esc(s.kind)} ×${n}</div><div class="t">${esc(s.text||'')}</div><div class="fancol">${calls}</div></div>`;
-    }
-    const kn=s.knobs?Object.entries(s.knobs).map(([k,v])=>`<span>${esc(k)}=${esc(String(v))}</span>`).join(''):'';
-    // Any stage that makes model calls (incl. a model-based select/tournament) gets an FM×N badge.
-    const fm = n>0 ? `<span class="fm"${bstyle}>${n>1?`${base}×${n}`:base}</span>` : '';
-    return `<div class="stage" style="--sc:${c}">${fm}<div class="k">${esc(s.kind)}</div><div class="t">${esc(s.text||'')}</div>${kn?`<div class="kn">${kn}</div>`:''}</div>`;
-  }).join('<div class="parrow">→</div>');
+const isAdapter=s=>/adapter|lora|fine-?tun/i.test(JSON.stringify((s&&s.knobs)||{}));
+// Per-call labels for a multi-call stage: a knob that's a comma-list matching n
+// (e.g. temps=0.3,0.5,0.7,0.9) labels each call; else #1..#n.
+const callLabels=s=>{ const n=callCount(s), k=(s&&s.knobs)||{};
+  for (const [key,val] of Object.entries(k)){ const p=String(val).split(',').map(x=>x.trim());
+    if (p.length===n && n>1) return p.map(x=>`${key}=${x}`); }
+  return Array.from({length:n},(_,i)=>`#${i+1}`); };
+
+function pipeSummary(spec){
+  if(!spec||!spec.stages) return '';
   const fmCount=spec.stages.reduce((a,s)=>a+callCount(s),0);
   const adapter=spec.stages.some(isAdapter);
-  const sum = spec.summary?`<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount===1?'':'s'}${adapter?' · <b style="color:#ca8a04">LoRA adapter</b>':''}</span></div>`:'';
-  return `${sum}<div class="pipe">${blocks}</div>`
-    + `<div class="legend-kinds"><b>FM</b> = on-device model call · coloured by stage type</div>`;
+  return spec.summary?`<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount===1?'':'s'}${adapter?' · <b style="color:#ca8a04">LoRA adapter</b>':''}</span></div>`:'';
+}
+
+// Left-to-right node-link layout. Parallel stages (ensemble) fan out vertically
+// (one source → N → merge); sequential multi-call stages chain horizontally.
+function layoutPipe(spec){
+  const stages=spec.stages||[]; const nodes=[], edges=[], info=[]; let col=0;
+  stages.forEach((s,si)=>{
+    const n=callCount(s), kind=s.kind, adapter=isAdapter(s), labels=callLabels(s);
+    if (kind==='ensemble' && n>1){                 // parallel fan
+      const ids=[];
+      for(let r=0;r<n;r++){ const id=si+'_'+r; ids.push(id);
+        nodes.push({id,col,row:r,rows:n,kind,adapter,model:true,title:'generate',sub:labels[r]||('#'+(r+1)),full:kind+': '+(s.text||'')+' ('+(labels[r]||'')+')'}); }
+      info.push({entry:ids,exit:ids}); col+=1;
+    } else if (n>1){                               // sequential chain
+      const ids=[];
+      for(let k=0;k<n;k++){ const id=si+'_'+k; ids.push(id);
+        nodes.push({id,col:col+k,row:0,rows:1,kind,adapter,model:true,title:k===0?kind:'',sub:'#'+(k+1),full:kind+' call '+(k+1)+'/'+n+': '+(s.text||'')});
+        if(k>0) edges.push({from:si+'_'+(k-1),to:id}); }
+      info.push({entry:[ids[0]],exit:[ids[n-1]]}); col+=n;
+    } else {                                        // single node
+      const id=si+'_0';
+      nodes.push({id,col,row:0,rows:1,kind,adapter,model:n>0,title:kind,sub:s.text||'',full:kind+': '+(s.text||'')});
+      info.push({entry:[id],exit:[id]}); col+=1;
+    }
+  });
+  for(let i=0;i<info.length-1;i++) info[i].exit.forEach(a=>info[i+1].entry.forEach(b=>edges.push({from:a,to:b})));
+  return {nodes,edges,cols:col};
+}
+
+function truncate(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+'…' : s; }
+
+function renderPipeD3(spec, el){
+  if(!spec||!spec.stages||!el||!window.d3) return;
+  const {nodes,edges,cols}=layoutPipe(spec);
+  const COLW=172, ROWH=58, NODEW=144, NODEH=46, PADX=10, PADY=14;
+  const byId={}; nodes.forEach(n=>byId[n.id]=n);
+  const totalRows=Math.max(1,...nodes.map(n=>n.rows));
+  const W=PADX*2+cols*COLW, H=PADY*2+totalRows*ROWH;
+  const pos=id=>{ const n=byId[id]; const x=PADX+n.col*COLW; const yOff=(totalRows-n.rows)/2;
+    const y=PADY+(yOff+n.row)*ROWH; return {x,y,cx:x+NODEW,cy:y+NODEH/2}; };
+  el.innerHTML='';
+  const svg=d3.select(el).append('svg').attr('width',W).attr('height',H).attr('viewBox','0 0 '+W+' '+H);
+  svg.append('g').selectAll('path').data(edges).join('path')
+    .attr('fill','none').attr('stroke','#cbd5e1').attr('stroke-width',1.5)
+    .attr('d',d=>{const a=pos(d.from),b=pos(d.to),mx=(a.cx+b.x)/2; return 'M'+a.cx+','+a.cy+' C'+mx+','+a.cy+' '+mx+','+b.cy+' '+b.x+','+b.cy;});
+  const g=svg.append('g').selectAll('g.node').data(nodes).join('g')
+    .attr('transform',d=>{const p=pos(d.id); return 'translate('+p.x+','+p.y+')';});
+  g.append('rect').attr('width',NODEW).attr('height',NODEH).attr('rx',8).attr('fill','#fff').attr('stroke','#e2e8f0');
+  g.append('rect').attr('width',NODEW).attr('height',3).attr('fill',d=>KINDC[d.kind]||'#64748b');
+  g.append('text').attr('x',9).attr('y',18).attr('font-size',10).attr('font-weight',700)
+    .attr('fill',d=>KINDC[d.kind]||'#64748b').text(d=>(d.title||'').toUpperCase());
+  g.append('text').attr('x',9).attr('y',33).attr('font-size',11).attr('fill','#334155').text(d=>truncate(d.sub||'',20));
+  const bw=d=>d.adapter?28:18;
+  const badge=g.filter(d=>d.model).append('g').attr('transform',d=>'translate('+(NODEW-bw(d)-6)+',6)');
+  badge.append('rect').attr('width',d=>bw(d)).attr('height',12).attr('rx',3).attr('fill',d=>d.adapter?'#ca8a04':'#db2777');
+  badge.append('text').attr('x',d=>bw(d)/2).attr('y',9.5).attr('text-anchor','middle').attr('font-size',8)
+    .attr('font-weight',800).attr('fill','#fff').text(d=>d.adapter?'LoRA':'FM');
+  g.append('title').text(d=>d.full);
 }
 
 async function fetchGold(id){
@@ -317,7 +365,10 @@ async function renderDetail(label, cell) {
       </div>${note}</div>`;
   }).join('');
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
-  cell.innerHTML = `<div class="detail-inner">${renderPipe(spec)}${triedHtml}${blocks}</div>`;
+  cell.innerHTML = `<div class="detail-inner">${pipeSummary(spec)}<div class="pipe-d3"></div>`
+    + `<div class="legend-kinds"><b>FM</b>/<b style="color:#ca8a04">LoRA</b> = on-device model call · vertical fan = parallel · horizontal chain = sequential · hover a node for details</div>`
+    + `${triedHtml}${blocks}</div>`;
+  if (spec) renderPipeD3(spec, cell.querySelector('.pipe-d3'));
 }
 
 function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }

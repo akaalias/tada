@@ -136,6 +136,22 @@ public enum Configs {
         // the tail. A new generation DYNAMIC (not select/rank/critique/aggregate, the
         // absolute judgment the 3B lacks), on the exp003 RAG few-shot base.
         "exp016": DiscoveryConfig(topology: .ragSequential),
+
+        // EXP-017: filler/redundancy detect-and-repair. The judge's recurring
+        // complaint on the best config (exp011) is that redundant near-duplicate
+        // clusters (bakery Q1/Q2/Q3/Q7, gp Q3/Q4, guitar Q5/Q7) and vague catch-alls
+        // ("specific features or preferences", "specific requirements") "crowd out
+        // more valuable questions" — the model often produces task-specific unknowns
+        // but WASTES slots, so the critical ones don't make the cut. exp005 (FM audit
+        // injecting a universal budget/timeline checklist) and exp009 (embedding
+        // gap-finder picking a gold question) both regressed. This keeps detection
+        // purely DETERMINISTIC in Swift (filler-phrase patterns + content-word Jaccard
+        // near-dupes), so it frees exactly the wasted slots the judge flags, then makes
+        // ONE scoped call to refill ONLY those slots with concrete, task-specific
+        // questions (shown the kept set, told to be specific, given NO dimension
+        // checklist). Strong slots returned verbatim; a defensive re-check reverts any
+        // refill that is itself filler or duplicates a kept slot. Built on exp011.
+        "exp017": DiscoveryConfig(topology: .ragFillerRepair),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
