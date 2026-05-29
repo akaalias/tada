@@ -23,10 +23,13 @@ func stringFlag(_ name: String) -> String? {
 }
 
 func selectedAgent() -> (name: String, fn: DiscoveryAgentFn) {
-    switch stringFlag("--agent") ?? "baseline" {
-    case "pipeline": let a = PipelineAgent(); return ("pipeline", { try await a.generate($0) })
-    default:         let a = BaselineAgent(); return ("baseline", { try await a.generate($0) })
+    let name = stringFlag("--agent") ?? "baseline"
+    guard let config = Configs.named(name) else {
+        FileHandle.standardError.write(Data("unknown agent '\(name)'. known: \(Configs.registry.keys.sorted().joined(separator: ", "))\n".utf8))
+        exit(2)
     }
+    let agent = ConfiguredAgent(config)
+    return (name, { try await agent.generate($0) })
 }
 
 switch command {
@@ -53,6 +56,10 @@ case "evaluate":
                      gold: DiscoveryResult(taskTitle: $0.input, taskDescription: "", questions: []))
         }
         print("no gold/ found — using \(cases.count) placeholder cases (stub judge only)")
+    }
+    if stringFlag("--subset") == "dev" {
+        cases = cases.filter { DiscoveryInputs.devSubsetIDs.contains($0.id) }
+        print("dev subset: \(cases.count) cases")
     }
     if let limit { cases = Array(cases.prefix(limit)) }
 
@@ -91,11 +98,14 @@ case "evaluate":
     let prior = (try? String(contentsOf: runsURL, encoding: .utf8))?
         .split(separator: "\n")
         .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? []
-    let bestBefore = prior.compactMap { $0["quality"] as? Double }.max() ?? -1
+    let subset = stringFlag("--subset") == "dev" ? "dev" : "full"
+    // Running best is per-subset: dev runs only compare to dev runs.
+    let bestBefore = prior.filter { ($0["subset"] as? String) == subset }
+        .compactMap { $0["quality"] as? Double }.max() ?? -1
     let rm = metric.rubricMeans
     let record: [String: Any] = [
         "index": prior.count, "label": label, "agent": agent.name,
-        "note": stringFlag("--note") ?? "",
+        "note": stringFlag("--note") ?? "", "subset": subset, "n": cases.count,
         "quality": metric.quality, "specPass": metric.specPassRate,
         "wins": metric.wins, "ties": metric.ties, "losses": metric.losses,
         "atomicity": rm.atomicity, "specificity": rm.specificity, "coverage": rm.coverage,

@@ -53,7 +53,27 @@ Requires `ANTHROPIC_API_KEY` in the environment for `gold` and `evaluate`.
 
 ## Experiment log
 
-_(newest first)_
+_(newest first; quality on dev-10 proxy unless noted)_
+
+- **PIVOT (after EXP-002):** Both structural moves lost to single-shot on the
+  dev proxy. exp002 improved non-redundancy (3→4 via score+select-in-Swift) but
+  collapsed coverage (3→2); pipelines also hurt naturalness (3rd-person phrasing).
+  Judge notes are unanimous across configs: the gap is **coverage** — the 3B
+  can't reliably identify the most decision-critical unknown per task type.
+  Instructions/topology don't move it. Pivoting to distillation levers:
+  (6) retrieval-augmented few-shot from the gold bank, then (7) adapter. This
+  matches the prior real-world finding that prompt/pipeline tweaks were not
+  sufficient. Best so far: **baseline 0.307**.
+
+- **EXP-002 overGenerateScore** (dev) — quality **0.263**, spec 100%, 0/0/10.
+  Rubric: atom 5, spec 3, cover 2, nat 3, nonRed 4. One call → 12 scored
+  candidates → top-7 by importance in Swift. Non-redundancy best of all configs;
+  coverage worst — importance scores rank niche features above critical unknowns.
+- **EXP-001 brainstormSelect** (dev) — quality **0.235**, spec 90% (1 error),
+  0/0/9. Rubric: atom 4, spec 3, cover 3, nat 3, nonRed 3. Two-stage; regressed
+  vs single-shot, added robotic 3rd-person phrasing in the select stage.
+- **baseline singleShot** (dev) — quality **0.307**, spec 100%, 0/1/9. Rubric:
+  atom 5, spec 3, cover 3, nat 3, nonRed 3. (Full-30: 0.282, see EXP-000.)
 
 - **EXP-001 dimension-scaffolded pipeline** — pending. Hypothesis: the gap is
   judgment (which 7 unknowns matter), not phrasing. Decompose into two FM calls

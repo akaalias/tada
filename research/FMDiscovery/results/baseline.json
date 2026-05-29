@@ -1,0 +1,622 @@
+[
+  {
+    "id" : "bakery_name",
+    "candidate" : {
+      "questions" : [
+        {
+          "requiresExternalAction" : false,
+          "title" : "What type of bakery are you planning to open?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a specific theme or style in mind for the bakery?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Who will be the primary target customers for your bakery?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "What is your budget for naming the bakery?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Are there any specific words or phrases you want to include in the name?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you prefer a unique, creative name or something more traditional?",
+          "description" : ""
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "How long do you want the name to be?",
+          "description" : ""
+        }
+      ],
+      "taskTitle" : "Name Bakery",
+      "taskDescription" : "Brainstorm a name for my new bakery."
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "input" : "Brainstorm a name for my new bakery",
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "coverage" : 3,
+        "naturalness" : 3,
+        "specificity" : 3,
+        "atomicity" : 5,
+        "nonRedundancy" : 3
+      },
+      "notes" : "Set B wastes a question on \"budget for naming\" (largely irrelevant to brainstorming a name) and conflates Q1/Q2 (type of bakery vs. theme/style overlap significantly), while missing important angles like personal story/owner identity and location/cultural context. Set A covers those gaps more usefully and naturally."
+    }
+  },
+  {
+    "id" : "buy_used_car",
+    "candidate" : {
+      "questions" : [
+        {
+          "requiresExternalAction" : true,
+          "description" : "How much are you willing to spend on the used car?",
+          "title" : "What is your budget for the car?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Do you have any particular features or models in mind?",
+          "title" : "Are there any specific features or models you prefer?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Would you like the car to have an automatic transmission?",
+          "title" : "Do you prefer a car with automatic transmission?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Is air conditioning a must for you?",
+          "title" : "Do you require a car with air conditioning?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Would you like the car to have a sunroof?",
+          "title" : "Do you want the car to have a sunroof?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Is a GPS system necessary for you?",
+          "title" : "Do you need the car to have a GPS system?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Would you like the car to have leather seats?",
+          "title" : "Do you prefer a car with leather seats?"
+        }
+      ],
+      "taskDescription" : "Purchase a pre-owned vehicle.",
+      "taskTitle" : "Buying a Used Car"
+    },
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "input" : "Buy a used car",
+    "verdict" : {
+      "notes" : "Set B wastes 5 of 7 questions on narrow feature preferences (sunroof, GPS, leather seats, A/C, transmission) while missing critical unknowns like vehicle type, mileage tolerance, age limit, location, and financing plans — all of which are far more important for planning a used-car purchase. Coverage is severely lacking for actionable task planning.",
+      "rubric" : {
+        "specificity" : 3,
+        "naturalness" : 3,
+        "nonRedundancy" : 4,
+        "atomicity" : 4,
+        "coverage" : 2
+      },
+      "pairwise" : "goldBetter"
+    }
+  },
+  {
+    "id" : "dinner_party",
+    "candidate" : {
+      "taskDescription" : "Organize a dinner gathering for 8 friends.",
+      "taskTitle" : "Plan Dinner Party for 8 Friends",
+      "questions" : [
+        {
+          "requiresExternalAction" : false,
+          "title" : "What date do you want to host the party?",
+          "description" : "Please provide a specific date for the dinner party."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Who are the 8 friends you want to invite?",
+          "description" : "List all the names of the friends you want to invite."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "What type of cuisine would you prefer for the dinner?",
+          "description" : "Would you like a specific type of cuisine or a mix?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a preferred venue or location for the party?",
+          "description" : "Would you like to host the party at a specific venue or would you prefer to cook at home?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Are there any dietary restrictions or preferences for your guests?",
+          "description" : "Please mention any dietary restrictions or preferences."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a budget for the dinner party?",
+          "description" : "What is your budget for the dinner party?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Would you like to hire a caterer or cook yourself?",
+          "description" : "Would you prefer to hire a caterer or cook yourself?"
+        }
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "input" : "Throw a dinner party for 8 friends",
+    "verdict" : {
+      "rubric" : {
+        "naturalness" : 4,
+        "nonRedundancy" : 4,
+        "coverage" : 3,
+        "atomicity" : 5,
+        "specificity" : 3
+      },
+      "pairwise" : "tie",
+      "notes" : "Set B swaps a useful question (dining style/formality) for \"Who are the 8 friends?\" — knowing the specific names of guests adds little planning value and wastes a question slot. This leaves out important unknowns like event tone/formality and whether invitations have been sent, reducing overall coverage compared to Set A."
+    }
+  },
+  {
+    "input" : "Find a therapist",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "id" : "find_therapist",
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "naturalness" : 2,
+        "atomicity" : 4,
+        "coverage" : 3,
+        "specificity" : 3,
+        "nonRedundancy" : 3
+      },
+      "notes" : "Set B wastes two questions on tangential pre-screening (doctor consultation, known therapists/clinics) that don't help plan finding a therapist, and conflates therapy format with therapist style in Q4. It also omits key planning factors like who the therapy is for, urgency, and gender preference, while phrasing feels more like a intake form than a natural coach."
+    },
+    "candidate" : {
+      "taskDescription" : "Identify a mental health professional.",
+      "taskTitle" : "Find Therapist",
+      "questions" : [
+        {
+          "requiresExternalAction" : false,
+          "title" : "What type of therapy are you interested in?",
+          "description" : "e.g., Cognitive Behavioral Therapy, Counseling, etc."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Have you tried talking to a doctor about your concerns?",
+          "description" : "e.g., primary care physician, psychiatrist."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "What location or area are you looking for a therapist in?",
+          "description" : "e.g., New York, Los Angeles, specific neighborhood."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a preferred therapist style (e.g., individual, group, online)?",
+          "description" : "e.g., face-to-face, phone, video chat."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "What is your budget for therapy sessions?",
+          "description" : "e.g., hourly rate, insurance coverage."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Are there any specific qualifications or specialties you are looking for?",
+          "description" : "e.g., trauma-focused therapy, LGBTQ+ therapist."
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Have you heard of any specific therapists or clinics in your area?",
+          "description" : "e.g., therapist names, clinic names."
+        }
+      ]
+    }
+  },
+  {
+    "input" : "Book a GP appointment",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "id" : "gp_appointment",
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "coverage" : 2,
+        "atomicity" : 4,
+        "naturalness" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3
+      },
+      "notes" : "Set B wastes a question on dietary restrictions/allergies — completely irrelevant to booking an appointment — and splits date/time into two questions when they could be one, while missing critical unknowns like urgency, who the appointment is for, and how the user wants to book. Set A covers the essential planning dimensions far more efficiently and relevantly."
+    },
+    "candidate" : {
+      "taskDescription" : "Schedule a medical consultation.",
+      "taskTitle" : "Book GP Appointment",
+      "questions" : [
+        {
+          "requiresExternalAction" : true,
+          "description" : "Include any specific clinics or doctors you'd like to see.",
+          "title" : "Which GP clinic do you prefer?"
+        },
+        {
+          "requiresExternalAction" : true,
+          "description" : "Include any preferences for weekday or weekend visits.",
+          "title" : "What day of the week would you like to visit?"
+        },
+        {
+          "requiresExternalAction" : true,
+          "description" : "Include any specific time preferences.",
+          "title" : "What time slot works best for you?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Include any specific issues or symptoms you'd like to discuss.",
+          "title" : "Do you have any specific health concerns?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Include any specific dietary preferences or restrictions.",
+          "title" : "Are there any dietary restrictions or allergies?"
+        },
+        {
+          "requiresExternalAction" : true,
+          "description" : "Include any specific purposes for the appointment.",
+          "title" : "Would you like to book an appointment for a specific purpose (e.g., check-up, consultation, test)?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "Include any specific insurance details or billing preferences.",
+          "title" : "Do you have any insurance or billing preferences?"
+        }
+      ]
+    }
+  },
+  {
+    "input" : "Learn to play guitar",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "id" : "learn_guitar",
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "atomicity" : 5,
+        "naturalness" : 3
+      },
+      "pairwise" : "goldBetter",
+      "notes" : "Set B has meaningful overlaps (Q2 genre vs Q6 goals; Q5 prior experience is vague compared to A's direct experience-level question) and misses a critical practical unknown — whether the user owns a guitar — replacing it with a weaker \"resources you already have\" catch-all. The title is also oddly meta rather than descriptive of the task. Set A covers budget, instrument ownership, and experience level more cleanly and concretely."
+    },
+    "candidate" : {
+      "taskTitle" : "How do you plan to learn guitar?",
+      "taskDescription" : "Understand your guitar learning goals and approach.",
+      "questions" : [
+        {
+          "requiresExternalAction" : false,
+          "description" : "Is it acoustic, electric, or another type?",
+          "title" : "What type of guitar do you want to learn?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What are your musical interests?",
+          "title" : "Do you have a specific song or genre you want to play?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What learning style works best for you?",
+          "title" : "Do you prefer online tutorials or in-person lessons?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What is your current schedule?",
+          "title" : "How much time can you realistically dedicate to practice each week?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What was your experience like?",
+          "title" : "Have you tried learning guitar before?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What do you hope to achieve?",
+          "title" : "Do you have any specific goals for your guitar learning?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "description" : "What books, apps, or instruments do you own?",
+          "title" : "Are there any resources or materials you already have?"
+        }
+      ]
+    }
+  },
+  {
+    "candidate" : {
+      "taskTitle" : "Product Manager Resume Update",
+      "questions" : [
+        {
+          "requiresExternalAction" : false,
+          "title" : "Which specific product manager role are you targeting?",
+          "description" : "What level or type of product manager position are you aiming for?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "What skills and experiences would you like to emphasize?",
+          "description" : "Which specific skills or achievements would you like to highlight?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a preferred format or style for your resume?",
+          "description" : "Would you like a traditional format, a more concise bullet point style, or something else?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Is there a deadline you need to meet for this update?",
+          "description" : "When do you need to have your resume ready?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have a preferred platform or tool for creating your resume?",
+          "description" : "Would you like to use a specific software like Canva, Microsoft Word, or another tool?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Are there any specific keywords or phrases you would like to include?",
+          "description" : "Are there any industry-specific terms or phrases you want to incorporate?"
+        },
+        {
+          "requiresExternalAction" : false,
+          "title" : "Do you have any feedback or examples of resumes you like?",
+          "description" : "Have you seen any successful product manager resumes that you admire?"
+        }
+      ],
+      "taskDescription" : "Revise my resume to align with a product manager position."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 4,
+        "naturalness" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 2,
+        "coverage" : 2
+      },
+      "notes" : "Set B skips critical foundational unknowns — whether the user has an existing resume, their current role, their experience level, and the target industry — and instead fills slots with generic, low-value questions (preferred platform/tool, resume format examples) that don't meaningfully inform planning a resume update for a PM role. Questions 2 and 6 also overlap considerably (skills/experiences vs. keywords)."
+    },
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "id" : "resume_refresh",
+    "input" : "Update my resume for a product manager role"
+  },
+  {
+    "candidate" : {
+      "taskTitle" : "Simplify German Tax Returns 2020-2024",
+      "taskDescription" : "Organize and simplify tax documents from 2020 to 2024.",
+      "questions" : [
+        {
+          "description" : "To provide the best guidance.",
+          "requiresExternalAction" : false,
+          "title" : "Which tax software are you currently using?"
+        },
+        {
+          "description" : "To address them effectively.",
+          "requiresExternalAction" : false,
+          "title" : "Do you have any specific errors or discrepancies in your returns?"
+        },
+        {
+          "description" : "To determine if additional support is needed.",
+          "requiresExternalAction" : false,
+          "title" : "Are you working with a tax professional for this task?"
+        },
+        {
+          "description" : "To ensure compatibility.",
+          "requiresExternalAction" : false,
+          "title" : "What format do you prefer for the final report (PDF, Excel, etc.)?"
+        },
+        {
+          "description" : "To assess the progress and potential challenges.",
+          "requiresExternalAction" : false,
+          "title" : "Have you already started organizing your documents?"
+        },
+        {
+          "description" : "To optimize your returns.",
+          "requiresExternalAction" : false,
+          "title" : "Do you need help identifying specific tax deductions or credits?"
+        },
+        {
+          "description" : "To plan the workflow and deadlines.",
+          "requiresExternalAction" : false,
+          "title" : "What is your timeline for completing this task?"
+        }
+      ]
+    },
+    "verdict" : {
+      "rubric" : {
+        "specificity" : 2,
+        "coverage" : 2,
+        "naturalness" : 3,
+        "nonRedundancy" : 4,
+        "atomicity" : 5
+      },
+      "pairwise" : "goldBetter",
+      "notes" : "Set B is almost entirely generic — asking about \"tax software,\" \"report format (PDF/Excel),\" and \"deductions\" could apply to any country's taxes and reveal little about what \"untangling\" German returns actually requires. It misses critical German-specific unknowns: residency status, employment type, Finanzamt registration, and whether returns have even been filed yet, all of which Set A correctly surfaces."
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "id" : "tax_returns_de",
+    "input" : "Untangle my German tax returns for 2020-2024"
+  },
+  {
+    "candidate" : {
+      "taskTitle" : "Paris Trip Planning",
+      "taskDescription" : "Organize travel details for a trip to Paris.",
+      "questions" : [
+        {
+          "description" : "Please specify your planned dates for the trip.",
+          "title" : "What is your travel date range?",
+          "requiresExternalAction" : false
+        },
+        {
+          "description" : "What time of day would you prefer to fly?",
+          "title" : "Do you have a preferred flight time?",
+          "requiresExternalAction" : false
+        },
+        {
+          "description" : "Are you looking for hotels, Airbnb, or another type of stay?",
+          "title" : "What accommodation type are you interested in?",
+          "requiresExternalAction" : false
+        },
+        {
+          "description" : "Are there any food allergies or dietary preferences you'd like to inform us of?",
+          "title" : "Do you have any dietary restrictions or preferences?",
+          "requiresExternalAction" : false
+        },
+        {
+          "description" : "Are there any particular landmarks or sites you'd like to see?",
+          "title" : "Would you like to visit any specific attractions?",
+          "requiresExternalAction" : false
+        },
+        {
+          "description" : "Would you like help with airport transfers?",
+          "title" : "Do you need assistance with transportation to and from the airport?",
+          "requiresExternalAction" : true
+        },
+        {
+          "description" : "What is your budget for the trip?",
+          "title" : "Do you have any specific budget constraints?",
+          "requiresExternalAction" : false
+        }
+      ]
+    },
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "atomicity" : 4,
+        "nonRedundancy" : 4,
+        "naturalness" : 3,
+        "specificity" : 3
+      },
+      "notes" : "Set B wastes two of its seven questions on narrow logistical details (preferred flight time, airport transportation) while missing critical foundational unknowns like departure city, trip duration, and group size — all of which are essential before any meaningful Paris trip planning can begin. Dietary restrictions, though valid, are a low-priority detail at this early stage.",
+      "pairwise" : "goldBetter"
+    },
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "id" : "trip_paris",
+    "input" : "Plan a trip to Paris"
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "atomicity" : 5,
+        "specificity" : 3,
+        "naturalness" : 3,
+        "nonRedundancy" : 3
+      },
+      "pairwise" : "goldBetter",
+      "notes" : "Set B has two notable weaknesses: first, questions 6 and 7 are partially redundant (both touch on vendors), and question 4 (\"Who would you like to invite?\") is far too vague to be actionable — it fails to capture the critical guest *count* needed for planning. Set B also misses a key unknown entirely: the specific target date/month, asking only a yes/no about whether a date has been chosen rather than soliciting the actual timeframe. Set A is more actionable and better covers the essential planning unknowns."
+    },
+    "input" : "Plan our wedding for next summer",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "id" : "wedding_plan",
+    "candidate" : {
+      "taskTitle" : "Wedding Planning Overview",
+      "taskDescription" : "Gathering information to start planning our wedding for next summer.",
+      "questions" : [
+        {
+          "title" : "Have you chosen a wedding date yet?",
+          "requiresExternalAction" : false,
+          "description" : "Please specify the date you envision for the wedding."
+        },
+        {
+          "title" : "Do you have a preferred location for the ceremony and reception?",
+          "requiresExternalAction" : false,
+          "description" : "What city or venue are you considering?"
+        },
+        {
+          "title" : "Have you decided on a wedding theme or style?",
+          "requiresExternalAction" : false,
+          "description" : "What kind of wedding are you envisioning?"
+        },
+        {
+          "title" : "Who would you like to invite to the wedding?",
+          "requiresExternalAction" : false,
+          "description" : "Please list the names of your guests."
+        },
+        {
+          "title" : "Do you have a budget in mind for the wedding?",
+          "requiresExternalAction" : false,
+          "description" : "Please share your estimated budget."
+        },
+        {
+          "title" : "Are there any specific vendors or services you prefer to work with?",
+          "requiresExternalAction" : false,
+          "description" : "What types of vendors are you interested in?"
+        },
+        {
+          "title" : "Have you started looking into wedding venues or vendors?",
+          "requiresExternalAction" : false,
+          "description" : "Please let me know if you've taken any steps in this direction."
+        }
+      ]
+    }
+  }
+]

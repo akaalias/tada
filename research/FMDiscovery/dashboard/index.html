@@ -38,7 +38,7 @@
   <div class="card"><canvas id="chart"></canvas></div>
   <div class="card">
     <table id="tbl">
-      <thead><tr><th>#</th><th>Label</th><th>Quality</th><th>Spec</th><th>W/T/L</th><th>Move</th></tr></thead>
+      <thead><tr><th>#</th><th>Label</th><th>Set</th><th>Quality</th><th>Spec</th><th>W/T/L</th><th>Move</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -52,11 +52,15 @@ async function load() {
     const txt = await (await fetch('../results/runs.jsonl?t=' + Date.now())).text();
     runs = txt.trim().split('\n').filter(Boolean).map(JSON.parse);
   } catch (e) { /* not served yet */ }
-  draw(runs);
+  // Chart tracks the proxy metric (dev subset) so all points share a denominator.
+  const subset = runs.some(r => (r.subset||'full')==='dev') ? 'dev' : 'full';
+  const chartRuns = runs.filter(r => (r.subset||'full')===subset);
+  draw(chartRuns);
   fillTable(runs);
-  const kept = runs.filter(r => r.kept).length;
+  const kept = chartRuns.filter(r => r.kept).length;
+  const n = chartRuns[0] ? chartRuns[0].n : '';
   document.getElementById('title').textContent =
-    `Autoresearch Progress: ${runs.length} Experiment${runs.length===1?'':'s'}, ${kept} Kept Improvement${kept===1?'':'s'}`;
+    `Autoresearch Progress: ${chartRuns.length} Experiment${chartRuns.length===1?'':'s'}, ${kept} Kept (${subset}-${n} proxy)`;
   document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
 }
 
@@ -108,6 +112,7 @@ function fillTable(runs) {
   [...runs].reverse().forEach(r=>{
     const tr=document.createElement('tr');
     tr.innerHTML = `<td>${r.index}</td><td>${r.label}</td>`+
+      `<td>${(r.subset||'full')}-${r.n||''}</td>`+
       `<td class="q">${r.quality.toFixed(3)}</td>`+
       `<td>${Math.round(r.specPass*100)}%</td>`+
       `<td>${r.wins}/${r.ties}/${r.losses}</td>`+

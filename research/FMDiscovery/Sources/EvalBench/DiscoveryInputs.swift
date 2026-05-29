@@ -4,6 +4,13 @@ import Foundation
 /// Spans travel, health, admin, home, social, career, creative/ideation,
 /// learning, shopping, finance. Reviewable / editable by the user.
 public enum DiscoveryInputs {
+    /// Fixed 10-case dev subset for fast/cheap iteration (full 30 confirms keepers).
+    /// Spread across hard cases (tax, bakery, paris) and common ones.
+    public static let devSubsetIDs: Set<String> = [
+        "trip_paris", "gp_appointment", "tax_returns_de", "bakery_name", "wedding_plan",
+        "resume_refresh", "buy_used_car", "dinner_party", "learn_guitar", "find_therapist",
+    ]
+
     public static let all: [(id: String, input: String)] = [
         ("trip_paris",          "Plan a trip to Paris"),
         ("gp_appointment",      "Book a GP appointment"),
