@@ -1,0 +1,30 @@
+{
+  "summary": "RAG best-of-4 single-elim pairwise 3B tournament",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG exemplars for 4 independent sets"
+    },
+    {
+      "kind": "ensemble",
+      "text": "4 RAG drafts at temps 0.3/0.5/0.7/0.9",
+      "knobs": {
+        "n": "4",
+        "temp": "0.3,0.5,0.7,0.9"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Single-elim pairwise 3B tournament, two-order vote, tie\u2192lower-temp"
+    },
+    {
+      "kind": "output",
+      "text": "Winner set returned verbatim"
+    }
+  ],
+  "label": "exp012"
+}

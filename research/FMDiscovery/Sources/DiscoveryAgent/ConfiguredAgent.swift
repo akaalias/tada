@@ -23,7 +23,82 @@ public struct ConfiguredAgent: Sendable {
         case .ragCoverageRepair: return try await ragCoverageRepair(input)
         case .ragSelfConsistency: return try await ragSelfConsistency(input)
         case .ragContrastiveFewShot: return try await ragContrastiveFewShot(input)
+        case .ragTournament:     return try await ragTournament(input)
         }
+    }
+
+    /// EXP-012: smart best-of-N via a PAIRWISE 3B TOURNAMENT. The log shows two
+    /// SELECTION strategies over the 3B's own multi-samples have failed: exp004's
+    /// absolute Swift coverage scorer (keyword span) picked worse sets, and exp010's
+    /// cross-sample frequency clustering concentrated the model's generic catch-alls.
+    /// Both ask for ABSOLUTE judgment. A 3B is far better at RELATIVE judgment, so
+    /// here selection is a single-elimination bracket of pairwise comparisons: each
+    /// match shows the 3B the task plus two whole 7-question sets and asks which set
+    /// is better. To damp position bias each match is judged in BOTH orderings and
+    /// votes are tallied (tie → the lower-temp incumbent). The winning set is returned
+    /// VERBATIM, so atomicity and natural phrasing are never mangled. If pairwise
+    /// selection lifts even slightly above chance, best-of-4 should beat a single draw.
+    private func ragTournament(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input)
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let temps = config.sampleTemps ?? [0.3, 0.5, 0.7, 0.9]
+
+        var plans: [DiscoveryResult] = []
+        for t in temps {
+            let session = LanguageModelSession { system }
+            let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                              options: config.options(temp: t, sampling: .modelDefault))
+            plans.append(r.content.toContract())
+        }
+        guard plans.count > 1 else { return plans.first! }
+
+        // Single-elimination bracket; lower index = lower-temp incumbent (tie-break).
+        var bracket = plans
+        while bracket.count > 1 {
+            var next: [DiscoveryResult] = []
+            var i = 0
+            while i < bracket.count {
+                if i + 1 < bracket.count {
+                    next.append(try await pickBetterSet(input, bracket[i], bracket[i + 1]))
+                    i += 2
+                } else {
+                    next.append(bracket[i]); i += 1
+                }
+            }
+            bracket = next
+        }
+        return bracket[0]
+    }
+
+    /// Two-order pairwise vote between two whole sets; tie → `a` (incumbent).
+    private func pickBetterSet(_ input: String, _ a: DiscoveryResult, _ b: DiscoveryResult) async throws -> DiscoveryResult {
+        // Forward: a is set 1 → 0 means a wins. Backward: b is set 1 → 1 means a wins.
+        let aVotesForward = (try await judgeBetter(input, a, b)) == 0 ? 1 : 0
+        let aVotesBackward = (try await judgeBetter(input, b, a)) == 1 ? 1 : 0
+        let aVotes = aVotesForward + aVotesBackward
+        return aVotes >= 1 ? a : b   // b only wins by sweeping both orderings.
+    }
+
+    /// Returns 0 if `first` is the better set, 1 if `second` is. Greedy/deterministic.
+    private func judgeBetter(_ input: String, _ first: DiscoveryResult, _ second: DiscoveryResult) async throws -> Int {
+        func numbered(_ r: DiscoveryResult) -> String {
+            r.questions.enumerated().map { "\($0.offset + 1). \($0.element.title)" }.joined(separator: "\n")
+        }
+        let session = LanguageModelSession { Prompts.setComparator }
+        let p = """
+        Task the user entered: "\(input)"
+
+        SET 1:
+        \(numbered(first))
+
+        SET 2:
+        \(numbered(second))
+
+        Which set is the better set of clarifying questions for planning this task? Answer 1 or 2.
+        """
+        let r = try await session.respond(to: p, generating: FMSetComparison.self,
+                                          options: config.options(temp: 0.0, sampling: .greedy)).content
+        return r.betterSet == 2 ? 1 : 0
     }
 
     /// EXP-011: contrastive (negative) few-shot. Builds on exp003's robust
@@ -482,6 +557,12 @@ struct FMSingleQuestion {
     var question: String
     @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
     var requiresExternalAction: Bool
+}
+
+@Generable
+struct FMSetComparison {
+    @Guide(description: "Which set is the better set of clarifying questions: answer exactly 1 or 2.")
+    var betterSet: Int
 }
 
 @Generable

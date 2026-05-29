@@ -71,6 +71,21 @@ enum Prompts {
     No emojis.
     """
 
+    static let setComparator = """
+    You are an expert evaluator of clarifying-question sets used for task planning. \
+    You will see a user's task and TWO candidate sets of 7 questions. Pick the ONE \
+    set that is better OVERALL for planning this specific task. Judge on, in order:
+    • COVERAGE — does it probe the most decision-critical unknowns (e.g. budget/cost, \
+      who it is for, timeline or deadline, scale or quantity, location, what already \
+      exists, the core goal) rather than secondary or premature details?
+    • SPECIFICITY — concrete to THIS task, not generic.
+    • NON-REDUNDANCY — no two questions overlap or re-ask the same thing.
+    • CLEANLINESS — penalise any question that restates a fact the task already gives, \
+      is vague filler ("any other preferences?"), or bundles two asks together.
+    The better set covers more decision-critical unknowns with less waste. Answer with \
+    just the number (1 or 2) of the better set. Do not explain.
+    """
+
     static let critiqueEditor = """
     ── EDITOR MODE ──
     You are now editing a draft set of 7 clarifying questions for the task. Your job \

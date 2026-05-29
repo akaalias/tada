@@ -17,6 +17,7 @@ public struct DiscoveryConfig: Sendable {
         case ragCoverageRepair   // exp003 draft, then deterministically (embeddings) replace the most-redundant slot with the least-covered concrete gold unknown
         case ragSelfConsistency  // N independent RAG sets → embedding-cluster all questions → keep the 7 with broadest cross-sample agreement
         case ragContrastiveFewShot // exp003 positive few-shot + a fixed GOOD-vs-BAD contrastive lesson teaching the anti-patterns to avoid, 1 call
+        case ragTournament       // N RAG sets at varying temps → single-elimination PAIRWISE 3B tournament (two-order voting) → return the winning set verbatim
     }
 
     public enum Sampling: Sendable {

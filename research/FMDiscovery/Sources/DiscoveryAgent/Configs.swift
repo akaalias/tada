@@ -76,6 +76,18 @@ public enum Configs {
         // 3B learns by CONTRAST what not to spend a slot on. Every prior coverage fix added
         // a runtime judging step and regressed; this bakes the judgment into a demonstration.
         "exp011": DiscoveryConfig(topology: .ragContrastiveFewShot),
+
+        // EXP-012: smart best-of-N via a PAIRWISE 3B TOURNAMENT. Draw 4 independent
+        // exp003 RAG sets at temps [0.3,0.5,0.7,0.9], then run a single-elimination
+        // bracket where each match is decided by the 3B comparing the TWO whole sets
+        // and picking the better one — run in BOTH orderings (vote, tie→incumbent) to
+        // damp position bias. The winner is returned VERBATIM (no mangling → atomicity
+        // and natural phrasing preserved). exp004 (absolute Swift coverage scorer) and
+        // exp010 (frequency clustering) both failed to pick the better set; the rules
+        // note RELATIVE judgment beats absolute scoring on a 3B — the one form of
+        // judgment a 3B is actually decent at, and the untried selection signal.
+        "exp012": DiscoveryConfig(topology: .ragTournament,
+                                  sampleTemps: [0.3, 0.5, 0.7, 0.9]),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
