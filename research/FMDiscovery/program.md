@@ -55,6 +55,20 @@ Requires `ANTHROPIC_API_KEY` in the environment for `gold` and `evaluate`.
 
 _(newest first)_
 
-- **EXP-000 baseline** — pending: single-shot port of the Sonnet prompt to a
-  `@Generable` FM type with `.count(7)` guided generation. Establishes the
-  number to beat.
+- **EXP-001 dimension-scaffolded pipeline** — pending. Hypothesis: the gap is
+  judgment (which 7 unknowns matter), not phrasing. Decompose into two FM calls
+  the 3B can each handle: (1) brainstorm ~12 candidate unknowns against a
+  universal planning-dimension scaffold (goal, who-for, scale, budget, timeline,
+  location, current-state, resources-owned, constraints, channel, DIY-vs-help);
+  (2) select the 7 most decision-relevant, drop redundant/filler/premature ones,
+  phrase each as a natural atomic question. Target: beat 0.282; win/tie some.
+
+- **EXP-000 baseline** — QUALITY **0.282**, spec pass 100%, vs gold **0 win /
+  0 tie / 30 loss**. Rubric means: atomicity 4, specificity 3, coverage 3,
+  naturalness 3, nonRedundancy 3. Single-shot Sonnet-prompt port. Sonnet wins
+  every case. Judge-note failure patterns (results/EXP-000.json):
+  (1) misses the single most critical unknown (coverage); (2) wastes slots on
+  niche/premature detail; (3) redundant overlapping questions; (4) generic
+  filler ("any concerns?"); (5) logical/off-target questions (bakery: "what's
+  your business name?"); (6) robotic first-person phrasing. Atomicity is the one
+  strong dimension — guided generation + the no-and/or rule hold.

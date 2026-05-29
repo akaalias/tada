@@ -4,7 +4,7 @@ import Contract
 /// Deterministic, objective technical-spec checks. NOT quality — quality is the
 /// judge's job. The gate only enforces the hard contract the app depends on.
 /// A failed gate forces the case's quality score to 0.
-public struct SpecResult: Sendable, Equatable {
+public struct SpecResult: Sendable, Equatable, Codable {
     public let passed: Bool
     public let violations: [String]
 }

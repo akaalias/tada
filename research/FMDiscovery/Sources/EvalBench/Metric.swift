@@ -2,7 +2,7 @@ import Foundation
 import Contract
 
 /// Result of evaluating the agent on a single gold case.
-public struct CaseScore: Sendable {
+public struct CaseScore: Sendable, Codable {
     public let id: String
     public let input: String
     public let spec: SpecResult

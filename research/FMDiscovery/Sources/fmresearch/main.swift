@@ -57,6 +57,22 @@ case "evaluate":
     let metric = await runner.run({ try await agent.generate($0) }, over: cases) { print($0) }
     print(metric.summary)
 
+    // Judge notes — the signal for the next hypothesis.
+    print("\n── judge notes (candidate weaknesses) ──")
+    for s in metric.scores where s.verdict != nil {
+        print("• \(s.id) [\(s.verdict!.pairwise.rawValue), rubric \(String(format: "%.1f", s.verdict!.rubric.mean))]: \(s.verdict!.notes)")
+    }
+
+    // Persist full results for offline analysis.
+    let label = args.firstIndex(of: "--label").map { args[$0 + 1] } ?? "latest"
+    let resultsDir = packageDir.appendingPathComponent("results")
+    try? FileManager.default.createDirectory(at: resultsDir, withIntermediateDirectories: true)
+    let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
+    if let data = try? enc.encode(metric.scores) {
+        try? data.write(to: resultsDir.appendingPathComponent("\(label).json"))
+        print("\nwrote results/\(label).json")
+    }
+
 case "inspect":
     let input = args.count > 2 ? args[2] : "Plan a trip to Paris"
     let result = try await BaselineAgent().generate(input)
