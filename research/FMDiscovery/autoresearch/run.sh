@@ -43,7 +43,12 @@ fi
 count() { local n; n=$(wc -l < "$PKG/results/runs.jsonl" 2>/dev/null || echo 0); echo "${n//[[:space:]]/}"; }
 
 echo "[autoresearch] start: $(count)/$TARGET experiments | coder=$CODER_MODEL | per-iter cap \$$PER_ITER_BUDGET"
-mkdir -p "$AR"
+mkdir -p "$AR" "$PKG/results/pipelines"
+
+# Backfill pipeline diagrams for any experiments missing one (best-effort).
+for L in $(jq -r .label "$PKG/results/runs.jsonl" 2>/dev/null | sort -u); do
+  [ -f "$PKG/results/pipelines/$L.json" ] || python3 "$AR/gen_pipeline.py" "$L" || true
+done
 
 while [ "$(count)" -lt "$TARGET" ]; do
   N=$(count)
@@ -81,7 +86,10 @@ while [ "$(count)" -lt "$TARGET" ]; do
 
   AFTER=$(count)
   if [ "$AFTER" -gt "$N" ]; then
-    # A run was logged => build was green (swift run requires it). Commit progress.
+    # A run was logged => build was green (swift run requires it).
+    # Generate the pipeline diagram for the new experiment, then commit progress.
+    NEWLABEL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r .label 2>/dev/null)
+    [ -n "$NEWLABEL" ] && python3 "$AR/gen_pipeline.py" "$NEWLABEL" || true
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
     echo "[autoresearch] OK: new experiment logged (total=$AFTER)"

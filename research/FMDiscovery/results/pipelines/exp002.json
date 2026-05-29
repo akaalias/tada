@@ -1,0 +1,28 @@
+{
+  "summary": "Over-generate 12 candidates, select top-7 in Swift",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "Receive user one-liner prompt"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate 12 question candidates",
+      "knobs": {
+        "n": "12"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Swift ranks and picks top-7",
+      "knobs": {
+        "k": "7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Return final 7 questions"
+    }
+  ],
+  "label": "exp002"
+}

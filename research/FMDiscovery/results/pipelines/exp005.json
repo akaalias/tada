@@ -1,0 +1,35 @@
+{
+  "summary": "RAG draft + reflexion editor: drop/fill unknowns",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch 2 nearest exemplar Q-sets",
+      "knobs": {
+        "k": "2"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 questions from RAG context",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Drop given/low-value/compound; fill missing decision-critical unknowns",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 refined questions"
+    }
+  ],
+  "label": "exp005"
+}

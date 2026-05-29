@@ -1,0 +1,34 @@
+{
+  "summary": "Best-of-4 RAG sets picked by Swift coverage scorer",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner topic"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG exemplars for context"
+    },
+    {
+      "kind": "expand",
+      "text": "Sample 4 RAG-grounded question sets",
+      "knobs": {
+        "n": "4",
+        "temps": "0.3,0.6,0.9,1.0"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Swift coverage scorer picks best set",
+      "knobs": {
+        "scorer": "dimension-span",
+        "penalties": "redundancy,how-many"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp004"
+}

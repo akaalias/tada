@@ -12,6 +12,7 @@ public struct DiscoveryConfig: Sendable {
         case ragCoverageBestOfN  // sample N RAG sets at varying temps → pick best by Swift coverage scorer
         case ragCritiqueRevise   // RAG draft → 2nd FM auditor revises for coverage, drops given/redundant
         case ragCoverageScaffold // RAG few-shot + explicit task-conditioned coverage checklist (dims from nearest exemplars), 1 call
+        case ragFewShotSemantic  // ragFewShot but exemplars retrieved by on-device NLEmbedding cosine, not word overlap
     }
 
     public enum Sampling: Sendable {

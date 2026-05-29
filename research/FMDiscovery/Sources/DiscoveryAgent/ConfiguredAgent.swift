@@ -18,6 +18,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragCoverageBestOfN: return try await ragCoverageBestOfN(input)
         case .ragCritiqueRevise: return try await ragCritiqueRevise(input)
         case .ragCoverageScaffold: return try await ragCoverageScaffold(input)
+        case .ragFewShotSemantic: return try await ragFewShotSemantic(input)
         }
     }
 
@@ -59,9 +60,11 @@ public struct ConfiguredAgent: Sendable {
     }
 
     /// Builds the RAG few-shot system prompt (shared by ragFewShot and best-of-N).
-    private func ragSystemPrompt(_ input: String) -> String {
-        // Retrieve 2 nearest gold exemplars by word-overlap similarity.
-        let examples = GoldExemplars.nearest(to: input, k: 2)
+    /// Default retrieval is word-overlap; pass `examples` to override (EXP-007 uses
+    /// semantic retrieval).
+    private func ragSystemPrompt(_ input: String, examples: [GoldExemplar]? = nil) -> String {
+        // Retrieve 2 nearest gold exemplars (word-overlap by default).
+        let examples = examples ?? GoldExemplars.nearest(to: input, k: 2)
         let exampleBlock = examples.enumerated().map { (i, ex) -> String in
             let numbered = ex.questions.enumerated()
                 .map { "\($0.offset + 1). \($0.element)" }
@@ -135,6 +138,18 @@ public struct ConfiguredAgent: Sendable {
 
     private func ragFewShot(_ input: String) async throws -> DiscoveryResult {
         let session = LanguageModelSession { ragSystemPrompt(input) }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-007: identical to ragFewShot but exemplars are retrieved by on-device
+    /// semantic similarity (NLEmbedding cosine) instead of word overlap, so the
+    /// few-shot demonstrations are the nearest task TYPE even with no shared words.
+    private func ragFewShotSemantic(_ input: String) async throws -> DiscoveryResult {
+        let examples = GoldExemplars.nearestSemantic(to: input, k: 2)
+        let session = LanguageModelSession { ragSystemPrompt(input, examples: examples) }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))

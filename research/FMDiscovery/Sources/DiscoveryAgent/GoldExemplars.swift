@@ -213,6 +213,13 @@ enum GoldExemplars {
             .map { $0.0 }
     }
 
+    /// EXP-007: semantic nearest via on-device NLEmbedding (cosine), with the
+    /// word-overlap `nearest` as fallback when embeddings are unavailable.
+    static func nearestSemantic(to query: String, k: Int) -> [GoldExemplar] {
+        SemanticRetrieval.nearest(query: query, candidates: all, k: k,
+                                  fallback: { q, kk in nearest(to: q, k: kk) })
+    }
+
     /// EXP-006: task-conditioned coverage checklist. Aggregate the dimension labels
     /// from the k nearest exemplars, dedup case-insensitively while preserving first
     /// occurrence order. These are the decision-critical dimensions that strong sets

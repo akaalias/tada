@@ -36,6 +36,13 @@ public enum Configs {
         // coverage wall with a retrieved (not universal) checklist — the lever exp005's
         // insight pointed to, without the auditor's redundancy/phrasing regressions.
         "exp006": DiscoveryConfig(topology: .ragCoverageScaffold),
+
+        // EXP-007: exp003 best, but RAG exemplars retrieved by on-device semantic
+        // similarity (NLEmbedding sentence-embedding cosine) instead of word-overlap
+        // Jaccard. Jaccard returns ~0 for topically distinct queries (resume↔interview,
+        // tax↔budget share no words); semantic retrieval surfaces the nearest task TYPE
+        // so the few-shot demonstrations model the right decision-critical unknowns.
+        "exp007": DiscoveryConfig(topology: .ragFewShotSemantic),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

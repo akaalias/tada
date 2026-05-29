@@ -1,0 +1,29 @@
+{
+  "summary": "RAG few-shot: 2 nearest exemplars as demonstrations",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch 2 nearest non-dev gold exemplars",
+      "knobs": {
+        "k": "2"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Single FM call with injected demonstrations",
+      "knobs": {
+        "temp": "0.7",
+        "shots": "2"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp003"
+}
