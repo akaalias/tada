@@ -7,6 +7,11 @@ struct GoldExemplar: Sendable {
     let input: String
     let title: String
     let questions: [String]
+    /// Short decision-critical dimension labels, one per gold question. Used by
+    /// EXP-006 to build a TASK-CONDITIONED coverage checklist (aggregated across
+    /// the nearest exemplars) — the dimensions that strong sets probe for this
+    /// task TYPE, not a universal hard-coded list.
+    let dimensions: [String]
 }
 
 enum GoldExemplars {
@@ -22,7 +27,8 @@ enum GoldExemplars {
                 "Do you already have a design style in mind?",
                 "Have you already purchased any materials or appliances?",
                 "Do you need to obtain permits for this renovation?"
-            ]
+            ],
+            dimensions: ["budget", "timeline / deadline", "scope (what parts)", "DIY vs hiring help", "style / preferences", "current progress / what's done", "permits / external requirements"]
         ),
         GoldExemplar(
             input: "Prepare for a software engineering job interview",
@@ -35,7 +41,8 @@ enum GoldExemplars {
                 "Which technical areas do you feel least confident in?",
                 "What is your primary programming language for this interview?",
                 "Have you done any preparation so far?"
-            ]
+            ],
+            dimensions: ["target / who (company)", "scale / level (seniority)", "timeline / deadline", "process stage / current state", "weak areas / focus", "primary tools / skills", "preparation already done"]
         ),
         GoldExemplar(
             input: "Move to a new apartment across the city",
@@ -48,7 +55,8 @@ enum GoldExemplars {
                 "What is your budget for the move?",
                 "Do you have any fragile or special items that need extra care?",
                 "Are there any services you need to transfer or set up at the new place?"
-            ]
+            ],
+            dimensions: ["timeline / deadline", "current state (place secured?)", "scale / volume", "DIY vs hiring help", "budget", "special items / constraints", "dependencies to set up"]
         ),
         GoldExemplar(
             input: "Build a daily reading habit",
@@ -61,7 +69,8 @@ enum GoldExemplars {
                 "What format do you prefer to read in?",
                 "Have you tried building this habit before?",
                 "What is your main motivation for reading more?"
-            ]
+            ],
+            dimensions: ["type / focus", "scale (how much per day)", "schedule / time of day", "resources owned", "format / preferences", "past attempts", "motivation / goal"]
         ),
         GoldExemplar(
             input: "Start a side business selling ceramics",
@@ -74,7 +83,8 @@ enum GoldExemplars {
                 "What is your budget to invest in getting started?",
                 "How much time per week can you dedicate to this business?",
                 "Do you have a target customer in mind?"
-            ]
+            ],
+            dimensions: ["current state / starting point", "product / what specifically", "sales channel / location", "resources & equipment owned", "budget", "time available", "target audience / who-for"]
         ),
         GoldExemplar(
             input: "Set up a monthly household budget",
@@ -87,7 +97,8 @@ enum GoldExemplars {
                 "Do you already know your approximate monthly spending in key areas?",
                 "What tool or format do you want to use for this budget?",
                 "Have you had a household budget before that did not work out?"
-            ]
+            ],
+            dimensions: ["income / resources", "scale / who-for (household size)", "goal", "priorities / focus areas", "current state known", "tool / format", "past attempts"]
         ),
         GoldExemplar(
             input: "Adopt a dog",
@@ -100,7 +111,8 @@ enum GoldExemplars {
                 "What is your budget for adoption and initial setup costs?",
                 "Are there other people or pets in your household?",
                 "What city or region are you located in?"
-            ]
+            ],
+            dimensions: ["preferences (breed)", "living situation / context", "past experience", "specifics (age)", "budget", "household members / who-for", "location"]
         ),
         GoldExemplar(
             input: "Find a birthday gift for my dad",
@@ -113,7 +125,8 @@ enum GoldExemplars {
                 "Do you prefer to buy online or in a physical store?",
                 "Is this gift from you alone or from multiple people?",
                 "Are there any gift types you want to avoid?"
-            ]
+            ],
+            dimensions: ["timeline / deadline", "budget", "interests / preferences", "specifics (age)", "channel (where)", "who-for / from-whom", "things to avoid"]
         ),
         GoldExemplar(
             input: "Declutter my entire apartment",
@@ -126,7 +139,8 @@ enum GoldExemplars {
                 "What do you plan to do with items you no longer want?",
                 "How much time can you realistically dedicate each day?",
                 "Are you decluttering alone or will someone be helping you?"
-            ]
+            ],
+            dimensions: ["scale (how much)", "motivation / why now", "timeline / deadline", "priority / where to start", "disposal plan / outcome", "time available", "alone vs help"]
         ),
         GoldExemplar(
             input: "Start meal prepping for the week",
@@ -139,7 +153,8 @@ enum GoldExemplars {
                 "How much time can you realistically set aside for prepping?",
                 "What is your weekly grocery budget for meals?",
                 "What is your current cooking skill level?"
-            ]
+            ],
+            dimensions: ["scope (which meals)", "scale / who-for", "dietary restrictions / constraints", "schedule / timing", "time available", "budget", "current skill level"]
         ),
         GoldExemplar(
             input: "Quit smoking",
@@ -152,7 +167,8 @@ enum GoldExemplars {
                 "What is your biggest trigger for smoking?",
                 "Are you open to using quitting aids?",
                 "Do you want professional support as part of your plan?"
-            ]
+            ],
+            dimensions: ["timeline / deadline", "current state (how much)", "history / duration", "past attempts", "triggers / obstacles", "openness to aids / methods", "support needs"]
         ),
         GoldExemplar(
             input: "Write a best man speech",
@@ -165,7 +181,8 @@ enum GoldExemplars {
                 "Do you have a specific story or memory you want included?",
                 "How long should the speech be?",
                 "Is there anything you want to avoid mentioning?"
-            ]
+            ],
+            dimensions: ["subject / who-for", "relationship / context", "key people involved", "tone / style", "specific content to include", "scale (length)", "things to avoid"]
         ),
     ]
 
@@ -194,5 +211,21 @@ enum GoldExemplars {
             .sorted { $0.1 > $1.1 }
             .prefix(k)
             .map { $0.0 }
+    }
+
+    /// EXP-006: task-conditioned coverage checklist. Aggregate the dimension labels
+    /// from the k nearest exemplars, dedup case-insensitively while preserving first
+    /// occurrence order. These are the decision-critical dimensions that strong sets
+    /// probe for THIS task TYPE — retrieved, not a universal hard-coded list.
+    static func coverageDimensions(to query: String, k: Int) -> [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for ex in nearest(to: query, k: k) {
+            for d in ex.dimensions {
+                let key = d.lowercased()
+                if seen.insert(key).inserted { out.append(d) }
+            }
+        }
+        return out
     }
 }

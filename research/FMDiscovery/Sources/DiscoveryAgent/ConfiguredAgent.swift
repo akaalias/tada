@@ -17,6 +17,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragFewShot:        return try await ragFewShot(input)
         case .ragCoverageBestOfN: return try await ragCoverageBestOfN(input)
         case .ragCritiqueRevise: return try await ragCritiqueRevise(input)
+        case .ragCoverageScaffold: return try await ragCoverageScaffold(input)
         }
     }
 
@@ -100,6 +101,36 @@ public struct ConfiguredAgent: Sendable {
           outside the app (call, email, visit). False for in-app data entry.
         • Do NOT use emojis.
         """
+    }
+
+    /// EXP-006: RAG few-shot + an EXPLICIT task-conditioned coverage checklist.
+    /// exp003 shows strong exemplars only as demonstrations, which does not transfer
+    /// into a coverage requirement (the 3B keeps missing budget/who-for/etc). Here we
+    /// aggregate the decision-critical DIMENSIONS from the same nearest exemplars and
+    /// inject them as an explicit (but adaptable) coverage requirement. Unlike exp005's
+    /// universal checklist, these dimensions are RETRIEVED per task type, and unlike the
+    /// auditor it stays a SINGLE call to preserve naturalness/atomicity.
+    private func ragCoverageScaffold(_ input: String) async throws -> DiscoveryResult {
+        let dims = GoldExemplars.coverageDimensions(to: input, k: 2)
+        let dimList = dims.map { "• \($0)" }.joined(separator: "\n")
+        let scaffold = """
+
+
+        ── COVERAGE CHECKLIST (task-conditioned) ──
+        For tasks like this one, the most decision-critical unknowns tend to fall in \
+        these dimensions:
+        \(dimList)
+        Make sure your 7 questions probe the MOST decision-critical of these for THIS \
+        specific task. Adapt the wording to this task; this is a guide, not a template. \
+        SKIP any dimension the task statement already answers, and skip any that clearly \
+        does not apply here. Prefer covering a critical missing dimension over adding a \
+        second question about something you already covered.
+        """
+        let session = LanguageModelSession { ragSystemPrompt(input) + scaffold }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     private func ragFewShot(_ input: String) async throws -> DiscoveryResult {

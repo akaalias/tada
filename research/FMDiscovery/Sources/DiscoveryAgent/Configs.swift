@@ -29,6 +29,13 @@ public enum Configs {
         // fills the highest-value missing decision-critical unknown. Low temp on both
         // stages for determinism; attacks the coverage wall via revision, not sampling.
         "exp005": DiscoveryConfig(topology: .ragCritiqueRevise, selectTemp: 0.3),
+
+        // EXP-006: RAG few-shot (exp003 best) + an explicit TASK-CONDITIONED coverage
+        // checklist. Dimensions are aggregated from the same 2 nearest gold exemplars
+        // and injected as an adaptable coverage requirement, single call. Attacks the
+        // coverage wall with a retrieved (not universal) checklist — the lever exp005's
+        // insight pointed to, without the auditor's redundancy/phrasing regressions.
+        "exp006": DiscoveryConfig(topology: .ragCoverageScaffold),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
