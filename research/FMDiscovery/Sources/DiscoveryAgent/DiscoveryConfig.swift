@@ -30,6 +30,8 @@ public struct DiscoveryConfig: Sendable {
         case ragStartingPointCritique // contrastive RAG draft → ONE scoped 2nd call judging only ONE failure mode (does any slot establish the user's STARTING POINT?) → if not, swap the single weakest slot in Swift for a task-specific starting-point question (≤1 slot changes, 6 verbatim)
         case ragGivensAware      // single call, in-schema: FIRST extract the facts the task already states (providedFacts — an EASY reading task, not judgment), THEN write 7 questions, none of which may re-ask a given; frees slots wasted on restating givens
         case ragCompositeBestOfN // best-of-N over the exp011 contrastive-RAG generator, selected by a COMPOSITE deterministic ruler (coverage span − filler − near-dup − compound/atomicity penalties), low-temp floor — fixes exp004's coverage-only scorer flaw, no 3B judgment
+        case ragAntiModalContrast // stage1: greedy (most-modal=most-generic) draft; stage2: generate FRESH questions told to SURPASS that self-draft — a DIRECTED, task-specific push off the model's own modal cluster (vs exp011's fixed neutral anchor, exp024's undirected temperature)
+        case adapterDirect       // single call on a fine-tuned LoRA adapter, schema-free guided generation (system+user match the training format; includeSchemaInPrompt:false)
     }
 
     public enum Sampling: Sendable {
@@ -57,13 +59,16 @@ public struct DiscoveryConfig: Sendable {
     public var maxTokens: Int?
     // best-of-N: per-sample temperatures (each yields one full set; Swift scores+selects).
     public var sampleTemps: [Double]?
+    // Absolute path to a trained .fmadapter; nil = stock base model. (lever 7)
+    public var adapter: String?
 
     public init(
         topology: Topology,
         brainstormTemp: Double? = nil, brainstormSampling: Sampling = .modelDefault,
         selectTemp: Double? = nil, selectSampling: Sampling = .modelDefault,
         maxTokens: Int? = nil,
-        sampleTemps: [Double]? = nil
+        sampleTemps: [Double]? = nil,
+        adapter: String? = nil
     ) {
         self.topology = topology
         self.brainstormTemp = brainstormTemp
@@ -72,6 +77,7 @@ public struct DiscoveryConfig: Sendable {
         self.selectSampling = selectSampling
         self.maxTokens = maxTokens
         self.sampleTemps = sampleTemps
+        self.adapter = adapter
     }
 
     func options(temp: Double?, sampling: Sampling) -> GenerationOptions {

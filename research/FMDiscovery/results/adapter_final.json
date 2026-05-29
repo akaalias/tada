@@ -1,0 +1,571 @@
+[
+  {
+    "id" : "bakery_name",
+    "input" : "Brainstorm a name for my new bakery",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What type of bakery do you plan to run?",
+          "requiresExternalAction" : false,
+          "description" : "Identify the specific niche or style of bakery, such as bread, pastries, cakes, gluten-free, vegan, etc."
+        },
+        {
+          "title" : "What city or neighborhood will the bakery be in?",
+          "requiresExternalAction" : false,
+          "description" : "Capture the location to inform location-based or regionally relevant naming opportunities."
+        },
+        {
+          "title" : "What is the name and concept behind your bakery?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the core idea or story the bakery wants to communicate through its name."
+        },
+        {
+          "title" : "Do you have a specific word or name in mind already?",
+          "requiresExternalAction" : false,
+          "description" : "Find out if the user has already identified a potential name or is starting from scratch."
+        },
+        {
+          "title" : "What is your target customer demographic for the bakery?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the intended clientele to ensure the name resonates with the right audience."
+        },
+        {
+          "title" : "Are there any competitors with similar names nearby?",
+          "requiresExternalAction" : false,
+          "description" : "Research local competition to avoid names that are too similar or already taken."
+        },
+        {
+          "title" : "What domain name and branding are you planning for?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify the long-term vision, including whether the user wants a specific domain and cohesive brand identity."
+        }
+      ],
+      "taskTitle" : "Brainstorm a bakery name ideas",
+      "taskDescription" : "Generate a creative and fitting name for the user's new bakery business."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 3,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "naturalness" : 3
+      },
+      "notes" : "Set B has a critical self-defeating flaw: Q3 asks \"What is the name and concept behind your bakery?\" — the user is literally trying to brainstorm a name, so asking for it is incoherent. Q7 bundles domain name AND branding into one question (atomicity issue), and Q6 (competitor names) is a generic business-research question rather than something that helps generate creative name ideas. Set B also misses the key creative dimensions Set A covers well: desired vibe/personality and styles to avoid."
+    }
+  },
+  {
+    "id" : "buy_used_car",
+    "input" : "Buy a used car",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your budget for the used car?",
+          "requiresExternalAction" : false,
+          "description" : "Understanding the maximum price the user is willing to pay."
+        },
+        {
+          "title" : "What is your primary reason for buying a used car?",
+          "requiresExternalAction" : false,
+          "description" : "Clarifying whether the car is for a specific need like commuting, hauling, or a backup vehicle."
+        },
+        {
+          "title" : "Do you have a specific make, model, or year in mind?",
+          "requiresExternalAction" : false,
+          "description" : "Determining if the user is targeting a particular vehicle type or era."
+        },
+        {
+          "title" : "Where do you plan to source the car from?",
+          "requiresExternalAction" : false,
+          "description" : "Clarifying whether the user wants to buy locally, nationally, or is open to international markets."
+        },
+        {
+          "title" : "Are you looking to trade in any current vehicle?",
+          "requiresExternalAction" : false,
+          "description" : "Understanding if the user has a trade-in car to offset the purchase price."
+        },
+        {
+          "title" : "What is your timeline for completing this purchase?",
+          "requiresExternalAction" : false,
+          "description" : "Establishing how quickly the user wants the car ready, which affects how urgently the search must run."
+        },
+        {
+          "title" : "Do you have a preferred dealership or private seller platform?",
+          "requiresExternalAction" : false,
+          "description" : "Determining if the user has a preferred buying channel or is open to either."
+        }
+      ],
+      "taskTitle" : "Buy a used car",
+      "taskDescription" : "The user wants to source and purchase a used car."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 4,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "naturalness" : 4
+      },
+      "notes" : "SET B wastes a slot asking about the \"primary reason for buying a used car,\" which is too open-ended to drive planning, and conflates source (Q4) with platform/dealership (Q7), making them redundant. It also misses critical unknowns like vehicle type, acceptable mileage, and car age — all of which Set A captures and which directly shape the search strategy."
+    }
+  },
+  {
+    "id" : "dinner_party",
+    "input" : "Throw a dinner party for 8 friends",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your target date for the dinner party?",
+          "requiresExternalAction" : false,
+          "description" : "Identify the specific date or timeframe the user has in mind."
+        },
+        {
+          "title" : "Do you already have a venue in mind?",
+          "requiresExternalAction" : false,
+          "description" : "Determine whether the user has a preferred location or needs recommendations."
+        },
+        {
+          "title" : "What is your total budget for the event?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the financial scope to guide decisions on food, drinks, and venue."
+        },
+        {
+          "title" : "How many guests are you planning to invite?",
+          "requiresExternalAction" : false,
+          "description" : "Confirm the exact headcount to plan for seating and catering."
+        },
+        {
+          "title" : "What type of cuisine or food style do you prefer?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the user wants a specific dietary preference or cuisine theme."
+        },
+        {
+          "title" : "Will you be cooking yourself or hiring a caterer?",
+          "requiresExternalAction" : false,
+          "description" : "Determine the preferred food arrangement to plan preparation steps accordingly."
+        },
+        {
+          "title" : "What activities or entertainment do you want to include?",
+          "requiresExternalAction" : false,
+          "description" : "Find out if the user wants live music, games, a DJ, or other entertainment options."
+        }
+      ],
+      "taskTitle" : "Throw a Dinner Party for 8 Friends",
+      "taskDescription" : "Plan and host a dinner party for eight friends in the evening."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 5,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 4,
+        "naturalness" : 4
+      },
+      "notes" : "Set B wastes a question asking how many guests the user is inviting when the task explicitly states 8 friends, and it misses the critical dietary restrictions question — a major planning unknown for any dinner party. These two flaws together significantly hurt coverage and non-redundancy relative to Set A."
+    }
+  },
+  {
+    "id" : "find_therapist",
+    "input" : "Find a therapist",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What type of therapy are you looking for?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the specific therapeutic approach or modality the user prefers, such as CBT, Gestalt, EMDR, or a generalist."
+        },
+        {
+          "title" : "What is your primary mental health goal?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify the core reason for seeking therapy, such as managing anxiety, trauma, relationship issues, or career concerns."
+        },
+        {
+          "title" : "Do you have a preferred location or city?",
+          "requiresExternalAction" : false,
+          "description" : "Determine the geographic area or specific location the user wants the therapist in, to narrow the search geographically."
+        },
+        {
+          "title" : "What is your budget per session or per month?",
+          "requiresExternalAction" : false,
+          "description" : "Establish a financial boundary to filter therapists who are within the user's price range."
+        },
+        {
+          "title" : "Do you prefer someone local or are you open to remote?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the user wants a nearby in-person therapist or is comfortable with online or long-distance therapy."
+        },
+        {
+          "title" : "How soon do you need a therapist ready to start?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the urgency and timeline so the plan can account for how quickly the search needs to be completed."
+        },
+        {
+          "title" : "Have you seen a therapist before?",
+          "requiresExternalAction" : false,
+          "description" : "Gauge the user's prior experience to tailor the plan, such as whether to include steps for finding referrals or building a treatment history."
+        }
+      ],
+      "taskTitle" : "Find a Therapist Near You",
+      "taskDescription" : "The user wants to locate and contact a suitable therapist to work with."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 4,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "naturalness" : 3
+      },
+      "notes" : "Set B wastes two questions on overlapping concerns (Q1 \"type of therapy\" and Q2 \"primary mental health goal\" cover similar ground) and conflates budget options in Q4 (\"per session or per month\"). It also misses key practical filters like therapist gender preference and who the therapy is for, while Q7 about prior therapy history — though potentially useful — is less actionable for planning than what Set A captures. The redundancy between Q3 and Q5 (location vs. local/remote) further dilutes coverage of genuinely distinct unknowns."
+    }
+  },
+  {
+    "id" : "gp_appointment",
+    "input" : "Book a GP appointment",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your primary reason for booking the appointment?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the main purpose, such as a routine check-up, follow-up, or specialist referral."
+        },
+        {
+          "title" : "Do you have a preferred location or city for the appointment?",
+          "requiresExternalAction" : false,
+          "description" : "Identify the user's preferred location or whether they are open to telehealth options."
+        },
+        {
+          "title" : "How soon do you need the appointment booked?",
+          "requiresExternalAction" : false,
+          "description" : "Determine the urgency and target a timeframe, such as within the next day or week."
+        },
+        {
+          "title" : "Do you have a specific day or time that works for you?",
+          "requiresExternalAction" : false,
+          "description" : "Find out if the user has a preferred day or time slot already in mind."
+        },
+        {
+          "title" : "Does your GP practice accept online booking or self-scheduling?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the user needs to book through the GP's website, app, or by phone."
+        },
+        {
+          "title" : "Do you have a deadline or urgency driving this task?",
+          "requiresExternalAction" : false,
+          "description" : "Understand any time pressure, such as an upcoming appointment or a known doctor's schedule gap."
+        },
+        {
+          "title" : "Have you already chosen a doctor or are you still deciding?",
+          "requiresExternalAction" : false,
+          "description" : "Determine whether the user needs to select a doctor or is still deciding based on reviews or referrals."
+        }
+      ],
+      "taskTitle" : "Book a GP Appointment",
+      "taskDescription" : "The user wants to schedule an appointment with their general practitioner (GP)"
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 5,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "naturalness" : 3
+      },
+      "notes" : "Set B has two notable redundancy problems: Q3 (\"how soon\") and Q6 (\"deadline or urgency\") overlap heavily, and Q4 duplicates Q3's time-framing angle. It also misses two important unknowns that Set A captures well — whether the appointment is for the user or someone else, and whether they prefer in-person vs. remote — reducing its planning coverage. Q5 (\"does your practice accept online booking\") feels like something the assistant should research rather than ask the user."
+    }
+  },
+  {
+    "id" : "learn_guitar",
+    "input" : "Learn to play guitar",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your current level of musical experience?",
+          "requiresExternalAction" : false,
+          "description" : "Understand whether the user has any prior knowledge of music theory, playing by ear, or prior instrument experience."
+        },
+        {
+          "title" : "Do you have a specific target date to reach basic proficiency?",
+          "requiresExternalAction" : false,
+          "description" : "Determine if there is a deadline or timeframe the user wants to hit."
+        },
+        {
+          "title" : "What type of guitar do you plan to play?",
+          "requiresExternalAction" : false,
+          "description" : "Identify whether the user wants an acoustic, electric, bass, or other guitar."
+        },
+        {
+          "title" : "How many hours per week can you dedicate to practice?",
+          "requiresExternalAction" : false,
+          "description" : "Establish the user's available practice window to shape a realistic learning plan."
+        },
+        {
+          "title" : "Do you prefer self-study, apps, videos, or a teacher?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify the user's preferred learning format to recommend the right resources."
+        },
+        {
+          "title" : "Is there a specific song or genre you want to play?",
+          "requiresExternalAction" : false,
+          "description" : "Find out if the user has a particular goal such as learning a pop song, classical piece, or rock riff."
+        },
+        {
+          "title" : "Are you learning alone or with others?",
+          "requiresExternalAction" : false,
+          "description" : "Determine if the user has a partner, group, or community to practice and collaborate with."
+        }
+      ],
+      "taskTitle" : "Learn to Play Guitar",
+      "taskDescription" : "The user wants to learn how to play guitar from scratch."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 4,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 4,
+        "naturalness" : 4
+      },
+      "notes" : "Set B misses two important planning unknowns: whether the user owns a guitar (critical for first steps) and budget (affects lesson/resource choices). Q5 combines multiple options in one question (apps, videos, teacher) reducing atomicity, and Q7 about \"learning with others\" largely overlaps with Q5's teacher option. The target date question (Q2) is a minor addition but doesn't compensate for the missing coverage gaps."
+    }
+  },
+  {
+    "id" : "resume_refresh",
+    "input" : "Update my resume for a product manager role",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your current industry and field of expertise?",
+          "requiresExternalAction" : false,
+          "description" : "Understanding the user's industry and core expertise will shape the resume focus."
+        },
+        {
+          "title" : "Have you worked as a product manager before?",
+          "requiresExternalAction" : false,
+          "description" : "Knowing their prior experience helps highlight the right skills and accomplishments."
+        },
+        {
+          "title" : "What specific product or tech stack should the resume emphasize?",
+          "requiresExternalAction" : false,
+          "description" : "The resume should be tailored to the product domain the user has worked on most recently."
+        },
+        {
+          "title" : "What is your target company or industry for this role?",
+          "requiresExternalAction" : false,
+          "description" : "The resume should be optimized for the specific employer and market the user is targeting."
+        },
+        {
+          "title" : "What are your top two or three product management tools to know?",
+          "requiresExternalAction" : false,
+          "description" : "Identifying the tools the user is most knowledgeable in ensures the resume highlights the right skills."
+        },
+        {
+          "title" : "What is your career goal — long-term or short-term?",
+          "requiresExternalAction" : false,
+          "description" : "Understanding the user's long-term vision helps align the resume with their ultimate career direction."
+        },
+        {
+          "title" : "Do you have a specific date or deadline to submit?",
+          "requiresExternalAction" : false,
+          "description" : "A target date or urgency helps prioritize and schedule the resume update work appropriately."
+        }
+      ],
+      "taskTitle" : "Update Resume for Product Manager Role",
+      "taskDescription" : "The user wants to update their resume to better suit a product manager position."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 3,
+        "coverage" : 3,
+        "nonRedundancy" : 3,
+        "specificity" : 3,
+        "naturalness" : 3
+      },
+      "notes" : "Set B misses the most critical unknown — whether the user has an existing resume — and never asks about seniority/level of the PM role, which heavily shapes resume content. Several questions are weak or redundant (Q1 and Q4 both probe industry; Q5 and A's Q6 overlap but B's version asks \"top tools to know\" which is oddly phrased as if asking for general knowledge rather than the user's own skills); Q6 (\"long-term or short-term career goal\") is vague and generic rather than actionable for resume writing. Atomicity also slips in Q6 with the \"long-term or short-term\" either/or framing."
+    }
+  },
+  {
+    "id" : "tax_returns_de",
+    "input" : "Untangle my German tax returns for 2020-2024",
+    "spec" : {
+      "passed" : false,
+      "violations" : [
+        "generation error"
+      ]
+    },
+    "error" : "refusal(FoundationModels.LanguageModelSession.GenerationError.Refusal(record: FoundationModels.LanguageModelSession.GenerationError.Refusal.TranscriptRecord), FoundationModels.LanguageModelSession.GenerationError.Context(debugDescription: \"May contain sensitive content\", underlyingErrors: [], errorDescriptionOverride: nil))"
+  },
+  {
+    "id" : "trip_paris",
+    "input" : "Plan a trip to Paris",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your total budget for this trip?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the financial scope to plan accommodations, transport, and activities."
+        },
+        {
+          "title" : "What are your exact travel dates or trip duration?",
+          "requiresExternalAction" : false,
+          "description" : "Determine how long the user wants to stay in Paris."
+        },
+        {
+          "title" : "What is your main reason for visiting Paris?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the trip is for business, leisure, a special occasion, or work."
+        },
+        {
+          "title" : "What are your top attractions or must-see landmarks?",
+          "requiresExternalAction" : false,
+          "description" : "Identify the specific sites the user wants to visit, such as the Eiffel Tower, Louvre, or Notre-Dame."
+        },
+        {
+          "title" : "What is your preferred pace of travel each day?",
+          "requiresExternalAction" : false,
+          "description" : "Determine if the user prefers a packed schedule with many stops or a relaxed pace with fewer activities."
+        },
+        {
+          "title" : "Do you have any dietary restrictions or mobility considerations?",
+          "requiresExternalAction" : false,
+          "description" : "Identify any personal constraints that would affect restaurant choices or walking distances."
+        },
+        {
+          "title" : "What is your preferred accommodation style or neighborhood?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the user wants a hotel, Airbnb, or unique lodging experience in a specific area like Montmartre or Le Marais."
+        }
+      ],
+      "taskTitle" : "Plan a trip to Paris",
+      "taskDescription" : "Organize all the details needed to plan a trip to Paris."
+    },
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "atomicity" : 4,
+        "coverage" : 3,
+        "nonRedundancy" : 4,
+        "specificity" : 4,
+        "naturalness" : 4
+      },
+      "notes" : "Set B never asks where the user is departing from (critical for flights/logistics) or how many travelers are going — two foundational unknowns for any trip plan. While B adds useful depth (pace, dietary/mobility needs, must-see attractions), it skips these basics, making it less complete for initial planning. Set A covers the essential logistics first and more reliably enables a full trip plan."
+    }
+  },
+  {
+    "id" : "wedding_plan",
+    "input" : "Plan our wedding for next summer",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "questions" : [
+        {
+          "title" : "What is your target date for the wedding?",
+          "requiresExternalAction" : false,
+          "description" : "Identify the specific date or timeframe the user has in mind for the wedding."
+        },
+        {
+          "title" : "How many guests are you planning to invite?",
+          "requiresExternalAction" : false,
+          "description" : "Determine the approximate size of the wedding party to shape venue and catering decisions."
+        },
+        {
+          "title" : "Do you have a total budget in mind?",
+          "requiresExternalAction" : false,
+          "description" : "Establish the financial scope of the wedding to guide choices across all categories."
+        },
+        {
+          "title" : "Will you be doing the planning yourself or hiring a planner?",
+          "requiresExternalAction" : false,
+          "description" : "Clarify whether the user wants a DIY approach or needs a professional wedding planner."
+        },
+        {
+          "title" : "Do you have a preferred venue or city for the ceremony?",
+          "requiresExternalAction" : false,
+          "description" : "Find out if the user has a specific location or city in mind for the wedding day."
+        },
+        {
+          "title" : "What type of wedding style are you going for?",
+          "requiresExternalAction" : false,
+          "description" : "Understand the aesthetic vision, such as rustic, modern, floral, or a destination wedding."
+        },
+        {
+          "title" : "Are there specific vendors or traditions you want included?",
+          "requiresExternalAction" : false,
+          "description" : "Identify any particular suppliers, such as a baker, florist, or officiant, or cultural elements to feature."
+        }
+      ],
+      "taskTitle" : "Plan Our Summer Wedding Next Year",
+      "taskDescription" : "Plan a wedding for next summer, with all details organized and ready by that time."
+    },
+    "verdict" : {
+      "pairwise" : "tie",
+      "rubric" : {
+        "atomicity" : 5,
+        "coverage" : 4,
+        "nonRedundancy" : 4,
+        "specificity" : 4,
+        "naturalness" : 5
+      },
+      "notes" : "Set B swaps out the highly useful \"which planning areas do you need the most help with?\" for \"will you be doing the planning yourself or hiring a planner?\" — a somewhat less actionable question — and its Q5 conflates venue and city into one ask, mildly reducing atomicity/nonRedundancy. However, Q7 about vendors/traditions adds genuine value not present in Set A, keeping overall quality roughly equal."
+    }
+  }
+]

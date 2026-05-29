@@ -65,7 +65,100 @@ public struct ConfiguredAgent: Sendable {
         case .ragStartingPointCritique: return try await ragStartingPointCritique(input)
         case .ragGivensAware:    return try await ragGivensAware(input)
         case .ragCompositeBestOfN: return try await ragCompositeBestOfN(input)
+        case .ragAntiModalContrast: return try await ragAntiModalContrast(input)
+        case .adapterDirect:     return try await adapterDirect(input)
         }
+    }
+
+    // MARK: - Adapter (lever 7)
+
+    /// System prompt for the adapter path. MUST match the training data's system
+    /// content (format_training_data.py): toolkit default + our coach instruction.
+    static let adapterSystem =
+        "A conversation between a user and a helpful assistant. "
+        + "Taking the role of a personal task coach. Given a task the user wants to accomplish, "
+        + "generate clarifying questions that uncover what they specifically want, the context "
+        + "(who/what/when/where/why), constraints and preferences, and key execution details. "
+        + "Restate the user's goal as a short specific title (4-9 words), never a generic label. "
+        + "Summarise the task in one sentence. Each question is complete, 5-10 words, asks ONE "
+        + "thing (never combine with \"and\"/\"or\"), specific to THIS task, addressed to the user, "
+        + "no emojis. Produce exactly 7 questions."
+
+    private func resolveModel() throws -> SystemLanguageModel {
+        guard let path = config.adapter else { return SystemLanguageModel.default }
+        let adapter = try SystemLanguageModel.Adapter(fileURL: URL(filePath: path))
+        return SystemLanguageModel(adapter: adapter)
+    }
+
+    /// Schema-free guided generation on the fine-tuned adapter: same system+user as
+    /// training, schema omitted from the prompt (the adapter learned the format).
+    private func adapterDirect(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let prompt = "Task the user entered: \"\(input)\""
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-027: anti-modal self-contrast. The plateau is judgment-limited and exp010's
+    /// central datum is precise: the 3B's MODAL output IS the generic catch-all set,
+    /// while the sharp task-specific unknowns live in the TAIL of its distribution.
+    /// Two prior levers tried to reach that tail and failed for diagnosable reasons:
+    /// exp024 raised TEMPERATURE (an UNDIRECTED widening that dredged up incoherence
+    /// and demo-bleed faster than coverage), and exp011 prepended a FIXED GOOD-vs-BAD
+    /// demo on a NEUTRAL task (a generic, task-agnostic anchor). The untried move is a
+    /// DIRECTED, task-specific push: first draw the model's OWN modal set with GREEDY
+    /// decoding (temp 0 = the most-confident = most-generic draw, confirmed by exp019),
+    /// then in a second call show that exact set back to the model AS the generic
+    /// baseline to beat and have it generate a FRESH 7 that surpasses it — sharper,
+    /// more domain-specific, targeting the unknowns the generic draft missed. Crucially
+    /// the second pass is GENERATION, not the select/rank/critique judgment that sank
+    /// every multi-FM config (exp001/004/005/012/017/023): the model isn't asked to
+    /// evaluate anything, only to out-do a concrete, maximally-relevant negative anchor
+    /// of its own making. Falsifiable: if a self-generated anti-modal anchor steers the
+    /// model off its modal cluster into the sharp tail, coverage/specificity lift above
+    /// the plateau; if the model just rewords its defaults or drifts off-task, it lands
+    /// in the ~0.27-0.32 noise and confirms the tail is unreachable by in-context steering.
+    private func ragAntiModalContrast(_ input: String) async throws -> DiscoveryResult {
+        let baseSystem = ragSystemPrompt(input) + Self.contrastLesson
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+
+        // Stage 1: the MODAL set — greedy decoding = the model's single most-confident
+        // (= most generic, per exp019) draw. This is the concrete anchor to surpass.
+        let modalSession = LanguageModelSession { baseSystem }
+        let modal = try await modalSession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: 0.0, sampling: .greedy)
+        ).content
+        let modalList = modal.questions.enumerated()
+            .map { "  \($0.offset + 1). \($0.element.question)" }.joined(separator: "\n")
+
+        // Stage 2: generate a FRESH set told to beat the model's own generic defaults —
+        // a directed push off the modal cluster using a dynamic, task-specific anchor.
+        let antiModal = """
+
+
+            ── A GENERIC ASSISTANT'S DRAFT FOR THIS EXACT TASK (do markedly BETTER) ──
+            A generic, unimaginative assistant asked these 7 questions for this task:
+            \(modalList)
+
+            Those are the OBVIOUS, default questions — what almost anyone would ask first, \
+            and several are vague or interchangeable across tasks. Your job is to do \
+            markedly BETTER. Write 7 SHARPER clarifying questions that a seasoned \
+            specialist in THIS task would prioritise: target the decision-critical \
+            unknowns the generic draft MISSED or only gestured at, ground them in the \
+            specifics of THIS task's domain, and do NOT merely restate or lightly reword \
+            any question above. You may keep a genuinely essential unknown the generic \
+            draft happened to include, but spend most of your 7 slots on the \
+            higher-leverage, more task-specific unknowns it overlooked.
+            """
+        let session = LanguageModelSession { baseSystem + antiModal }
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     /// EXP-026: best-of-N over the BEST generator (exp011 contrastive RAG), selected

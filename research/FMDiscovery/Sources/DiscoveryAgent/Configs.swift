@@ -303,6 +303,31 @@ public enum Configs {
         // coverage-only) ruler + deterministic selection + low-temp floor.
         "exp026": DiscoveryConfig(topology: .ragCompositeBestOfN,
                                   sampleTemps: [0.4, 0.6, 0.8, 1.0]),
+
+        // EXP-027: anti-modal self-contrast. The plateau is judgment-limited; exp010's
+        // datum is that the 3B's MODAL output IS the generic catch-all and the sharp
+        // task-specific unknowns live in the TAIL. exp024 reached for the tail with raw
+        // TEMPERATURE (undirected → dredged incoherence/demo-bleed, not coverage) and
+        // exp011 used a FIXED neutral-task GOOD-vs-BAD anchor. This is the untried
+        // DIRECTED, task-specific push: stage 1 draws the model's OWN modal set via
+        // GREEDY decoding (most-confident = most-generic, per exp019); stage 2 shows
+        // that exact set back as "the generic draft to beat" and generates a FRESH 7
+        // that surpasses it (sharper, more domain-specific, covering what it missed).
+        // Stage 2 is GENERATION against a maximally-relevant self-anchor — NOT the
+        // select/rank/critique judgment that sank every multi-FM config. Built on the
+        // exp011 contrastive RAG base (current best). selectTemp = model default.
+        "exp027": DiscoveryConfig(topology: .ragAntiModalContrast),
+
+        // LoRA adapter (lever 7) — schema-free guided generation on the fine-tuned
+        // on-device model (system+user match the training format, includeSchemaInPrompt
+        // false). Three checkpoints compared on the HELD-OUT judge, since the final
+        // epoch overfit (train loss ~0.02 vs valid ~1.92): epoch1 / epoch2 / final.
+        "adapter_e1": DiscoveryConfig(topology: .adapterDirect,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_e1.fmadapter"),
+        "adapter_e2": DiscoveryConfig(topology: .adapterDirect,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_e2.fmadapter"),
+        "adapter_final": DiscoveryConfig(topology: .adapterDirect,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
