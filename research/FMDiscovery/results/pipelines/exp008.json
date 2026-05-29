@@ -1,0 +1,28 @@
+{
+  "summary": "RAG: adapt nearest exemplar's 7 gold Qs one-to-one",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "knobs": {
+        "k": "1"
+      },
+      "text": "Fetch single nearest gold exemplar"
+    },
+    {
+      "kind": "generate",
+      "knobs": {
+        "temp": "0.7"
+      },
+      "text": "Rewrite exemplar's 7 Qs one-to-one to new task"
+    },
+    {
+      "kind": "output",
+      "text": "7 adapted questions"
+    }
+  ],
+  "label": "exp008"
+}

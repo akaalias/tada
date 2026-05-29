@@ -1,27 +1,27 @@
 {
-  "summary": "Over-generate 12 candidates, select top-7 in Swift",
+  "summary": "Over-generate 12 candidates, Swift picks top-7",
   "stages": [
     {
       "kind": "input",
-      "text": "Receive user one-liner prompt"
+      "text": "User one-liner prompt in"
     },
     {
       "kind": "expand",
-      "text": "Over-generate 12 question candidates",
+      "text": "FM over-produces 12 scored candidates",
       "knobs": {
         "n": "12"
       }
     },
     {
       "kind": "select",
-      "text": "Swift ranks and picks top-7",
+      "text": "Swift ranker picks top-7",
       "knobs": {
         "k": "7"
       }
     },
     {
       "kind": "output",
-      "text": "Return final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp002"

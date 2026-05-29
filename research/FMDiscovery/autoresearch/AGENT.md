@@ -21,6 +21,19 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
 - NEVER hand-edit `results/runs.jsonl` or `results/*.json`. The eval writes them.
 - NEVER change the gold answers, the judge, the metric, or the spec gate. Do not
   try to make the metric easier. Improve the agent, not the ruler.
+- GOLD/EXEMPLAR LEAK BAN: gold or retrieved exemplar question-sets may be used
+  ONLY as in-context few-shot DEMONSTRATIONS that inform questions you GENERATE
+  for the user's actual task. NEVER copy, template, paraphrase, or rewrite an
+  exemplar's questions one-to-one into the output. A real user's task will not
+  match the exemplar bank, so the model must always generate fresh questions for
+  the specific task. An experiment that transcribes/adapts gold questions as its
+  output is INVALID even if it scores well — do not pursue that class of idea.
+- CORPUS MAY GROW (encouraged): generating MORE Sonnet (task→questions) pairs for
+  NEW, different tasks — to broaden the retrieval/demonstration bank or to build
+  adapter-training data — is allowed and valuable. Those live under
+  `research/FMDiscovery/corpus/` (a growable demonstration bank), NOT `gold/`. The
+  eval `gold/` and the dev-10 stay FROZEN: never add, edit, or remove eval cases.
+  Growing the demonstration bank is fine; changing what you are scored on is not.
 - Every experiment MUST end with a GREEN build and exactly one NEW logged run.
 - Keep all previous configs intact; each experiment ADDS a new named config.
 

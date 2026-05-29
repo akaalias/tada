@@ -1,0 +1,29 @@
+{
+  "summary": "RAG few-shot with semantic NLEmbedding retrieval",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "NLEmbedding cosine: top-2 semantic exemplars",
+      "knobs": {
+        "retrieval": "cosine",
+        "k": "2"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Few-shot FM call drafts 7 questions",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp007"
+}

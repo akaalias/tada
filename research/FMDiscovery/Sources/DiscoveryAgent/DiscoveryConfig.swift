@@ -13,6 +13,9 @@ public struct DiscoveryConfig: Sendable {
         case ragCritiqueRevise   // RAG draft → 2nd FM auditor revises for coverage, drops given/redundant
         case ragCoverageScaffold // RAG few-shot + explicit task-conditioned coverage checklist (dims from nearest exemplars), 1 call
         case ragFewShotSemantic  // ragFewShot but exemplars retrieved by on-device NLEmbedding cosine, not word overlap
+        case ragAdaptExemplar    // adapt the nearest exemplar's 7 concrete gold questions one-to-one to the new task
+        case ragCoverageRepair   // exp003 draft, then deterministically (embeddings) replace the most-redundant slot with the least-covered concrete gold unknown
+        case ragSelfConsistency  // N independent RAG sets → embedding-cluster all questions → keep the 7 with broadest cross-sample agreement
     }
 
     public enum Sampling: Sendable {

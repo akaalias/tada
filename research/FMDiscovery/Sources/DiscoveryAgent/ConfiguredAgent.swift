@@ -19,7 +19,48 @@ public struct ConfiguredAgent: Sendable {
         case .ragCritiqueRevise: return try await ragCritiqueRevise(input)
         case .ragCoverageScaffold: return try await ragCoverageScaffold(input)
         case .ragFewShotSemantic: return try await ragFewShotSemantic(input)
+        case .ragAdaptExemplar:  return try await ragAdaptExemplar(input)
+        case .ragCoverageRepair: return try await ragCoverageRepair(input)
+        case .ragSelfConsistency: return try await ragSelfConsistency(input)
         }
+    }
+
+    /// EXP-010: self-consistency consensus. Draw N independent RAG sets (same
+    /// exp003 few-shot prompt) at varying temperatures, then in Swift cluster all
+    /// ~Nx7 questions by embedding similarity and keep the 7 clusters with the
+    /// broadest CROSS-SAMPLE agreement. Redundant clusters collapse to one question;
+    /// one-off niche slots (single-sample singletons) drop out; the recurring
+    /// decision-critical unknowns rise to the top. Falls back to a single sample if
+    /// embeddings are unavailable.
+    private func ragSelfConsistency(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input)
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let temps = config.sampleTemps ?? [0.4, 0.6, 0.8, 1.0]
+
+        var items: [SelfConsistency.Item] = []
+        var title = ""
+        var summary = ""
+        for (s, t) in temps.enumerated() {
+            let session = LanguageModelSession { system }
+            let plan = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                                  options: config.options(temp: t, sampling: .modelDefault)).content
+            if s == 0 { title = plan.title; summary = plan.summary }
+            for (p, q) in plan.questions.enumerated() {
+                items.append(.init(text: q.question, requiresExternalAction: q.requiresExternalAction,
+                                   sample: s, position: p))
+            }
+        }
+
+        guard let selected = SelfConsistency.select(items, count: 7), selected.count == 7 else {
+            // Fallback: return the first (lowest-temp) sample verbatim.
+            let session = LanguageModelSession { system }
+            return try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                              options: config.options(temp: temps.first, sampling: .modelDefault))
+                .content.toContract()
+        }
+        return DiscoveryResult(
+            taskTitle: title, taskDescription: summary,
+            questions: selected.map { DiscoveryQuestion(title: $0.text, description: "", requiresExternalAction: $0.requiresExternalAction) })
     }
 
     // MARK: topologies
@@ -156,6 +197,127 @@ public struct ConfiguredAgent: Sendable {
         return r.content.toContract()
     }
 
+    /// EXP-008: adapt-the-exemplar. The log's recurring conclusion is that the 3B
+    /// imitates surface form but can't DISCOVER which unknowns are decision-critical
+    /// (coverage stuck at 3 across exp003-007; checklists/labels in exp005/006 failed
+    /// because labels aren't questions). exp003 shows exemplars only as demonstrations.
+    /// Here we make the nearest exemplar's 7 concrete gold questions HARD CONSTRAINTS:
+    /// the model must adapt each one ONE-TO-ONE to the new task, preserving the
+    /// underlying unknown each probes (so gold's excellent dimension SPAN transfers
+    /// directly) while doing only the surface rewrite the 3B is good at. If an
+    /// exemplar question's unknown is already answered by the new task statement, it
+    /// replaces that single slot with the next most decision-critical unknown.
+    private func ragAdaptExemplar(_ input: String) async throws -> DiscoveryResult {
+        let ex = GoldExemplars.nearest(to: input, k: 1).first!
+        let numbered = ex.questions.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let system = """
+        You are a personal task coach. For a closely related task, an expert wrote a \
+        PROVEN set of 7 clarifying questions. Your job is to ADAPT that proven set, \
+        question by question, to the user's new task — so the new questions probe the \
+        SAME kinds of decision-critical unknowns that made the proven set excellent.
+
+        ── PROVEN SET (related task: "\(ex.input)") ──
+        \(numbered)
+
+        ── HOW TO ADAPT ──
+        • Produce exactly 7 questions, one adapted from each proven question IN ORDER.
+        • Keep the SAME underlying unknown each proven question probes (its budget \
+          question → your budget question; its timeline question → your timeline \
+          question; its who-for question → your who-for question), but reword it to be \
+          specific and natural for THIS task.
+        • Use the proven set's DIRECT phrasing. If it asks "What is your budget?", you \
+          ask "What is your budget?" — never soften to "Do you have a budget?".
+        • If, and only if, a proven question's unknown is ALREADY answered by the user's \
+          task statement, drop just that one and replace it with the next most \
+          decision-critical unknown for this task (do not duplicate another slot).
+
+        ── RULES ──
+        TASK TITLE: restate the user's goal as a short specific title (4-9 words) in \
+        their own terms. Never a generic label like "Clarifying Questions".
+        DESCRIPTION: summarise the task in one plain sentence.
+        QUESTIONS:
+        • Each question title IS the complete question, 5-15 words, natural.
+        • ONE thing per question. NEVER combine two asks with "and" or "or".
+        • Be SPECIFIC to THIS task; no vague catch-alls like "any other preferences?".
+        • Addressed to the user ("you/your"). Never first-person ("my dad", "I").
+        • requiresExternalAction true only when answering needs a real-world action \
+          outside the app (call, email, visit). False for in-app data entry.
+        • Do NOT use emojis.
+        """
+        let session = LanguageModelSession { system }
+        let prompt = """
+        Task the user entered: "\(input)"
+
+        Adapt the proven set to this task: generate exactly 7 clarifying questions.
+        """
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-009: coverage-gap REPAIR on the exp003 draft. exp003 is the best config
+    /// but the judge consistently dings it for missing the single most decision-
+    /// critical unknown (coverage stuck at 3). Every prior fix asked the 3B to JUDGE
+    /// which unknown is missing — it can't. Here the judgment is deterministic: build
+    /// the exp003 draft, then in Swift (NLEmbedding) find the concrete gold question
+    /// (from the same nearest exemplars) whose unknown the draft covers LEAST and the
+    /// most-redundant draft slot. A single focused FM call adapts that one gold
+    /// question to this task; we swap it into the redundant slot, leaving the other
+    /// six draft questions untouched. Coverage gets fixed without mangling the draft.
+    private func ragCoverageRepair(_ input: String) async throws -> DiscoveryResult {
+        let exemplars = GoldExemplars.nearest(to: input, k: 2)
+        let draftSession = LanguageModelSession { ragSystemPrompt(input, examples: exemplars) }
+        let draftPrompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let plan = try await draftSession.respond(
+            to: draftPrompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        let draftTitles = questions.map { $0.title }
+
+        guard let repair = CoverageRepair.plan(draft: draftTitles, exemplars: exemplars) else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+
+        let alreadyAsked = draftTitles.enumerated()
+            .map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        let repairSystem = """
+        You are a personal task coach. A proven clarifying question from a closely \
+        related task probes a decision-critical unknown that the user's task very \
+        likely shares but that the current question set does NOT yet cover. Adapt it \
+        into ONE natural clarifying question specific to the user's task.
+
+        ── PROVEN QUESTION (probes the missing unknown) ──
+        \(repair.missing)
+
+        ── RULES ──
+        • Output exactly ONE question that probes the SAME underlying unknown, reworded \
+          to be specific and natural for the user's task.
+        • 5-12 words, ONE thing only, never combine asks with "and"/"or", addressed to \
+          the user ("you"/"your").
+        • If the user's task statement ALREADY answers that unknown, instead ask the \
+          single most decision-critical unknown still missing for this task.
+        • Do NOT duplicate any of these already-asked questions:
+        \(alreadyAsked)
+        • No emojis.
+        """
+        let repairSession = LanguageModelSession { repairSystem }
+        let adapted = try await repairSession.respond(
+            to: "Task the user entered: \"\(input)\"\n\nWrite the one clarifying question.",
+            generating: FMSingleQuestion.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        questions[repair.replaceIndex] = DiscoveryQuestion(
+            title: adapted.question, description: "", requiresExternalAction: adapted.requiresExternalAction)
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
     /// EXP-004: best-of-N over the RAG few-shot agent, ranked by a deterministic
     /// Swift coverage scorer. Generate N full sets at varying temperatures, then
     /// pick the set that best covers the universal high-value planning dimensions
@@ -266,6 +428,14 @@ struct FMQuestion {
     var question: String
     @Guide(description: "Optional short extra context. May be empty.")
     var detail: String
+    @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
+    var requiresExternalAction: Bool
+}
+
+@Generable
+struct FMSingleQuestion {
+    @Guide(description: "One complete clarifying question, 5-12 words, asking exactly ONE thing. Never combine two asks with 'and' or 'or'. Addressed to the user ('you'/'your').")
+    var question: String
     @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
     var requiresExternalAction: Bool
 }

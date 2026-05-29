@@ -40,14 +40,28 @@ TOOL = {
     }
 }
 
-SYSTEM = (
-    "You convert a one-line description of an on-device LLM pipeline experiment into a structured "
-    "stage list, using ONLY the fixed stage vocabulary in the tool. The point is a consistent visual "
-    "language: the SAME building block must always get the SAME kind, so similar experiments look "
-    "similar and different ones look different. Always start with an 'input' stage and end with an "
-    "'output' stage. Describe ONLY the generation pipeline that runs on-device — never the eval, gold, "
-    "or judge. Put decoding/retrieval/count settings in knobs. Be terse."
-)
+SYSTEM = """You convert a one-line description of an on-device LLM pipeline experiment into a structured stage list, using ONLY the fixed stage vocabulary in the tool. Goal: a consistent visual language — the SAME building block always gets the SAME kind, so similar experiments look similar.
+
+Rules:
+- Always start with 'input' and end with 'output'. Describe ONLY the on-device generation pipeline — never the eval, gold, or judge.
+- Map building blocks to kinds:
+  - a single on-device model call that drafts the questions -> generate (an FM call)
+  - retrieval / RAG / few-shot exemplar lookup -> retrieve
+  - one FM call that OVER-produces many candidates (e.g. 12) -> expand
+  - deterministic Swift ranking/selection of top-K, no model -> select
+  - a SECOND model pass that audits/edits/revises a draft (reflexion/editor/critique) -> critique
+  - best-of-N / multiple variants (e.g. N temperatures) then pick -> ensemble
+  - deterministic Swift post-processing (dedup, coverage check, atomicity repair) -> post
+- DO NOT invent stages. A plain single-shot pipeline is EXACTLY: input -> generate -> output. Only add retrieve/expand/select/critique/ensemble/post if the description explicitly implies them.
+- generate/critique/ensemble are model (FM) calls; select/post are deterministic code. Put decoding/retrieval/count settings in knobs (temp, sampling, k, n). Keep text fields <=8 words.
+
+Examples (description -> stage kinds):
+- "single-shot (EXP-000 port)" -> input, generate, output
+- "over-generate 12 scored, top-7 in Swift" -> input, expand, select, output
+- "brainstorm then select+phrase" (two FM calls) -> input, generate, generate, output
+- "RAG few-shot: nearest gold exemplars injected" -> input, retrieve, generate, output
+- "reflexion editor on RAG draft" -> input, retrieve, generate, critique, output
+- "best-of-N(4 temps) RAG sets, select by Swift coverage scorer" -> input, retrieve, ensemble, select, output"""
 
 
 def fail(msg):
@@ -65,8 +79,11 @@ def main():
 
     prog = (PKG / "program.md").read_text(encoding="utf-8") if (PKG / "program.md").exists() else ""
     entry = ""
+    # Match the bullet whose HEADING is this label (after optional markdown **),
+    # not just any line that mentions the label (e.g. a PIVOT note).
+    head = re.compile(r"^\s*-\s*\*{0,2}" + re.escape(label) + r"\b")
     for line in prog.splitlines():
-        if line.lstrip().startswith("-") and re.search(r"\b" + re.escape(label) + r"\b", line):
+        if head.match(line):
             entry = line.strip()
             break
     note = ""

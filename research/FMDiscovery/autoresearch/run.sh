@@ -49,6 +49,7 @@ mkdir -p "$AR" "$PKG/results/pipelines"
 for L in $(jq -r .label "$PKG/results/runs.jsonl" 2>/dev/null | sort -u); do
   [ -f "$PKG/results/pipelines/$L.json" ] || python3 "$AR/gen_pipeline.py" "$L" || true
 done
+python3 "$AR/gen_costs.py" 2>/dev/null || true   # backfill per-experiment coder costs
 
 while [ "$(count)" -lt "$TARGET" ]; do
   N=$(count)
@@ -92,7 +93,8 @@ while [ "$(count)" -lt "$TARGET" ]; do
     [ -n "$NEWLABEL" ] && python3 "$AR/gen_pipeline.py" "$NEWLABEL" || true
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
-    echo "[autoresearch] OK: new experiment logged (total=$AFTER)"
+    python3 "$AR/gen_costs.py" 2>/dev/null || true   # refresh costs.json from the new commit
+    echo "[autoresearch] OK: new experiment logged (total=$AFTER, coder \$$cost)"
   else
     # No run logged this iteration. Revert any half-finished agent edits to keep green.
     git checkout -- "research/FMDiscovery/Sources/DiscoveryAgent" 2>/dev/null || true

@@ -43,6 +43,30 @@ public enum Configs {
         // tax↔budget share no words); semantic retrieval surfaces the nearest task TYPE
         // so the few-shot demonstrations model the right decision-critical unknowns.
         "exp007": DiscoveryConfig(topology: .ragFewShotSemantic),
+
+        // EXP-008: adapt-the-exemplar. Make the nearest exemplar's 7 CONCRETE gold
+        // questions hard constraints — the model adapts each one-to-one to the new
+        // task, preserving the unknown each probes so gold's dimension SPAN transfers
+        // directly. exp005/006 failed because they injected dimension LABELS; this
+        // injects the actual questions to rewrite, the lever the log keeps pointing to.
+        "exp008": DiscoveryConfig(topology: .ragAdaptExemplar),
+
+        // EXP-009: coverage-gap REPAIR. Build the exp003 RAG draft, then deterministically
+        // (NLEmbedding) find the concrete gold question whose unknown the draft covers LEAST
+        // and the most-redundant draft slot; one focused FM call adapts that gold question to
+        // the task and we swap it into the redundant slot. Coverage judgment moves OUT of the
+        // 3B into embedding math; 6/7 draft questions stay verbatim. Low temp for determinism.
+        "exp009": DiscoveryConfig(topology: .ragCoverageRepair, selectTemp: 0.3),
+
+        // EXP-010: self-consistency consensus. Draw 4 independent RAG sets (the exp003
+        // few-shot prompt) at temps [0.4,0.6,0.8,1.0], embedding-cluster all 28 questions,
+        // and keep the 7 clusters with the broadest CROSS-SAMPLE agreement. Attacks the
+        // redundancy + one-off-niche faults the judge flags in nearly every exp003 case:
+        // duplicates collapse to one cluster, single-sample noise drops out, and the
+        // recurring (=high-probability=likely critical) planning unknowns rise. New
+        // selection signal vs exp002 (self-rated importance) and exp004 (whole-set scoring).
+        "exp010": DiscoveryConfig(topology: .ragSelfConsistency,
+                                  sampleTemps: [0.4, 0.6, 0.8, 1.0]),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

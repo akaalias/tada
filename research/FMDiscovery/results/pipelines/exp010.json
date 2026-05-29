@@ -1,0 +1,41 @@
+{
+  "summary": "RAG self-consistency: 4 sets, cluster, pick 7 broadest",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task description"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG exemplars for 4 independent sets"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Generate 4 RAG drafts at varied temps",
+      "knobs": {
+        "n": "4",
+        "temp": "0.4,0.6,0.8,1.0"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "NLEmbedding cosine cluster 28 questions",
+      "knobs": {
+        "merge_threshold": "0.62",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Keep 7 broadest cross-sample agreement clusters",
+      "knobs": {
+        "k": "7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions (centroid-nearest members)"
+    }
+  ],
+  "label": "exp010"
+}

@@ -1,34 +1,25 @@
 {
-  "summary": "RAG draft + reflexion editor: drop/fill unknowns",
+  "summary": "RAG draft + reflexion editor with checklist critique",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User one-liner task description"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest exemplar Q-sets",
-      "knobs": {
-        "k": "2"
-      }
+      "text": "Fetch nearest gold exemplars via RAG"
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions from RAG context",
-      "knobs": {
-        "temp": "0.7"
-      }
+      "text": "Stage-1: draft 7 questions (exp003)"
     },
     {
       "kind": "critique",
-      "text": "Drop given/low-value/compound; fill missing decision-critical unknowns",
-      "knobs": {
-        "temp": "0.7"
-      }
+      "text": "Stage-2: FM auditor drops/fills via checklist"
     },
     {
       "kind": "output",
-      "text": "Final 7 refined questions"
+      "text": "Final 7 revised questions"
     }
   ],
   "label": "exp005"

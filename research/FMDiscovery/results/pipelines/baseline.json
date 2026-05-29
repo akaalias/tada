@@ -1,33 +1,17 @@
 {
-  "summary": "Best-of-N RAG sets picked by coverage scorer",
+  "summary": "Single-shot baseline, EXP-000 port",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner topic"
+      "text": "User one-liner prompt in"
     },
     {
-      "kind": "retrieve",
-      "text": "Fetch RAG exemplars for context"
-    },
-    {
-      "kind": "expand",
-      "text": "Sample 4 RAG+generate sets at varied temps",
-      "knobs": {
-        "n": "4",
-        "temps": "0.3,0.6,0.9,1.0"
-      }
-    },
-    {
-      "kind": "select",
-      "text": "Swift coverage scorer picks best set",
-      "knobs": {
-        "scoring": "weighted-dim-span",
-        "penalties": "redundancy,how-many"
-      }
+      "kind": "generate",
+      "text": "Single-shot FM call drafts 7 questions"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "baseline"

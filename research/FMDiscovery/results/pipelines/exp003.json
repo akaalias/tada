@@ -1,23 +1,23 @@
 {
-  "summary": "RAG few-shot: 2 nearest exemplars as demonstrations",
+  "summary": "RAG few-shot: 2 nearest exemplars injected",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User one-liner task description"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest non-dev gold exemplars",
+      "text": "Fetch 2 nearest gold exemplars via Jaccard",
       "knobs": {
-        "k": "2"
+        "k": "2",
+        "metric": "Jaccard"
       }
     },
     {
       "kind": "generate",
-      "text": "Single FM call with injected demonstrations",
+      "text": "Single FM call with few-shot system prompt",
       "knobs": {
-        "temp": "0.7",
-        "shots": "2"
+        "sampling": "greedy"
       }
     },
     {

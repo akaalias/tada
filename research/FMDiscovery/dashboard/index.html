@@ -96,6 +96,7 @@
         <th>#</th><th>Label</th><th>Set</th><th>Quality</th>
         <th title="Share of cases that pass the hard technical-spec gate: exactly 7 atomic questions, valid title, no emojis. Quality is forced to 0 for any case that fails.">Spec</th>
         <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
+        <th title="Cost of the code-writing agent for this experiment (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>
         <th>Move</th>
       </tr></thead>
       <tbody></tbody>
@@ -120,7 +121,7 @@
 <div id="tip"></div>
 <script>
 const GREEN="#16a34a", GREY="#94a3b8", INK="#0f172a", MUTED="#94a3b8", LINE="#e2e8f0";
-let lastSig="", expanded=new Set(), detailCache={}, chartPoints=[];
+let lastSig="", expanded=new Set(), detailCache={}, chartPoints=[], costs={};
 
 async function load() {
   let runs = [];
@@ -139,9 +140,10 @@ async function load() {
 
   draw(chartRuns);
 
+  try { costs = await (await fetch('../results/costs.json?t=' + Date.now())).json(); } catch(e) {}
   // Only rebuild the table when the data actually changed, so open detail
   // panels aren't collapsed under the reader by the 3s auto-refresh.
-  const sig = runs.map(r=>r.label+':'+r.quality+':'+r.kept).join('|');
+  const sig = runs.map(r=>r.label+':'+r.quality+':'+r.kept+':'+(costs[r.label]??'')).join('|');
   if (sig !== lastSig) { lastSig = sig; fillTable(runs); }
 }
 
@@ -293,9 +295,10 @@ function fillTable(runs) {
       `<td class="q">${r.quality.toFixed(3)}</td>`+
       `<td>${Math.round(r.specPass*100)}%</td>`+
       `<td>${r.wins}/${r.ties}/${r.losses}</td>`+
+      `<td class="q">${costs[r.label]!=null ? '$'+costs[r.label].toFixed(2) : '<span class="disc">—</span>'}</td>`+
       `<td>${esc(r.note||'')} <span class="${r.kept?'kept':'disc'}">${r.kept?'kept':'discarded'}</span></td>`;
     const det=document.createElement('tr'); det.className='detail';
-    const cell=document.createElement('td'); cell.colSpan=7;
+    const cell=document.createElement('td'); cell.colSpan=8;
     det.appendChild(cell); det.style.display = expanded.has(r.label)?'':'none';
     if (expanded.has(r.label)) renderDetail(r.label, cell);
     tr.addEventListener('click', ()=>{

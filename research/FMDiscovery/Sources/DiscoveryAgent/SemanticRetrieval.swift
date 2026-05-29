@@ -29,6 +29,23 @@ enum SemanticRetrieval {
         return scored.sorted { $0.1 > $1.1 }.prefix(k).map { $0.0 }
     }
 
+    /// EXP-009: embed an arbitrary list of strings on-device. Returns nil if the
+    /// sentence embedder is unavailable or any string fails to embed (so callers
+    /// can fall back safely). Used by CoverageRepair to compare a draft against the
+    /// concrete gold questions in embedding space.
+    static func vectors(for strings: [String]) -> [[Double]]? {
+        guard let embedder = NLEmbedding.sentenceEmbedding(for: .english) else { return nil }
+        var out: [[Double]] = []
+        for s in strings {
+            guard let v = embedder.vector(for: s) else { return nil }
+            out.append(v)
+        }
+        return out
+    }
+
+    /// Public cosine for callers working with raw vectors (EXP-009).
+    static func cos(_ a: [Double], _ b: [Double]) -> Double { cosine(a, b) }
+
     private static func cosine(_ a: [Double], _ b: [Double]) -> Double {
         guard a.count == b.count, !a.isEmpty else { return 0 }
         var dot = 0.0, na = 0.0, nb = 0.0
