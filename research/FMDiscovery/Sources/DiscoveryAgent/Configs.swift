@@ -216,6 +216,21 @@ public enum Configs {
         // 3B selection/ranking/critique pass is added (the move that sank every prior
         // multi-FM attempt). Built on the exp011 contrastive RAG base.
         "exp021": DiscoveryConfig(topology: .ragPerspectiveEnsemble),
+
+        // EXP-022: interleaved per-question chain-of-thought. exp018 already tried
+        // in-schema CoT but as a BATCH leading list (name all 7 unknowns first, then
+        // write all 7 questions) — it failed because the model filled the list with
+        // the same modal/generic content and the questions inherited it; a batch list
+        // conditions all 7 at once but gates no single slot. This tests the untried
+        // tight-coupling variant: the schema INTERLEAVES a concrete decision-IMPACT
+        // rationale immediately BEFORE each question (guided generation emits fields
+        // in order, so slot k's rationale conditions slot k's question). Hypothesis: a
+        // per-emission justification is harder to satisfy with filler than a one-shot
+        // batch list — forcing the model to name the concrete plan-fork a slot changes,
+        // at the moment it writes that slot, should suppress "any other preferences?"
+        // catch-alls and nudge specificity/non-redundancy. Single call on the exp011
+        // contrastive RAG base (best); rationales are discarded from the output.
+        "exp022": DiscoveryConfig(topology: .ragJustifiedQuestions),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -61,8 +61,57 @@ public struct ConfiguredAgent: Sendable {
         case .ragReasonedFewShot: return try await ragReasonedFewShot(input)
         case .ragCorpusSelect:   return try await ragCorpusSelect(input)
         case .ragPerspectiveEnsemble: return try await ragPerspectiveEnsemble(input)
+        case .ragJustifiedQuestions: return try await ragJustifiedQuestions(input)
         }
     }
+
+    /// EXP-022: interleaved per-question chain-of-thought. exp018 (in-schema CoT)
+    /// listed all 7 critical unknowns FIRST in a batch and then wrote all 7
+    /// questions — and it FAILED because the model filled the leading list with the
+    /// same modal/generic content and the questions inherited it; the batch list
+    /// conditions all 7 questions at once but doesn't gate any single slot. This
+    /// config tests the untried tight-coupling variant: the schema INTERLEAVES the
+    /// reasoning, forcing a concrete decision-IMPACT rationale immediately BEFORE
+    /// each question (guided generation emits fields in declared order, so for slot
+    /// k the model must state "answering this changes <concrete decision>" right
+    /// before phrasing question k). Hypothesis: a per-emission justification gate is
+    /// harder to satisfy with filler than a one-shot batch list — a model that must
+    /// name the concrete decision a slot changes, at the moment it writes that slot,
+    /// is less likely to spend it on "any other preferences?". Single call on the
+    /// exp011 contrastive RAG base (best); the rationales are discarded from output.
+    private func ragJustifiedQuestions(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.justifiedGuidance }
+        let prompt = """
+        Task the user entered: "\(input)"
+
+        Produce exactly 7 clarifying questions. For EACH, first state — in one short \
+        phrase — the concrete decision that answering it would change for THIS task, \
+        then write the question. A slot you can only justify with vague wording \
+        ("to understand preferences", "to know more") is filler: replace it with a \
+        sharper, decision-critical unknown instead.
+        """
+        let r = try await session.respond(to: prompt, generating: FMJustifiedPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-022: guidance appended after the contrastive lesson — explains the
+    /// interleaved justify-then-ask discipline the schema enforces, reusing the
+    /// "Organize my garage" task so the rationales line up with the STRONG set above.
+    static let justifiedGuidance = """
+
+
+        ── JUSTIFY EACH SLOT, THEN ASK (one at a time) ──
+        For every question, FIRST name the concrete decision its answer would change, \
+        THEN write the question — immediately, slot by slot. The rationale must point \
+        to a real fork in the plan, never vague intent. For "Organize my garage":
+        • rationale "decides storage vs workshop vs parking layout" → "What is your main goal for the garage?"
+        • rationale "sets how much shelving to buy" → "What is your budget for storage systems?"
+        • rationale "determines whether you need outside help or a dumpster" → "Roughly how much stuff needs removing?"
+        If the only rationale you can write is generic ("to understand your preferences", \
+        "to know more about it"), the slot is FILLER — discard it and ask a sharper \
+        decision-critical unknown for THIS task instead. Never restate a fact the task gives.
+        """
 
     /// EXP-021: prompt-diverse perspective ensemble. Every prior multi-sample
     /// config (best-of-N exp004, self-consistency exp010, tournament exp012,
@@ -1003,6 +1052,36 @@ struct FMReasonedPlan {
     func toContract() -> DiscoveryResult {
         DiscoveryResult(taskTitle: title, taskDescription: summary,
                         questions: questions.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
+    }
+}
+
+/// EXP-022: a plan whose 7 slots each INTERLEAVE a decision-impact rationale
+/// before the question. Because guided generation emits fields in declared order,
+/// the model commits to "answering this changes <decision>" immediately before
+/// phrasing each question — a per-slot CoT gate (vs exp018's batch-leading list).
+/// The rationales are discarded; only the questions reach the contract.
+@Generable
+struct FMJustifiedQuestion {
+    @Guide(description: "In 6-14 words, the CONCRETE decision in the plan that answering the question would change for THIS task (e.g. 'decides which city to book flights from'). Must name a real fork in the plan — never vague ('to understand preferences').")
+    var rationale: String
+    @Guide(description: "One complete clarifying question for the decision named above, 5-12 words, asking exactly ONE thing. Never combine two asks with 'and' or 'or'. Addressed to the user ('you'/'your'). Never restate a fact the task already gives.")
+    var question: String
+    @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
+    var requiresExternalAction: Bool
+}
+
+@Generable
+struct FMJustifiedPlan {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "Exactly 7 slots, each a decision-impact rationale paired with one clarifying question probing that decision.", .count(7))
+    var questions: [FMJustifiedQuestion]
+
+    func toContract() -> DiscoveryResult {
+        DiscoveryResult(taskTitle: title, taskDescription: summary,
+                        questions: questions.map { DiscoveryQuestion(title: $0.question, description: "", requiresExternalAction: $0.requiresExternalAction) })
     }
 }
 
