@@ -53,8 +53,8 @@ export function layoutPipe(spec) {
 export function renderPipeD3(spec, el) {
   if (!spec || !spec.stages || !el || !window.d3) return;
   const { nodes, edges } = layoutPipe(spec);
-  const LANEW = 184, STEPH = 92, NODEW = 160, NODEH = 72, PADX = 14, PADY = 14;
-  const ADW = 132, ADH = 46, ADGAP = 28;                       // adapter side-node
+  const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
+  const ADW = 132, ADH = 46, ADGAP = 44;                       // adapter side-node
   const hasAdapter = nodes.some(n => n.adapterName);
   const LEFTPAD = hasAdapter ? ADW + ADGAP : 0;                // room on the left for adapter nodes
   const byId = {}; nodes.forEach(n => byId[n.id] = n);
