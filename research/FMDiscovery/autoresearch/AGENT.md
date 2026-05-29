@@ -66,9 +66,11 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
    (b) for best-of-N, select via PAIRWISE 3B comparisons / a tournament (relative
    judgment beats absolute scoring on a 3B), not an absolute scorer; (c) self-
    consistency voting across diverse generations.
-3. **Code it** as a NEW named config in `Configs.swift` — pick the next free name
-   (`exp003`, `exp004`, … check the registry + program.md for the highest used).
-   Add any new topology/post-processing code in `DiscoveryAgent`. Keep old configs.
+3. **Code it** as a NEW named config in `Configs.swift`. CHOOSE A UNIQUE LABEL:
+   scan BOTH `results/runs.jsonl` and `Configs.swift` for the highest existing
+   `expNNN` and use the next integer. NEVER reuse a label that already appears in
+   `results/runs.jsonl` — duplicate labels corrupt the dashboard, cost, and diagram
+   mapping. Add any new topology/post-processing code in `DiscoveryAgent`; keep old configs.
 4. **Build** until green: `swift build --package-path research/FMDiscovery`.
    Fix your own compile errors. (Swift 6 strict concurrency: `[String:Any]`
    statics must be computed `var`; agents must be `Sendable`.)

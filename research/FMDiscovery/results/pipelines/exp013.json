@@ -1,0 +1,32 @@
+{
+  "summary": "Plan-then-surface-assumptions, RAG-phrase 7 questions",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft concrete plan, surface forced assumptions",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG few-shot exemplars for phrasing"
+    },
+    {
+      "kind": "generate",
+      "text": "Phrase assumed unknowns into 7 questions",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp013"
+}

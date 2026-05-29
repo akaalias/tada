@@ -36,6 +36,20 @@ enum Prompts {
     specific to THIS task. Do not include anything the task already answers.
     """
 
+    static let planAssumptions = """
+    You are a meticulous planner. Given a task a user wants to accomplish, do TWO \
+    things:
+    1. Draft a concrete, specific plan to actually accomplish it — commit to concrete \
+       choices (a route, a budget level, a schedule, an approach) even though the user \
+       hasn't told you the details.
+    2. Because you had to commit, surface the ASSUMPTIONS you made — the specific facts \
+       about THIS task you did not actually know (e.g. where they're starting from, how \
+       much they can spend, who it's for, when it needs to happen, what they already \
+       have, how many, where). List the assumptions whose real answer would MOST change \
+       your plan first. Be concrete and specific to this task; never list generic \
+       placeholders, and never assume something the task already tells you.
+    """
+
     static let select = """
     You are a personal task coach choosing the best clarifying questions to ask \
     a user before planning their task.

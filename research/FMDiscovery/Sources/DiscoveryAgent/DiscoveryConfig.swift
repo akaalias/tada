@@ -18,6 +18,7 @@ public struct DiscoveryConfig: Sendable {
         case ragSelfConsistency  // N independent RAG sets → embedding-cluster all questions → keep the 7 with broadest cross-sample agreement
         case ragContrastiveFewShot // exp003 positive few-shot + a fixed GOOD-vs-BAD contrastive lesson teaching the anti-patterns to avoid, 1 call
         case ragTournament       // N RAG sets at varying temps → single-elimination PAIRWISE 3B tournament (two-order voting) → return the winning set verbatim
+        case ragPlanAssumptions  // stage1: draft a concrete plan + surface the assumptions it forced → stage2: turn those assumed unknowns into 7 RAG-phrased questions
     }
 
     public enum Sampling: Sendable {

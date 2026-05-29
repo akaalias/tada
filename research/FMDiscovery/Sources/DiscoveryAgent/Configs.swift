@@ -88,6 +88,18 @@ public enum Configs {
         // judgment a 3B is actually decent at, and the untried selection signal.
         "exp012": DiscoveryConfig(topology: .ragTournament,
                                   sampleTemps: [0.3, 0.5, 0.7, 0.9]),
+
+        // EXP-013: plan-then-extract-assumptions. The coverage wall is that the 3B
+        // can't RANK which unknowns are decision-critical (every selection/aggregation/
+        // critique/in-context variant stuck at coverage 3). This changes the COGNITIVE
+        // task: stage 1 has the 3B draft a CONCRETE plan and surface the ASSUMPTIONS it
+        // was forced to commit to — to write a real plan it must assume a departure
+        // city/budget/who-for/dates/scale, i.e. exactly the decision-critical unknowns,
+        // and they emerge grounded in THIS task (unlike brainstormSelect's abstract,
+        // generic unknown-listing). Stage 2 turns those assumed unknowns into 7 natural
+        // questions using the proven exp003 RAG few-shot scaffold for phrasing/atomicity.
+        "exp013": DiscoveryConfig(topology: .ragPlanAssumptions,
+                                  brainstormTemp: 0.5, selectTemp: 0.3),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

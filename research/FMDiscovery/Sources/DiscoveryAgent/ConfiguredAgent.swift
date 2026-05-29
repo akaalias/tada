@@ -24,6 +24,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragSelfConsistency: return try await ragSelfConsistency(input)
         case .ragContrastiveFewShot: return try await ragContrastiveFewShot(input)
         case .ragTournament:     return try await ragTournament(input)
+        case .ragPlanAssumptions: return try await ragPlanAssumptions(input)
         }
     }
 
@@ -304,6 +305,49 @@ public struct ConfiguredAgent: Sendable {
         return r.content.toContract()
     }
 
+    /// EXP-013: plan-then-extract-assumptions. Every prior coverage attempt asked the
+    /// 3B to RANK which unknowns matter (abstract judgment it lacks) or to select/
+    /// aggregate/critique its own generic question samples — all stuck at coverage 3.
+    /// Here we change the COGNITIVE task: stage 1 makes the 3B draft a CONCRETE plan to
+    /// actually accomplish the task and surface the ASSUMPTIONS it was forced to commit
+    /// to (to write a real plan for "trip to Paris" it must assume a departure city,
+    /// dates, budget, group size — exactly the decision-critical unknowns). Those
+    /// assumptions emerge grounded in THIS specific task (unlike brainstormSelect's
+    /// abstract unknown-listing, which went generic). Stage 2 turns them into 7 natural
+    /// questions using the proven exp003 RAG exemplars to anchor phrasing/atomicity.
+    private func ragPlanAssumptions(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: draft a concrete plan and surface the assumptions it required.
+        let planner = LanguageModelSession { Prompts.planAssumptions }
+        let pa = try await planner.respond(
+            to: "The user wants to: \"\(input)\"\n\nDraft a concrete plan to accomplish this, then list the specific assumptions you had to make because the task didn't tell you.",
+            generating: FMPlanAssumptions.self,
+            options: config.options(temp: config.brainstormTemp, sampling: config.brainstormSampling)
+        ).content
+        let assumptionList = pa.assumptions.map { "- \($0)" }.joined(separator: "\n")
+
+        // Stage 2: turn the most decision-critical assumed unknowns into 7 questions,
+        // reusing the exp003 RAG few-shot scaffold for phrasing/atomicity/non-redundancy.
+        let scaffold = """
+
+
+        ── SOURCE: WHAT THE PLAN HAD TO ASSUME ──
+        To plan this task, the following facts had to be ASSUMED because the user never \
+        stated them. Each is a decision-critical unknown — the real answer could differ \
+        and change the plan:
+        \(assumptionList)
+
+        Turn the MOST decision-critical of these assumed unknowns into exactly 7 \
+        clarifying questions. Merge any that overlap into one, drop any the task already \
+        answers or that are trivial, and put the single most important missing thing \
+        first. Ask each as a natural question; do not mention the word "assumption".
+        """
+        let session = LanguageModelSession { ragSystemPrompt(input) + scaffold }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions, each probing one assumed unknown above."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
     /// EXP-007: identical to ragFewShot but exemplars are retrieved by on-device
     /// semantic similarity (NLEmbedding cosine) instead of word overlap, so the
     /// few-shot demonstrations are the nearest task TYPE even with no shared words.
@@ -563,6 +607,14 @@ struct FMSingleQuestion {
 struct FMSetComparison {
     @Guide(description: "Which set is the better set of clarifying questions: answer exactly 1 or 2.")
     var betterSet: Int
+}
+
+@Generable
+struct FMPlanAssumptions {
+    @Guide(description: "A concrete, specific plan to actually accomplish this task, 3-6 sentences. Commit to concrete choices (a route, a budget level, a schedule, an approach) even though the user hasn't given the details.")
+    var plan: String
+    @Guide(description: "The specific facts about THIS task you had to ASSUME to write that plan because the user did not state them — e.g. where they're starting from, how much they can spend, who it's for, when it needs to happen, what they already have, how many, where. Each is one concrete, task-specific assumed fact, never a generic placeholder. List the ones whose real answer would MOST change the plan first.", .count(8))
+    var assumptions: [String]
 }
 
 @Generable

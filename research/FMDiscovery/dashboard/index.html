@@ -222,12 +222,17 @@ function relabelSets(s){ return (s||'').replace(/\bset a\b/gi,'Gold (Sonnet)').r
 // Pipeline diagram — fixed visual language (must match gen_pipeline.py vocabulary).
 const pipeCache={};
 const KINDC={input:'#64748b',retrieve:'#0891b2',generate:'#2563eb',expand:'#7c3aed',select:'#9333ea',critique:'#d97706',ensemble:'#db2777',post:'#059669',output:'#16a34a'};
-const FMK=new Set(['generate','critique','ensemble']);   // stages that are on-device model calls
+const FMK=new Set(['generate','expand','critique','ensemble']);   // stages that are on-device model calls
+const callCount=s=>{ if(!FMK.has(s.kind)) return 0; if(s.kind==='ensemble'){ const n=parseInt((s.knobs||{}).n); return Number.isFinite(n)&&n>0?n:2; } return 1; };
 async function fetchPipe(label){
   if (pipeCache[label]!==undefined) return pipeCache[label];
-  try { pipeCache[label]=await (await fetch(`../results/pipelines/${label}.json?t=`+Date.now())).json(); }
-  catch(e){ pipeCache[label]=null; }
-  return pipeCache[label];
+  try {
+    const r = await fetch(`../results/pipelines/${label}.json?t=`+Date.now());
+    if (!r.ok) return null;                 // don't cache a miss — retry next refresh
+    const j = await r.json();
+    pipeCache[label] = j;                    // cache only on success
+    return j;
+  } catch(e){ return null; }
 }
 function renderPipe(spec){
   if (!spec || !spec.stages) return '';
@@ -236,10 +241,14 @@ function renderPipe(spec){
     const c=KINDC[s.kind]||'#64748b';
     const kn=s.knobs?Object.entries(s.knobs).map(([k,v])=>`<span>${esc(k)}=${esc(String(v))}</span>`).join(''):'';
     let fm='';
-    if (FMK.has(s.kind)) fm = isAdapter(s) ? '<span class="fm" style="background:#ca8a04">LoRA</span>' : '<span class="fm">FM</span>';
+    if (FMK.has(s.kind)) {
+      const base = isAdapter(s) ? 'LoRA' : 'FM';
+      const n = callCount(s);
+      fm = `<span class="fm"${isAdapter(s)?' style="background:#ca8a04"':''}>${n>1?`${base}×${n}`:base}</span>`;
+    }
     return `<div class="stage" style="--sc:${c}">${fm}<div class="k">${esc(s.kind)}</div><div class="t">${esc(s.text||'')}</div>${kn?`<div class="kn">${kn}</div>`:''}</div>`;
   }).join('<div class="parrow">→</div>');
-  const fmCount=spec.stages.filter(s=>FMK.has(s.kind)).length;
+  const fmCount=spec.stages.reduce((a,s)=>a+callCount(s),0);
   const adapter=spec.stages.some(isAdapter);
   const sum = spec.summary?`<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount===1?'':'s'}${adapter?' · <b style="color:#ca8a04">LoRA adapter</b>':''}</span></div>`:'';
   return `${sum}<div class="pipe">${blocks}</div>`
@@ -248,9 +257,12 @@ function renderPipe(spec){
 
 async function fetchGold(id){
   if (goldCache[id]!==undefined) return goldCache[id];
-  try { goldCache[id]=(await (await fetch(`../gold/${id}.json?t=`+Date.now())).json()).gold; }
-  catch(e){ goldCache[id]=null; }
-  return goldCache[id];
+  try {
+    const r = await fetch(`../gold/${id}.json?t=`+Date.now());
+    if (!r.ok) return null;
+    goldCache[id] = (await r.json()).gold;
+    return goldCache[id];
+  } catch(e){ return null; }
 }
 async function programLine(label){
   if (programText===null){ try { programText=await (await fetch('../program.md?t='+Date.now())).text(); } catch(e){ programText=''; } }
