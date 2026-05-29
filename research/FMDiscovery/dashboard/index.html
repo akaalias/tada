@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FM Discovery — Autoresearch Progress</title>
+<style>
+  :root { --green:#16a34a; --grey:#cbd5e1; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 -apple-system,system-ui,sans-serif; color:var(--ink); background:#f8fafc; }
+  header { padding:24px 32px 8px; }
+  h1 { font-size:20px; margin:0; }
+  .sub { color:var(--muted); font-size:14px; margin-top:4px; }
+  .wrap { padding:8px 32px 40px; max-width:1200px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
+  canvas { width:100%; height:480px; display:block; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .q { font-variant-numeric:tabular-nums; font-weight:700; }
+  .kept { color:var(--green); font-weight:600; }
+  .disc { color:var(--muted); }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .legend { font-size:13px; color:var(--muted); display:flex; gap:18px; align-items:center; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Autoresearch Progress</h1>
+  <div class="sub legend">
+    <span><span class="dot" style="background:var(--grey)"></span>Discarded</span>
+    <span><span class="dot" style="background:var(--green)"></span>Kept improvement</span>
+    <span>— Running best</span>
+    <span id="updated"></span>
+  </div>
+</header>
+<div class="wrap">
+  <div class="card"><canvas id="chart"></canvas></div>
+  <div class="card">
+    <table id="tbl">
+      <thead><tr><th>#</th><th>Label</th><th>Quality</th><th>Spec</th><th>W/T/L</th><th>Move</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<script>
+const GREEN="#16a34a", GREY="#cbd5e1", INK="#0f172a", MUTED="#94a3b8", LINE="#e2e8f0";
+
+async function load() {
+  let runs = [];
+  try {
+    const txt = await (await fetch('../results/runs.jsonl?t=' + Date.now())).text();
+    runs = txt.trim().split('\n').filter(Boolean).map(JSON.parse);
+  } catch (e) { /* not served yet */ }
+  draw(runs);
+  fillTable(runs);
+  const kept = runs.filter(r => r.kept).length;
+  document.getElementById('title').textContent =
+    `Autoresearch Progress: ${runs.length} Experiment${runs.length===1?'':'s'}, ${kept} Kept Improvement${kept===1?'':'s'}`;
+  document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+}
+
+function draw(runs) {
+  const cv = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  if (!runs.length) { ctx.fillStyle=MUTED; ctx.fillText('No runs yet — run: swift run fmresearch evaluate', 20, 40); return; }
+
+  const pad = {l:64, r:24, t:24, b:48};
+  const qs = runs.map(r=>r.quality);
+  let lo = Math.min(...qs), hi = Math.max(...qs);
+  const span = Math.max(0.05, hi-lo); lo = Math.max(0, lo-span*0.25); hi = Math.min(1, hi+span*0.35);
+  const n = runs.length;
+  const X = i => pad.l + (n===1 ? (W-pad.l-pad.r)/2 : i*(W-pad.l-pad.r)/(n-1));
+  const Y = q => pad.t + (1-(q-lo)/(hi-lo))*(H-pad.t-pad.b);
+
+  // grid + y labels
+  ctx.strokeStyle=LINE; ctx.fillStyle=MUTED; ctx.font='12px system-ui'; ctx.lineWidth=1;
+  for (let k=0;k<=5;k++){ const q=lo+(hi-lo)*k/5, y=Y(q);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillText(q.toFixed(3), 16, y+4); }
+  ctx.fillText('Experiment #', (W)/2-30, H-12);
+  ctx.save(); ctx.translate(16,H/2); ctx.rotate(-Math.PI/2); ctx.fillText('Quality (higher is better)', -70, -44); ctx.restore();
+
+  // running best line (step)
+  let best=-1; const bestPts=[];
+  runs.forEach((r,i)=>{ if(r.quality>best){best=r.quality;} bestPts.push([i,best]); });
+  ctx.strokeStyle=GREEN; ctx.lineWidth=2; ctx.beginPath();
+  bestPts.forEach(([i,b],k)=>{ const x=X(i),y=Y(b);
+    if(k===0){ctx.moveTo(x,y);} else { const px=X(i-1); ctx.lineTo(px,y); ctx.lineTo(x,y);} });
+  ctx.stroke();
+
+  // points + labels for kept
+  runs.forEach((r,i)=>{ const x=X(i), y=Y(r.quality);
+    ctx.beginPath(); ctx.arc(x,y, r.kept?6:3, 0, 7);
+    ctx.fillStyle = r.kept?GREEN:GREY; ctx.fill();
+    if (r.kept) { ctx.fillStyle=GREEN; ctx.font='12px system-ui';
+      const lbl = r.note ? r.note : r.label;
+      ctx.fillText(lbl, x+8, y-8); }
+  });
+}
+
+function fillTable(runs) {
+  const tb = document.querySelector('#tbl tbody'); tb.innerHTML='';
+  [...runs].reverse().forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${r.index}</td><td>${r.label}</td>`+
+      `<td class="q">${r.quality.toFixed(3)}</td>`+
+      `<td>${Math.round(r.specPass*100)}%</td>`+
+      `<td>${r.wins}/${r.ties}/${r.losses}</td>`+
+      `<td>${r.note||''} <span class="${r.kept?'kept':'disc'}">${r.kept?'kept':'discarded'}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+load(); setInterval(load, 3000); window.addEventListener('resize', load);
+</script>
+</body>
+</html>

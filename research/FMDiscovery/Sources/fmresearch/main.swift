@@ -17,6 +17,18 @@ let packageDir = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 let goldDir = packageDir.appendingPathComponent("gold")
 
+func stringFlag(_ name: String) -> String? {
+    guard let i = args.firstIndex(of: name), i + 1 < args.count else { return nil }
+    return args[i + 1]
+}
+
+func selectedAgent() -> (name: String, fn: DiscoveryAgentFn) {
+    switch stringFlag("--agent") ?? "baseline" {
+    case "pipeline": let a = PipelineAgent(); return ("pipeline", { try await a.generate($0) })
+    default:         let a = BaselineAgent(); return ("baseline", { try await a.generate($0) })
+    }
+}
+
 switch command {
 case "availability":
     if #available(macOS 26.0, *) {
@@ -52,9 +64,10 @@ case "evaluate":
         print("note: ANTHROPIC_API_KEY not set — using StubJudge (no real scores)")
     }
 
-    let agent = BaselineAgent()
+    let agent = selectedAgent()
+    print("agent: \(agent.name)")
     let runner = Runner(judge: judge)
-    let metric = await runner.run({ try await agent.generate($0) }, over: cases) { print($0) }
+    let metric = await runner.run(agent.fn, over: cases) { print($0) }
     print(metric.summary)
 
     // Judge notes — the signal for the next hypothesis.
@@ -73,9 +86,34 @@ case "evaluate":
         print("\nwrote results/\(label).json")
     }
 
+    // Append one line per experiment to the dashboard run log.
+    let runsURL = resultsDir.appendingPathComponent("runs.jsonl")
+    let prior = (try? String(contentsOf: runsURL, encoding: .utf8))?
+        .split(separator: "\n")
+        .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? []
+    let bestBefore = prior.compactMap { $0["quality"] as? Double }.max() ?? -1
+    let rm = metric.rubricMeans
+    let record: [String: Any] = [
+        "index": prior.count, "label": label, "agent": agent.name,
+        "note": stringFlag("--note") ?? "",
+        "quality": metric.quality, "specPass": metric.specPassRate,
+        "wins": metric.wins, "ties": metric.ties, "losses": metric.losses,
+        "atomicity": rm.atomicity, "specificity": rm.specificity, "coverage": rm.coverage,
+        "naturalness": rm.naturalness, "nonRedundancy": rm.nonRedundancy,
+        "kept": metric.quality > bestBefore,
+    ]
+    if let line = try? JSONSerialization.data(withJSONObject: record),
+       let s = String(data: line, encoding: .utf8) {
+        let existing = (try? String(contentsOf: runsURL, encoding: .utf8)) ?? ""
+        try? (existing + s + "\n").write(to: runsURL, atomically: true, encoding: .utf8)
+        print("logged run #\(prior.count) to results/runs.jsonl")
+    }
+
 case "inspect":
     let input = args.count > 2 ? args[2] : "Plan a trip to Paris"
-    let result = try await BaselineAgent().generate(input)
+    let agent = selectedAgent()
+    print("agent: \(agent.name)")
+    let result = try await agent.fn(input)
     print("TITLE: \(result.taskTitle)")
     print("DESC:  \(result.taskDescription)")
     for (i, q) in result.questions.enumerated() {
