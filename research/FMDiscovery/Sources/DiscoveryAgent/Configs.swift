@@ -267,6 +267,23 @@ public enum Configs {
         // limited or judgment-limited — a clean falsifiable probe, no added
         // 3B-judgment or embedding dependence.
         "exp024": DiscoveryConfig(topology: .ragContrastiveFewShot, selectTemp: 1.2),
+
+        // EXP-025: givens-aware single call. The most-cited waste across the entire
+        // log is the 3B spending slots re-asking facts the task ALREADY states
+        // (dinner "how many guests?" when the task says 8 friends; trip destination
+        // is Paris; buy_used_car assumes a car is already chosen). exp018 tried an
+        // in-schema think-first step but its first field — "name the 7 critical
+        // unknowns" — demands the which-unknown-is-critical JUDGMENT the 3B lacks, so
+        // it filled it with the same modal/generic content and lost. This flips the
+        // first field to one the 3B CAN reliably produce: `providedFacts`, the
+        // concrete facts literally present in the task text (pure reading
+        // comprehension, not judgment). Guided generation emits fields in declared
+        // order, so the model commits to the givens FIRST, then writes 7 questions
+        // under an absolute no-re-ask-a-given rule — in ONE coherent draw, no separate
+        // refill pass. The bet: a meaningful share of the recurring slot-waste is
+        // re-asking givens, so freeing those slots lets the 7 span more genuine
+        // unknowns. Built on the exp011 contrastive RAG base (current best).
+        "exp025": DiscoveryConfig(topology: .ragGivensAware),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

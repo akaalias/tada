@@ -63,8 +63,62 @@ public struct ConfiguredAgent: Sendable {
         case .ragPerspectiveEnsemble: return try await ragPerspectiveEnsemble(input)
         case .ragJustifiedQuestions: return try await ragJustifiedQuestions(input)
         case .ragStartingPointCritique: return try await ragStartingPointCritique(input)
+        case .ragGivensAware:    return try await ragGivensAware(input)
         }
     }
+
+    /// EXP-025: givens-aware single call. The most-cited waste across the whole log
+    /// is the 3B spending slots re-asking facts the task ALREADY states (dinner
+    /// "how many guests?" when the task says 8 friends; trip destination is Paris;
+    /// buy_used_car assumes a car already chosen). exp018 tried a think-first schema
+    /// (name the critical unknowns first) and lost because that first field demands
+    /// the which-unknown-is-critical JUDGMENT the 3B lacks — it filled it with the
+    /// same modal/generic content. This config flips the first field to one the 3B
+    /// CAN reliably produce: `providedFacts` — the concrete facts literally present
+    /// in the task text (pure reading comprehension, not judgment). Guided generation
+    /// emits fields in declared order, so the model commits to the givens FIRST, then
+    /// writes 7 questions under an absolute rule that none may re-ask a given. The
+    /// bet: a meaningful share of the recurring slot-waste is re-asking givens, so
+    /// freeing those slots — in one coherent draw, no separate refill pass — lets the
+    /// 7 span more genuine unknowns. Built on the exp011 contrastive RAG base (best).
+    private func ragGivensAware(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.givensGuidance }
+        let prompt = """
+        Task the user entered: "\(input)"
+
+        First list the facts this task statement ALREADY tells you (the givens), then \
+        write exactly 7 clarifying questions — none of which may ask about, restate, or \
+        re-confirm any given fact. Every slot must probe a genuine unknown.
+        """
+        let r = try await session.respond(to: prompt, generating: FMGivensPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-025: appended after the contrastive lesson — teaches the extract-givens-
+    /// first format the schema enforces, with worked examples of pulling concrete
+    /// facts straight out of the task text (an EASY reading task) and the absolute
+    /// no-re-ask-a-given rule that frees the wasted slots.
+    static let givensGuidance = """
+
+
+        ── STEP 1: LIST WHAT THE TASK ALREADY TELLS YOU ──
+        Before writing any questions, extract the concrete facts the task statement \
+        ALREADY gives you — the things you do NOT need to ask because the user already \
+        said them. This is simple reading: pull the facts straight out of the text.
+        • "Plan a dinner party for 8 friends this Saturday" → givens: it is a dinner \
+          party; 8 guests; this Saturday. (So NEVER ask how many guests or what day.)
+        • "Buy a used Toyota Corolla under $10k" → givens: a used car; make/model is \
+          Toyota Corolla; budget is under $10k. (So NEVER ask the type, make, or budget.)
+        • "Learn to play guitar" → givens: the instrument is guitar. (So NEVER ask \
+          which instrument.)
+
+        Then write your 7 questions. ABSOLUTE RULE: none of the 7 may ask about, \
+        restate, or re-confirm any fact you listed as given — every slot must probe a \
+        genuine UNKNOWN. Spending a slot on a fact the task already states is the most \
+        wasteful mistake; freeing that slot for a real decision-critical unknown is \
+        exactly what makes the set strong.
+        """
 
     /// EXP-022: interleaved per-question chain-of-thought. exp018 (in-schema CoT)
     /// listed all 7 critical unknowns FIRST in a batch and then wrote all 7
@@ -1141,6 +1195,27 @@ struct FMReasonedPlan {
     @Guide(description: "The 7 MOST decision-critical unknowns for THIS task, each a short phrase (2-5 words) naming a fact whose answer would most change the plan (e.g. 'departure city', 'trip budget', 'who is travelling'). Specific to this task; never generic filler; never a fact the task already states.", .count(7))
     var criticalUnknowns: [String]
     @Guide(description: "Exactly 7 clarifying questions — one natural question probing each decision-critical unknown above, in the SAME order.", .count(7))
+    var questions: [FMQuestion]
+
+    func toContract() -> DiscoveryResult {
+        DiscoveryResult(taskTitle: title, taskDescription: summary,
+                        questions: questions.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
+    }
+}
+
+/// EXP-025: a plan with an in-schema GIVENS-extraction step. The model fills
+/// `providedFacts` FIRST (guided generation emits fields in declared order) — an
+/// easy reading task — so it commits to what the task already states before
+/// writing questions, which must then avoid re-asking any given.
+@Generable
+struct FMGivensPlan {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "The concrete facts the task statement ALREADY states — each a short phrase naming something the user has already told you, so you must NOT ask about it (e.g. 'destination is Paris', '8 guests', 'budget under $10k', 'instrument is guitar'). List ONLY facts actually present in the task text; if the task is very short, this may be just one or two facts.")
+    var providedFacts: [String]
+    @Guide(description: "Exactly 7 clarifying questions, each probing a genuine UNKNOWN. NEVER ask about, restate, or re-confirm any fact listed in providedFacts. Each is a complete question, 5-15 words, asking exactly ONE thing, addressed to the user.", .count(7))
     var questions: [FMQuestion]
 
     func toContract() -> DiscoveryResult {

@@ -28,6 +28,7 @@ public struct DiscoveryConfig: Sendable {
         case ragPerspectiveEnsemble // generate full sets from 3 DISTINCT generation FRAMES (execution / scope / domain-expert) — prompt-diversity, not temp-diversity — then deterministically round-robin-merge by emission order with near-dup suppression (no 3B selection pass)
         case ragJustifiedQuestions // single call, INTERLEAVED per-question CoT: schema forces a concrete decision-impact rationale immediately BEFORE each question (vs exp018's batch-first list), gating filler at the point of emission
         case ragStartingPointCritique // contrastive RAG draft → ONE scoped 2nd call judging only ONE failure mode (does any slot establish the user's STARTING POINT?) → if not, swap the single weakest slot in Swift for a task-specific starting-point question (≤1 slot changes, 6 verbatim)
+        case ragGivensAware      // single call, in-schema: FIRST extract the facts the task already states (providedFacts — an EASY reading task, not judgment), THEN write 7 questions, none of which may re-ask a given; frees slots wasted on restating givens
     }
 
     public enum Sampling: Sendable {
