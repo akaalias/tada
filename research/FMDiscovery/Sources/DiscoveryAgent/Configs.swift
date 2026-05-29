@@ -250,6 +250,23 @@ public enum Configs {
         // verbatim, filler/near-dup defended). At most one slot changes — the
         // minimal-surface 2nd pass, attacking the one gap that recurs everywhere.
         "exp023": DiscoveryConfig(topology: .ragStartingPointCritique),
+
+        // EXP-024: decoding lever, UPPER endpoint on the BEST base. exp019 isolated
+        // the decoding lever's LOWER endpoint — greedy (temp 0) on the exp011
+        // contrastive-RAG base scored 0.273 (the deterministic floor), confirming
+        // exp010's datum that the 3B's MODAL output is the generic catch-all. The
+        // complementary half has never been isolated: if the sharp, task-specific
+        // unknowns live in the TAIL of the sampling distribution (exp010), then a
+        // HIGHER-temperature single draw should surface more of them and lift
+        // coverage — at the known risk (exp004) that very high temp degrades
+        // atomicity (compound/parenthetical asks, possible spec-gate failures).
+        // This holds the exp011 topology FIXED and only raises temperature to 1.2
+        // (clearly above the model default, into tail territory). Together with
+        // exp019 (greedy, 0.273) and the model-default draws (~0.32) it maps the
+        // temperature/quality curve and decides whether the plateau is decoding-
+        // limited or judgment-limited — a clean falsifiable probe, no added
+        // 3B-judgment or embedding dependence.
+        "exp024": DiscoveryConfig(topology: .ragContrastiveFewShot, selectTemp: 1.2),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
