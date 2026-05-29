@@ -27,8 +27,13 @@ public struct Runner {
                 log?("    \(verdict.pairwise.rawValue)  rubric \(String(format: "%.1f", verdict.rubric.mean))")
                 scores.append(CaseScore(id: c.id, input: c.input, spec: spec, verdict: verdict, candidate: candidate, error: nil))
             } catch {
-                log?("    ERROR: \(error)")
-                scores.append(CaseScore(id: c.id, input: c.input, spec: SpecResult(passed: false, violations: ["generation error"]), verdict: nil, candidate: nil, error: "\(error)"))
+                // Distinguish an FM content-moderation refusal (no output, not a quality
+                // failure) from any other generation error, so the metric/UI can exclude it.
+                let desc = "\(error)"
+                let moderated = desc.range(of: "guardrail|safety|moderat|unsafe|sensitive|content polic", options: [.regularExpression, .caseInsensitive]) != nil
+                let label = moderated ? "FM content moderation (refused)" : "generation error"
+                log?("    \(moderated ? "REFUSED (moderation)" : "ERROR"): \(error)")
+                scores.append(CaseScore(id: c.id, input: c.input, spec: SpecResult(passed: false, violations: [label]), verdict: nil, candidate: nil, error: label))
             }
         }
         return Metric(scores: scores)

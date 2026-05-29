@@ -18,9 +18,13 @@ export async function renderDetail(label, cell) {
     const gold = golds[i];
     const goldQs = gold ? `<ol class="qs">${gold.questions.map(q => `<li>${esc(q.title)}</li>`).join('')}</ol>` : '<div class="disc">gold unavailable</div>';
     const cand = s.candidate;
+    const refused = !!s.error;
     const fmQs = cand ? `<ol class="qs">${cand.questions.map(q => `<li>${esc(q.title)}</li>`).join('')}</ol>`
+      : refused ? `<div class="disc">${esc(s.error)} — no output; excluded from quality</div>`
       : `<div class="disc">spec failed: ${(s.spec.violations || []).join('; ')}</div>`;
-    let head = '<span class="disc">not judged (spec failed)</span>';
+    let head = refused
+      ? '<span class="badge b-tie">REFUSED</span> <span class="disc">FM content moderation — excluded from quality</span>'
+      : '<span class="disc">not judged (spec failed)</span>';
     if (s.verdict) {
       const [cls, txt] = pw(s.verdict.pairwise);
       head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;

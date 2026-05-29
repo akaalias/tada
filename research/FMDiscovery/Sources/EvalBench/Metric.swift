@@ -23,8 +23,17 @@ public struct Metric: Sendable {
     public let scores: [CaseScore]
 
     public var count: Int { scores.count }
-    public var quality: Double { mean(scores.map(\.quality)) }
-    public var specPassRate: Double { mean(scores.map { $0.spec.passed ? 1.0 : 0.0 }) }
+    // Quality is averaged ONLY over cases that produced output. An FM content-moderation
+    // refusal / generation error yields no questions, so it is NOT a quality-0 (which would
+    // unfairly drag the metric); it is excluded here and surfaced separately as `refused`
+    // — a product signal (the app needs a fallback for refused tasks), not a quality signal.
+    public var quality: Double { mean(scores.filter { $0.error == nil }.map(\.quality)) }
+    public var refused: Int { scores.filter { $0.error != nil }.count }
+    public var answered: Int { scores.filter { $0.error == nil }.count }
+    public var specPassRate: Double {
+        let a = scores.filter { $0.error == nil }
+        return a.isEmpty ? 0 : mean(a.map { $0.spec.passed ? 1.0 : 0.0 })
+    }
     public var errorRate: Double { mean(scores.map { $0.error == nil ? 0.0 : 1.0 }) }
 
     public var wins: Int { judged.filter { $0.pairwise == .fmBetter }.count }
@@ -49,10 +58,10 @@ public struct Metric: Sendable {
         let rm = rubricMeans
         return """
         ── metric ──────────────────────────────────────────
-        cases:        \(count)
-        QUALITY:      \(String(format: "%.3f", quality))   (headline; 0-1)
-        spec pass:    \(String(format: "%.0f%%", specPassRate * 100))
-        errors:       \(String(format: "%.0f%%", errorRate * 100))
+        cases:        \(count)  (answered \(answered), refused \(refused))
+        QUALITY:      \(String(format: "%.3f", quality))   (headline; 0-1, over answered cases)
+        spec pass:    \(String(format: "%.0f%%", specPassRate * 100))   (of answered)
+        refused:      \(refused)   (FM content moderation — excluded from quality)
         vs gold:      \(wins) win / \(ties) tie / \(losses) loss
         rubric means: atomicity \(rm.atomicity)  specificity \(rm.specificity)  coverage \(rm.coverage)  naturalness \(rm.naturalness)  nonRedundancy \(rm.nonRedundancy)
         ─────────────────────────────────────────────────────
