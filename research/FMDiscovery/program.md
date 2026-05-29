@@ -55,6 +55,8 @@ Requires `ANTHROPIC_API_KEY` in the environment for `gold` and `evaluate`.
 
 _(newest first; quality on dev-10 proxy unless noted)_
 
+- **exp003 ragFewShot** — quality **0.320** (dev), spec 100%, 0/1/9. Rubric: atom 4, spec 3, cover 3, nat 3, nonRed 4. **NEW BEST** (+0.013 vs baseline). Hard-coded 12 non-dev gold exemplars; at runtime retrieve 2 nearest by word-overlap Jaccard, inject as few-shot demonstrations in system prompt, single FM call. Non-redundancy improved 3→4; first tie vs gold (learn_guitar). Judge notes show model still makes catastrophic errors (asks "What is the name of your bakery?" for a naming task; asks redundant scheduling questions for GP appointment); critical coverage gaps persist (budget, departure city, group size). The RAG scaffolding helped non-redundancy but the 3B still can't reliably reason about which unknowns are most decision-critical.
+
 - **PIVOT (after EXP-002):** Both structural moves lost to single-shot on the
   dev proxy. exp002 improved non-redundancy (3→4 via score+select-in-Swift) but
   collapsed coverage (3→2); pipelines also hurt naturalness (3rd-person phrasing).

@@ -13,6 +13,10 @@ public enum Configs {
 
         // EXP-002: over-generate 12 scored candidates, select top-7 in Swift code.
         "exp002": DiscoveryConfig(topology: .overGenerateScore),
+
+        // EXP-003: retrieval-augmented few-shot — retrieve 2 nearest non-dev gold
+        // exemplars by word overlap, inject as few-shot demonstrations, single call.
+        "exp003": DiscoveryConfig(topology: .ragFewShot),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

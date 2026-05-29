@@ -8,6 +8,7 @@ public struct DiscoveryConfig: Sendable {
         case singleShot          // 1 call → 7 questions
         case brainstormSelect    // call1: list unknowns → call2: select+phrase 7
         case overGenerateScore   // 1 call → 12 scored candidates → Swift picks top 7
+        case ragFewShot          // retrieve 2 nearest gold exemplars → inject as few-shot → 1 call
     }
 
     public enum Sampling: Sendable {

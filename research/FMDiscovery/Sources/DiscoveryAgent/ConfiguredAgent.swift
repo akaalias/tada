@@ -14,6 +14,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShot:        return try await singleShot(input)
         case .brainstormSelect:  return try await brainstormSelect(input)
         case .overGenerateScore: return try await overGenerateScore(input)
+        case .ragFewShot:        return try await ragFewShot(input)
         }
     }
 
@@ -52,6 +53,56 @@ public struct ConfiguredAgent: Sendable {
         return try await sel.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                      options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
             .content.toContract()
+    }
+
+    private func ragFewShot(_ input: String) async throws -> DiscoveryResult {
+        // Retrieve 2 nearest gold exemplars by word-overlap similarity.
+        let examples = GoldExemplars.nearest(to: input, k: 2)
+        let exampleBlock = examples.enumerated().map { (i, ex) -> String in
+            let numbered = ex.questions.enumerated()
+                .map { "\($0.offset + 1). \($0.element)" }
+                .joined(separator: "\n")
+            return """
+            ── EXAMPLE \(i + 1) ──
+            User task: "\(ex.input)"
+            Excellent questions for this task:
+            \(numbered)
+            """
+        }.joined(separator: "\n\n")
+
+        let systemPrompt = """
+        You are a personal task coach. The user just shared a task they want to \
+        accomplish. Before making any plans, generate clarifying questions that \
+        uncover what they specifically want, context (who/what/when/where/why), \
+        constraints, resources, and key execution details.
+
+        Study these high-quality examples first — they show the level of \
+        specificity, coverage, and naturalness you must match:
+
+        \(exampleBlock)
+
+        ── RULES ──
+        TASK TITLE: restate the user's goal as a short, specific title (4-9 words) \
+        in their own terms. Never use generic labels like "Clarifying Questions".
+        DESCRIPTION: summarise the task itself in one plain sentence.
+        QUESTIONS — follow these rules without exception:
+        • Each question title IS the complete question, 5-15 words, natural.
+        • ONE thing per question. NEVER combine two asks with "and" or "or".
+        • Be SPECIFIC to THIS task — model the precision in the examples above.
+        • The 7 questions must cover the most decision-critical unknowns for \
+          THIS task; don't waste slots on generic or premature details.
+        • Addressed to the user ("you/your"). Never first-person ("my dad", "I").
+        • Do not ask about anything the task statement already tells you.
+        • requiresExternalAction true only when answering needs a real-world action \
+          outside the app (call, email, visit). False for in-app data entry.
+        • Do NOT use emojis.
+        """
+
+        let session = LanguageModelSession { systemPrompt }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     private func overGenerateScore(_ input: String) async throws -> DiscoveryResult {
