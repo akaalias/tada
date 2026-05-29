@@ -124,6 +124,18 @@ public enum Configs {
         // current-state — coverage breadth becomes a property of the SCHEMA, not of
         // ranking judgment the 3B lacks. Single call on the exp011 RAG+contrastive base.
         "exp015": DiscoveryConfig(topology: .ragDimensionalSchema),
+
+        // EXP-016: sequential one-question-at-a-time generation. Every prior config
+        // emitted all 7 questions in a SINGLE guided generation (flat array, scored
+        // pool, or 7 typed slots) and plateaued at coverage 3. exp010's datum: the
+        // 3B's MODAL output is the generic catch-all; the sharp task-specific unknowns
+        // live in the TAIL of its distribution. Emitting 7 at once lets the model
+        // collapse onto the modal cluster. This topology generates ONE question per
+        // call, each shown the already-asked set and told to probe a DIFFERENT unknown
+        // — forced novelty pushes each successive emission off the modal cluster into
+        // the tail. A new generation DYNAMIC (not select/rank/critique/aggregate, the
+        // absolute judgment the 3B lacks), on the exp003 RAG few-shot base.
+        "exp016": DiscoveryConfig(topology: .ragSequential),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

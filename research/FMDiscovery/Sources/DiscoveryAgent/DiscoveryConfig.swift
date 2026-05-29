@@ -21,6 +21,7 @@ public struct DiscoveryConfig: Sendable {
         case ragPlanAssumptions  // stage1: draft a concrete plan + surface the assumptions it forced → stage2: turn those assumed unknowns into 7 RAG-phrased questions
         case ragCorpusFewShot    // RAG few-shot drawn from the 100+ corpus bank (semantic retrieval, k=3) + the exp011 contrastive lesson, 1 call
         case ragDimensionalSchema // single call, but output schema is 7 typed per-dimension slots (goal/scope/who-for/budget/timeline/current-state/constraints) so guided generation STRUCTURALLY enforces coverage breadth
+        case ragSequential       // generate questions ONE AT A TIME, each conditioned on the already-asked set (forced-novelty pushes generation off the modal generic cluster into the task-specific tail)
     }
 
     public enum Sampling: Sendable {

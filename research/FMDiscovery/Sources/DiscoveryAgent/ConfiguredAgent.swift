@@ -56,7 +56,70 @@ public struct ConfiguredAgent: Sendable {
         case .ragPlanAssumptions: return try await ragPlanAssumptions(input)
         case .ragCorpusFewShot:  return try await ragCorpusFewShot(input)
         case .ragDimensionalSchema: return try await ragDimensionalSchema(input)
+        case .ragSequential:     return try await ragSequential(input)
         }
+    }
+
+    /// EXP-016: sequential, one-question-at-a-time generation. Every prior config
+    /// generated all 7 questions in a SINGLE guided emission (one flat array, a
+    /// scored pool, or 7 typed slots), and they all plateau at coverage 3. exp010's
+    /// key datum: the 3B's MODAL output is the generic catch-all, and the sharp
+    /// task-specific decision-critical unknowns appear only in the TAIL of its
+    /// sampling distribution. Generating 7 at once lets the model collapse onto its
+    /// modal cluster (7 generic-ish slots). This topology instead generates ONE
+    /// question per call, each call shown the questions already chosen and told to
+    /// probe a DIFFERENT unknown than all of them. Forced novelty pushes each
+    /// successive emission OFF the modal cluster into the tail where the
+    /// task-specific unknowns live — a different generation DYNAMIC than asking the
+    /// 3B to select/rank/critique/aggregate (the absolute judgment it lacks). The
+    /// exp003 RAG few-shot system prompt grounds phrasing/atomicity per step, and
+    /// the explicit do-not-repeat list structurally maximises non-redundancy.
+    private func ragSequential(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input)
+
+        // Task framing (title + one-sentence summary) in one small call.
+        let framingSession = LanguageModelSession { system }
+        let framing = try await framingSession.respond(
+            to: "Task the user entered: \"\(input)\"\n\nRestate this task as a short specific title (4-9 words) and a one-sentence summary.",
+            generating: FMTaskFraming.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        // Generate 7 questions, one per call, each conditioned on the prior set.
+        var asked: [DiscoveryQuestion] = []
+        for i in 0..<7 {
+            let priorBlock: String
+            if asked.isEmpty {
+                priorBlock = "No questions have been asked yet. Ask the SINGLE most decision-critical unknown for this task."
+            } else {
+                let list = asked.enumerated().map { "  \($0.offset + 1). \($0.element.title)" }.joined(separator: "\n")
+                priorBlock = """
+                Questions already asked (do NOT repeat or overlap with any of these):
+                \(list)
+
+                Ask the SINGLE next most decision-critical unknown that none of the \
+                above already covers. It must probe a genuinely DIFFERENT unknown.
+                """
+            }
+            let prompt = """
+            Task the user entered: "\(input)"
+
+            \(priorBlock)
+
+            Write exactly ONE clarifying question (question \(i + 1) of 7). It must be \
+            specific to THIS task, ask exactly one thing, and not restate a fact the \
+            task already gives.
+            """
+            let session = LanguageModelSession { system }
+            let q = try await session.respond(
+                to: prompt, generating: FMSingleQuestion.self,
+                options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+            ).content
+            asked.append(DiscoveryQuestion(title: q.question, description: "",
+                                           requiresExternalAction: q.requiresExternalAction))
+        }
+
+        return DiscoveryResult(taskTitle: framing.title, taskDescription: framing.summary, questions: asked)
     }
 
     /// EXP-015: structural coverage enforcement via a typed guided SCHEMA. Every
@@ -711,6 +774,16 @@ struct FMSingleQuestion {
     var question: String
     @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
     var requiresExternalAction: Bool
+}
+
+/// EXP-016: task framing (title + summary) for the sequential topology, which
+/// emits questions one at a time and so needs a separate small framing emission.
+@Generable
+struct FMTaskFraming {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
 }
 
 @Generable
