@@ -1,0 +1,42 @@
+// The expanded per-experiment detail: pipeline diagram + write-up + per-case
+// gold-vs-on-device comparison with the judge's verdict and notes.
+
+import { fetchResults, fetchPipe, fetchGold, programLine } from './api.js';
+import { pipeSummary, renderPipeD3 } from './pipeline.js';
+import { esc, pw, rmean, rubricChips, relabelSets } from './util.js';
+
+export async function renderDetail(label, cell) {
+  cell.innerHTML = '<div class="detail-inner">loading…</div>';
+  const scores = await fetchResults(label);
+  if (!scores) { cell.innerHTML = '<div class="detail-inner disc">no per-case results file for this experiment</div>'; return; }
+
+  const tried = await programLine(label);
+  const spec = await fetchPipe(label);
+  const golds = await Promise.all(scores.map(s => fetchGold(s.id)));
+
+  const blocks = scores.map((s, i) => {
+    const gold = golds[i];
+    const goldQs = gold ? `<ol class="qs">${gold.questions.map(q => `<li>${esc(q.title)}</li>`).join('')}</ol>` : '<div class="disc">gold unavailable</div>';
+    const cand = s.candidate;
+    const fmQs = cand ? `<ol class="qs">${cand.questions.map(q => `<li>${esc(q.title)}</li>`).join('')}</ol>`
+      : `<div class="disc">spec failed: ${(s.spec.violations || []).join('; ')}</div>`;
+    let head = '<span class="disc">not judged (spec failed)</span>';
+    if (s.verdict) {
+      const [cls, txt] = pw(s.verdict.pairwise);
+      head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;
+    }
+    const note = s.verdict ? `<div class="note">judge: ${esc(relabelSets(s.verdict.notes))}</div>` : '';
+    return `<div class="case">
+      <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${head}</div>
+      <div class="cmp">
+        <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div>${goldQs}</div>
+        <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div>${fmQs}</div>
+      </div>${note}</div>`;
+  }).join('');
+
+  const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
+  cell.innerHTML = `<div class="detail-inner">${pipeSummary(spec)}<div class="pipe-d3"></div>`
+    + `<div class="legend-kinds"><b>FM</b>/<b style="color:#ca8a04">LoRA</b> = on-device model call · vertical fan = parallel · horizontal chain = sequential · hover a node for details</div>`
+    + `${triedHtml}${blocks}</div>`;
+  if (spec) renderPipeD3(spec, cell.querySelector('.pipe-d3'));
+}

@@ -168,6 +168,23 @@ public enum Configs {
         // anchors what GOOD critical-unknown identification looks like (classic CoT
         // few-shot), on the exp011 contrastive RAG base (current best).
         "exp018": DiscoveryConfig(topology: .ragReasonedFewShot),
+
+        // EXP-019: decoding lever, isolated on the BEST base. Every prior config —
+        // including the running best (exp011 contrastive RAG) and exp003 — left the
+        // single generation call on STOCHASTIC model-default sampling, so each
+        // reported ~0.32 is a NOISY single draw (the exp011 log itself calls its
+        // +0.003 "within run-to-run noise"). The decoding lever (rules' lever #1)
+        // has never been isolated on the best topology. exp010's datum says the 3B's
+        // MODAL output is the generic catch-all and the sharp task-specific unknowns
+        // live in the TAIL — a directly falsifiable prediction. This config holds the
+        // exp011 contrastive-RAG topology FIXED and only swaps decoding to GREEDY
+        // (temperature 0, deterministic mode). If modal=generic is right, greedy
+        // should regress coverage (pure mode = most generic) AND remove sampling
+        // noise/redundancy; if exp011's score was partly sampling luck, greedy gives
+        // the model's single most-confident set. Either way it isolates how much of
+        // the plateau is decoding vs. judgment — signal no prior experiment produced.
+        "exp019": DiscoveryConfig(topology: .ragContrastiveFewShot,
+                                  selectTemp: 0.0, selectSampling: .greedy),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

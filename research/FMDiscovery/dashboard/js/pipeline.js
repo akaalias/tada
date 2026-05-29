@@ -1,0 +1,82 @@
+// The d3 pipeline graph: turns a pipeline spec into a top-down node-link diagram.
+// Parallel stages (ensemble) fan out horizontally; sequential multi-call stages
+// (e.g. a tournament) chain downward. Every model call is its own node.
+
+import { esc, KINDC, callCount, isAdapter, callLabels } from './util.js';
+
+export function pipeSummary(spec) {
+  if (!spec || !spec.stages) return '';
+  const fmCount = spec.stages.reduce((a, s) => a + callCount(s), 0);
+  const adapter = spec.stages.some(isAdapter);
+  return spec.summary
+    ? `<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount === 1 ? '' : 's'}${adapter ? ' · <b style="color:#ca8a04">LoRA adapter</b>' : ''}</span></div>`
+    : '';
+}
+
+// Build {nodes, edges, cols}. col = pipeline depth (→ y, downward); row = parallel
+// lane (→ x). Each node carries a human-readable `sub` and a `full` tooltip.
+export function layoutPipe(spec) {
+  const stages = spec.stages || [];
+  const nodes = [], edges = [], info = [];
+  let col = 0;
+  stages.forEach((s, si) => {
+    const n = callCount(s), kind = s.kind, adapter = isAdapter(s), labels = callLabels(s);
+    if (kind === 'ensemble' && n > 1) {                 // parallel fan
+      const ids = [];
+      for (let r = 0; r < n; r++) {
+        const id = si + '_' + r; ids.push(id);
+        nodes.push({ id, col, row: r, rows: n, kind, adapter, model: true, title: 'generate', sub: labels[r] || ('#' + (r + 1)), full: kind + ': ' + (s.text || '') + ' (' + (labels[r] || '') + ')' });
+      }
+      info.push({ entry: ids, exit: ids }); col += 1;
+    } else if (n > 1) {                                 // sequential chain
+      const ids = [];
+      for (let k = 0; k < n; k++) {
+        const id = si + '_' + k; ids.push(id);
+        nodes.push({ id, col: col + k, row: 0, rows: 1, kind, adapter, model: true, title: kind, sub: labels[k] || (kind + ' ' + (k + 1)), full: kind + ' call ' + (k + 1) + '/' + n + ': ' + (labels[k] || '') + ' — ' + (s.text || '') });
+        if (k > 0) edges.push({ from: si + '_' + (k - 1), to: id });
+      }
+      info.push({ entry: [ids[0]], exit: [ids[n - 1]] }); col += n;
+    } else {                                            // single node
+      const id = si + '_0';
+      nodes.push({ id, col, row: 0, rows: 1, kind, adapter, model: n > 0, title: kind, sub: s.text || '', full: kind + ': ' + (s.text || '') });
+      info.push({ entry: [id], exit: [id] }); col += 1;
+    }
+  });
+  for (let i = 0; i < info.length - 1; i++)
+    info[i].exit.forEach(a => info[i + 1].entry.forEach(b => edges.push({ from: a, to: b })));
+  return { nodes, edges, cols: col };
+}
+
+export function renderPipeD3(spec, el) {
+  if (!spec || !spec.stages || !el || !window.d3) return;
+  const { nodes, edges } = layoutPipe(spec);
+  const LANEW = 184, STEPH = 92, NODEW = 160, NODEH = 72, PADX = 14, PADY = 14;
+  const byId = {}; nodes.forEach(n => byId[n.id] = n);
+  const totalLanes = Math.max(1, ...nodes.map(n => n.rows));
+  const maxCol = Math.max(0, ...nodes.map(n => n.col));
+  const W = PADX * 2 + totalLanes * LANEW, H = PADY * 2 + maxCol * STEPH + NODEH;
+  const pos = id => {
+    const n = byId[id], laneOff = (totalLanes - n.rows) / 2;
+    const x = PADX + (laneOff + n.row) * LANEW, y = PADY + n.col * STEPH;
+    return { x, y, topx: x + NODEW / 2, topy: y, botx: x + NODEW / 2, boty: y + NODEH };
+  };
+  el.innerHTML = '';
+  const svg = d3.select(el).append('svg').attr('width', W).attr('height', H).attr('viewBox', '0 0 ' + W + ' ' + H);
+  svg.append('g').selectAll('path').data(edges).join('path')
+    .attr('fill', 'none').attr('stroke', '#cbd5e1').attr('stroke-width', 1.5)
+    .attr('d', d => { const a = pos(d.from), b = pos(d.to), my = (a.boty + b.topy) / 2; return 'M' + a.botx + ',' + a.boty + ' C' + a.botx + ',' + my + ' ' + b.topx + ',' + my + ' ' + b.topx + ',' + b.topy; });
+  const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
+    .attr('transform', d => { const p = pos(d.id); return 'translate(' + p.x + ',' + p.y + ')'; });
+  g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff').attr('stroke', '#e2e8f0');
+  g.append('rect').attr('width', NODEW).attr('height', 3).attr('fill', d => KINDC[d.kind] || '#64748b');
+  const fo = g.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', NODEW).attr('height', NODEH - 6);
+  const box = fo.append('xhtml:div').attr('class', 'nodebox');
+  box.append('xhtml:div').attr('class', 'nb-kind').style('color', d => KINDC[d.kind] || '#64748b').text(d => (d.title || '').toUpperCase());
+  box.append('xhtml:div').attr('class', 'nb-sub').text(d => d.sub || '');
+  const bw = d => d.adapter ? 28 : 18;
+  const badge = g.filter(d => d.model).append('g').attr('transform', d => 'translate(' + (NODEW - bw(d) - 6) + ',6)');
+  badge.append('rect').attr('width', d => bw(d)).attr('height', 12).attr('rx', 3).attr('fill', d => d.adapter ? '#ca8a04' : '#db2777');
+  badge.append('text').attr('x', d => bw(d) / 2).attr('y', 9.5).attr('text-anchor', 'middle').attr('font-size', 8)
+    .attr('font-weight', 800).attr('fill', '#fff').text(d => d.adapter ? 'LoRA' : 'FM');
+  g.append('title').text(d => d.full);
+}

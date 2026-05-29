@@ -1,0 +1,26 @@
+{
+  "summary": "Greedy decoding isolated on contrastive-RAG best base",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Contrastive RAG few-shot exemplar lookup"
+    },
+    {
+      "kind": "generate",
+      "text": "Single generate call, greedy decoding",
+      "knobs": {
+        "temp": "0",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions output"
+    }
+  ],
+  "label": "exp019"
+}
