@@ -1,0 +1,32 @@
+{
+  "summary": "RAG anti-modal self-contrast: greedy anchor then generate",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of few-shot exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Greedy modal draft as negative anchor",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Fresh generation to surpass modal anchor",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp027"
+}
