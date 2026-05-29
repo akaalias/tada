@@ -3,26 +3,26 @@
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "NLEmbedding cosine: top-2 semantic exemplars",
+      "text": "Semantic cosine retrieval via NLEmbedding",
       "knobs": {
-        "retrieval": "cosine",
+        "method": "NLEmbedding-cosine",
         "k": "2"
       }
     },
     {
       "kind": "generate",
-      "text": "Few-shot FM call drafts 7 questions",
+      "text": "Few-shot prompted draft of 7 questions",
       "knobs": {
-        "temp": "0.7"
+        "shots": "2"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp007"

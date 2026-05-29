@@ -1,33 +1,39 @@
 {
-  "summary": "Best-of-N RAG sets, Swift coverage scorer selects",
+  "summary": "Best-of-4 RAG sets, Swift coverage scorer selects",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User one-liner topic input"
     },
     {
       "kind": "retrieve",
-      "text": "RAG exemplar fetch for each variant"
+      "text": "RAG fetch of exemplar sets"
     },
     {
       "kind": "ensemble",
-      "text": "4 RAG sets sampled at varied temps",
+      "text": "Sample 4 RAG drafts at varied temps",
       "knobs": {
         "n": "4",
-        "temps": "0.3,0.6,0.9,1.0"
-      }
+        "temp": "0.3,0.6,0.9,1.0"
+      },
+      "call_labels": [
+        "draft RAG set at temp 0.3",
+        "draft RAG set at temp 0.6",
+        "draft RAG set at temp 0.9",
+        "draft RAG set at temp 1.0"
+      ]
     },
     {
       "kind": "select",
       "text": "Swift coverage scorer picks best set",
       "knobs": {
         "k": "1",
-        "scorer": "dimension-span+penalties"
+        "scoring": "weighted-dimension-span"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp004"

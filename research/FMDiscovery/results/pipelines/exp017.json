@@ -1,17 +1,17 @@
 {
-  "summary": "RAG draft \u2192 deterministic filler/dupe detect \u2192 scoped refill",
+  "summary": "Deterministic filler/dupe detect, scoped FM refill repair",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "user one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive-RAG exemplar fetch (exp011 base)"
+      "text": "contrastive-RAG exemplar fetch (exp011 base)"
     },
     {
       "kind": "generate",
-      "text": "Draft 7 Qs via contrastive-RAG prompt"
+      "text": "exp011 base draft generation"
     },
     {
       "kind": "post",
@@ -19,18 +19,18 @@
     },
     {
       "kind": "critique",
-      "text": "Scoped FM call refills wasted slots only",
+      "text": "scoped FM refills only wasted slots concretely",
       "knobs": {
         "temp": "0.7"
       }
     },
     {
       "kind": "post",
-      "text": "Defensive re-check reverts filler/dupe refills"
+      "text": "defensive revert: re-check refills for filler/dupes"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "final 7 questions out"
     }
   ],
   "label": "exp017"

@@ -69,6 +69,9 @@
   .pipe-sum { font-size:13px; font-weight:600; color:#334155; margin:2px 0 8px; }
   .pipe-d3 { overflow-x:auto; padding-bottom:6px; }
   .pipe-d3 svg text { font-family:-apple-system,system-ui,sans-serif; }
+  .pipe-d3 .nodebox { font:11px/1.3 -apple-system,system-ui,sans-serif; padding:7px 9px 6px; box-sizing:border-box; height:100%; overflow:hidden; }
+  .pipe-d3 .nb-kind { font-size:9.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; margin-bottom:2px; }
+  .pipe-d3 .nb-sub { color:#334155; overflow-wrap:anywhere; }
   .pipe { display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; margin-bottom:14px; }
   .stage { position:relative; border:1px solid var(--line); border-top:3px solid var(--sc,#64748b); border-radius:8px; padding:6px 9px 7px; min-width:104px; max-width:172px; background:#fff; }
   .stage .k { font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--sc,#64748b); text-transform:uppercase; }
@@ -252,9 +255,11 @@ const isAdapter=s=>/adapter|lora|fine-?tun/i.test(JSON.stringify((s&&s.knobs)||{
 // Per-call labels for a multi-call stage: a knob that's a comma-list matching n
 // (e.g. temps=0.3,0.5,0.7,0.9) labels each call; else #1..#n.
 const callLabels=s=>{ const n=callCount(s), k=(s&&s.knobs)||{};
+  if (Array.isArray(s.call_labels) && s.call_labels.length===n) return s.call_labels;  // generator-provided, human-readable
   for (const [key,val] of Object.entries(k)){ const p=String(val).split(',').map(x=>x.trim());
     if (p.length===n && n>1) return p.map(x=>`${key}=${x}`); }
-  return Array.from({length:n},(_,i)=>`#${i+1}`); };
+  const word={ensemble:'draft',generate:'draft',select:'compare',critique:'edit pass',expand:'draft'}[s.kind]||(s.kind+' call');
+  return Array.from({length:n},(_,i)=>`${word} ${i+1}`); };
 
 function pipeSummary(spec){
   if(!spec||!spec.stages) return '';
@@ -277,7 +282,7 @@ function layoutPipe(spec){
     } else if (n>1){                               // sequential chain
       const ids=[];
       for(let k=0;k<n;k++){ const id=si+'_'+k; ids.push(id);
-        nodes.push({id,col:col+k,row:0,rows:1,kind,adapter,model:true,title:k===0?kind:'',sub:'#'+(k+1),full:kind+' call '+(k+1)+'/'+n+': '+(s.text||'')});
+        nodes.push({id,col:col+k,row:0,rows:1,kind,adapter,model:true,title:kind,sub:labels[k]||(kind+' '+(k+1)),full:kind+' call '+(k+1)+'/'+n+': '+(labels[k]||'')+' — '+(s.text||'')});
         if(k>0) edges.push({from:si+'_'+(k-1),to:id}); }
       info.push({entry:[ids[0]],exit:[ids[n-1]]}); col+=n;
     } else {                                        // single node
@@ -295,24 +300,29 @@ function truncate(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+'…' : 
 function renderPipeD3(spec, el){
   if(!spec||!spec.stages||!el||!window.d3) return;
   const {nodes,edges,cols}=layoutPipe(spec);
-  const COLW=172, ROWH=58, NODEW=144, NODEH=46, PADX=10, PADY=14;
+  // Top-down: pipeline depth flows DOWNWARD (n.col -> y, page scrolls naturally);
+  // parallel fans spread HORIZONTALLY (n.row -> x, bounded by a few lanes).
+  const LANEW=184, STEPH=92, NODEW=160, NODEH=72, PADX=14, PADY=14;
   const byId={}; nodes.forEach(n=>byId[n.id]=n);
-  const totalRows=Math.max(1,...nodes.map(n=>n.rows));
-  const W=PADX*2+cols*COLW, H=PADY*2+totalRows*ROWH;
-  const pos=id=>{ const n=byId[id]; const x=PADX+n.col*COLW; const yOff=(totalRows-n.rows)/2;
-    const y=PADY+(yOff+n.row)*ROWH; return {x,y,cx:x+NODEW,cy:y+NODEH/2}; };
+  const totalLanes=Math.max(1,...nodes.map(n=>n.rows));
+  const maxCol=Math.max(0,...nodes.map(n=>n.col));
+  const W=PADX*2+totalLanes*LANEW, H=PADY*2+maxCol*STEPH+NODEH;
+  const pos=id=>{ const n=byId[id]; const laneOff=(totalLanes-n.rows)/2;
+    const x=PADX+(laneOff+n.row)*LANEW, y=PADY+n.col*STEPH;
+    return {x,y, topx:x+NODEW/2, topy:y, botx:x+NODEW/2, boty:y+NODEH}; };
   el.innerHTML='';
   const svg=d3.select(el).append('svg').attr('width',W).attr('height',H).attr('viewBox','0 0 '+W+' '+H);
   svg.append('g').selectAll('path').data(edges).join('path')
     .attr('fill','none').attr('stroke','#cbd5e1').attr('stroke-width',1.5)
-    .attr('d',d=>{const a=pos(d.from),b=pos(d.to),mx=(a.cx+b.x)/2; return 'M'+a.cx+','+a.cy+' C'+mx+','+a.cy+' '+mx+','+b.cy+' '+b.x+','+b.cy;});
+    .attr('d',d=>{const a=pos(d.from),b=pos(d.to),my=(a.boty+b.topy)/2; return 'M'+a.botx+','+a.boty+' C'+a.botx+','+my+' '+b.topx+','+my+' '+b.topx+','+b.topy;});
   const g=svg.append('g').selectAll('g.node').data(nodes).join('g')
     .attr('transform',d=>{const p=pos(d.id); return 'translate('+p.x+','+p.y+')';});
   g.append('rect').attr('width',NODEW).attr('height',NODEH).attr('rx',8).attr('fill','#fff').attr('stroke','#e2e8f0');
   g.append('rect').attr('width',NODEW).attr('height',3).attr('fill',d=>KINDC[d.kind]||'#64748b');
-  g.append('text').attr('x',9).attr('y',18).attr('font-size',10).attr('font-weight',700)
-    .attr('fill',d=>KINDC[d.kind]||'#64748b').text(d=>(d.title||'').toUpperCase());
-  g.append('text').attr('x',9).attr('y',33).attr('font-size',11).attr('fill','#334155').text(d=>truncate(d.sub||'',20));
+  const fo=g.append('foreignObject').attr('x',0).attr('y',4).attr('width',NODEW).attr('height',NODEH-6);
+  const box=fo.append('xhtml:div').attr('class','nodebox');
+  box.append('xhtml:div').attr('class','nb-kind').style('color',d=>KINDC[d.kind]||'#64748b').text(d=>(d.title||'').toUpperCase());
+  box.append('xhtml:div').attr('class','nb-sub').text(d=>d.sub||'');
   const bw=d=>d.adapter?28:18;
   const badge=g.filter(d=>d.model).append('g').attr('transform',d=>'translate('+(NODEW-bw(d)-6)+',6)');
   badge.append('rect').attr('width',d=>bw(d)).attr('height',12).attr('rx',3).attr('fill',d=>d.adapter?'#ca8a04':'#db2777');

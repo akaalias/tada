@@ -1,35 +1,42 @@
 {
-  "summary": "RAG self-consistency: 4 sets, cluster, pick 7 broadest",
+  "summary": "Self-consistency: 4 RAG sets, embedding-cluster, top-7",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG exemplars for 4 independent sets"
+      "text": "RAG exemplar lookup for 4 independent sets"
     },
     {
       "kind": "ensemble",
-      "text": "Generate 4 RAG drafts at varied temps",
+      "text": "4 RAG drafts at varied temperatures",
       "knobs": {
         "n": "4",
-        "temp": "0.4,0.6,0.8,1.0"
-      }
+        "temp": "0.4/0.6/0.8/1.0"
+      },
+      "call_labels": [
+        "RAG draft at temp 0.4",
+        "RAG draft at temp 0.6",
+        "RAG draft at temp 0.8",
+        "RAG draft at temp 1.0"
+      ]
     },
     {
       "kind": "post",
-      "text": "NLEmbedding cosine cluster 28 questions",
+      "text": "Embedding-cluster 28 Qs, merge cosine \u22650.62",
       "knobs": {
-        "merge_threshold": "0.62",
-        "sampling": "greedy"
+        "method": "NLEmbedding cosine",
+        "threshold": "0.62"
       }
     },
     {
       "kind": "select",
       "text": "Keep 7 broadest cross-sample agreement clusters",
       "knobs": {
-        "k": "7"
+        "k": "7",
+        "tiebreak": "avg position"
       }
     },
     {

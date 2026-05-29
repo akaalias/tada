@@ -1,0 +1,26 @@
+{
+  "summary": "In-schema CoT: name 7 unknowns then question each",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG: fetch exp011 contrastive exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Single call: schema-forced unknowns then questions",
+      "knobs": {
+        "schema": "criticalUnknowns[7]+questions[7]",
+        "base": "exp011"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp018"
+}

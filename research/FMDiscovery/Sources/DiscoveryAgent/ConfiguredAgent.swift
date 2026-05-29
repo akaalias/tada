@@ -58,8 +58,60 @@ public struct ConfiguredAgent: Sendable {
         case .ragDimensionalSchema: return try await ragDimensionalSchema(input)
         case .ragSequential:     return try await ragSequential(input)
         case .ragFillerRepair:   return try await ragFillerRepair(input)
+        case .ragReasonedFewShot: return try await ragReasonedFewShot(input)
         }
     }
+
+    /// EXP-018: in-schema chain-of-thought few-shot. The persistent coverage wall is
+    /// that the 3B does not decide WHICH unknown is decision-critical — it defaults to
+    /// generic catch-alls and drops the one slot that matters. Every prior config
+    /// either emitted the 7 questions DIRECTLY (no explicit prioritisation step:
+    /// exp003/011/014) or pushed the judgment into a SEPARATE FM pass (brainstorm→
+    /// select exp001, plan→assumptions exp013, auditor exp005, tournament exp012) —
+    /// the latter all compounded the 3B's weak judgment and lost. This is the untried
+    /// middle path: a SINGLE call whose output SCHEMA forces the model to first commit
+    /// to the 7 most decision-critical unknowns (short phrases), THEN write one natural
+    /// question probing each, in order. Because guided generation fills fields in
+    /// declared order, the leading `criticalUnknowns` list is in-schema CoT that
+    /// conditions the subsequent questions — no extra weak-judgment FM pass. A worked
+    /// reasoning demonstration (the unknowns for "Organize my garage") anchors what
+    /// good critical-unknown identification looks like (classic CoT few-shot), atop the
+    /// exp011 contrastive RAG base (current best).
+    private func ragReasonedFewShot(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.reasonedGuidance }
+        let prompt = """
+        Task the user entered: "\(input)"
+
+        First identify the 7 most decision-critical unknowns for THIS task (short \
+        phrases), then write exactly one clarifying question probing each, in the same \
+        order.
+        """
+        let r = try await session.respond(to: prompt, generating: FMReasonedPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-018: appended after the contrastive lesson — a worked example of the
+    /// reasoning step (identify decision-critical unknowns BEFORE phrasing questions),
+    /// reusing the "Organize my garage" task so the unknowns line up with the STRONG
+    /// set already shown above. Teaches the think-first format the schema enforces.
+    static let reasonedGuidance = """
+
+
+        ── THINK FIRST: name the decision-critical unknowns ──
+        Before writing any questions, name the MOST decision-critical unknowns for the \
+        task — the facts whose answers would most change the plan. For the example task \
+        "Organize my garage", those unknowns are:
+        main goal (storage vs workshop vs parking); garage size; how much stuff there \
+        is; budget for storage systems; deadline; what to do with unwanted items; \
+        whether anyone is helping.
+        These are HIGH-LEVERAGE unknowns — never generic filler ("any preferences?") \
+        and never a fact the task already states. Each then becomes exactly ONE natural \
+        question, in the same order.
+
+        Do this for the user's task: first list its 7 decision-critical unknowns as \
+        short phrases, then write one question probing each.
+        """
 
     /// EXP-017: filler/redundancy detect-and-repair on the contrastive RAG draft.
     /// The judge's recurring complaint on the best config (exp011) is that redundant
@@ -809,6 +861,26 @@ struct FMQuestion {
     var detail: String
     @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
     var requiresExternalAction: Bool
+}
+
+/// EXP-018: a plan with in-schema chain-of-thought. The model fills
+/// `criticalUnknowns` FIRST (guided generation emits fields in declared order), so
+/// committing to which 7 unknowns matter conditions the questions it then writes.
+@Generable
+struct FMReasonedPlan {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "The 7 MOST decision-critical unknowns for THIS task, each a short phrase (2-5 words) naming a fact whose answer would most change the plan (e.g. 'departure city', 'trip budget', 'who is travelling'). Specific to this task; never generic filler; never a fact the task already states.", .count(7))
+    var criticalUnknowns: [String]
+    @Guide(description: "Exactly 7 clarifying questions — one natural question probing each decision-critical unknown above, in the SAME order.", .count(7))
+    var questions: [FMQuestion]
+
+    func toContract() -> DiscoveryResult {
+        DiscoveryResult(taskTitle: title, taskDescription: summary,
+                        questions: questions.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
+    }
 }
 
 /// EXP-015: a typed plan whose seven question slots each target a distinct

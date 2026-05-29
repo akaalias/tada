@@ -30,7 +30,8 @@ TOOL = {
                         "kind": {"type": "string", "enum": KINDS, "description":
                             "input=the user one-liner; retrieve=RAG fetch of exemplars; generate=an on-device FM call that drafts questions/unknowns; expand=one FM call that over-produces N candidates; select=deterministic Swift ranking/pick of top-K; critique=a second FM pass that audits/edits/revises a draft (reflexion); ensemble=best-of-N variants then pick; post=deterministic Swift post-processing (dedup/coverage-check/atomicity-repair); output=the final 7 questions."},
                         "text": {"type": "string", "description": "<=8 words: what this stage does for THIS experiment."},
-                        "knobs": {"type": "object", "description": "Optional knob values shown as chips, e.g. {\"temp\":\"0.7\",\"sampling\":\"greedy\",\"k\":\"2\",\"n\":\"4\"}. Omit if none."}
+                        "knobs": {"type": "object", "description": "Optional knob values shown as chips, e.g. {\"temp\":\"0.7\",\"sampling\":\"greedy\",\"k\":\"2\",\"n\":\"4\"}. Omit if none."},
+                        "call_labels": {"type": "array", "items": {"type": "string"}, "description": "REQUIRED when this stage makes more than one model call (n>1 for an ensemble, or calls>1 for a model-based select/tournament/loop): one concise human-readable description per call (<=7 words), in order, with length equal to the call count. Describe what EACH call actually does. e.g. ensemble: [\"draft at temp 0.3\", \"draft at temp 0.6\", ...]; pairwise tournament: [\"semifinal: draft A vs B\", \"same pair, order swapped\", \"final: the two winners\", ...]. NEVER leave multiple calls as bare numbers."}
                     },
                     "required": ["kind", "text"]
                 }
@@ -56,6 +57,7 @@ Rules:
 - generate/critique/ensemble are model (FM) calls; select/post are deterministic code. Put decoding/retrieval/count settings in knobs (temp, sampling, k, n). Keep text fields <=8 words.
 - If a model call uses a fine-tuned / LoRA / adapter model instead of the stock base 3B, set that stage's knobs.model to the adapter name (e.g. "adapter-v1"). Omit model for the stock base model.
 - A select/post stage that uses the MODEL (pairwise LLM comparisons, a tournament, an LLM-as-judge) is real model work: set its knobs.calls to the number of model calls it makes (e.g. a single-elimination pairwise tournament over 4 candidates with a two-order vote ≈ 6). Pure deterministic select/post (sorting, embedding clustering, dedup, regex repair) must OMIT calls.
+- For ANY stage with multiple model calls (parallel ensemble OR a sequential model-based select/tournament/loop), you MUST fill call_labels with one short human-readable description per call, in order — describe what each call does; never leave them as bare numbers.
 
 Examples (description -> stage kinds):
 - "single-shot (EXP-000 port)" -> input, generate, output

@@ -152,6 +152,22 @@ public enum Configs {
         // checklist). Strong slots returned verbatim; a defensive re-check reverts any
         // refill that is itself filler or duplicates a kept slot. Built on exp011.
         "exp017": DiscoveryConfig(topology: .ragFillerRepair),
+
+        // EXP-018: in-schema chain-of-thought. The coverage wall is that the 3B
+        // can't decide WHICH unknown is decision-critical, so it defaults to generic
+        // catch-alls. Every prior config either emitted questions DIRECTLY (no
+        // explicit which-unknowns-matter step) or moved the judgment into a SEPARATE
+        // FM pass (brainstorm→select exp001, plan→assumptions exp013, auditor exp005,
+        // tournament exp012) — all of which compounded the 3B's weak judgment and lost.
+        // This is the untried middle path: a SINGLE call whose output schema forces
+        // the model to FIRST commit to the 7 most decision-critical unknowns as short
+        // phrases, THEN write one natural question probing each, in order. Guided
+        // generation emits fields in order, so the leading `criticalUnknowns` list acts
+        // as in-schema CoT that conditions the questions — no extra weak-judgment pass.
+        // A worked reasoning demonstration (the unknowns for "Organize my garage")
+        // anchors what GOOD critical-unknown identification looks like (classic CoT
+        // few-shot), on the exp011 contrastive RAG base (current best).
+        "exp018": DiscoveryConfig(topology: .ragReasonedFewShot),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -1,29 +1,29 @@
 {
-  "summary": "Corpus-backed semantic RAG k=3 + contrastive base",
+  "summary": "RAG few-shot: semantic k=3 over 117-set corpus",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner topic"
+      "text": "user topic one-liner"
     },
     {
       "kind": "retrieve",
-      "text": "Semantic k=3 from 117-set corpus bank",
+      "text": "semantic NLEmbedding k=3 from 117-set corpus",
       "knobs": {
-        "sampling": "semantic",
+        "retrieval": "semantic",
         "k": "3",
-        "corpus": "117-set"
+        "bank": "117-corpus"
       }
     },
     {
       "kind": "generate",
-      "text": "Draft 7 Qs with contrastive few-shot prompt",
+      "text": "draft 7 questions with RAG + contrastive prompt",
       "knobs": {
         "temp": "0.7"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "final 7 questions"
     }
   ],
   "label": "exp014"

@@ -1,21 +1,39 @@
 {
-  "summary": "Embedding coverage-gap repair: swap redundant draft slot",
+  "summary": "RAG draft + Swift embedding coverage-gap repair call",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner input"
+      "text": "User scenario one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch 2 nearest gold exemplars via RAG"
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions single-shot"
+      "text": "Draft 7 questions from exp003 base",
+      "knobs": {
+        "temp": "0.7"
+      }
     },
     {
       "kind": "post",
-      "text": "Embedding coverage check; swap redundant slot"
+      "text": "Swift NLEmbedding: find least-covered gold unknown"
+    },
+    {
+      "kind": "select",
+      "text": "Swift: pick most-redundant draft slot to replace"
+    },
+    {
+      "kind": "critique",
+      "text": "One FM call adapts gold Q into redundant slot",
+      "knobs": {
+        "temp": "0.7"
+      }
     },
     {
       "kind": "output",
-      "text": "Final 7 coverage-repaired questions"
+      "text": "Final 7 questions (6 unchanged + 1 repaired)"
     }
   ],
   "label": "exp009"

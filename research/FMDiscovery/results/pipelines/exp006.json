@@ -3,25 +3,29 @@
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest gold exemplars + dimensions",
+      "text": "Fetch 2 nearest exemplars + their dimension labels",
       "knobs": {
         "k": "2"
       }
     },
     {
+      "kind": "post",
+      "text": "Aggregate dims into coverage checklist"
+    },
+    {
       "kind": "generate",
-      "text": "Single call: RAG + checklist-scaffolded generation",
+      "text": "Single call: RAG few-shot + checklist injected",
       "knobs": {
-        "sampling": "greedy"
+        "temp": "0.7"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp006"

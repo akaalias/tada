@@ -3,25 +3,23 @@
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch nearest RAG exemplars",
-      "knobs": {
-        "k": "2"
-      }
+      "text": "RAG fetch of nearest gold exemplars"
     },
     {
       "kind": "generate",
-      "text": "Generate 7 typed per-dimension schema slots",
+      "text": "Generate 7 questions via typed per-dimension schema",
       "knobs": {
-        "temp": "0.7"
+        "temp": "0.7",
+        "sampling": "top-p"
       }
     },
     {
       "kind": "output",
-      "text": "7 dimension-slot questions emitted"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp015"

@@ -3,50 +3,40 @@
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG few-shot exemplars (exp003 base)"
+      "text": "RAG fetch of few-shot exemplars (exp003 base)"
     },
     {
       "kind": "generate",
-      "text": "Framing call: set up context",
+      "text": "Framing call: orient task context",
       "knobs": {
-        "sampling": "greedy"
+        "temp": "0.7",
+        "call": "1 of 8"
       }
     },
     {
       "kind": "generate",
-      "text": "Q1: first question, no prior set"
-    },
-    {
-      "kind": "generate",
-      "text": "Q2: conditioned on Q1, forced novelty"
-    },
-    {
-      "kind": "generate",
-      "text": "Q3: conditioned on Q1-Q2, forced novelty"
-    },
-    {
-      "kind": "generate",
-      "text": "Q4: conditioned on Q1-Q3, forced novelty"
-    },
-    {
-      "kind": "generate",
-      "text": "Q5: conditioned on Q1-Q4, forced novelty"
-    },
-    {
-      "kind": "generate",
-      "text": "Q6: conditioned on Q1-Q5, forced novelty"
-    },
-    {
-      "kind": "generate",
-      "text": "Q7: conditioned on Q1-Q6, forced novelty"
+      "text": "7 sequential calls, each conditioned on prior set",
+      "knobs": {
+        "temp": "0.7",
+        "calls": "7"
+      },
+      "call_labels": [
+        "Q1: first unknown, no prior context",
+        "Q2: novel unknown given Q1",
+        "Q3: novel unknown given Q1\u2013Q2",
+        "Q4: novel unknown given Q1\u2013Q3",
+        "Q5: novel unknown given Q1\u2013Q4",
+        "Q6: novel unknown given Q1\u2013Q5",
+        "Q7: novel unknown given Q1\u2013Q6"
+      ]
     },
     {
       "kind": "output",
-      "text": "Final 7 sequentially-generated questions"
+      "text": "Final 7 sequentially-generated questions out"
     }
   ],
   "label": "exp016"

@@ -1,5 +1,5 @@
 {
-  "summary": "RAG few-shot: 2 nearest exemplars injected",
+  "summary": "RAG few-shot: 2 nearest exemplars injected as demos",
   "stages": [
     {
       "kind": "input",
@@ -9,13 +9,14 @@
       "kind": "retrieve",
       "text": "Fetch 2 nearest gold exemplars via Jaccard",
       "knobs": {
+        "method": "word-overlap Jaccard",
         "k": "2",
-        "metric": "Jaccard"
+        "pool": "12 non-dev gold"
       }
     },
     {
       "kind": "generate",
-      "text": "Single FM call with few-shot system prompt",
+      "text": "Single FM call with few-shot prompt",
       "knobs": {
         "sampling": "greedy"
       }

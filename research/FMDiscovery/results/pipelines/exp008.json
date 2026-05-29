@@ -1,27 +1,24 @@
 {
-  "summary": "RAG: adapt nearest exemplar's 7 gold Qs one-to-one",
+  "summary": "RAG nearest exemplar rewrite one-to-one adapt",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task description in"
     },
     {
       "kind": "retrieve",
-      "knobs": {
-        "k": "1"
-      },
-      "text": "Fetch single nearest gold exemplar"
+      "text": "Fetch nearest gold exemplar (7 Qs)"
     },
     {
       "kind": "generate",
+      "text": "Rewrite each exemplar Q one-to-one",
       "knobs": {
-        "temp": "0.7"
-      },
-      "text": "Rewrite exemplar's 7 Qs one-to-one to new task"
+        "sampling": "greedy"
+      }
     },
     {
       "kind": "output",
-      "text": "7 adapted questions"
+      "text": "7 adapted questions out"
     }
   ],
   "label": "exp008"

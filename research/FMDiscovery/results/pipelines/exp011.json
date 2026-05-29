@@ -1,19 +1,20 @@
 {
-  "summary": "RAG contrastive GOOD-vs-BAD few-shot on exp003 base",
+  "summary": "Contrastive GOOD-vs-BAD few-shot RAG pipeline",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch nearest positive exemplars (RAG)"
+      "text": "RAG fetch of positive exemplars"
     },
     {
       "kind": "generate",
-      "text": "Single FM call with contrastive GOOD-vs-BAD demos",
+      "text": "Generate with contrastive GOOD-vs-BAD few-shot",
       "knobs": {
-        "sampling": "greedy"
+        "temp": "0.7",
+        "sampling": "top-p"
       }
     },
     {

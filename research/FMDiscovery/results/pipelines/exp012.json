@@ -1,36 +1,50 @@
 {
-  "summary": "RAG best-of-4 with single-elim pairwise 3B tournament",
+  "summary": "RAG best-of-4 with pairwise 3B tournament winner verbatim",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG exemplars for 4 independent sets",
+      "text": "Draw 4 independent RAG exemplar sets",
       "knobs": {
-        "n": "4",
-        "temps": "0.3,0.5,0.7,0.9"
+        "n": "4"
       }
     },
     {
       "kind": "ensemble",
-      "text": "Generate 4 RAG sets at varied temps",
+      "text": "Generate 4 RAG drafts at varied temps",
       "knobs": {
-        "n": "4",
-        "temp": "0.3\u20130.9"
-      }
+        "temps": "0.3,0.5,0.7,0.9",
+        "n": "4"
+      },
+      "call_labels": [
+        "RAG draft at temp 0.3",
+        "RAG draft at temp 0.5",
+        "RAG draft at temp 0.7",
+        "RAG draft at temp 0.9"
+      ]
     },
     {
       "kind": "select",
       "text": "Single-elim pairwise 3B tournament, two-order vote",
       "knobs": {
-        "calls": "6"
-      }
+        "calls": "6",
+        "tiebreak": "lower-temp incumbent"
+      },
+      "call_labels": [
+        "semifinal: set A vs B (order 1)",
+        "semifinal: set A vs B (order 2)",
+        "semifinal: set C vs D (order 1)",
+        "semifinal: set C vs D (order 2)",
+        "final: winner AB vs winner CD (order 1)",
+        "final: winner AB vs winner CD (order 2)"
+      ]
     },
     {
       "kind": "output",
-      "text": "Winner set returned verbatim"
+      "text": "Winning 7-question set returned verbatim"
     }
   ],
   "label": "exp012"
