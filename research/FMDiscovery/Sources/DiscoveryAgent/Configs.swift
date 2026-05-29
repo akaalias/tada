@@ -185,6 +185,20 @@ public enum Configs {
         // the plateau is decoding vs. judgment — signal no prior experiment produced.
         "exp019": DiscoveryConfig(topology: .ragContrastiveFewShot,
                                   selectTemp: 0.0, selectSampling: .greedy),
+
+        // EXP-020: corpus-grounded SELECTION over an over-generated candidate pool.
+        // The wall: the 3B can't rank which unknown is decision-critical. Every prior
+        // selection over its own samples failed because the SIGNAL was weak 3B
+        // judgment (exp002/010/012) or a blunt heuristic (exp004/009). This selector's
+        // signal is EXTERNAL: rank each candidate by embedding resemblance to the
+        // questions Sonnet ACTUALLY asks for the nearest corpus task types — generic
+        // 3B catch-alls match Sonnet's sharp questions weakly (demoted), tail
+        // task-specific questions match strongly (surfaced). Over-generate at 3 temps
+        // so the task-specific TAIL (exp010's datum) lands in the pool; then select 7
+        // by max-cosine-to-Sonnet with embedding redundancy suppression. Output stays
+        // 3B-generated; corpus is a ranking prior only (no copy/template = leak-safe).
+        "exp020": DiscoveryConfig(topology: .ragCorpusSelect,
+                                  sampleTemps: [0.4, 0.7, 1.0]),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

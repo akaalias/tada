@@ -24,6 +24,7 @@ public struct DiscoveryConfig: Sendable {
         case ragSequential       // generate questions ONE AT A TIME, each conditioned on the already-asked set (forced-novelty pushes generation off the modal generic cluster into the task-specific tail)
         case ragFillerRepair     // contrastive RAG draft → deterministically detect wasted slots (filler phrases + Jaccard near-dupes) → one scoped call refills only those with concrete task-specific questions
         case ragReasonedFewShot  // single call, but the output schema forces in-schema chain-of-thought: list the 7 decision-critical unknowns FIRST (anchored by a reasoning demo), then write one question per unknown
+        case ragCorpusSelect     // over-generate a diverse candidate pool (N temps), then SELECT 7 by embedding resemblance to the questions Sonnet actually asks for the nearest corpus task types (corpus as a relevance prior, output stays 3B-generated)
     }
 
     public enum Sampling: Sendable {

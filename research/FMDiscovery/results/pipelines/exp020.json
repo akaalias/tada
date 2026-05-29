@@ -1,0 +1,45 @@
+{
+  "summary": "Over-generate 3 temps, rank by Sonnet corpus embedding, select 7",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch k=3 nearest Sonnet corpus task types",
+      "knobs": {
+        "k": "3",
+        "source": "corpus-bank-300+"
+      }
+    },
+    {
+      "kind": "ensemble",
+      "text": "Over-generate pool at 3 temps (21 candidates)",
+      "knobs": {
+        "n": "3",
+        "temps": "0.4,0.7,1.0",
+        "model": "contrastive-RAG-exp011"
+      },
+      "call_labels": [
+        "draft questions at temp 0.4",
+        "draft questions at temp 0.7",
+        "draft questions at temp 1.0"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Rank by max cosine to Sonnet corpus; dedup \u22650.80",
+      "knobs": {
+        "k": "7",
+        "dedup_threshold": "0.80",
+        "signal": "embedding-cosine"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 corpus-grounded questions out"
+    }
+  ],
+  "label": "exp020"
+}

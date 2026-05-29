@@ -59,7 +59,48 @@ public struct ConfiguredAgent: Sendable {
         case .ragSequential:     return try await ragSequential(input)
         case .ragFillerRepair:   return try await ragFillerRepair(input)
         case .ragReasonedFewShot: return try await ragReasonedFewShot(input)
+        case .ragCorpusSelect:   return try await ragCorpusSelect(input)
         }
+    }
+
+    /// EXP-020: corpus-grounded selection over an over-generated candidate pool.
+    /// Every prior SELECTION over the 3B's own samples failed because the selection
+    /// SIGNAL was weak 3B judgment (self-rating exp002, pairwise exp012, frequency
+    /// exp010) or a blunt heuristic (keyword coverage exp004, single-gold embedding
+    /// gap exp009). Here the signal is EXTERNAL: how much a candidate resembles the
+    /// questions Sonnet actually asks for the nearest corpus task types. Stage 1
+    /// over-generates a DIVERSE pool by drawing the exp011 contrastive-RAG generator
+    /// at several temperatures (so the task-specific TAIL questions exp010 identified
+    /// actually land in the pool, not just the modal generic cluster). Stage 2 ranks
+    /// every candidate by max embedding cosine to the Sonnet reference questions
+    /// (retrieved from the 300+ `corpus/` bank) and greedily selects 7 with embedding
+    /// redundancy suppression. The output questions are all 3B-generated fresh; the
+    /// corpus is a RANKING prior only — never copied or templated. Falsifiable test:
+    /// if the critical questions exist in the pool but get mis-ranked, this lifts
+    /// coverage; if it plateaus, the critical questions are never generated (the wall
+    /// is generation-side mode collapse, not ranking).
+    private func ragCorpusSelect(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input) + Self.contrastLesson
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let temps = config.sampleTemps ?? [0.4, 0.7, 1.0]
+
+        var candidates: [DiscoveryQuestion] = []
+        var title = ""
+        var summary = ""
+        for (i, t) in temps.enumerated() {
+            let session = LanguageModelSession { system }
+            let plan = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                                  options: config.options(temp: t, sampling: .modelDefault)).content
+            if i == 0 { title = plan.title; summary = plan.summary }
+            for q in plan.questions {
+                candidates.append(DiscoveryQuestion(title: q.question, description: q.detail,
+                                                    requiresExternalAction: q.requiresExternalAction))
+            }
+        }
+
+        let references = CorpusBank.nearestSemantic(to: input, k: 3).flatMap { $0.questions }
+        let selected = CorpusSelector.select(candidates: candidates, references: references, count: 7)
+        return DiscoveryResult(taskTitle: title, taskDescription: summary, questions: selected)
     }
 
     /// EXP-018: in-schema chain-of-thought few-shot. The persistent coverage wall is
