@@ -74,6 +74,11 @@
   .stage .kn { margin-top:5px; line-height:1.8; }
   .stage .kn span { font-size:10px; font-family:ui-monospace,Menlo,monospace; background:#f1f5f9; color:#475569; border-radius:4px; padding:1px 4px; margin-right:3px; }
   .stage .fm { position:absolute; top:5px; right:6px; font-size:9px; font-weight:800; color:#fff; background:var(--sc); border-radius:3px; padding:0 3px; }
+  .fanstage { min-width:160px; max-width:240px; }
+  .fancol { display:flex; flex-direction:column; gap:5px; margin-top:7px; padding-left:11px; border-left:2px dashed var(--sc); }
+  .call { font-size:11.5px; color:#334155; background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:3px 7px; display:flex; align-items:center; gap:6px; }
+  .call .fm { position:static; top:auto; right:auto; font-size:9px; }
+  .call span:last-child { font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#475569; }
   .parrow { align-self:center; color:#cbd5e1; font-size:18px; }
   .legend-kinds { font-size:11px; color:var(--muted); margin:0 0 12px; display:flex; flex-wrap:wrap; gap:10px; }
   .legend-kinds b { font-weight:700; }
@@ -223,7 +228,11 @@ function relabelSets(s){ return (s||'').replace(/\bset a\b/gi,'Gold (Sonnet)').r
 const pipeCache={};
 const KINDC={input:'#64748b',retrieve:'#0891b2',generate:'#2563eb',expand:'#7c3aed',select:'#9333ea',critique:'#d97706',ensemble:'#db2777',post:'#059669',output:'#16a34a'};
 const FMK=new Set(['generate','expand','critique','ensemble']);   // stages that are on-device model calls
-const callCount=s=>{ if(!FMK.has(s.kind)) return 0; if(s.kind==='ensemble'){ const n=parseInt((s.knobs||{}).n); return Number.isFinite(n)&&n>0?n:2; } return 1; };
+const callCount=s=>{ const k=s.knobs||{}; const explicit=parseInt(k.calls);
+  if (Number.isFinite(explicit)&&explicit>0) return explicit;   // e.g. a model-based select/tournament sets knobs.calls
+  if (!FMK.has(s.kind)) return 0;
+  if (s.kind==='ensemble'){ const n=parseInt(k.n); return Number.isFinite(n)&&n>0?n:2; }
+  return 1; };
 async function fetchPipe(label){
   if (pipeCache[label]!==undefined) return pipeCache[label];
   try {
@@ -237,15 +246,24 @@ async function fetchPipe(label){
 function renderPipe(spec){
   if (!spec || !spec.stages) return '';
   const isAdapter=s=>/adapter|lora|fine-?tun/i.test(JSON.stringify(s.knobs||{}));
+  // Per-call labels for a parallel stage: if a knob is a comma-list matching n
+  // (e.g. temp=0.3,0.5,0.7,0.9), label each call by it; else #1..#n.
+  const callLabels=s=>{ const n=callCount(s), k=s.knobs||{};
+    for (const [key,val] of Object.entries(k)){ const p=String(val).split(',').map(x=>x.trim());
+      if (p.length===n && n>1) return p.map(x=>`${key}=${x}`); }
+    return Array.from({length:n},(_,i)=>`#${i+1}`); };
   const blocks = spec.stages.map(s=>{
     const c=KINDC[s.kind]||'#64748b';
-    const kn=s.knobs?Object.entries(s.knobs).map(([k,v])=>`<span>${esc(k)}=${esc(String(v))}</span>`).join(''):'';
-    let fm='';
-    if (FMK.has(s.kind)) {
-      const base = isAdapter(s) ? 'LoRA' : 'FM';
-      const n = callCount(s);
-      fm = `<span class="fm"${isAdapter(s)?' style="background:#ca8a04"':''}>${n>1?`${base}×${n}`:base}</span>`;
+    const adapter=isAdapter(s), base=adapter?'LoRA':'FM', n=callCount(s);
+    const bstyle=adapter?' style="background:#ca8a04"':'';
+    // Only an ensemble is genuinely PARALLEL → a column of N call-boxes off a spine.
+    if (s.kind==='ensemble' && n>1) {
+      const calls=callLabels(s).map(l=>`<div class="call"><span class="fm"${bstyle}>${base}</span><span>${esc(l)}</span></div>`).join('');
+      return `<div class="stage fanstage" style="--sc:${c}"><div class="k">${esc(s.kind)} ×${n}</div><div class="t">${esc(s.text||'')}</div><div class="fancol">${calls}</div></div>`;
     }
+    const kn=s.knobs?Object.entries(s.knobs).map(([k,v])=>`<span>${esc(k)}=${esc(String(v))}</span>`).join(''):'';
+    // Any stage that makes model calls (incl. a model-based select/tournament) gets an FM×N badge.
+    const fm = n>0 ? `<span class="fm"${bstyle}>${n>1?`${base}×${n}`:base}</span>` : '';
     return `<div class="stage" style="--sc:${c}">${fm}<div class="k">${esc(s.kind)}</div><div class="t">${esc(s.text||'')}</div>${kn?`<div class="kn">${kn}</div>`:''}</div>`;
   }).join('<div class="parrow">→</div>');
   const fmCount=spec.stages.reduce((a,s)=>a+callCount(s),0);

@@ -1,0 +1,28 @@
+{
+  "summary": "RAG + contrastive base with dimensional guided schema",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch nearest RAG exemplars",
+      "knobs": {
+        "k": "2"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Generate 7 typed per-dimension schema slots",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "7 dimension-slot questions emitted"
+    }
+  ],
+  "label": "exp015"
+}

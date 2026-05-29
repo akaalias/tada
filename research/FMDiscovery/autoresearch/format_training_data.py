@@ -10,16 +10,23 @@ PKG = pathlib.Path(__file__).resolve().parent.parent
 CORPUS = PKG / "corpus"
 OUT = PKG / "adapter" / "data"
 
-# Mirrors the canonical single-shot discovery instruction the on-device agent uses,
-# so training matches inference. The assistant target is the structured plan JSON
-# (FMDiscoveryPlan shape: title / summary / questions[{question,detail,requiresExternalAction}]).
-INSTR = """You are a personal task coach. The user shared a task they want to accomplish. Generate clarifying questions that uncover what they specifically want, the context (who/what/when/where/why), constraints and preferences, and key execution details.
-Restate the user's goal as a short specific title (4-9 words), never a generic label. Summarise the task in one sentence. Each question is complete, 5-10 words, asks ONE thing (never combine with "and"/"or"), specific to THIS task, addressed to the user, no emojis. Output a JSON object: {"title","summary","questions":[7 x {"question","detail","requiresExternalAction"}]}."""
+# Schema-free guided generation (toolkit docs/schema.md): one fixed output format,
+# so we DON'T embed a JSON schema — just consistent input/output pairs. Instructions
+# go in a `system` role, prepended with the toolkit's recommended default for quality.
+# Assistant content is the plan as stringified JSON via json.dumps (default separators
+# give exactly one space after each comma/colon, which the toolkit requires).
+DEFAULT = "A conversation between a user and a helpful assistant. "
+INSTR = ("Taking the role of a personal task coach. Given a task the user wants to accomplish, "
+         "generate clarifying questions that uncover what they specifically want, the context "
+         "(who/what/when/where/why), constraints and preferences, and key execution details. "
+         "Restate the user's goal as a short specific title (4-9 words), never a generic label. "
+         "Summarise the task in one sentence. Each question is complete, 5-10 words, asks ONE "
+         "thing (never combine with \"and\"/\"or\"), specific to THIS task, addressed to the user, "
+         "no emojis. Produce exactly 7 questions.")
 
 
 def to_pair(case):
     g = case["gold"]
-    user = INSTR + f'\n\nTask the user entered: "{case["input"]}"\n\nGenerate exactly 7 clarifying questions, one thing each.'
     resp = {
         "title": g["taskTitle"],
         "summary": g["taskDescription"],
@@ -29,8 +36,11 @@ def to_pair(case):
             for q in g["questions"]
         ],
     }
-    return [{"role": "user", "content": user},
-            {"role": "assistant", "content": json.dumps(resp, ensure_ascii=False)}]
+    return [
+        {"role": "system", "content": DEFAULT + INSTR},
+        {"role": "user", "content": f'Task the user entered: "{case["input"]}"'},
+        {"role": "assistant", "content": json.dumps(resp, ensure_ascii=False)},
+    ]
 
 
 def main():

@@ -55,6 +55,7 @@ Rules:
 - DO NOT invent stages. A plain single-shot pipeline is EXACTLY: input -> generate -> output. Only add retrieve/expand/select/critique/ensemble/post if the description explicitly implies them.
 - generate/critique/ensemble are model (FM) calls; select/post are deterministic code. Put decoding/retrieval/count settings in knobs (temp, sampling, k, n). Keep text fields <=8 words.
 - If a model call uses a fine-tuned / LoRA / adapter model instead of the stock base 3B, set that stage's knobs.model to the adapter name (e.g. "adapter-v1"). Omit model for the stock base model.
+- A select/post stage that uses the MODEL (pairwise LLM comparisons, a tournament, an LLM-as-judge) is real model work: set its knobs.calls to the number of model calls it makes (e.g. a single-elimination pairwise tournament over 4 candidates with a two-order vote ≈ 6). Pure deterministic select/post (sorting, embedding clustering, dedup, regex repair) must OMIT calls.
 
 Examples (description -> stage kinds):
 - "single-shot (EXP-000 port)" -> input, generate, output

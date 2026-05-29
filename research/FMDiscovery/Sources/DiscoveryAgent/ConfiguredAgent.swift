@@ -9,6 +9,35 @@ public struct ConfiguredAgent: Sendable {
     let config: DiscoveryConfig
     public init(_ config: DiscoveryConfig) { self.config = config }
 
+    /// EXP-011's worked GOOD-vs-BAD contrastive lesson (the current-best base).
+    /// Shared by exp011 and exp014 verbatim so both teach the same anti-patterns.
+    static let contrastLesson = """
+
+
+        ── WORKED CONTRAST: what makes a question set strong ──
+        For an example task "Organize my garage", here is a STRONG set and a WEAK set.
+
+        STRONG (each question targets a decision-critical unknown, asks ONE thing):
+        1. What is your main goal: more storage, a workshop, or parking space?
+        2. How large is your garage?
+        3. Roughly how much stuff needs sorting or removing?
+        4. What is your budget for shelving or storage systems?
+        5. Do you have a deadline to finish by?
+        6. What will you do with items you no longer want?
+        7. Will anyone be helping you with the work?
+
+        WEAK (avoid every one of these patterns):
+        • "Do you have a garage?" — restates a fact the task already gives.
+        • "What color should the walls be?" — niche/premature, off the core task.
+        • "Do you have any other preferences?" — vague filler, not decision-critical.
+        • "What is your budget and timeline?" — compound, asks two things at once.
+        • "How big is your garage and what fits in it?" — redundant and compound.
+
+        The STRONG set wins because every slot probes a different decision-critical \
+        unknown, each asks exactly one thing, and none restates what the task already \
+        states. Never produce a question that fits a WEAK pattern.
+        """
+
     public func generate(_ input: String) async throws -> DiscoveryResult {
         switch config.topology {
         case .singleShot:        return try await singleShot(input)
@@ -25,7 +54,82 @@ public struct ConfiguredAgent: Sendable {
         case .ragContrastiveFewShot: return try await ragContrastiveFewShot(input)
         case .ragTournament:     return try await ragTournament(input)
         case .ragPlanAssumptions: return try await ragPlanAssumptions(input)
+        case .ragCorpusFewShot:  return try await ragCorpusFewShot(input)
+        case .ragDimensionalSchema: return try await ragDimensionalSchema(input)
         }
+    }
+
+    /// EXP-015: structural coverage enforcement via a typed guided SCHEMA. Every
+    /// coverage attempt to date has either SHOWN the 3B which unknowns matter
+    /// (in-context demos exp003/007/008/014, checklists exp005/006) or asked it to
+    /// SELECT/RANK/CRITIQUE its own samples (exp004/010/012) — all plateau at
+    /// coverage 3 because the 3B can't decide which unknown is decision-critical and
+    /// freely DROPS the critical slot for a generic one. This is a NEW lever: instead
+    /// of one flat `questions: [FMQuestion]` array (used by every prior config), the
+    /// output schema has SEVEN distinctly-named, individually-`@Guide`d slots, one per
+    /// universal high-value planning dimension the judge keeps flagging as MISSING
+    /// (goal, scope/scale, who-for, budget/resources, timeline, current-state,
+    /// constraints/avoid). Guided generation ENFORCES every named field, so the model
+    /// structurally cannot omit the budget/who-for/timeline/current-state slots — it
+    /// must produce a task-specific question for each. Coverage breadth becomes a
+    /// property of the SCHEMA, not of ranking judgment the 3B lacks. Each slot's guide
+    /// allows graceful adaptation when a dimension is moot (ask the closest applicable
+    /// unknown), and the exp011 RAG+contrastive system prompt anchors phrasing/atomicity.
+    private func ragDimensionalSchema(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.dimensionalGuidance }
+        let prompt = """
+        Task the user entered: "\(input)"
+
+        Generate clarifying questions by filling each labelled slot below with ONE \
+        natural question specific to THIS task. Each slot targets a different \
+        decision-critical unknown so the set covers the task broadly.
+        """
+        let r = try await session.respond(to: prompt, generating: FMDimensionalPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// Extra guidance appended to the system prompt for EXP-015's dimensional schema:
+    /// names the 7 slots and tells the model how to gracefully adapt a moot dimension.
+    static let dimensionalGuidance = """
+
+
+        ── DIMENSION SLOTS (fill each with ONE question) ──
+        Your output has seven labelled slots. Fill each with a single natural question \
+        that probes that slot's decision-critical unknown FOR THIS SPECIFIC TASK:
+        1. GOAL — the user's specific goal, desired outcome, or what success looks like.
+        2. SCOPE — the scope or scale: how much, how many, or which parts are involved.
+        3. WHO-FOR — who the task is for or who else is involved (if it's solely for the \
+           user, ask instead about their relevant experience or skill level).
+        4. BUDGET — the budget or resources available (if money is clearly irrelevant to \
+           this task, ask instead about the key material, tool, or resource it needs).
+        5. TIMELINE — the deadline, target date, or how soon it must happen.
+        6. CURRENT-STATE — what already exists, what they have done so far, or their \
+           starting point (e.g. do they already own/have the core thing involved).
+        7. CONSTRAINTS — preferences, requirements, or things they specifically want to avoid.
+        Adapt each to be genuinely useful for THIS task; never ask about a fact the task \
+        statement already gives. Keep every question to ONE thing, 5-15 words, natural.
+        """
+
+    /// EXP-014: corpus-backed RAG few-shot. The coverage wall has held against every
+    /// in-context retrieval variant — but all of them retrieved from only the 12
+    /// generic hardcoded `GoldExemplars`, where the "nearest" demo is frequently
+    /// off-domain (exp007's lesson: semantically-nearest≠instructive WHEN the pool is
+    /// tiny and generic). This swaps the retrieval BANK (not the mechanism) for the
+    /// 100+ `corpus/` Sonnet sets — a far richer, more specific bank the rules
+    /// explicitly encourage using — so semantic retrieval can surface genuinely
+    /// close-DOMAIN demonstrations (baby-shower→dinner_party, 401k→retirement,
+    /// visa/Portugal→trip_paris) that model the right decision-critical unknowns for
+    /// THIS task type. k=3 (vs exp003's 2) because the richer bank has more close
+    /// matches to draw coverage signal from. Keeps exp011's contrastive lesson (the
+    /// current-best base) to suppress the off-task/compound/filler anti-patterns.
+    private func ragCorpusFewShot(_ input: String) async throws -> DiscoveryResult {
+        let examples = CorpusBank.nearestSemantic(to: input, k: 3)
+        let session = LanguageModelSession { ragSystemPrompt(input, examples: examples) + Self.contrastLesson }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     /// EXP-012: smart best-of-N via a PAIRWISE 3B TOURNAMENT. The log shows two
@@ -112,33 +216,7 @@ public struct ConfiguredAgent: Sendable {
     /// off-task/self-defeating questions, vague filler, compound asks, redundant
     /// pairs), so the model learns by example what NOT to spend a slot on.
     private func ragContrastiveFewShot(_ input: String) async throws -> DiscoveryResult {
-        let contrast = """
-
-
-        ── WORKED CONTRAST: what makes a question set strong ──
-        For an example task "Organize my garage", here is a STRONG set and a WEAK set.
-
-        STRONG (each question targets a decision-critical unknown, asks ONE thing):
-        1. What is your main goal: more storage, a workshop, or parking space?
-        2. How large is your garage?
-        3. Roughly how much stuff needs sorting or removing?
-        4. What is your budget for shelving or storage systems?
-        5. Do you have a deadline to finish by?
-        6. What will you do with items you no longer want?
-        7. Will anyone be helping you with the work?
-
-        WEAK (avoid every one of these patterns):
-        • "Do you have a garage?" — restates a fact the task already gives.
-        • "What color should the walls be?" — niche/premature, off the core task.
-        • "Do you have any other preferences?" — vague filler, not decision-critical.
-        • "What is your budget and timeline?" — compound, asks two things at once.
-        • "How big is your garage and what fits in it?" — redundant and compound.
-
-        The STRONG set wins because every slot probes a different decision-critical \
-        unknown, each asks exactly one thing, and none restates what the task already \
-        states. Never produce a question that fits a WEAK pattern.
-        """
-        let session = LanguageModelSession { ragSystemPrompt(input) + contrast }
+        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -593,6 +671,38 @@ struct FMQuestion {
     var detail: String
     @Guide(description: "True only if answering requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
     var requiresExternalAction: Bool
+}
+
+/// EXP-015: a typed plan whose seven question slots each target a distinct
+/// decision-critical planning dimension. Guided generation enforces every named
+/// field, so coverage breadth is structural — the model cannot drop a slot.
+@Generable
+struct FMDimensionalPlan {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "Question about the user's specific GOAL, desired outcome, or what success looks like for this task.")
+    var goalQuestion: FMQuestion
+    @Guide(description: "Question about the SCOPE or SCALE: how much, how many, or which parts are involved.")
+    var scopeQuestion: FMQuestion
+    @Guide(description: "Question about WHO the task is for or who else is involved. If it is solely for the user, ask about their relevant experience or skill level instead.")
+    var whoForQuestion: FMQuestion
+    @Guide(description: "Question about BUDGET or resources available. If money is clearly irrelevant, ask about the key material, tool, or resource the task needs instead.")
+    var budgetQuestion: FMQuestion
+    @Guide(description: "Question about the TIMELINE: deadline, target date, or how soon this must happen.")
+    var timelineQuestion: FMQuestion
+    @Guide(description: "Question about the CURRENT STATE: what already exists, progress so far, or whether they already own/have the core thing involved.")
+    var currentStateQuestion: FMQuestion
+    @Guide(description: "Question about CONSTRAINTS: preferences, requirements, or things they specifically want to avoid.")
+    var constraintsQuestion: FMQuestion
+
+    func toContract() -> DiscoveryResult {
+        let qs = [goalQuestion, scopeQuestion, whoForQuestion, budgetQuestion,
+                  timelineQuestion, currentStateQuestion, constraintsQuestion]
+        return DiscoveryResult(taskTitle: title, taskDescription: summary,
+                               questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
+    }
 }
 
 @Generable

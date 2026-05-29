@@ -54,6 +54,16 @@ private func model() throws -> SystemLanguageModel {
 Then change each `LanguageModelSession { Prompts.x }` to
 `LanguageModelSession(model: try model()) { Prompts.x }`.
 
+**Schema-free guided generation:** the adapter is trained on one fixed output
+format (no schema in the prompt), so when an adapter is active, the `respond`
+call must pass `includeSchemaInPrompt: false`, e.g.
+`try await session.respond(to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: config.adapter == nil, options: ...)`.
+Also use the SAME system instruction + `Task the user entered: "…"` user turn the
+training data uses (see `format_training_data.py`) so inference matches training.
+
+Toolkit path: `train_adapter.sh` auto-detects the unzipped toolkit at
+`research/FMDiscovery/adapter_training_toolkit_v26_0_0/` (override with `TOOLKIT=`).
+
 `Sources/DiscoveryAgent/Configs.swift` — add an adapter config, e.g.:
 ```swift
 "exp_adapter": DiscoveryConfig(topology: .ragFewShot,

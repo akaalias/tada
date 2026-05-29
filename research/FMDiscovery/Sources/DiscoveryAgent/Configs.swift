@@ -100,6 +100,30 @@ public enum Configs {
         // questions using the proven exp003 RAG few-shot scaffold for phrasing/atomicity.
         "exp013": DiscoveryConfig(topology: .ragPlanAssumptions,
                                   brainstormTemp: 0.5, selectTemp: 0.3),
+
+        // EXP-014: corpus-backed RAG few-shot. Every prior retrieval variant drew
+        // demonstrations from only the 12 generic hardcoded GoldExemplars, so the
+        // "nearest" exemplar was often off-domain and modeled the wrong decision-
+        // critical unknowns (exp007 wrongly concluded retrieval can't help — but the
+        // POOL was the limiter). This swaps the BANK for the 100+ corpus/ Sonnet sets
+        // (semantic retrieval, k=3) so the few-shot demos are genuinely close-DOMAIN
+        // and model the right unknowns for THIS task type. Built on exp011's
+        // contrastive lesson (the current best). Tests whether a richer demonstration
+        // bank — the one untapped lever the rules encourage — breaks the coverage wall.
+        "exp014": DiscoveryConfig(topology: .ragCorpusFewShot),
+
+        // EXP-015: structural coverage enforcement via a typed guided SCHEMA. Every
+        // prior coverage attempt either SHOWED the 3B which unknowns matter (demos/
+        // checklists) or asked it to SELECT/RANK/CRITIQUE its samples — all stuck at
+        // coverage 3 because the 3B can't rank and freely DROPS the critical slot. New
+        // lever (untried — every config used one flat questions[] array): the output
+        // schema has SEVEN distinctly-@Guide'd slots, one per universal high-value
+        // planning dimension the judge keeps flagging as MISSING (goal/scope/who-for/
+        // budget/timeline/current-state/constraints). Guided generation ENFORCES each
+        // named field, so the model structurally cannot omit budget/who-for/timeline/
+        // current-state — coverage breadth becomes a property of the SCHEMA, not of
+        // ranking judgment the 3B lacks. Single call on the exp011 RAG+contrastive base.
+        "exp015": DiscoveryConfig(topology: .ragDimensionalSchema),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -1,0 +1,30 @@
+{
+  "summary": "Corpus-backed semantic RAG k=3 + contrastive base",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner topic"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Semantic k=3 from 117-set corpus bank",
+      "knobs": {
+        "sampling": "semantic",
+        "k": "3",
+        "corpus": "117-set"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 Qs with contrastive few-shot prompt",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp014"
+}

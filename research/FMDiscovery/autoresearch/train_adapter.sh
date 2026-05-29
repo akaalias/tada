@@ -12,8 +12,10 @@ set -euo pipefail
 PKG="/Users/alexisrondeau/Workshop/tada/research/FMDiscovery"
 AR="$PKG/autoresearch"
 ADP="$PKG/adapter"
-TOOLKIT="${TOOLKIT:?Set TOOLKIT=/path/to/adapter_training_toolkit_v26 (download from Apple Developer)}"
-EPOCHS="${EPOCHS:-5}"; LR="${LR:-1e-3}"; BATCH="${BATCH:-4}"; NAME="${NAME:-discovery_v1}"
+# Default to the toolkit unzipped inside the package; override with TOOLKIT=...
+TOOLKIT="${TOOLKIT:-$PKG/adapter_training_toolkit_v26_0_0}"
+[ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT (set TOOLKIT=/path)"; exit 1; }
+EPOCHS="${EPOCHS:-6}"; LR="${LR:-1e-3}"; BATCH="${BATCH:-4}"; NAME="${NAME:-discovery_v1}"
 
 echo "[adapter] 1/4 formatting training data from corpus/"
 python3 "$AR/format_training_data.py"
@@ -35,9 +37,12 @@ echo "[adapter] 3/4 training (epochs=$EPOCHS lr=$LR batch=$BATCH) — this takes
     --checkpoint-dir "$ADP/checkpoints" )
 
 echo "[adapter] 4/4 exporting .fmadapter"
+CKPT="$(ls -t "$ADP/checkpoints"/*.pt 2>/dev/null | head -1)"
+[ -n "$CKPT" ] || { echo "no checkpoint .pt found in $ADP/checkpoints"; exit 1; }
+echo "[adapter] using checkpoint: $CKPT"
 ( cd "$TOOLKIT" && python -m export.export_fmadapter \
     --adapter-name "$NAME" \
-    --checkpoint "$ADP/checkpoints/adapter-final.pt" \
+    --checkpoint "$CKPT" \
     --output-dir "$ADP/exports" )
 
 echo "[adapter] DONE -> $ADP/exports/$NAME.fmadapter"
