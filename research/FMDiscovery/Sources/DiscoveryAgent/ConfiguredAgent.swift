@@ -16,6 +16,7 @@ public struct ConfiguredAgent: Sendable {
         case .overGenerateScore: return try await overGenerateScore(input)
         case .ragFewShot:        return try await ragFewShot(input)
         case .ragCoverageBestOfN: return try await ragCoverageBestOfN(input)
+        case .ragCritiqueRevise: return try await ragCritiqueRevise(input)
         }
     }
 
@@ -130,6 +131,48 @@ public struct ConfiguredAgent: Sendable {
             if s > bestScore { bestScore = s; best = cand }
         }
         return best!
+    }
+
+    /// EXP-005: reflexion editor on top of the RAG few-shot draft. Stage 1 is the
+    /// current best (ragFewShot). Stage 2 is a second FM call that audits the draft
+    /// against an explicit decision-critical dimension checklist: it drops questions
+    /// that re-ask facts the task already states, drops low-value/niche slots, splits
+    /// double-barreled asks, and ensures the highest-value MISSING unknown is added —
+    /// while keeping the strong draft questions verbatim to preserve naturalness.
+    private func ragCritiqueRevise(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: strong RAG draft (= exp003 best).
+        let draftSession = LanguageModelSession { ragSystemPrompt(input) }
+        let draftPrompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let draft = try await draftSession.respond(
+            to: draftPrompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        // Stage 2: auditor revises the draft. Reuse the same exemplars (naturalness
+        // anchor) plus an editor instruction with the decision-critical checklist.
+        let numbered = draft.questions.enumerated()
+            .map { "\($0.offset + 1). \($0.element.question)" }
+            .joined(separator: "\n")
+        let editorSystem = ragSystemPrompt(input) + "\n\n" + Prompts.critiqueEditor
+        let editorSession = LanguageModelSession { editorSystem }
+        let editorPrompt = """
+        Task the user entered: "\(input)"
+
+        A first draft of 7 clarifying questions:
+        \(numbered)
+
+        Audit this draft and output the FINAL exactly 7 questions. Apply the editor rules: \
+        delete any question whose answer is already stated in the task; delete the single \
+        lowest-value or most niche question; split any question that asks two things; and \
+        make sure the set covers the most decision-critical unknown that the draft is MISSING \
+        (especially budget/cost, who it is for, timeline/urgency, scale, location, or what \
+        already exists). Keep the draft's strong questions worded as they are.
+        """
+        let revised = try await editorSession.respond(
+            to: editorPrompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+        return revised.toContract()
     }
 
     private func overGenerateScore(_ input: String) async throws -> DiscoveryResult {

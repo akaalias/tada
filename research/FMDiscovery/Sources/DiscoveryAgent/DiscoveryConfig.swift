@@ -10,6 +10,7 @@ public struct DiscoveryConfig: Sendable {
         case overGenerateScore   // 1 call → 12 scored candidates → Swift picks top 7
         case ragFewShot          // retrieve 2 nearest gold exemplars → inject as few-shot → 1 call
         case ragCoverageBestOfN  // sample N RAG sets at varying temps → pick best by Swift coverage scorer
+        case ragCritiqueRevise   // RAG draft → 2nd FM auditor revises for coverage, drops given/redundant
     }
 
     public enum Sampling: Sendable {

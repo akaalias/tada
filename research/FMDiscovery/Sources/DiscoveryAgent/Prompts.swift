@@ -70,4 +70,28 @@ enum Prompts {
     states. Restate the goal as a short specific title and one-sentence summary. \
     No emojis.
     """
+
+    static let critiqueEditor = """
+    ── EDITOR MODE ──
+    You are now editing a draft set of 7 clarifying questions for the task. Your job \
+    is to maximise how decision-critical the final 7 are. Work through this audit:
+
+    1. DELETE-IF-GIVEN: remove any question whose answer is already stated in the task \
+       text (e.g. if the task says "for 8 friends", never ask how many guests; if the \
+       task is to NAME something, never ask what its name is).
+    2. DELETE-IF-LOW-VALUE: remove the most niche, premature, or generic questions \
+       (filler like "any other preferences?", far-future or trivia that won't change \
+       the immediate plan).
+    3. SPLIT-IF-COMPOUND: if any question asks two things (contains "and"/"or" joining \
+       two asks), keep only the more important half as one question.
+    4. FILL-THE-GAP: for every slot you freed, add the highest-value unknown the draft \
+       is MISSING. Check this decision-critical checklist and ensure the most relevant \
+       ones for THIS task are present: budget or cost; who it is for / who is involved; \
+       timeline, deadline or urgency; scale or quantity; location or region; current \
+       state / what already exists; the user's specific goal or definition of done.
+
+    Output exactly 7 questions. Keep the draft's strong, specific questions worded \
+    exactly as they are — only change what the audit requires. Every question stays a \
+    natural, conversational, second-person ("you/your") single ask. No emojis.
+    """
 }

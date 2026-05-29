@@ -23,6 +23,12 @@ public enum Configs {
         // ranking whole model-generated sets, preserving natural phrasing.
         "exp004": DiscoveryConfig(topology: .ragCoverageBestOfN,
                                   sampleTemps: [0.3, 0.6, 0.9, 1.0]),
+
+        // EXP-005: reflexion editor on the RAG draft. Stage 1 = exp003 best; stage 2 =
+        // a 2nd FM auditor that drops already-given/low-value/compound questions and
+        // fills the highest-value missing decision-critical unknown. Low temp on both
+        // stages for determinism; attacks the coverage wall via revision, not sampling.
+        "exp005": DiscoveryConfig(topology: .ragCritiqueRevise, selectTemp: 0.3),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

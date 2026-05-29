@@ -41,10 +41,28 @@
   .qs { margin:6px 0 0; padding-left:20px; font-size:13.5px; }
   .qs li { margin:1px 0; }
   .note { margin-top:6px; font-size:13px; color:#334155; font-style:italic; }
-  .glossary { font-size:12.5px; color:var(--muted); margin-top:12px; line-height:1.7; }
-  .glossary b { color:#334155; }
+  .help { margin-top:14px; font-size:13px; color:#475569; }
+  .help > summary { cursor:pointer; color:var(--muted); font-weight:600; list-style:none; }
+  .help > summary::-webkit-details-marker { display:none; }
+  .help > summary::before { content:"▸  "; color:var(--muted); }
+  .help[open] > summary::before { content:"▾  "; }
+  .help-grid { margin:12px 0 2px; display:grid; grid-template-columns:max-content 1fr; gap:7px 18px; align-items:baseline; }
+  .help-grid dt { font-weight:700; color:#334155; white-space:nowrap; }
+  .help-grid dd { margin:0; }
+  .help .gold { color:var(--green); font-weight:700; }
+  .help .fm { color:#2563eb; font-weight:700; }
+  .help code { background:#f1f5f9; padding:0 4px; border-radius:4px; font-size:12px; }
+  .help .foot { margin-top:10px; color:var(--muted); }
   #tip { position:fixed; pointer-events:none; background:#0f172a; color:#fff; font-size:12px; padding:6px 9px; border-radius:6px; max-width:300px; opacity:0; transition:opacity .08s; z-index:10; }
   #tip .t-note { color:#cbd5e1; display:block; margin-top:3px; }
+  .tried { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:13px; color:#1e3a8a; }
+  .tried b { color:#1e3a8a; }
+  .chip { display:inline-block; border:1px solid var(--line); border-radius:6px; padding:0 6px; margin-right:4px; font-size:11px; color:#475569; cursor:help; }
+  .cmp { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  .col-head { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin-bottom:2px; }
+  .col-gold .col-head { color:var(--green); }
+  .col-fm .col-head { color:#2563eb; }
+  @media (max-width:760px){ .cmp { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -69,12 +87,21 @@
       </tr></thead>
       <tbody></tbody>
     </table>
-    <div class="glossary">
-      <b>Quality</b> (0–1, higher is better): <code>0.5 × rubric + 0.5 × pairwise</code>, averaged over the cases.
-      &nbsp;•&nbsp; <b>Spec</b>: % of cases passing the hard technical gate (exactly 7 atomic questions, valid title, no emojis) — fail ⇒ that case scores 0.
-      &nbsp;•&nbsp; <b>W/T/L</b>: head-to-head vs Sonnet's gold — <span class="kept">Wins</span> / Ties / Losses (W = on-device judged <i>better</i> than Sonnet).
-      &nbsp;•&nbsp; Click any row to see the model's actual questions and the judge's per-case notes.
-    </div>
+    <details class="help">
+      <summary>What do the columns &amp; rubric mean?</summary>
+      <dl class="help-grid">
+        <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × rubric + 0.5 × pairwise</code>, averaged over cases.</dd>
+        <dt>Spec</dt><dd>% of cases passing the hard technical gate: exactly 7 atomic questions, valid title, no emojis. A failed case scores 0.</dd>
+        <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device questions were judged <i>better</i> than Sonnet's.</dd>
+        <dt>The two sets</dt><dd><span class="gold">Set A = Gold (Sonnet)</span> &nbsp;vs&nbsp; <span class="fm">Set B = On-device</span>. The judge picks which is better and scores Set B 1–5 on five dimensions:</dd>
+        <dt>atomicity</dt><dd>asks exactly one thing (no “and/or”)</dd>
+        <dt>specificity</dt><dd>concrete to this task, not generic filler</dd>
+        <dt>coverage</dt><dd>the 7 cover the most decision-critical unknowns</dd>
+        <dt>naturalness</dt><dd>reads like a thoughtful human coach</dd>
+        <dt>nonRedundancy</dt><dd>no overlapping or repeated questions</dd>
+      </dl>
+      <div class="foot">Click any row to see what the experiment tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
+    </details>
   </div>
 </div>
 <div id="tip"></div>
@@ -167,6 +194,26 @@ document.getElementById('chart').addEventListener('mouseleave', ()=> tip.style.o
 function pw(p){ return p==='fmBetter'?['b-win','WIN']:p==='tie'?['b-tie','TIE']:['b-loss','LOSS']; }
 function rmean(rb){ return ((rb.atomicity+rb.specificity+rb.coverage+rb.naturalness+rb.nonRedundancy)/5).toFixed(1); }
 
+const goldCache={}; let programText=null;
+const RUBRIC=[['atomicity','atom'],['specificity','spec'],['coverage','cover'],['naturalness','nat'],['nonRedundancy','nonRed']];
+const RUBRIC_DESC={atomicity:'asks exactly one thing (no "and"/"or")', specificity:'concrete to THIS task, not generic filler', coverage:'the 7 cover the most decision-critical unknowns', naturalness:'reads like a thoughtful human coach', nonRedundancy:'questions do not overlap or repeat'};
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function rubricChips(rb){ return RUBRIC.map(([k,short])=>`<span class="chip" title="${cap(k)}: ${RUBRIC_DESC[k]}. 1=poor … 5=excellent">${short} ${rb[k]}</span>`).join(''); }
+function relabelSets(s){ return (s||'').replace(/\bset a\b/gi,'Gold (Sonnet)').replace(/\bset b\b/gi,'On-device'); }
+
+async function fetchGold(id){
+  if (goldCache[id]!==undefined) return goldCache[id];
+  try { goldCache[id]=(await (await fetch(`../gold/${id}.json?t=`+Date.now())).json()).gold; }
+  catch(e){ goldCache[id]=null; }
+  return goldCache[id];
+}
+async function programLine(label){
+  if (programText===null){ try { programText=await (await fetch('../program.md?t='+Date.now())).text(); } catch(e){ programText=''; } }
+  const esc=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const m=programText.match(new RegExp('^\\s*-\\s.*\\b'+esc+'\\b.*$','mi'));
+  return m ? m[0].replace(/^\s*-\s*/,'').replace(/\*\*/g,'') : '';
+}
+
 async function renderDetail(label, cell) {
   cell.innerHTML = '<div class="detail-inner">loading…</div>';
   let scores = detailCache[label];
@@ -174,21 +221,27 @@ async function renderDetail(label, cell) {
     try { scores = await (await fetch(`../results/${label}.json?t=`+Date.now())).json(); detailCache[label]=scores; }
     catch(e){ cell.innerHTML='<div class="detail-inner disc">no per-case results file for this experiment</div>'; return; }
   }
-  const blocks = scores.map(s => {
+  const tried = await programLine(label);
+  const golds = await Promise.all(scores.map(s => fetchGold(s.id)));
+  const blocks = scores.map((s,i) => {
+    const gold = golds[i];
+    const goldQs = gold ? `<ol class="qs">${gold.questions.map(q=>`<li>${esc(q.title)}</li>`).join('')}</ol>` : '<div class="disc">gold unavailable</div>';
     const cand = s.candidate;
-    const qs = cand ? `<ol class="qs">${cand.questions.map(q=>`<li>${esc(q.title)}</li>`).join('')}</ol>` : '';
-    let verdict = '<span class="disc">spec failed: '+ (s.spec.violations||[]).join('; ') +'</span>';
-    let rub = '';
-    if (s.verdict){ const [cls,txt]=pw(s.verdict.pairwise); const rb=s.verdict.rubric;
-      verdict = `<span class="badge ${cls}">${txt}</span>`;
-      rub = `<span class="rubric">rubric ${rmean(rb)} &nbsp;(atom ${rb.atomicity} · spec ${rb.specificity} · cover ${rb.coverage} · nat ${rb.naturalness} · nonRed ${rb.nonRedundancy})</span>`;
-    }
-    const note = s.verdict ? `<div class="note">judge: ${esc(s.verdict.notes)}</div>` : '';
+    const fmQs = cand ? `<ol class="qs">${cand.questions.map(q=>`<li>${esc(q.title)}</li>`).join('')}</ol>`
+                      : `<div class="disc">spec failed: ${(s.spec.violations||[]).join('; ')}</div>`;
+    let head = '<span class="disc">not judged (spec failed)</span>';
+    if (s.verdict){ const [cls,txt]=pw(s.verdict.pairwise);
+      head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`; }
+    const note = s.verdict ? `<div class="note">judge: ${esc(relabelSets(s.verdict.notes))}</div>` : '';
     return `<div class="case">
-      <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${verdict} ${rub}</div>
-      ${qs}${note}</div>`;
+      <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${head}</div>
+      <div class="cmp">
+        <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div>${goldQs}</div>
+        <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div>${fmQs}</div>
+      </div>${note}</div>`;
   }).join('');
-  cell.innerHTML = `<div class="detail-inner">${blocks}</div>`;
+  const triedHtml = tried ? `<div class="tried"><b>What we tried:</b> ${esc(tried)}</div>` : '';
+  cell.innerHTML = `<div class="detail-inner">${triedHtml}${blocks}</div>`;
 }
 
 function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
