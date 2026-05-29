@@ -9,6 +9,7 @@ public struct DiscoveryConfig: Sendable {
         case brainstormSelect    // call1: list unknowns → call2: select+phrase 7
         case overGenerateScore   // 1 call → 12 scored candidates → Swift picks top 7
         case ragFewShot          // retrieve 2 nearest gold exemplars → inject as few-shot → 1 call
+        case ragCoverageBestOfN  // sample N RAG sets at varying temps → pick best by Swift coverage scorer
     }
 
     public enum Sampling: Sendable {
@@ -34,12 +35,15 @@ public struct DiscoveryConfig: Sendable {
     public var selectTemp: Double?
     public var selectSampling: Sampling
     public var maxTokens: Int?
+    // best-of-N: per-sample temperatures (each yields one full set; Swift scores+selects).
+    public var sampleTemps: [Double]?
 
     public init(
         topology: Topology,
         brainstormTemp: Double? = nil, brainstormSampling: Sampling = .modelDefault,
         selectTemp: Double? = nil, selectSampling: Sampling = .modelDefault,
-        maxTokens: Int? = nil
+        maxTokens: Int? = nil,
+        sampleTemps: [Double]? = nil
     ) {
         self.topology = topology
         self.brainstormTemp = brainstormTemp
@@ -47,6 +51,7 @@ public struct DiscoveryConfig: Sendable {
         self.selectTemp = selectTemp
         self.selectSampling = selectSampling
         self.maxTokens = maxTokens
+        self.sampleTemps = sampleTemps
     }
 
     func options(temp: Double?, sampling: Sampling) -> GenerationOptions {

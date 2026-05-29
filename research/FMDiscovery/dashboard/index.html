@@ -5,23 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FM Discovery — Autoresearch Progress</title>
 <style>
-  :root { --green:#16a34a; --grey:#cbd5e1; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; }
+  :root { --green:#16a34a; --grey:#94a3b8; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --red:#dc2626; --amber:#d97706; }
   * { box-sizing: border-box; }
   body { margin:0; font:16px/1.5 -apple-system,system-ui,sans-serif; color:var(--ink); background:#f8fafc; }
   header { padding:24px 32px 8px; }
   h1 { font-size:20px; margin:0; }
   .sub { color:var(--muted); font-size:14px; margin-top:4px; }
-  .wrap { padding:8px 32px 40px; max-width:1200px; }
+  .wrap { padding:8px 32px 48px; max-width:1200px; }
   .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
   canvas { width:100%; height:480px; display:block; }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
   th { color:var(--muted); font-weight:600; }
+  th[title] { cursor:help; border-bottom:1px dotted var(--muted); }
   .q { font-variant-numeric:tabular-nums; font-weight:700; }
   .kept { color:var(--green); font-weight:600; }
   .disc { color:var(--muted); }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle; }
-  .legend { font-size:13px; color:var(--muted); display:flex; gap:18px; align-items:center; }
+  .legend { font-size:13px; color:var(--muted); display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  .row-main { cursor:pointer; }
+  .row-main:hover { background:#f1f5f9; }
+  .caret { color:var(--muted); display:inline-block; width:12px; transition:transform .15s; }
+  .open .caret { transform:rotate(90deg); }
+  .detail td { background:#f8fafc; padding:0; }
+  .detail-inner { padding:12px 16px 16px 38px; }
+  .case { border-top:1px solid var(--line); padding:12px 0; }
+  .case:first-child { border-top:none; }
+  .case-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+  .case-task { font-weight:600; }
+  .badge { font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; letter-spacing:.02em; }
+  .b-win { background:#dcfce7; color:var(--green); }
+  .b-tie { background:#fef3c7; color:var(--amber); }
+  .b-loss{ background:#fee2e2; color:var(--red); }
+  .rubric { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .qs { margin:6px 0 0; padding-left:20px; font-size:13.5px; }
+  .qs li { margin:1px 0; }
+  .note { margin-top:6px; font-size:13px; color:#334155; font-style:italic; }
+  .glossary { font-size:12.5px; color:var(--muted); margin-top:12px; line-height:1.7; }
+  .glossary b { color:#334155; }
+  #tip { position:fixed; pointer-events:none; background:#0f172a; color:#fff; font-size:12px; padding:6px 9px; border-radius:6px; max-width:300px; opacity:0; transition:opacity .08s; z-index:10; }
+  #tip .t-note { color:#cbd5e1; display:block; margin-top:3px; }
 </style>
 </head>
 <body>
@@ -38,30 +61,48 @@
   <div class="card"><canvas id="chart"></canvas></div>
   <div class="card">
     <table id="tbl">
-      <thead><tr><th>#</th><th>Label</th><th>Set</th><th>Quality</th><th>Spec</th><th>W/T/L</th><th>Move</th></tr></thead>
+      <thead><tr>
+        <th>#</th><th>Label</th><th>Set</th><th>Quality</th>
+        <th title="Share of cases that pass the hard technical-spec gate: exactly 7 atomic questions, valid title, no emojis. Quality is forced to 0 for any case that fails.">Spec</th>
+        <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
+        <th>Move</th>
+      </tr></thead>
       <tbody></tbody>
     </table>
+    <div class="glossary">
+      <b>Quality</b> (0–1, higher is better): <code>0.5 × rubric + 0.5 × pairwise</code>, averaged over the cases.
+      &nbsp;•&nbsp; <b>Spec</b>: % of cases passing the hard technical gate (exactly 7 atomic questions, valid title, no emojis) — fail ⇒ that case scores 0.
+      &nbsp;•&nbsp; <b>W/T/L</b>: head-to-head vs Sonnet's gold — <span class="kept">Wins</span> / Ties / Losses (W = on-device judged <i>better</i> than Sonnet).
+      &nbsp;•&nbsp; Click any row to see the model's actual questions and the judge's per-case notes.
+    </div>
   </div>
 </div>
+<div id="tip"></div>
 <script>
-const GREEN="#16a34a", GREY="#cbd5e1", INK="#0f172a", MUTED="#94a3b8", LINE="#e2e8f0";
+const GREEN="#16a34a", GREY="#94a3b8", INK="#0f172a", MUTED="#94a3b8", LINE="#e2e8f0";
+let lastSig="", expanded=new Set(), detailCache={}, chartPoints=[];
 
 async function load() {
   let runs = [];
   try {
     const txt = await (await fetch('../results/runs.jsonl?t=' + Date.now())).text();
     runs = txt.trim().split('\n').filter(Boolean).map(JSON.parse);
-  } catch (e) { /* not served yet */ }
-  // Chart tracks the proxy metric (dev subset) so all points share a denominator.
+  } catch (e) {}
+  document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+
   const subset = runs.some(r => (r.subset||'full')==='dev') ? 'dev' : 'full';
   const chartRuns = runs.filter(r => (r.subset||'full')===subset);
-  draw(chartRuns);
-  fillTable(runs);
   const kept = chartRuns.filter(r => r.kept).length;
   const n = chartRuns[0] ? chartRuns[0].n : '';
   document.getElementById('title').textContent =
     `Autoresearch Progress: ${chartRuns.length} Experiment${chartRuns.length===1?'':'s'}, ${kept} Kept (${subset}-${n} proxy)`;
-  document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+
+  draw(chartRuns);
+
+  // Only rebuild the table when the data actually changed, so open detail
+  // panels aren't collapsed under the reader by the 3s auto-refresh.
+  const sig = runs.map(r=>r.label+':'+r.quality+':'+r.kept).join('|');
+  if (sig !== lastSig) { lastSig = sig; fillTable(runs); }
 }
 
 function draw(runs) {
@@ -69,55 +110,108 @@ function draw(runs) {
   const dpr = window.devicePixelRatio || 1;
   const W = cv.clientWidth, H = cv.clientHeight;
   cv.width = W*dpr; cv.height = H*dpr;
-  const ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,W,H);
-  if (!runs.length) { ctx.fillStyle=MUTED; ctx.fillText('No runs yet — run: swift run fmresearch evaluate', 20, 40); return; }
+  chartPoints = [];
+  if (!runs.length) { ctx.fillStyle=MUTED; ctx.fillText('No runs yet — run: ./autoresearch/run.sh', 20, 40); return; }
 
-  const pad = {l:64, r:24, t:24, b:48};
+  const pad = {l:64, r:40, t:24, b:48};
   const qs = runs.map(r=>r.quality);
   let lo = Math.min(...qs), hi = Math.max(...qs);
   const span = Math.max(0.05, hi-lo); lo = Math.max(0, lo-span*0.25); hi = Math.min(1, hi+span*0.35);
-  const n = runs.length;
-  const X = i => pad.l + (n===1 ? (W-pad.l-pad.r)/2 : i*(W-pad.l-pad.r)/(n-1));
+  const nn = runs.length;
+  const X = i => pad.l + (nn===1 ? (W-pad.l-pad.r)/2 : i*(W-pad.l-pad.r)/(nn-1));
   const Y = q => pad.t + (1-(q-lo)/(hi-lo))*(H-pad.t-pad.b);
 
-  // grid + y labels
   ctx.strokeStyle=LINE; ctx.fillStyle=MUTED; ctx.font='12px system-ui'; ctx.lineWidth=1;
   for (let k=0;k<=5;k++){ const q=lo+(hi-lo)*k/5, y=Y(q);
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
     ctx.fillText(q.toFixed(3), 16, y+4); }
-  ctx.fillText('Experiment #', (W)/2-30, H-12);
+  ctx.fillText('Experiment #', W/2-30, H-12);
   ctx.save(); ctx.translate(16,H/2); ctx.rotate(-Math.PI/2); ctx.fillText('Quality (higher is better)', -70, -44); ctx.restore();
 
-  // running best line (step)
+  // running best step line
   let best=-1; const bestPts=[];
   runs.forEach((r,i)=>{ if(r.quality>best){best=r.quality;} bestPts.push([i,best]); });
   ctx.strokeStyle=GREEN; ctx.lineWidth=2; ctx.beginPath();
   bestPts.forEach(([i,b],k)=>{ const x=X(i),y=Y(b);
-    if(k===0){ctx.moveTo(x,y);} else { const px=X(i-1); ctx.lineTo(px,y); ctx.lineTo(x,y);} });
+    if(k===0){ctx.moveTo(x,y);} else { ctx.lineTo(X(i-1),y); ctx.lineTo(x,y);} });
   ctx.stroke();
 
-  // points + labels for kept
+  // points: discarded now clearly visible (darker, larger, white stroke)
   runs.forEach((r,i)=>{ const x=X(i), y=Y(r.quality);
-    ctx.beginPath(); ctx.arc(x,y, r.kept?6:3, 0, 7);
+    chartPoints.push({x,y,r});
+    ctx.beginPath(); ctx.arc(x,y, r.kept?6:5, 0, 7);
     ctx.fillStyle = r.kept?GREEN:GREY; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
     if (r.kept) { ctx.fillStyle=GREEN; ctx.font='12px system-ui';
-      const lbl = r.note ? r.note : r.label;
-      ctx.fillText(lbl, x+8, y-8); }
+      ctx.fillText(r.note ? r.note : r.label, x+9, y-9); }
   });
 }
+
+// hover tooltip on any point (kept or discarded)
+const tip = document.getElementById('tip');
+document.getElementById('chart').addEventListener('mousemove', e => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+  let hit=null, bd=144;
+  for (const p of chartPoints){ const d=(p.x-mx)**2+(p.y-my)**2; if(d<bd){bd=d;hit=p;} }
+  if (hit){ const r=hit.r;
+    tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.kept?'kept':'discarded'}`
+      + (r.note?`<span class="t-note">${r.note}</span>`:'');
+    tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY+12)+'px'; tip.style.opacity=1;
+  } else tip.style.opacity=0;
+});
+document.getElementById('chart').addEventListener('mouseleave', ()=> tip.style.opacity=0);
+
+function pw(p){ return p==='fmBetter'?['b-win','WIN']:p==='tie'?['b-tie','TIE']:['b-loss','LOSS']; }
+function rmean(rb){ return ((rb.atomicity+rb.specificity+rb.coverage+rb.naturalness+rb.nonRedundancy)/5).toFixed(1); }
+
+async function renderDetail(label, cell) {
+  cell.innerHTML = '<div class="detail-inner">loading…</div>';
+  let scores = detailCache[label];
+  if (!scores) {
+    try { scores = await (await fetch(`../results/${label}.json?t=`+Date.now())).json(); detailCache[label]=scores; }
+    catch(e){ cell.innerHTML='<div class="detail-inner disc">no per-case results file for this experiment</div>'; return; }
+  }
+  const blocks = scores.map(s => {
+    const cand = s.candidate;
+    const qs = cand ? `<ol class="qs">${cand.questions.map(q=>`<li>${esc(q.title)}</li>`).join('')}</ol>` : '';
+    let verdict = '<span class="disc">spec failed: '+ (s.spec.violations||[]).join('; ') +'</span>';
+    let rub = '';
+    if (s.verdict){ const [cls,txt]=pw(s.verdict.pairwise); const rb=s.verdict.rubric;
+      verdict = `<span class="badge ${cls}">${txt}</span>`;
+      rub = `<span class="rubric">rubric ${rmean(rb)} &nbsp;(atom ${rb.atomicity} · spec ${rb.specificity} · cover ${rb.coverage} · nat ${rb.naturalness} · nonRed ${rb.nonRedundancy})</span>`;
+    }
+    const note = s.verdict ? `<div class="note">judge: ${esc(s.verdict.notes)}</div>` : '';
+    return `<div class="case">
+      <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${verdict} ${rub}</div>
+      ${qs}${note}</div>`;
+  }).join('');
+  cell.innerHTML = `<div class="detail-inner">${blocks}</div>`;
+}
+
+function esc(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 function fillTable(runs) {
   const tb = document.querySelector('#tbl tbody'); tb.innerHTML='';
   [...runs].reverse().forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${r.index}</td><td>${r.label}</td>`+
+    const tr=document.createElement('tr'); tr.className='row-main'+(expanded.has(r.label)?' open':'');
+    tr.innerHTML = `<td>${r.index}</td><td><span class="caret">▸</span> ${r.label}</td>`+
       `<td>${(r.subset||'full')}-${r.n||''}</td>`+
       `<td class="q">${r.quality.toFixed(3)}</td>`+
       `<td>${Math.round(r.specPass*100)}%</td>`+
       `<td>${r.wins}/${r.ties}/${r.losses}</td>`+
-      `<td>${r.note||''} <span class="${r.kept?'kept':'disc'}">${r.kept?'kept':'discarded'}</span></td>`;
-    tb.appendChild(tr);
+      `<td>${esc(r.note||'')} <span class="${r.kept?'kept':'disc'}">${r.kept?'kept':'discarded'}</span></td>`;
+    const det=document.createElement('tr'); det.className='detail';
+    const cell=document.createElement('td'); cell.colSpan=7;
+    det.appendChild(cell); det.style.display = expanded.has(r.label)?'':'none';
+    if (expanded.has(r.label)) renderDetail(r.label, cell);
+    tr.addEventListener('click', ()=>{
+      if (expanded.has(r.label)){ expanded.delete(r.label); det.style.display='none'; tr.classList.remove('open'); }
+      else { expanded.add(r.label); det.style.display=''; tr.classList.add('open'); renderDetail(r.label, cell); }
+    });
+    tb.appendChild(tr); tb.appendChild(det);
   });
 }
 

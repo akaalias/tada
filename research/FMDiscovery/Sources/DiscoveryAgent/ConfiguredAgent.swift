@@ -15,6 +15,7 @@ public struct ConfiguredAgent: Sendable {
         case .brainstormSelect:  return try await brainstormSelect(input)
         case .overGenerateScore: return try await overGenerateScore(input)
         case .ragFewShot:        return try await ragFewShot(input)
+        case .ragCoverageBestOfN: return try await ragCoverageBestOfN(input)
         }
     }
 
@@ -55,7 +56,8 @@ public struct ConfiguredAgent: Sendable {
             .content.toContract()
     }
 
-    private func ragFewShot(_ input: String) async throws -> DiscoveryResult {
+    /// Builds the RAG few-shot system prompt (shared by ragFewShot and best-of-N).
+    private func ragSystemPrompt(_ input: String) -> String {
         // Retrieve 2 nearest gold exemplars by word-overlap similarity.
         let examples = GoldExemplars.nearest(to: input, k: 2)
         let exampleBlock = examples.enumerated().map { (i, ex) -> String in
@@ -70,7 +72,7 @@ public struct ConfiguredAgent: Sendable {
             """
         }.joined(separator: "\n\n")
 
-        let systemPrompt = """
+        return """
         You are a personal task coach. The user just shared a task they want to \
         accomplish. Before making any plans, generate clarifying questions that \
         uncover what they specifically want, context (who/what/when/where/why), \
@@ -97,12 +99,37 @@ public struct ConfiguredAgent: Sendable {
           outside the app (call, email, visit). False for in-app data entry.
         • Do NOT use emojis.
         """
+    }
 
-        let session = LanguageModelSession { systemPrompt }
+    private func ragFewShot(_ input: String) async throws -> DiscoveryResult {
+        let session = LanguageModelSession { ragSystemPrompt(input) }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
         return r.content.toContract()
+    }
+
+    /// EXP-004: best-of-N over the RAG few-shot agent, ranked by a deterministic
+    /// Swift coverage scorer. Generate N full sets at varying temperatures, then
+    /// pick the set that best covers the universal high-value planning dimensions
+    /// (budget, timeline, scale/who-for, location, current-state) while avoiding
+    /// redundant clusters and re-asking facts already stated in the task.
+    private func ragCoverageBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input)
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let temps = config.sampleTemps ?? [0.3, 0.6, 0.9, 1.0]
+
+        var best: DiscoveryResult?
+        var bestScore = -Double.greatestFiniteMagnitude
+        for t in temps {
+            let session = LanguageModelSession { system }
+            let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                              options: config.options(temp: t, sampling: .modelDefault))
+            let cand = r.content.toContract()
+            let s = CoverageScorer.score(cand.questions.map { $0.title }, input: input)
+            if s > bestScore { bestScore = s; best = cand }
+        }
+        return best!
     }
 
     private func overGenerateScore(_ input: String) async throws -> DiscoveryResult {

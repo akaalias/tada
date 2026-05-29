@@ -17,6 +17,12 @@ public enum Configs {
         // EXP-003: retrieval-augmented few-shot — retrieve 2 nearest non-dev gold
         // exemplars by word overlap, inject as few-shot demonstrations, single call.
         "exp003": DiscoveryConfig(topology: .ragFewShot),
+
+        // EXP-004: best-of-N over the RAG agent (4 temps), select the set with the
+        // best deterministic coverage score in Swift. Attacks the coverage gap by
+        // ranking whole model-generated sets, preserving natural phrasing.
+        "exp004": DiscoveryConfig(topology: .ragCoverageBestOfN,
+                                  sampleTemps: [0.3, 0.6, 0.9, 1.0]),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
