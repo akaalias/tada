@@ -284,6 +284,25 @@ public enum Configs {
         // re-asking givens, so freeing those slots lets the 7 span more genuine
         // unknowns. Built on the exp011 contrastive RAG base (current best).
         "exp025": DiscoveryConfig(topology: .ragGivensAware),
+
+        // EXP-026: composite-ruler best-of-N over the BEST generator. exp004 already
+        // tried best-of-N and lost, but the log records exactly WHY and what to fix:
+        // it ran on the weaker exp003 base and selected by a COVERAGE-ONLY keyword
+        // scorer, which is blind to the atomicity/specificity degradation high-temp
+        // draws introduce (it "can't see those and selects the worse set"). The log's
+        // explicit prescription — "a useful ruler must score atomicity+specificity+
+        // task-fit, not just dimension keyword presence; and sampling noise needs a
+        // low-temp floor" — was never implemented. This config does precisely that:
+        // draw N sets from the exp011 contrastive-RAG generator (the current best,
+        // not exp003) with a low-temp floor, then select FULLY DETERMINISTICALLY (no
+        // 3B judgment — the trap that sank every multi-FM config) by a COMPOSITE score
+        // = CoverageScorer dimension span MINUS penalties for filler catch-alls,
+        // near-duplicate pairs, and compound ("and"/"or") asks (the atomicity proxy
+        // the rubric rewards). Winner returned verbatim (phrasing never mangled). This
+        // is the one untried point in the best-of-N space: best base + composite (not
+        // coverage-only) ruler + deterministic selection + low-temp floor.
+        "exp026": DiscoveryConfig(topology: .ragCompositeBestOfN,
+                                  sampleTemps: [0.4, 0.6, 0.8, 1.0]),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -29,6 +29,7 @@ public struct DiscoveryConfig: Sendable {
         case ragJustifiedQuestions // single call, INTERLEAVED per-question CoT: schema forces a concrete decision-impact rationale immediately BEFORE each question (vs exp018's batch-first list), gating filler at the point of emission
         case ragStartingPointCritique // contrastive RAG draft → ONE scoped 2nd call judging only ONE failure mode (does any slot establish the user's STARTING POINT?) → if not, swap the single weakest slot in Swift for a task-specific starting-point question (≤1 slot changes, 6 verbatim)
         case ragGivensAware      // single call, in-schema: FIRST extract the facts the task already states (providedFacts — an EASY reading task, not judgment), THEN write 7 questions, none of which may re-ask a given; frees slots wasted on restating givens
+        case ragCompositeBestOfN // best-of-N over the exp011 contrastive-RAG generator, selected by a COMPOSITE deterministic ruler (coverage span − filler − near-dup − compound/atomicity penalties), low-temp floor — fixes exp004's coverage-only scorer flaw, no 3B judgment
     }
 
     public enum Sampling: Sendable {

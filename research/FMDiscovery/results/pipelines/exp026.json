@@ -1,0 +1,36 @@
+{
+  "summary": "Composite-ruler best-of-N over contrastive-RAG generator",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Contrastive-RAG exemplar fetch (exp011)"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Draw N sets at 4 temps, low-temp floor",
+      "knobs": {
+        "n": "4",
+        "temp": "0.4/0.6/0.8/1.0"
+      },
+      "call_labels": [
+        "generate set at temp 0.4",
+        "generate set at temp 0.6",
+        "generate set at temp 0.8",
+        "generate set at temp 1.0"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Composite ruler: span \u2212 filler \u2212 near-dup \u2212 compound"
+    },
+    {
+      "kind": "output",
+      "text": "Top-ranked question set returned verbatim"
+    }
+  ],
+  "label": "exp026"
+}

@@ -64,7 +64,66 @@ public struct ConfiguredAgent: Sendable {
         case .ragJustifiedQuestions: return try await ragJustifiedQuestions(input)
         case .ragStartingPointCritique: return try await ragStartingPointCritique(input)
         case .ragGivensAware:    return try await ragGivensAware(input)
+        case .ragCompositeBestOfN: return try await ragCompositeBestOfN(input)
         }
+    }
+
+    /// EXP-026: best-of-N over the BEST generator (exp011 contrastive RAG), selected
+    /// by a COMPOSITE deterministic ruler. exp004 already tried best-of-N but its
+    /// failure is documented precisely in the log: it ran on the plain exp003 base
+    /// and selected by a COVERAGE-ONLY keyword scorer, so it (a) couldn't see the
+    /// atomicity/specificity degradation that high-temp draws introduce (compound/
+    /// parenthetical asks) and (b) picked the worse set. The log's own prescription
+    /// was never built: "A useful ruler must score atomicity+specificity+task-fit,
+    /// not just dimension keyword presence; and sampling noise needs a low-temp
+    /// floor." This config does exactly that. It draws N sets from the exp011
+    /// contrastive-RAG generator (the current best, not the weaker exp003 base) with
+    /// a low-temp floor, then selects fully DETERMINISTICALLY (no 3B judgment — the
+    /// move that sank every multi-FM config) by a composite score: CoverageScorer's
+    /// dimension span MINUS penalties for filler catch-alls (FillerDetector), near-
+    /// duplicate pairs (content Jaccard), and compound asks ("and"/"or" — the
+    /// atomicity proxy the rubric rewards). The winning set is returned VERBATIM so
+    /// phrasing is never mangled. Falsifiable: if every draw sits in the same modal
+    /// generic cluster (exp010's datum), selecting the best by a quality proxy
+    /// cannot lift coverage and this lands within the ~0.27-0.32 plateau noise; if
+    /// the best base produces a genuinely stronger draw that a composite ruler (but
+    /// not a coverage-only one) can spot, it should edge above the plateau.
+    private func ragCompositeBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let system = ragSystemPrompt(input) + Self.contrastLesson
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let temps = config.sampleTemps ?? [0.4, 0.6, 0.8, 1.0]
+
+        var best: DiscoveryResult?
+        var bestScore = -Double.greatestFiniteMagnitude
+        for t in temps {   // ascending temps; strict `>` keeps the lower-temp set on ties
+            let session = LanguageModelSession { system }
+            let cand = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                                  options: config.options(temp: t, sampling: .modelDefault))
+                .content.toContract()
+            let s = Self.compositeScore(cand.questions.map { $0.title }, input: input)
+            if s > bestScore { bestScore = s; best = cand }
+        }
+        return best!
+    }
+
+    /// EXP-026 composite ruler: rewards dimension coverage span (CoverageScorer) and
+    /// subtracts the rubric-relevant defects a coverage-only scorer is blind to —
+    /// filler catch-alls, near-duplicate pairs, and compound (non-atomic) asks. All
+    /// deterministic, on-device; no model judgment.
+    static func compositeScore(_ questions: [String], input: String) -> Double {
+        var score = CoverageScorer.score(questions, input: input)
+        for q in questions where FillerDetector.isFiller(q) { score -= 1.5 }
+        for i in 0..<questions.count {
+            for j in (i + 1)..<questions.count
+            where FillerDetector.jaccard(questions[i], questions[j]) >= 0.5 {
+                score -= 1.0   // near-duplicate pair wastes a slot
+            }
+        }
+        for q in questions {
+            let l = " " + q.lowercased() + " "
+            if l.contains(" and ") || l.contains(" or ") { score -= 1.0 }  // compound = non-atomic
+        }
+        return score
     }
 
     /// EXP-025: givens-aware single call. The most-cited waste across the whole log
