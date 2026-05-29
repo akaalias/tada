@@ -1,0 +1,25 @@
+{
+  "summary": "RAG contrastive GOOD-vs-BAD few-shot on exp003 base",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch nearest positive exemplars (RAG)"
+    },
+    {
+      "kind": "generate",
+      "text": "Single FM call with contrastive GOOD-vs-BAD demos",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp011"
+}

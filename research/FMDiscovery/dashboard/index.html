@@ -228,14 +228,17 @@ async function fetchPipe(label){
 }
 function renderPipe(spec){
   if (!spec || !spec.stages) return '';
+  const isAdapter=s=>/adapter|lora|fine-?tun/i.test(JSON.stringify(s.knobs||{}));
   const blocks = spec.stages.map(s=>{
     const c=KINDC[s.kind]||'#64748b';
     const kn=s.knobs?Object.entries(s.knobs).map(([k,v])=>`<span>${esc(k)}=${esc(String(v))}</span>`).join(''):'';
-    const fm=FMK.has(s.kind)?'<span class="fm">FM</span>':'';
+    let fm='';
+    if (FMK.has(s.kind)) fm = isAdapter(s) ? '<span class="fm" style="background:#ca8a04">LoRA</span>' : '<span class="fm">FM</span>';
     return `<div class="stage" style="--sc:${c}">${fm}<div class="k">${esc(s.kind)}</div><div class="t">${esc(s.text||'')}</div>${kn?`<div class="kn">${kn}</div>`:''}</div>`;
   }).join('<div class="parrow">→</div>');
   const fmCount=spec.stages.filter(s=>FMK.has(s.kind)).length;
-  const sum = spec.summary?`<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount===1?'':'s'}</span></div>`:'';
+  const adapter=spec.stages.some(isAdapter);
+  const sum = spec.summary?`<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount===1?'':'s'}${adapter?' · <b style="color:#ca8a04">LoRA adapter</b>':''}</span></div>`:'';
   return `${sum}<div class="pipe">${blocks}</div>`
     + `<div class="legend-kinds"><b>FM</b> = on-device model call · coloured by stage type</div>`;
 }

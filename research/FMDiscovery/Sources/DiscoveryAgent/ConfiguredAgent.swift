@@ -22,7 +22,51 @@ public struct ConfiguredAgent: Sendable {
         case .ragAdaptExemplar:  return try await ragAdaptExemplar(input)
         case .ragCoverageRepair: return try await ragCoverageRepair(input)
         case .ragSelfConsistency: return try await ragSelfConsistency(input)
+        case .ragContrastiveFewShot: return try await ragContrastiveFewShot(input)
         }
+    }
+
+    /// EXP-011: contrastive (negative) few-shot. Builds on exp003's robust
+    /// single-call positive few-shot (the running best), but PREPENDS one worked
+    /// GOOD-vs-BAD example on a neutral, non-eval task. Every prior coverage fix
+    /// added a runtime JUDGING step (auditor/repair/scaffold/consensus) and
+    /// regressed — the 3B can't judge. Here the judgment is baked into a
+    /// demonstration CONTRAST instead of asked at runtime: the BAD set illustrates
+    /// the exact anti-patterns the judge flags on exp003 (restating given facts,
+    /// off-task/self-defeating questions, vague filler, compound asks, redundant
+    /// pairs), so the model learns by example what NOT to spend a slot on.
+    private func ragContrastiveFewShot(_ input: String) async throws -> DiscoveryResult {
+        let contrast = """
+
+
+        ── WORKED CONTRAST: what makes a question set strong ──
+        For an example task "Organize my garage", here is a STRONG set and a WEAK set.
+
+        STRONG (each question targets a decision-critical unknown, asks ONE thing):
+        1. What is your main goal: more storage, a workshop, or parking space?
+        2. How large is your garage?
+        3. Roughly how much stuff needs sorting or removing?
+        4. What is your budget for shelving or storage systems?
+        5. Do you have a deadline to finish by?
+        6. What will you do with items you no longer want?
+        7. Will anyone be helping you with the work?
+
+        WEAK (avoid every one of these patterns):
+        • "Do you have a garage?" — restates a fact the task already gives.
+        • "What color should the walls be?" — niche/premature, off the core task.
+        • "Do you have any other preferences?" — vague filler, not decision-critical.
+        • "What is your budget and timeline?" — compound, asks two things at once.
+        • "How big is your garage and what fits in it?" — redundant and compound.
+
+        The STRONG set wins because every slot probes a different decision-critical \
+        unknown, each asks exactly one thing, and none restates what the task already \
+        states. Never produce a question that fits a WEAK pattern.
+        """
+        let session = LanguageModelSession { ragSystemPrompt(input) + contrast }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
+                                          options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     /// EXP-010: self-consistency consensus. Draw N independent RAG sets (same

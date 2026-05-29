@@ -51,9 +51,21 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
    - deterministic post-processing in Swift: embedding-based dedup, coverage
      enforcement against a dimension scaffold, atomicity/filler detect-and-repair
    - retrieval-augmented few-shot: embed the input, retrieve nearest exemplar
-     question-sets from the gold bank, inject as dynamic few-shot (on-device,
-     production-safe). On-device embeddings: `NLEmbedding`/`NLContextualEmbedding`.
+     question-sets from the demonstration bank (`corpus/`, may be grown), inject
+     as dynamic few-shot (on-device). On-device embeddings: `NLEmbedding`/`NLContextualEmbedding`.
+   - adapter (when available): a fine-tuned on-device LoRA adapter may be exposed
+     as a model knob. Prefer it as the base for generate/critique once present;
+     multi-FM is expected to pay off more on the adapter than the stock 3B.
    Build on the current BEST config; periodically try a bold, different idea.
+
+   WHAT THE DATA SAYS — single-call RAG (exp003, 0.320) still leads; NAIVE multi-FM
+   has lost every time: chained brainstorm→select (exp001, 0.235), best-of-N over 4
+   temps (exp004, 0.245), reflexion editor (exp005, 0.315) — extra stock-3B passes
+   compound weak judgment. Do NOT repeat those. If you revisit multi-FM, make it
+   SMARTER: (a) scope a critique to ONE named failure mode, not a general audit;
+   (b) for best-of-N, select via PAIRWISE 3B comparisons / a tournament (relative
+   judgment beats absolute scoring on a 3B), not an absolute scorer; (c) self-
+   consistency voting across diverse generations.
 3. **Code it** as a NEW named config in `Configs.swift` — pick the next free name
    (`exp003`, `exp004`, … check the registry + program.md for the highest used).
    Add any new topology/post-processing code in `DiscoveryAgent`. Keep old configs.

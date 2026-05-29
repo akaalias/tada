@@ -67,6 +67,15 @@ public enum Configs {
         // selection signal vs exp002 (self-rated importance) and exp004 (whole-set scoring).
         "exp010": DiscoveryConfig(topology: .ragSelfConsistency,
                                   sampleTemps: [0.4, 0.6, 0.8, 1.0]),
+
+        // EXP-011: contrastive (negative) few-shot. exp003's positive few-shot stays
+        // (the running best, single call), but a fixed GOOD-vs-BAD worked example on a
+        // neutral task ("Organize my garage") is prepended. The BAD set demonstrates the
+        // exact anti-patterns the judge flags on exp003 — restating given facts, off-task/
+        // self-defeating questions, vague filler, compound asks, redundant pairs — so the
+        // 3B learns by CONTRAST what not to spend a slot on. Every prior coverage fix added
+        // a runtime judging step and regressed; this bakes the judgment into a demonstration.
+        "exp011": DiscoveryConfig(topology: .ragContrastiveFewShot),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

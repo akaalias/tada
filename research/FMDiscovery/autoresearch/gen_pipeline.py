@@ -54,6 +54,7 @@ Rules:
   - deterministic Swift post-processing (dedup, coverage check, atomicity repair) -> post
 - DO NOT invent stages. A plain single-shot pipeline is EXACTLY: input -> generate -> output. Only add retrieve/expand/select/critique/ensemble/post if the description explicitly implies them.
 - generate/critique/ensemble are model (FM) calls; select/post are deterministic code. Put decoding/retrieval/count settings in knobs (temp, sampling, k, n). Keep text fields <=8 words.
+- If a model call uses a fine-tuned / LoRA / adapter model instead of the stock base 3B, set that stage's knobs.model to the adapter name (e.g. "adapter-v1"). Omit model for the stock base model.
 
 Examples (description -> stage kinds):
 - "single-shot (EXP-000 port)" -> input, generate, output
