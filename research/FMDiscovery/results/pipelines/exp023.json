@@ -1,0 +1,39 @@
+{
+  "summary": "Contrastive RAG draft + scoped starting-point critique, Swift swap",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Contrastive RAG: fetch exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Contrastive RAG draft 7 questions",
+      "knobs": {
+        "temp": "0.7"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Judge starting-point coverage only",
+      "knobs": {
+        "calls": "1"
+      },
+      "call_labels": [
+        "does any slot establish starting point?"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Swift swaps \u22641 weakest slot"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp023"
+}

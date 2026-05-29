@@ -231,6 +231,25 @@ public enum Configs {
         // catch-alls and nudge specificity/non-redundancy. Single call on the exp011
         // contrastive RAG base (best); rationales are discarded from the output.
         "exp022": DiscoveryConfig(topology: .ragJustifiedQuestions),
+
+        // EXP-023: scoped starting-point critique. Every prior 2nd-pass config ran a
+        // GENERAL audit and lost — exp005 (delete-given/delete-low-value/split-
+        // compound/fill-from-a-checklist, 0.315) and exp017 (detect+refill all wasted
+        // slots, 0.283) both compound the 3B's weak judgment across many independent
+        // edits and mangle strong slots. The rules' guidance for a smarter multi-FM
+        // pass is to "scope a critique to ONE named failure mode, not a general
+        // audit." The single dominant recurring miss across the WHOLE dev set is the
+        // same dimension: the model ASSUMES the user's STARTING POINT and never asks
+        // it (trip→departure city, resume→current role/existing resume, guitar→skill
+        // level, tax→residency/employment, buy_used_car→is a car already chosen,
+        // wedding→is the venue booked). Stage 1 = exp011 contrastive RAG draft (best).
+        // Stage 2 = ONE call judging ONLY "does any slot establish the starting
+        // point?" — if YES, the draft is returned verbatim (zero rewrite risk); if NO,
+        // the model names the single weakest slot and writes one task-specific
+        // starting-point question, and Swift swaps exactly that one slot (other 6
+        // verbatim, filler/near-dup defended). At most one slot changes — the
+        // minimal-surface 2nd pass, attacking the one gap that recurs everywhere.
+        "exp023": DiscoveryConfig(topology: .ragStartingPointCritique),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

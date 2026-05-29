@@ -27,6 +27,7 @@ public struct DiscoveryConfig: Sendable {
         case ragCorpusSelect     // over-generate a diverse candidate pool (N temps), then SELECT 7 by embedding resemblance to the questions Sonnet actually asks for the nearest corpus task types (corpus as a relevance prior, output stays 3B-generated)
         case ragPerspectiveEnsemble // generate full sets from 3 DISTINCT generation FRAMES (execution / scope / domain-expert) — prompt-diversity, not temp-diversity — then deterministically round-robin-merge by emission order with near-dup suppression (no 3B selection pass)
         case ragJustifiedQuestions // single call, INTERLEAVED per-question CoT: schema forces a concrete decision-impact rationale immediately BEFORE each question (vs exp018's batch-first list), gating filler at the point of emission
+        case ragStartingPointCritique // contrastive RAG draft → ONE scoped 2nd call judging only ONE failure mode (does any slot establish the user's STARTING POINT?) → if not, swap the single weakest slot in Swift for a task-specific starting-point question (≤1 slot changes, 6 verbatim)
     }
 
     public enum Sampling: Sendable {

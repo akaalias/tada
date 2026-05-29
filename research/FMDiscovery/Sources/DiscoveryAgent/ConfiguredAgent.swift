@@ -62,6 +62,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragCorpusSelect:   return try await ragCorpusSelect(input)
         case .ragPerspectiveEnsemble: return try await ragPerspectiveEnsemble(input)
         case .ragJustifiedQuestions: return try await ragJustifiedQuestions(input)
+        case .ragStartingPointCritique: return try await ragStartingPointCritique(input)
         }
     }
 
@@ -284,6 +285,99 @@ public struct ConfiguredAgent: Sendable {
         Do this for the user's task: first list its 7 decision-critical unknowns as \
         short phrases, then write one question probing each.
         """
+
+    /// EXP-023: scoped starting-point critique. Every prior 2nd-pass config lost
+    /// because it ran a GENERAL audit (exp005 delete-given/delete-low-value/split-
+    /// compound/fill-from-a-7-item-checklist; exp017 detect-and-refill all wasted
+    /// slots) — a broad rewrite that compounds the 3B's weak judgment across many
+    /// independent decisions and mangles strong slots. The rules' guidance for a
+    /// SMARTER multi-FM pass is to "scope a critique to ONE named failure mode, not
+    /// a general audit." The single dominant recurring miss across the dev set is
+    /// the same one: the model ASSUMES the user's STARTING POINT and never asks it —
+    /// trip (departure city), resume (current role / existing resume), learn_guitar
+    /// (current skill level), tax (residency/employment situation), buy_used_car
+    /// (whether a specific car is already chosen), wedding (whether the venue is
+    /// booked). This is one well-defined dimension, not a checklist. Stage 1 is the
+    /// exp011 contrastive RAG draft (current best). Stage 2 is ONE call that judges
+    /// ONLY this: does any of the 7 questions establish the user's starting point
+    /// for THIS task? If YES, the draft is returned verbatim (no rewrite, no risk).
+    /// If NO, the model names the single WEAKEST slot and writes ONE task-specific
+    /// starting-point question; Swift swaps exactly that one slot (the other 6 stay
+    /// verbatim, defended by a filler/near-dup re-check). At most one slot changes —
+    /// the minimal-surface 2nd pass, attacking the one gap that recurs everywhere.
+    private func ragStartingPointCritique(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: contrastive RAG draft (= exp011, the current best base).
+        let draftSession = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+        let plan = try await draftSession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        let titles = questions.map { $0.title }
+        let numbered = titles.enumerated().map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+
+        // Stage 2: ONE scoped critique — starting-point coverage ONLY.
+        let critiqueSystem = """
+        You are reviewing a set of 7 clarifying questions a coach will ask BEFORE \
+        planning the user's task. Focus on ONE thing only: the user's STARTING POINT.
+
+        Almost every plan depends on where the user is starting FROM — their current \
+        situation, what they already have or have done, or the concrete thing they are \
+        starting with. Examples: for a trip, the city they are departing from; for a \
+        resume, their current role and whether a resume already exists; for learning an \
+        instrument, their current skill level; for buying something used, whether they \
+        have already picked a specific one; for an event, whether the venue is booked.
+
+        Read the 7 draft questions. Decide: do ANY of them establish the user's \
+        STARTING POINT for THIS task?
+        • If YES, set startingPointCovered = true (everything else is ignored).
+        • If NO, set startingPointCovered = false, give the 1-based position of the \
+          single WEAKEST question (the most generic, premature, or least \
+          decision-critical one), and write ONE natural, task-specific question that \
+          establishes the starting point — 5-12 words, asking exactly ONE thing, \
+          addressed to the user, never generic filler, never restating a fact the \
+          task already gives.
+
+        Judge ONLY starting-point coverage. Do not comment on anything else.
+        """
+        let critiqueSession = LanguageModelSession { critiqueSystem }
+        let critiquePrompt = """
+        Task the user entered: "\(input)"
+
+        Draft questions:
+        \(numbered)
+
+        Does any draft question establish the user's starting point for this task?
+        """
+        let fix = try await critiqueSession.respond(
+            to: critiquePrompt, generating: FMStartingPointFix.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        // Covered → return the draft verbatim (no rewrite, no risk).
+        if fix.startingPointCovered {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+
+        // Not covered → swap exactly the named weakest slot, with defensive guards.
+        let idx = fix.weakestIndex - 1
+        let cand = fix.startingPointQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard questions.indices.contains(idx), !cand.isEmpty, !FillerDetector.isFiller(cand) else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+        // Don't introduce a near-duplicate of any slot we are KEEPING.
+        let kept = titles.enumerated().filter { $0.offset != idx }.map { $0.element }
+        if kept.contains(where: { FillerDetector.jaccard(cand, $0) >= 0.5 }) {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+        questions[idx] = DiscoveryQuestion(title: cand, description: "",
+                                           requiresExternalAction: fix.requiresExternalAction)
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
 
     /// EXP-017: filler/redundancy detect-and-repair on the contrastive RAG draft.
     /// The judge's recurring complaint on the best config (exp011) is that redundant
@@ -1115,6 +1209,22 @@ struct FMDimensionalPlan {
         return DiscoveryResult(taskTitle: title, taskDescription: summary,
                                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
     }
+}
+
+/// EXP-023: the scoped starting-point critique verdict. The model first commits to
+/// a single boolean (is the starting point covered?), then — only if not — names the
+/// weakest slot and writes one replacement. Guided generation emits fields in order,
+/// so the boolean gates whether the replacement is even considered downstream.
+@Generable
+struct FMStartingPointFix {
+    @Guide(description: "True if at least one of the 7 draft questions already establishes the user's STARTING POINT for THIS task — where/what they are starting from, what they already have or have done, or their current situation. False if none of them do.")
+    var startingPointCovered: Bool
+    @Guide(description: "The 1-based position (1 to 7) of the SINGLE weakest draft question — the most generic, premature, or least decision-critical one. Only used when startingPointCovered is false.")
+    var weakestIndex: Int
+    @Guide(description: "One natural clarifying question, 5-12 words, asking exactly ONE thing, that establishes the user's STARTING POINT for THIS task. Specific to this task; never generic filler; never restate a fact the task already gives. Only used when startingPointCovered is false.")
+    var startingPointQuestion: String
+    @Guide(description: "True only if answering the new question requires a real-world action outside the app (call, email, visit). False for in-app data entry.")
+    var requiresExternalAction: Bool
 }
 
 /// EXP-017: a variable-length list of refill questions (the wasted-slot count is
