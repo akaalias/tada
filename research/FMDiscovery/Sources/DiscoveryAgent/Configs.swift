@@ -199,6 +199,23 @@ public enum Configs {
         // 3B-generated; corpus is a ranking prior only (no copy/template = leak-safe).
         "exp020": DiscoveryConfig(topology: .ragCorpusSelect,
                                   sampleTemps: [0.4, 0.7, 1.0]),
+
+        // EXP-021: prompt-diverse PERSPECTIVE ENSEMBLE. The coverage wall is that the
+        // 3B's single draw collapses onto a generic modal cluster (exp010's datum),
+        // and EVERY prior multi-sample config (best-of-N exp004, self-consistency
+        // exp010, tournament exp012, corpus-select exp020) drew its samples from ONE
+        // prompt at varying TEMPERATURES — so all the samples sit in that SAME modal
+        // cluster and no aggregation/selection over them recovers the missing
+        // dimensions. This config tests the orthogonal, untried lever: PROMPT
+        // diversity. It generates three full sets from three systematically different
+        // generation FRAMES (EXECUTION/logistics, SCOPE/goals, DOMAIN-EXPERT), each
+        // steering the model into a different region of decision-space so the UNION
+        // spans dimensions a single draw misses (the domain-expert frame targets the
+        // recurring domain-specificity gap). The 7 are merged DETERMINISTICALLY —
+        // round-robin by emission order with filler/near-dup suppression — so NO weak
+        // 3B selection/ranking/critique pass is added (the move that sank every prior
+        // multi-FM attempt). Built on the exp011 contrastive RAG base.
+        "exp021": DiscoveryConfig(topology: .ragPerspectiveEnsemble),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -23,11 +23,16 @@ python3 "$AR/format_training_data.py"
 echo "[adapter] 2/4 python 3.11 venv + toolkit requirements"
 PY311="$(pyenv root 2>/dev/null)/versions/3.11.9/bin/python3"
 [ -x "$PY311" ] || PY311="python3"   # fall back; toolkit prefers 3.11
-"$PY311" -m venv "$ADP/venv"
+[ -d "$ADP/venv" ] || "$PY311" -m venv "$ADP/venv"
 # shellcheck disable=SC1091
 source "$ADP/venv/bin/activate"
-pip install -q --upgrade pip
-pip install -q -r "$TOOLKIT/requirements.txt"
+# Idempotent + network-resilient: skip if deps already import; retry on flaky net.
+if python -c "import torch, coremltools, tamm" 2>/dev/null; then
+  echo "[adapter] deps already installed — skipping"
+else
+  pip install --upgrade pip
+  pip install --retries 10 --timeout 120 -r "$TOOLKIT/requirements.txt"
+fi
 
 echo "[adapter] 3/4 training (epochs=$EPOCHS lr=$LR batch=$BATCH) — this takes a while"
 ( cd "$TOOLKIT" && python -m examples.train_adapter \

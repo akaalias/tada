@@ -60,8 +60,90 @@ public struct ConfiguredAgent: Sendable {
         case .ragFillerRepair:   return try await ragFillerRepair(input)
         case .ragReasonedFewShot: return try await ragReasonedFewShot(input)
         case .ragCorpusSelect:   return try await ragCorpusSelect(input)
+        case .ragPerspectiveEnsemble: return try await ragPerspectiveEnsemble(input)
         }
     }
+
+    /// EXP-021: prompt-diverse perspective ensemble. Every prior multi-sample
+    /// config (best-of-N exp004, self-consistency exp010, tournament exp012,
+    /// corpus-select exp020) drew its samples from ONE prompt at varying
+    /// TEMPERATURES — and exp010's central datum is that those samples all collapse
+    /// onto the SAME generic modal cluster, so aggregating/selecting over them
+    /// cannot recover coverage the model never produces. This config attacks that
+    /// diagnosed failure with the orthogonal, untried lever: PROMPT diversity.
+    /// It generates three full 7-question sets from three systematically DIFFERENT
+    /// generation FRAMES — an EXECUTION/logistics planner, a SCOPE/goals strategist,
+    /// and a DOMAIN EXPERT for this task's field — each of which steers the model
+    /// into a different region of decision-space, so their UNION spans dimensions
+    /// no single modal draw covers (the domain-expert frame in particular targets
+    /// the recurring domain-specificity gap: tax→residency/employment-type,
+    /// therapist→presenting concern). The 7 are then assembled DETERMINISTICALLY
+    /// (PerspectiveMerge): round-robin across the three sets in each frame's own
+    /// emission order, skipping filler and near-duplicates — no 3B selection/
+    /// ranking/critique pass, the move that compounded weak judgment in every prior
+    /// multi-FM loser. Built on the exp011 contrastive RAG base for phrasing.
+    private func ragPerspectiveEnsemble(_ input: String) async throws -> DiscoveryResult {
+        let base = ragSystemPrompt(input) + Self.contrastLesson
+        let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
+
+        var sets: [[DiscoveryQuestion]] = []
+        var title = ""
+        var summary = ""
+        for (i, frame) in Self.perspectiveFrames.enumerated() {
+            let session = LanguageModelSession { base + frame }
+            let plan = try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self,
+                options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+            ).content
+            if i == 0 { title = plan.title; summary = plan.summary }
+            sets.append(plan.questions.map {
+                DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+            })
+        }
+        let merged = PerspectiveMerge.merge(sets, count: 7)
+        return DiscoveryResult(taskTitle: title, taskDescription: summary, questions: merged)
+    }
+
+    /// EXP-021: the three distinct generation FRAMES, each appended to the exp011
+    /// contrastive RAG system prompt. Unlike exp015's abstract dimension LABELS
+    /// (which crowded out task-specific unknowns) and exp016's "ask something
+    /// different" (which produced trivial surface variations), each frame is a full
+    /// generative PERSONA that gives the model room to reason and produce a natural,
+    /// task-specific 7-question set from one coherent vantage point.
+    static let perspectiveFrames: [String] = [
+        """
+
+
+        ── YOUR LENS: EXECUTION & LOGISTICS ──
+        Approach this as the planner who must actually CARRY OUT the task. Focus your \
+        questions on the concrete logistics whose answers you'd need to start the work: \
+        exact quantities and scale, who/what/where/when, the money and resources \
+        required, and the practical constraints of getting it done. Ask the execution \
+        details that would block or reshape a real plan if left unknown.
+        """,
+        """
+
+
+        ── YOUR LENS: SCOPE & GOALS ──
+        Approach this as the strategist who defines what SUCCESS looks like before any \
+        work starts. Focus your questions on the user's underlying objective and \
+        priorities: the outcome they actually want, who it is for, how big or ambitious \
+        the effort is, what tradeoffs matter most, and where to focus first. Ask the \
+        high-level scoping questions whose answers would most change WHICH plan is right.
+        """,
+        """
+
+
+        ── YOUR LENS: DOMAIN EXPERT ──
+        Approach this as a seasoned professional who specialises in exactly this kind of \
+        task and has done it many times. Focus your questions on the specialised, \
+        field-specific decision factors an expert always checks first but a novice would \
+        overlook — the details particular to THIS domain (its typical categories, \
+        requirements, common pitfalls, or context-specific facts) that determine the \
+        right approach. Ask the expert-level questions that separate a knowledgeable \
+        plan from a generic one.
+        """,
+    ]
 
     /// EXP-020: corpus-grounded selection over an over-generated candidate pool.
     /// Every prior SELECTION over the 3B's own samples failed because the selection

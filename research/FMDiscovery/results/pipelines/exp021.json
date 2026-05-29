@@ -1,0 +1,34 @@
+{
+  "summary": "Prompt-diverse 3-frame ensemble + round-robin merge",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task description"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of few-shot exemplars"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Three perspective-framed generation calls",
+      "knobs": {
+        "n": "3"
+      },
+      "call_labels": [
+        "generate: execution/logistics frame",
+        "generate: scope/goals frame",
+        "generate: domain-expert frame"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Round-robin merge + near-dup suppression"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 clarifying questions"
+    }
+  ],
+  "label": "exp021"
+}
