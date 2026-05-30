@@ -328,6 +328,16 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_e2.fmadapter"),
         "adapter_final": DiscoveryConfig(topology: .adapterDirect,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v1.fmadapter"),
+
+        // v2 adapters — GREEDY decoding (deterministic) so the metric is reproducible,
+        // gated on the full 30. v2a = 558 pairs, lr 5e-4; valid loss bottomed at epoch 2.
+        // adapter_e1_g = v1 epoch1 at greedy, as a like-for-like baseline.
+        "adapter_e1_g": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_e1.fmadapter"),
+        "adapter_v2a_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "adapter_v2a_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e2.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
