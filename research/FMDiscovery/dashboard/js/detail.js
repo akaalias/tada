@@ -15,6 +15,12 @@ export async function renderDetail(label, cell) {
   const spec = await fetchPipe(label);
   const golds = await Promise.all(scores.map(s => fetchGold(s.id)));
 
+  // Model used for each column. Gold + Judge are fixed Sonnet; the on-device
+  // candidate model is derived from the pipeline spec (adapter knob, else base 3B).
+  const GOLD_MODEL = 'claude-sonnet-4-6', JUDGE_MODEL = 'claude-sonnet-4-6';
+  const adapterStage = (spec && spec.stages || []).find(s => s.knobs && s.knobs.model);
+  const candModel = adapterStage ? 'Apple FM 3B + LoRA: ' + adapterStage.knobs.model : 'Apple FM (on-device 3B)';
+
   const blocks = scores.map((s, i) => {
     const gold = golds[i];
     const goldQs = gold ? `<ol class="qs">${gold.questions.map(q => `<li>${esc(q.title)}</li>`).join('')}</ol>` : '<div class="disc">gold unavailable</div>';
@@ -35,9 +41,9 @@ export async function renderDetail(label, cell) {
     return `<div class="case">
       <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${head}</div>
       <div class="cmp">
-        <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div>${goldQs}</div>
-        <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div>${fmQs}</div>
-        <div class="col col-judge"><div class="col-head">Judge</div><div class="judge-note">${judgeText}</div></div>
+        <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div><div class="col-model">${esc(GOLD_MODEL)}</div>${goldQs}</div>
+        <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div><div class="col-model">${esc(candModel)}</div>${fmQs}</div>
+        <div class="col col-judge"><div class="col-head">Judge</div><div class="col-model">${esc(JUDGE_MODEL)}</div><div class="judge-note">${judgeText}</div></div>
       </div></div>`;
   }).join('');
 
