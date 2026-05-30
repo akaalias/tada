@@ -69,7 +69,77 @@ public struct ConfiguredAgent: Sendable {
         case .adapterDirect:     return try await adapterDirect(input)
         case .adapterScopedCritique: return try await adapterScopedCritique(input)
         case .adapterDivergeConverge: return try await adapterDivergeConverge(input)
+        case .adapterSolutionSpaceEIG: return try await adapterSolutionSpaceEIG(input)
         }
+    }
+
+    /// EXP-030: solution-space information gain on the champion adapter (Lever C, the
+    /// rules' TOP PICK — genuinely untried, never run on the adapter). A deep review of
+    /// the 2024-25 disambiguation literature found that EVERY method beating baselines
+    /// scores a question NOT in isolation but against an EXPLICIT, materialised set of
+    /// competing solutions it would discriminate between. ALL 29 prior experiments scored
+    /// questions in isolation (absolute rubric, vague "importance", whole-set pairwise) or
+    /// asked the model to introspect "which unknown is critical" — undefined until you
+    /// have competing answers to be critical ABOUT. That is very likely WHY coverage is
+    /// pinned at 3. This is distinct from exp013 (drafted ONE plan, extracted its
+    /// assumptions → skewed to logistics) and exp029 (free-prose brainstorm → drifted
+    /// generic): it materialises a SET of N DIVERGENT concrete scenarios — competing
+    /// plausible interpretations of who the user is and what they specifically want
+    /// (e.g. for "plan a trip": shoestring solo backpacker / luxury anniversary couple /
+    /// business trip with one free day / family of five on a budget) — then frames
+    /// generation as DISCRIMINATION: write the 7 questions whose answers would most
+    /// SEPARATE which scenario is the real one. "Which unknown matters" is now grounded —
+    /// a question matters iff the scenarios disagree on its answer. Both passes are
+    /// GENERATION (not the judgment/selection that sank every multi-FM loss), both greedy.
+    /// Stage 2 keeps the champion's native training-format anchor first to stay in
+    /// distribution; the scenario block is compact to avoid exp029's verbose-drift failure.
+    /// Falsifiable: if grounding question value in competing concrete answers surfaces the
+    /// decision-critical unknown, coverage lifts above 3; if the adapter just restates its
+    /// modal set, it lands at/below the champion's 0.409.
+    private func adapterSolutionSpaceEIG(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: materialise N divergent competing scenarios for the task.
+        let scenarioSystem = """
+        You are a sharp planning analyst. Before any clarifying questions are written, \
+        you imagine the DIFFERENT realistic situations a user who entered this task could \
+        actually be in — because the right plan depends entirely on which one is true.
+
+        Produce 4 DIVERGENT, concrete, plausible interpretations of who THIS user is and \
+        what they specifically want. Make them genuinely DISAGREE on the decisions that \
+        matter: different goal, scale, budget, audience, starting point, constraints, or \
+        stakes — whatever is decision-critical for this kind of task. Each is one vivid \
+        sentence committing to SPECIFIC choices (not vague hedging), and the four together \
+        should span the realistic range of how this task could really go.
+        """
+        let scenarioSession = LanguageModelSession(model: try resolveModel()) { scenarioSystem }
+        let scenarios = try await scenarioSession.respond(
+            to: "The user's task: \"\(input)\"\n\nList 4 divergent concrete scenarios for who this user is and what they want.",
+            generating: FMScenarios.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content.scenarios
+        let scenarioList = scenarios.enumerated()
+            .map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+
+        // Stage 2: champion's native-format call, framed as DISCRIMINATION between the
+        // competing scenarios. Training-format anchor first to stay in distribution.
+        let convergeSession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let convergePrompt = """
+        Task the user entered: "\(input)"
+
+        This task could mean very different things. Four plausible situations the user \
+        could be in:
+        \(scenarioList)
+
+        Write the 7 clarifying questions that would best tell us WHICH of these situations \
+        is the real one — the questions on which these scenarios most DISAGREE. A question \
+        earns its slot only if answering it would change which situation you'd plan for. \
+        Prioritise the decision-critical forks the scenarios differ on over generic filler.
+        """
+        let plan = try await convergeSession.respond(
+            to: convergePrompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+        return plan.toContract()
     }
 
     // MARK: - Adapter (lever 7)
@@ -1656,6 +1726,14 @@ struct FMPlanAssumptions {
     var plan: String
     @Guide(description: "The specific facts about THIS task you had to ASSUME to write that plan because the user did not state them — e.g. where they're starting from, how much they can spend, who it's for, when it needs to happen, what they already have, how many, where. Each is one concrete, task-specific assumed fact, never a generic placeholder. List the ones whose real answer would MOST change the plan first.", .count(8))
     var assumptions: [String]
+}
+
+/// EXP-030: a set of divergent competing scenarios — the materialised solution space
+/// the questions must discriminate between (Lever C, solution-space information gain).
+@Generable
+struct FMScenarios {
+    @Guide(description: "4 DIVERGENT, concrete, plausible interpretations of who this user is and what they specifically want for the task. Each is ONE vivid sentence committing to SPECIFIC, different answers (different goal, scale, budget, audience, starting point, or constraints) so the four together span the realistic range. They must genuinely DISAGREE on the decision-critical unknowns; never vague or interchangeable.", .count(4))
+    var scenarios: [String]
 }
 
 @Generable

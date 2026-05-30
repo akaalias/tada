@@ -1,0 +1,31 @@
+{
+  "summary": "Divergent scenarios then discriminating questions on champion adapter",
+  "hypothesis": "Generating divergent scenarios first, then deriving discriminating questions from them, should improve information-gain and coverage by forcing the model to explore the solution space more broadly before committing to questions.",
+  "technique": "A two-stage FM pipeline on the champion LoRA adapter: a first call generates divergent scenarios (solution-space exploration), then a second call derives discriminating questions from those scenarios \u2014 a structured \"Lever C\" info-gain decomposition.",
+  "result": "Scored 0.305 on the full-30 eval (0 wins / 1 tie / 19 losses vs Sonnet), with specPass=100% but rubric scores of atom=4, spec=3, cover=3, nat=3, nonRed=3. This is below the champion adapter baseline and well short of parity; the divergent-scenario decomposition did not improve coverage or overall quality, so the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Generate divergent solution-space scenarios",
+      "knobs": {
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Derive discriminating questions from scenarios",
+      "knobs": {
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp030"
+}

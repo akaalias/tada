@@ -369,6 +369,22 @@ public enum Configs {
         // GENERATION (not the judgment that sank exp028), both greedy/deterministic.
         "exp029": DiscoveryConfig(topology: .adapterDivergeConverge, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-030: solution-space information gain on the champion adapter (Lever C — the
+        // rules' TOP PICK, genuinely untried, never run on the adapter). The deep-review
+        // finding: every disambiguation method that beats baselines scores a question
+        // against an EXPLICIT, materialised set of COMPETING solutions it discriminates
+        // between — never in isolation, which is how all 29 prior experiments scored, and
+        // very likely WHY coverage is pinned at 3 ("which unknown is critical" is undefined
+        // until you have competing answers to be critical about). Stage 1 materialises 4
+        // DIVERGENT concrete scenarios (competing interpretations of who/what the user
+        // wants); stage 2 is the champion's native-format call reframed as DISCRIMINATION —
+        // write the 7 questions whose answers most SEPARATE the scenarios. Distinct from
+        // exp013 (ONE plan → assumptions, skewed to logistics) and exp029 (free-prose
+        // brainstorm → drifted generic). Both passes GENERATION (not judgment/selection),
+        // both greedy; scenario block kept compact to avoid exp029's verbose-drift.
+        "exp030": DiscoveryConfig(topology: .adapterSolutionSpaceEIG, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
