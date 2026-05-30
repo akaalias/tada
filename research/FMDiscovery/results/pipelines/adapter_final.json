@@ -1,14 +1,17 @@
 {
-  "summary": "Single-shot generation with LoRA adapter, schema-free",
+  "summary": "LoRA adapter (epoch 6) schema-free single-shot",
+  "hypothesis": "A LoRA adapter trained to convergence (epoch 6) should internalize the right question-generation style without any schema constraints, producing strong questions purely from learned weights.",
+  "technique": "A single greedy on-device call using the adapter_final LoRA adapter (epoch 6), with no guided schema or post-processing \u2014 the adapter alone is expected to carry all the task knowledge.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner input"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
-      "text": "Draft questions via LoRA adapter",
+      "text": "Schema-free draft via adapter_final (epoch 6)",
       "knobs": {
+        "sampling": "greedy",
         "model": "adapter_final"
       }
     },

@@ -1,15 +1,18 @@
 {
-  "summary": "LoRA adapter single-shot, schema-free generation",
+  "summary": "LoRA adapter (epoch 2), schema-free single-shot",
+  "hypothesis": "A LoRA adapter trained for 2 epochs should bake in question-generation judgment well enough to match or beat prompt-engineered baselines, because the fine-tuned weights encode task-specific style without needing a structured schema.",
+  "technique": "A single greedy on-device call using a LoRA adapter (adapter_e2, epoch 2) fine-tuned on the target task, with no schema or post-processing constraints applied.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User topic one-liner in"
     },
     {
       "kind": "generate",
-      "text": "LoRA adapter drafts 7 questions",
+      "text": "adapter_e2 schema-free single-shot draft",
       "knobs": {
-        "model": "adapter_e2"
+        "model": "adapter_e2",
+        "sampling": "greedy"
       }
     },
     {

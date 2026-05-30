@@ -1,5 +1,7 @@
 {
-  "summary": "Self-consistency: 4 RAG sets, embedding-cluster, top-7",
+  "summary": "Self-consistency: 4 RAG sets, embedding-cluster, keep 7",
+  "hypothesis": "Aggregating 4 independent RAG-drafted sets should surface decision-critical unknowns (they recur) and suppress niche/redundant ones (they don't), giving a new criticality signal that beats single-sample RAG.",
+  "technique": "Four independent exp003-style RAG calls at temperatures [0.4, 0.6, 0.8, 1.0] produce 28 candidate questions; all 28 are embedding-clustered (NLEmbedding cosine, merge threshold \u2265 0.62) in Swift, and the 7 clusters with the broadest cross-sample agreement are kept, each represented by its centroid-nearest member.",
   "stages": [
     {
       "kind": "input",
@@ -7,7 +9,7 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG exemplar lookup for 4 independent sets"
+      "text": "Fetch nearest gold exemplars for RAG"
     },
     {
       "kind": "ensemble",
@@ -25,23 +27,19 @@
     },
     {
       "kind": "post",
-      "text": "Embedding-cluster 28 Qs, merge cosine \u22650.62",
+      "text": "Embed-cluster 28 Qs, merge \u22650.62",
       "knobs": {
-        "method": "NLEmbedding cosine",
-        "threshold": "0.62"
+        "merge_threshold": "0.62",
+        "embedding": "NLEmbedding-cosine"
       }
     },
     {
       "kind": "select",
-      "text": "Keep 7 broadest cross-sample agreement clusters",
-      "knobs": {
-        "k": "7",
-        "tiebreak": "avg position"
-      }
+      "text": "Keep 7 broadest cross-sample clusters"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions (centroid-nearest members)"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp010"

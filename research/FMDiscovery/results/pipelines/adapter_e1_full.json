@@ -1,21 +1,23 @@
 {
   "summary": "LoRA epoch-1 adapter, single-shot generation",
+  "hypothesis": "A LoRA adapter trained for one epoch should generate better questions than the stock base model, because fine-tuning bakes task-specific judgment directly into the weights rather than relying on prompt instructions alone.",
+  "technique": "A single greedy on-device call using a LoRA adapter fine-tuned for one epoch, evaluated on the full 30-case held-out set to confirm adapter quality vs. the base model baseline.",
   "stages": [
     {
       "kind": "input",
-      "text": "user one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
       "text": "LoRA epoch-1 adapter single-shot draft",
       "knobs": {
-        "model": "adapter_e1_full",
+        "model": "adapter_e1",
         "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "adapter_e1_full"

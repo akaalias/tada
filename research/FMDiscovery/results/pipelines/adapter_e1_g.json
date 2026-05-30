@@ -1,16 +1,18 @@
 {
-  "summary": "Adapter model, single-shot greedy generate",
+  "summary": "LoRA adapter, single-shot greedy decode",
+  "hypothesis": "A LoRA adapter fine-tuned on task-specific question generation should outperform the stock base model, because the adapter bakes in the right question style and judgment directly into the weights rather than relying on prompt instructions alone.",
+  "technique": "A single greedy on-device call using a LoRA adapter (adapter_e1_g) in place of the stock base model \u2014 no sampling, no multi-call pipeline, just one forward pass to produce the final 7 questions.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner input"
+      "text": "Receive user one-liner"
     },
     {
       "kind": "generate",
-      "text": "Single-shot greedy draft with adapter",
+      "text": "Adapter greedy single-shot generation",
       "knobs": {
         "sampling": "greedy",
-        "model": "adapter_e1"
+        "model": "adapter_e1_g"
       }
     },
     {

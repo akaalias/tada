@@ -1,5 +1,7 @@
 {
-  "summary": "Composite-ruler best-of-N over contrastive-RAG generator",
+  "summary": "Composite-ruler best-of-N over contrastive-RAG base",
+  "hypothesis": "Running best-of-N over the strongest base (exp011 contrastive-RAG) with a richer composite ruler \u2014 penalising filler, near-duplicates, and compound asks on top of coverage span \u2014 should fix exp004's coverage-only blindness and recover the non-redundancy gap, because the shape proxy would be selecting over higher-quality draws.",
+  "technique": "Four draws at a low-temperature floor [0.4, 0.6, 0.8, 1.0] from the exp011 contrastive-RAG generator (retrieve + generate), then fully deterministic Swift selection by a composite ruler scoring coverage-span minus filler (FillerDetector) minus near-duplicate pairs (Jaccard \u2265 0.5) minus compound asks \u2014 no model call in the select stage.",
   "stages": [
     {
       "kind": "input",
@@ -11,21 +13,24 @@
     },
     {
       "kind": "ensemble",
-      "text": "Draw N sets at 4 temps, low-temp floor",
+      "text": "4 draws at low-temp floor [0.4\u20131.0]",
       "knobs": {
         "n": "4",
-        "temp": "0.4/0.6/0.8/1.0"
+        "temp": "0.4\u20131.0"
       },
       "call_labels": [
-        "generate set at temp 0.4",
-        "generate set at temp 0.6",
-        "generate set at temp 0.8",
-        "generate set at temp 1.0"
+        "draw at temp 0.4",
+        "draw at temp 0.6",
+        "draw at temp 0.8",
+        "draw at temp 1.0"
       ]
     },
     {
       "kind": "select",
-      "text": "Composite ruler: span \u2212 filler \u2212 near-dup \u2212 compound"
+      "text": "Composite ruler: span\u2212filler\u2212near-dup\u2212compound",
+      "knobs": {
+        "k": "1"
+      }
     },
     {
       "kind": "output",

@@ -1,38 +1,37 @@
 {
-  "summary": "Contrastive RAG draft + scoped starting-point critique, Swift swap",
+  "summary": "Scoped starting-point critique on RAG draft",
+  "hypothesis": "Scoping a 2nd-pass critique to one named failure mode \u2014 whether the user's starting point is established \u2014 should reduce rewrite risk and fix the single dominant recurring miss without the noise of a general audit.",
+  "technique": "The exp011 contrastive RAG draft feeds into a single focused FM critique call that judges only starting-point coverage; if covered it returns the draft verbatim, otherwise it names the weakest slot and writes one replacement question. Swift then swaps at most that one slot, leaving the other six untouched.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User task one-liner"
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive RAG: fetch exemplars"
+      "text": "Fetch contrastive RAG exemplars (exp011)"
     },
     {
       "kind": "generate",
-      "text": "Contrastive RAG draft 7 questions",
+      "text": "Draft 7 questions with contrastive RAG prompt",
       "knobs": {
-        "temp": "0.7"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "critique",
-      "text": "Judge starting-point coverage only",
+      "text": "Judge starting-point coverage; name weakest slot",
       "knobs": {
         "calls": "1"
-      },
-      "call_labels": [
-        "does any slot establish starting point?"
-      ]
+      }
     },
     {
       "kind": "post",
-      "text": "Swift swaps \u22641 weakest slot"
+      "text": "Swift swaps \u22641 weakest slot; rest verbatim"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp023"

@@ -1,5 +1,7 @@
 {
   "summary": "RAG few-shot with semantic NLEmbedding retrieval",
+  "hypothesis": "Replacing Jaccard word-overlap retrieval with semantic sentence-embedding cosine similarity would better match exemplar task types to novel queries, improving coverage of decision-critical unknowns where Jaccard found near-zero overlap.",
+  "technique": "A RAG pipeline using on-device NLEmbedding cosine similarity (instead of Jaccard) to retrieve the 2 nearest exemplars by semantic task type, injected as few-shot demonstrations into a single on-device FM call.",
   "stages": [
     {
       "kind": "input",
@@ -7,17 +9,17 @@
     },
     {
       "kind": "retrieve",
-      "text": "Semantic cosine retrieval via NLEmbedding",
+      "text": "NLEmbedding cosine: fetch 2 nearest exemplars",
       "knobs": {
-        "method": "NLEmbedding-cosine",
+        "method": "cosine",
         "k": "2"
       }
     },
     {
       "kind": "generate",
-      "text": "Few-shot prompted draft of 7 questions",
+      "text": "Draft 7 questions with few-shot context",
       "knobs": {
-        "shots": "2"
+        "sampling": "greedy"
       }
     },
     {

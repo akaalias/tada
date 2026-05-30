@@ -1,5 +1,7 @@
 {
   "summary": "Greedy decoding isolated on contrastive-RAG best base",
+  "hypothesis": "Switching the single generation call from stochastic sampling to greedy (deterministic) decoding on the best contrastive-RAG base (exp011) should reduce noise and surface sharper, more specific unknowns \u2014 because every prior ~0.32 result was a noisy single draw, and a deterministic mode might consistently hit a better mode than sampling luck.",
+  "technique": "The exp011 contrastive-RAG topology was held completely fixed; only the decoding of the single generation call was swapped to greedy (temperature 0, deterministic mode) to isolate the decoding lever on the best-performing base pipeline.",
   "stages": [
     {
       "kind": "input",
@@ -7,11 +9,14 @@
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive RAG few-shot exemplar lookup"
+      "text": "Contrastive-RAG: fetch positive/negative exemplars",
+      "knobs": {
+        "sampling": "contrastive"
+      }
     },
     {
       "kind": "generate",
-      "text": "Single generate call, greedy decoding",
+      "text": "Draft 7 questions, greedy decoding",
       "knobs": {
         "temp": "0",
         "sampling": "greedy"
@@ -19,7 +24,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions output"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp019"

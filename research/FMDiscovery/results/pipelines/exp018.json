@@ -1,5 +1,7 @@
 {
-  "summary": "In-schema CoT: name 7 unknowns then question each",
+  "summary": "In-schema CoT: name 7 unknowns, then question each",
+  "hypothesis": "Forcing the model to explicitly name the 7 most decision-critical unknowns before phrasing questions should prevent generic catch-alls, because committing to the unknowns first conditions the questions on what actually matters.",
+  "technique": "A single on-device FM call using a guided output schema that first populates a `criticalUnknowns` list of 7 short phrases and then emits one question per unknown in order \u2014 in-schema CoT via field-declaration ordering. The prompt is anchored with exp011's contrastive RAG retrieval plus a worked reasoning demo (the \"Organize my garage\" unknowns example) as classic CoT few-shot.",
   "stages": [
     {
       "kind": "input",
@@ -7,14 +9,16 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG: fetch exp011 contrastive exemplars"
+      "text": "RAG: fetch exp011 contrastive exemplars + demo",
+      "knobs": {
+        "base": "exp011"
+      }
     },
     {
       "kind": "generate",
-      "text": "Single call: schema-forced unknowns then questions",
+      "text": "Single call: schema-guided CoT then 7 questions",
       "knobs": {
-        "schema": "criticalUnknowns[7]+questions[7]",
-        "base": "exp011"
+        "sampling": "guided-schema"
       }
     },
     {

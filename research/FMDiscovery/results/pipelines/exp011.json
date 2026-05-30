@@ -1,5 +1,7 @@
 {
-  "summary": "Contrastive GOOD-vs-BAD few-shot RAG pipeline",
+  "summary": "Contrastive GOOD-vs-BAD few-shot on RAG base",
+  "hypothesis": "Prepending a GOOD-vs-BAD worked example should teach the model which anti-patterns to avoid better than positive-only demos or instruction checklists, because the contrast directly demonstrates the failure modes the judge flags rather than just showing success cases.",
+  "technique": "Built on exp003's RAG positive few-shot single-call pipeline, but prepended one fixed contrastive worked example on a neutral non-eval task (\"Organize my garage\") whose WEAK set demonstrates the exact anti-patterns flagged by the judge (restating facts, off-task questions, vague filler, compound asks, redundant pairs). No extra model calls \u2014 the contrast is baked into the prompt as a negative demonstration.",
   "stages": [
     {
       "kind": "input",
@@ -7,14 +9,16 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of positive exemplars"
+      "text": "Fetch nearest positive RAG exemplars",
+      "knobs": {
+        "k": "2"
+      }
     },
     {
       "kind": "generate",
-      "text": "Generate with contrastive GOOD-vs-BAD few-shot",
+      "text": "Single call with contrastive GOOD/BAD prompt",
       "knobs": {
-        "temp": "0.7",
-        "sampling": "top-p"
+        "sampling": "greedy"
       }
     },
     {

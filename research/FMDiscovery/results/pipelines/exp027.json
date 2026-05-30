@@ -1,5 +1,7 @@
 {
-  "summary": "RAG anti-modal self-contrast: greedy anchor then generate",
+  "summary": "RAG anti-modal self-contrast: greedy anchor then surpass",
+  "hypothesis": "Showing the model its own greedy (most-generic) output as a negative anchor and asking it to generate a fresher, sharper set should push coverage past the modal cluster \u2014 because a maximally self-relevant contrast should be a stronger signal than a fixed neutral anchor (exp011) or raw temperature (exp024).",
+  "technique": "A two-stage RAG pipeline: stage 1 retrieves exemplars and generates a greedy draft (most-confident = most-generic modal output); stage 2 receives that draft back as a dynamic negative anchor and makes a fresh generation call instructed to surpass it \u2014 avoiding any select/critique judgment step that failed in earlier experiments.",
   "stages": [
     {
       "kind": "input",
@@ -7,18 +9,18 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of few-shot exemplars"
+      "text": "Fetch RAG exemplars for task"
     },
     {
       "kind": "generate",
-      "text": "Greedy modal draft as negative anchor",
+      "text": "Greedy modal draft \u2014 negative anchor",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "generate",
-      "text": "Fresh generation to surpass modal anchor",
+      "text": "Fresh 7 Qs instructed to surpass anchor",
       "knobs": {
         "temp": "0.7"
       }

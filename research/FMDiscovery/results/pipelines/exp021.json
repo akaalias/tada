@@ -1,13 +1,15 @@
 {
-  "summary": "Prompt-diverse 3-frame ensemble + round-robin merge",
+  "summary": "Prompt-diverse frame ensemble + round-robin merge",
+  "hypothesis": "Sampling from three systematically different prompt frames (execution, scope, domain-expert) should push the model into distinct decision regions whose union covers more question dimensions than any single-prompt multi-temperature draw, because prior multi-sample configs all drew from the same generic modal cluster.",
+  "technique": "Three independent RAG-augmented generation calls, each using a different perspective frame prompt, produce three full 7-question sets; these are merged deterministically in Swift via round-robin interleaving by emission order with near-duplicate suppression (no model ranking pass).",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of few-shot exemplars"
+      "text": "RAG fetch of exemplar questions"
     },
     {
       "kind": "ensemble",
@@ -27,7 +29,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 clarifying questions"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp021"

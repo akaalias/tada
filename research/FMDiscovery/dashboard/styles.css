@@ -86,5 +86,17 @@ details.trywrap > summary { cursor:pointer; color:var(--muted); font-weight:600;
 .pipe-d3 .nodebox { font:11px/1.3 -apple-system,system-ui,sans-serif; padding:7px 9px 6px; box-sizing:border-box; height:100%; overflow:hidden; }
 .pipe-d3 .nb-kind { font-size:9.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; margin-bottom:2px; }
 .pipe-d3 .nb-sub { color:#334155; overflow-wrap:anywhere; }
+/* diagram (left) + hypothesis/technique (right) */
+.pipe-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(250px,1fr); gap:24px; align-items:start; margin:2px 0 6px; }
+@media (max-width:900px){ .pipe-grid { grid-template-columns:1fr; } }
+.pipe-diagram { min-width:0; }
+.explain { display:flex; flex-direction:column; gap:14px; padding-top:6px; }
+.explain-block { border:1px solid var(--line); border-left-width:3px; border-radius:10px; padding:11px 14px; background:#fff; }
+.explain-block.eb-hyp { border-left-color:#a78bfa; }
+.explain-block.eb-tech { border-left-color:#5eead4; }
+.explain-h { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:5px; }
+.eb-hyp .explain-h { color:#6d28d9; }
+.eb-tech .explain-h { color:#0e7490; }
+.explain-block p { margin:0; font-size:14px; line-height:1.55; color:#334155; }
 .legend-kinds { font-size:11px; color:var(--muted); margin:0 0 12px; display:flex; flex-wrap:wrap; gap:10px; }
 .legend-kinds b { font-weight:700; }

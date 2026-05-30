@@ -1,5 +1,7 @@
 {
-  "summary": "Contrastive RAG few-shot at high temp 1.2",
+  "summary": "Contrastive RAG at temp 1.2 (upper decoding endpoint)",
+  "hypothesis": "Raising temperature to 1.2 on the best contrastive-RAG base should surface sharper, task-specific tail questions that greedy/default decoding misses \u2014 because the critical unknowns are hypothesised to live in the tail of the distribution.",
+  "technique": "The exp011 contrastive-RAG pipeline (good-vs-bad exemplar retrieval injected as few-shot context) is run with decoding temperature raised to 1.2 \u2014 the upper endpoint of the decoding lever \u2014 to sample deeper into the tail and test whether coverage-filling questions can be surfaced that way.",
   "stages": [
     {
       "kind": "input",
@@ -7,7 +9,10 @@
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive good-vs-bad RAG exemplar fetch"
+      "text": "Contrastive good-vs-bad exemplar lookup",
+      "knobs": {
+        "sampling": "contrastive"
+      }
     },
     {
       "kind": "generate",

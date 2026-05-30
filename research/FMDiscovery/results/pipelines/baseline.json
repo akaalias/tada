@@ -1,17 +1,19 @@
 {
-  "summary": "Single-shot baseline, EXP-000 port",
+  "summary": "Single-shot baseline, direct generation",
+  "hypothesis": "A plain single-shot prompt should establish a reasonable quality floor, because without any retrieval or multi-step refinement the model's out-of-the-box instruction-following sets the minimum bar.",
+  "technique": "A single greedy on-device model call with no retrieval, expansion, or post-processing \u2014 a direct port of the EXP-000 single-shot pipeline.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
-      "text": "Single-shot question generation"
+      "text": "Single-shot direct question generation"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "baseline"

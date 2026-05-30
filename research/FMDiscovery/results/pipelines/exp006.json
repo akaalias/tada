@@ -1,31 +1,26 @@
 {
   "summary": "RAG few-shot + retrieved coverage checklist, single call",
+  "hypothesis": "Injecting a task-conditioned coverage checklist \u2014 dimensions aggregated from the same nearest exemplars used for RAG \u2014 should beat a universal checklist by giving the model decision-critical dimension labels tailored to the specific task, nudging it toward the right coverage axes.",
+  "technique": "At runtime, retrieve the 2 nearest gold exemplars (same as exp003), aggregate their tagged decision-critical dimension labels into a coverage checklist, and inject both the exemplars and the checklist into a single on-device generation call \u2014 no separate auditor or post-processing pass.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "Accept user task one-liner"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest exemplars + their dimension labels",
+      "text": "Fetch 2 nearest gold exemplars + dimension labels",
       "knobs": {
         "k": "2"
       }
     },
     {
-      "kind": "post",
-      "text": "Aggregate dims into coverage checklist"
-    },
-    {
       "kind": "generate",
-      "text": "Single call: RAG few-shot + checklist injected",
-      "knobs": {
-        "temp": "0.7"
-      }
+      "text": "Single call: RAG few-shot + coverage checklist injected"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Emit final 7 questions"
     }
   ],
   "label": "exp006"

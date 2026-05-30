@@ -1,20 +1,23 @@
 {
-  "summary": "Single-shot LoRA adapter, schema-free generation",
+  "summary": "LoRA adapter v1, schema-free single-shot",
+  "hypothesis": "A LoRA adapter fine-tuned on answer-only pairs should outperform the stock base model on question generation, because baking task-specific behavior into the weights should beat relying on prompt instructions alone.",
+  "technique": "A single greedy on-device call using a LoRA adapter (adapter_e1) fine-tuned on answer-only pairs, with no schema or post-processing \u2014 a direct drop-in replacement for the single-shot baseline.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
-      "text": "LoRA adapter single-shot generate",
+      "text": "Adapter_e1 single-shot question generation",
       "knobs": {
-        "model": "adapter_e1"
+        "model": "adapter_e1",
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "adapter_e1"

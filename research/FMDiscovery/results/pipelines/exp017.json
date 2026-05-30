@@ -1,36 +1,38 @@
 {
-  "summary": "Deterministic filler/dupe detect, scoped FM refill repair",
+  "summary": "Deterministic filler/dupe detect, scoped FM refill",
+  "hypothesis": "Freeing wasted slots (filler phrases and near-duplicate questions) and refilling only those with a scoped model call should recover coverage, because the 3B already knows task-specific unknowns but wastes slots on redundant or vague catch-alls.",
+  "technique": "On top of the exp011 contrastive-RAG draft, deterministic Swift detects wasted slots via curated filler-phrase patterns and Jaccard near-dupe pairs, then a single scoped FM call refills only those slots (shown the kept questions, given no universal checklist). Strong slots are kept verbatim and a defensive re-check reverts any refills that are themselves filler or dupes.",
   "stages": [
     {
       "kind": "input",
-      "text": "user one-liner in"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "contrastive-RAG exemplar fetch (exp011 base)"
+      "text": "Contrastive-RAG exemplar fetch (exp011 base)"
     },
     {
       "kind": "generate",
-      "text": "exp011 base draft generation"
+      "text": "Draft 7 questions via exp011 contrastive-RAG prompt"
     },
     {
       "kind": "post",
       "text": "Swift detects filler phrases + Jaccard near-dupes"
     },
     {
-      "kind": "critique",
-      "text": "scoped FM refills only wasted slots concretely",
+      "kind": "generate",
+      "text": "Scoped refill call for wasted slots only",
       "knobs": {
-        "temp": "0.7"
+        "scope": "bad-slots-only"
       }
     },
     {
       "kind": "post",
-      "text": "defensive revert: re-check refills for filler/dupes"
+      "text": "Defensive re-check; revert refills that are filler/dupes"
     },
     {
       "kind": "output",
-      "text": "final 7 questions out"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp017"

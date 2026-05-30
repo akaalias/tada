@@ -1,5 +1,7 @@
 {
-  "summary": "Over-generate 3 temps, rank by Sonnet corpus embedding, select 7",
+  "summary": "Over-generate at 3 temps, rank by Sonnet corpus embedding",
+  "hypothesis": "Ranking a diverse candidate pool by embedding similarity to Sonnet's actual corpus questions should surface higher-quality, coverage-rich selections \u2014 because it replaces weak 3B self-judgment with an external, Sonnet-grounded relevance signal.",
+  "technique": "A contrastive-RAG generator (exp011 style) over-produces 21 candidates at three temperatures (0.4, 0.7, 1.0); Swift then ranks each candidate by max cosine similarity to the nearest-corpus Sonnet questions (k=3, 300+ corpus bank) and greedily selects 7 with embedding-based redundancy suppression (\u22650.80 cosine threshold). All generation stays on-device (3B); the corpus is a ranking prior only.",
   "stages": [
     {
       "kind": "input",
@@ -9,36 +11,33 @@
       "kind": "retrieve",
       "text": "Fetch k=3 nearest Sonnet corpus task types",
       "knobs": {
-        "k": "3",
-        "source": "corpus-bank-300+"
+        "k": "3"
       }
     },
     {
       "kind": "ensemble",
-      "text": "Over-generate pool at 3 temps (21 candidates)",
+      "text": "Over-generate 21 candidates at 3 temps",
       "knobs": {
         "n": "3",
-        "temps": "0.4,0.7,1.0",
-        "model": "contrastive-RAG-exp011"
+        "temps": "0.4,0.7,1.0"
       },
       "call_labels": [
-        "draft questions at temp 0.4",
-        "draft questions at temp 0.7",
-        "draft questions at temp 1.0"
+        "draft candidates at temp 0.4",
+        "draft candidates at temp 0.7",
+        "draft candidates at temp 1.0"
       ]
     },
     {
       "kind": "select",
-      "text": "Rank by max cosine to Sonnet corpus; dedup \u22650.80",
+      "text": "Rank by max cosine to corpus; pick top 7",
       "knobs": {
         "k": "7",
-        "dedup_threshold": "0.80",
-        "signal": "embedding-cosine"
+        "dedup_threshold": "0.80"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 corpus-grounded questions out"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp020"

@@ -1,31 +1,33 @@
 {
-  "summary": "Plan-then-surface-assumptions, RAG-phrase 7 questions",
+  "summary": "Plan-then-assumptions RAG: draft plan, surface unknowns, phrase questions",
+  "hypothesis": "Having the model draft a concrete plan first should force it to commit to real decision-critical assumptions (budget, departure city, scale), which can then be turned into better-targeted questions than abstract brainstorming produces.",
+  "technique": "A two-FM-call pipeline: the first call has the stock 3B draft a concrete plan and explicitly surface the assumptions it was forced to make; the second call feeds those surfaced assumptions into the exp003 RAG few-shot scaffold to phrase and atomise them into 7 questions.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG few-shot exemplars for phrasing"
     },
     {
       "kind": "generate",
       "text": "Draft concrete plan, surface forced assumptions",
       "knobs": {
-        "temp": "0.7"
+        "sampling": "greedy"
       }
     },
     {
-      "kind": "retrieve",
-      "text": "RAG fetch gold exemplars for phrasing"
-    },
-    {
       "kind": "generate",
-      "text": "Phrase 7 questions from assumptions via RAG scaffold",
+      "text": "RAG-phrase assumptions into 7 questions",
       "knobs": {
-        "temp": "0.7"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp013"

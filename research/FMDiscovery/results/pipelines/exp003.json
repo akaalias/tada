@@ -1,22 +1,23 @@
 {
-  "summary": "RAG few-shot: 2 nearest exemplars injected as demos",
+  "summary": "RAG few-shot with 2 nearest gold exemplars",
+  "hypothesis": "Injecting the 2 most similar gold exemplars as few-shot demonstrations should improve question quality \u2014 especially non-redundancy and coverage \u2014 because seeing worked examples of decision-critical unknowns gives the 3B a concrete pattern to follow at inference time.",
+  "technique": "At runtime, 2 nearest non-dev gold exemplars are retrieved by word-overlap Jaccard similarity from a hard-coded pool of 12, then injected as few-shot demonstrations into the system prompt, followed by a single greedy FM call to generate the 7 questions.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
       "text": "Fetch 2 nearest gold exemplars via Jaccard",
       "knobs": {
-        "method": "word-overlap Jaccard",
         "k": "2",
-        "pool": "12 non-dev gold"
+        "similarity": "jaccard"
       }
     },
     {
       "kind": "generate",
-      "text": "Single FM call with few-shot prompt",
+      "text": "Single FM call with few-shot demonstrations",
       "knobs": {
         "sampling": "greedy"
       }

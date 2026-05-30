@@ -1,39 +1,40 @@
 {
-  "summary": "RAG draft + Swift embedding coverage-gap repair call",
+  "summary": "RAG draft + embedding coverage-gap repair call",
+  "hypothesis": "Keeping exp003's strong 6/7 draft questions untouched and making only one surgical FM call to patch the single least-covered slot should improve coverage without risking the rest of the draft \u2014 because moving the coverage judgment into deterministic Swift embeddings removes fallible 3B judgment from the loop.",
+  "technique": "A RAG pipeline generates the base draft from the 2 nearest exemplars; Swift NLEmbedding then identifies the gold unknown least covered by the draft and the most-redundant draft slot; a single focused FM call adapts that gold question into the redundant slot, leaving 6/7 questions untouched.",
   "stages": [
     {
       "kind": "input",
-      "text": "User scenario one-liner in"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest gold exemplars via RAG"
+      "text": "Fetch 2 nearest gold exemplars via RAG",
+      "knobs": {
+        "k": "2"
+      }
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions from exp003 base",
+      "text": "Draft 7 questions from exemplars",
       "knobs": {
-        "temp": "0.7"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "post",
-      "text": "Swift NLEmbedding: find least-covered gold unknown"
-    },
-    {
-      "kind": "select",
-      "text": "Swift: pick most-redundant draft slot to replace"
+      "text": "Swift NLEmbedding: find gap + redundant slot"
     },
     {
       "kind": "critique",
-      "text": "One FM call adapts gold Q into redundant slot",
+      "text": "One FM call: adapt gold Q into redundant slot",
       "knobs": {
-        "temp": "0.7"
+        "n": "1"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions (6 unchanged + 1 repaired)"
+      "text": "Final 7 questions (6 untouched + 1 repair)"
     }
   ],
   "label": "exp009"

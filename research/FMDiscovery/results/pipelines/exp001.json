@@ -1,17 +1,25 @@
 {
-  "summary": "Brainstorm then select and phrase",
+  "summary": "Brainstorm then select+phrase (two FM calls)",
+  "hypothesis": "Running a first model call to brainstorm raw question candidates, then a second call to select and phrase the best 7, should outperform single-shot generation because separating ideation from editorial judgment lets each pass specialise.",
+  "technique": "A two-call on-device pipeline: the first FM call freely brainstorms candidate questions, and the second FM call selects and phrases the final 7 from that candidate pool \u2014 splitting generation from selection/phrasing across two sequential model calls.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User task one-liner in"
     },
     {
       "kind": "generate",
-      "text": "Brainstorm raw question ideas"
+      "text": "Brainstorm raw question candidates",
+      "call_labels": [
+        "brainstorm candidate questions"
+      ]
     },
     {
       "kind": "generate",
-      "text": "Select and phrase final questions"
+      "text": "Select and phrase final 7 questions",
+      "call_labels": [
+        "select and phrase final 7"
+      ]
     },
     {
       "kind": "output",

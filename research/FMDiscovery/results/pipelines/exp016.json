@@ -1,28 +1,29 @@
 {
   "summary": "RAG sequential one-at-a-time forced-novelty generation",
+  "hypothesis": "Generating questions one-at-a-time, each conditioned on the already-asked set, should push the 3B off its modal cluster into the task-specific tail of its distribution \u2014 because forcing explicit novelty relative to prior questions is a different generation dynamic than emitting all 7 at once and collapsing onto the generic center.",
+  "technique": "An 8-call RAG-grounded pipeline: 1 framing call followed by 7 sequential question calls, each shown the already-asked set in-context and instructed to probe a genuinely different unknown, built on the exp003 RAG few-shot base.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of few-shot exemplars (exp003 base)"
+      "text": "Fetch RAG few-shot exemplars (exp003 base)"
     },
     {
       "kind": "generate",
-      "text": "Framing call: orient task context",
+      "text": "Framing call: set up task context",
       "knobs": {
-        "temp": "0.7",
-        "call": "1 of 8"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "generate",
-      "text": "7 sequential calls, each conditioned on prior set",
+      "text": "7 sequential calls, each conditioned on prior Qs",
       "knobs": {
-        "temp": "0.7",
-        "calls": "7"
+        "n": "7",
+        "sampling": "greedy"
       },
       "call_labels": [
         "Q1: first unknown, no prior context",
@@ -36,7 +37,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 sequentially-generated questions out"
+      "text": "Final 7 sequential questions emitted"
     }
   ],
   "label": "exp016"

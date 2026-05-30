@@ -1,21 +1,23 @@
 {
-  "summary": "Interleaved per-question CoT rationale before each question",
+  "summary": "Interleaved per-question CoT rationale before each slot",
+  "hypothesis": "Forcing a concrete decision-impact justification immediately before each question (rather than a batch list up front) should suppress generic catch-alls at the point of emission and nudge specificity and non-redundancy, because a per-slot gate is harder to satisfy with filler than a single one-shot list.",
+  "technique": "A single on-device generate call using a guided JSON schema that interleaves a \"decision-impact rationale\" field immediately before each question field, so that guided generation conditions each question on its own rationale at emission time. An explicit instruction warns that vague rationales signal filler slots and should be replaced.",
   "stages": [
     {
       "kind": "input",
-      "text": "User scenario one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
-      "text": "Interleaved rationale-then-question CoT draft",
+      "text": "Interleaved rationale-then-question schema call",
       "knobs": {
-        "sampling": "guided",
-        "schema": "rationale+question interleaved"
+        "sampling": "greedy",
+        "schema": "interleaved-CoT"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp022"

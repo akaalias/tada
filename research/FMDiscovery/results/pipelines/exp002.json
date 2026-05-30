@@ -1,27 +1,29 @@
 {
-  "summary": "Over-generate 12 candidates, Swift selects top-7",
+  "summary": "Over-generate 12 candidates, pick top-7 in Swift",
+  "hypothesis": "Generating more than 7 candidates and then selecting the best 7 via a deterministic Swift scorer should improve quality, because a larger candidate pool increases the chance of covering more question dimensions before the final cut.",
+  "technique": "A single on-device FM call over-produces 12 candidate questions, then a deterministic Swift ranker scores and selects the top 7 for output \u2014 no additional model calls involved in selection.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner input"
+      "text": "User task one-liner in"
     },
     {
       "kind": "expand",
-      "text": "Over-generate 12 candidate questions",
+      "text": "FM over-generates 12 candidate questions",
       "knobs": {
         "n": "12"
       }
     },
     {
       "kind": "select",
-      "text": "Swift scorer picks top-7",
+      "text": "Swift scorer picks top-7 deterministically",
       "knobs": {
         "k": "7"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp002"

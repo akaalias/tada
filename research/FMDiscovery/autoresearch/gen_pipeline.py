@@ -21,6 +21,8 @@ TOOL = {
         "type": "object",
         "properties": {
             "summary": {"type": "string", "description": "<=10 words naming the core idea of this experiment."},
+            "hypothesis": {"type": "string", "description": "1-2 plain sentences for a human skimming the dashboard: the BELIEF this experiment tests — what we expected to improve and WHY we thought it would. Frame as a testable bet, e.g. 'Distilling Sonnet's question-style into the weights should beat any in-context prompt, because the gap is per-call judgment, not instructions.' Do NOT describe the mechanism here (that's 'technique')."},
+            "technique": {"type": "string", "description": "1-2 plain sentences: the concrete METHOD used to test the hypothesis — the actual change/mechanism in plain language, naming the lever (decoding, retrieval/RAG, multi-call pipeline, guided-schema design, deterministic post-processing, LoRA adapter, etc.). e.g. 'A single greedy on-device call using a LoRA adapter fine-tuned on 558 Sonnet task->questions pairs.'"},
             "stages": {
                 "type": "array",
                 "description": "Ordered left-to-right stages of the on-device pipeline (NOT the eval/judge).",
@@ -37,11 +39,14 @@ TOOL = {
                 }
             }
         },
-        "required": ["summary", "stages"]
+        "required": ["summary", "hypothesis", "technique", "stages"]
     }
 }
 
 SYSTEM = """You convert a one-line description of an on-device LLM pipeline experiment into a structured stage list, using ONLY the fixed stage vocabulary in the tool. Goal: a consistent visual language — the SAME building block always gets the SAME kind, so similar experiments look similar.
+
+You ALSO write two short human-readable fields for the dashboard: 'hypothesis' (the testable bet — what we expected to improve and why) and 'technique' (the concrete method/lever used to test it). Ground both in the log entry and note; if the description is sparse, infer the most reasonable bet and method from the technique named. Keep each to 1-2 plain sentences, no jargon dumps. The hypothesis is the WHY/what-we-believe; the technique is the HOW/what-we-did — keep them distinct.
+CRITICAL FACTUAL GUARD: 'full-30', 'dev-10', 'full-30 greedy', 'dev' etc. refer to the EVALUATION subset — the 30 or 10 frozen HELD-OUT eval cases the run is scored on — NOT the training-set size. NEVER state or imply a training-set/corpus size unless an explicit number appears in the log entry (e.g. '558 train pairs', 'corpus 619'). If the training size is not given, do not mention it. Do not confuse eval-subset size with training-set size.
 
 Rules:
 - Always start with 'input' and end with 'output'. Describe ONLY the on-device generation pipeline — never the eval, gold, or judge.
@@ -90,6 +95,15 @@ def main():
         if head.match(line):
             entry = line.strip()
             break
+    # Fallback: many runs (esp. the adapter track) have no bullet HEADED by their
+    # exact label — their context lives in a milestone bullet that mentions the
+    # label inline. Grab the first such bullet so hypothesis/technique are grounded.
+    if not entry:
+        mention = re.compile(r"\b" + re.escape(label) + r"\b")
+        for line in prog.splitlines():
+            if line.lstrip().startswith("-") and mention.search(line):
+                entry = line.strip()
+                break
     note = ""
     runs = PKG / "results" / "runs.jsonl"
     if runs.exists():

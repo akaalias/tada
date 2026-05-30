@@ -1,5 +1,7 @@
 {
-  "summary": "RAG + contrastive base with dimensional guided schema",
+  "summary": "RAG + dimensional guided-schema structural coverage",
+  "hypothesis": "Replacing the flat 7-question array with seven typed per-dimension schema slots (goal/scope/who-for/budget/timeline/current-state/constraints) will enforce coverage breadth structurally, because the 3B model lacks the judgment to rank which unknowns are critical and freely drops key slots when the output shape is unconstrained.",
+  "technique": "Built on the exp011 RAG+contrastive base, the flat `questions: [FMQuestion].count(7)` output array was replaced with seven distinctly `@Guide`-annotated typed slots \u2014 one per universal high-value planning dimension \u2014 so the schema structurally prevents any single dimension from being omitted at generation time.",
   "stages": [
     {
       "kind": "input",
@@ -7,19 +9,18 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of nearest gold exemplars"
+      "text": "RAG fetch of contrastive exemplars"
     },
     {
       "kind": "generate",
-      "text": "Generate 7 questions via typed per-dimension schema",
+      "text": "Generate via 7-slot dimensional guided schema",
       "knobs": {
-        "temp": "0.7",
-        "sampling": "top-p"
+        "schema": "dimensional-7-slots"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "7 dimensionally-slotted questions out"
     }
   ],
   "label": "exp015"

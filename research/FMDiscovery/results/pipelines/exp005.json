@@ -1,25 +1,33 @@
 {
-  "summary": "RAG draft + reflexion editor with checklist critique",
+  "summary": "RAG draft + reflexion editor with checklist",
+  "hypothesis": "Adding a second-pass FM auditor with a universal decision-critical checklist (budget/timeline/who-for/etc.) should improve question quality by pruning low-value or compound questions and injecting missing high-value unknowns \u2014 because the RAG draft's main weakness is wrongly-scoped questions, not its retrieval or phrasing.",
+  "technique": "Two-stage FM pipeline: stage 1 is the exp003 RAG-generate draft; stage 2 is a second on-device FM call (reflexion/critique) given the draft plus a hard universal checklist of decision-critical dimensions, instructed to delete already-given/low-value/compound questions and fill the single highest-value missing unknown while keeping strong questions verbatim.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner in"
+      "text": "User one-liner task description"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch nearest RAG exemplars"
+      "text": "Fetch nearest gold exemplars via RAG"
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions from RAG context"
+      "text": "Draft 7 questions with RAG few-shot",
+      "knobs": {
+        "sampling": "greedy"
+      }
     },
     {
       "kind": "critique",
-      "text": "2nd FM audits draft via decision-critical checklist"
+      "text": "Auditor: prune/fill via checklist",
+      "knobs": {
+        "checklist": "budget/who-for/timeline/scale/location/current-state/goal"
+      }
     },
     {
       "kind": "output",
-      "text": "Revised 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp005"

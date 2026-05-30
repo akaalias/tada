@@ -48,7 +48,13 @@ export async function renderDetail(label, cell) {
   }).join('');
 
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
-  cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div><div class="pipe-d3"></div>`
+  // Right-hand explanation: the human-readable hypothesis + technique for this run.
+  const explain = spec && (spec.hypothesis || spec.technique) ? `<div class="explain">`
+    + (spec.hypothesis ? `<div class="explain-block eb-hyp"><div class="explain-h">Hypothesis — the bet</div><p>${esc(spec.hypothesis)}</p></div>` : '')
+    + (spec.technique ? `<div class="explain-block eb-tech"><div class="explain-h">Technique — how we test it</div><p>${esc(spec.technique)}</p></div>` : '')
+    + `</div>` : '';
+  cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div>`
+    + `<div class="pipe-grid"><div class="pipe-diagram"><div class="pipe-d3"></div></div>${explain}</div>`
     + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#db2777">FM</b> on-device model call · <b style="color:#ea580c">Swift</b> deterministic code · <b style="color:#64748b">User</b> input/output · gold <b style="color:#ca8a04">LoRA</b> node = adapter feeding a call. Vertical = parallel, horizontal = sequential · hover for details</div>`
     + `${triedHtml}${blocks}</div>`;
   if (spec) {

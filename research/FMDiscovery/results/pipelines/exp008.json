@@ -1,9 +1,11 @@
 {
-  "summary": "RAG nearest exemplar rewrite one-to-one adapt",
+  "summary": "RAG adapt: rewrite nearest exemplar's 7 gold Qs one-to-one",
+  "hypothesis": "Forcing the model to adapt each of the nearest exemplar's 7 concrete gold questions one-to-one to the new task should transfer the exemplar's full dimension span, because the hard constraints remove the model's freedom to drop important unknowns.",
+  "technique": "A RAG pipeline retrieves the single nearest gold exemplar, then a single on-device FM call is prompted with those 7 concrete questions as hard one-to-one rewrite constraints \u2014 the model must surface-adapt each question to the new task while preserving its underlying unknown.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task description in"
+      "text": "Accept new task one-liner"
     },
     {
       "kind": "retrieve",
@@ -11,14 +13,14 @@
     },
     {
       "kind": "generate",
-      "text": "Rewrite each exemplar Q one-to-one",
+      "text": "Rewrite each gold Q one-to-one for task",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "7 adapted questions out"
+      "text": "Emit 7 adapted questions"
     }
   ],
   "label": "exp008"

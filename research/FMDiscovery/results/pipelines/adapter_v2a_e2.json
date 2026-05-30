@@ -1,13 +1,15 @@
 {
-  "summary": "Single-shot greedy generation with adapter-v2a",
+  "summary": "LoRA adapter v2a epoch2, greedy decoding",
+  "hypothesis": "A larger fine-tuning corpus (619 total, 558 train pairs) should push the adapter above the in-context plateau, because more diverse examples give the model better judgment about question quality \u2014 not just stylistic cues.",
+  "technique": "A single greedy (deterministic) on-device call using a LoRA adapter (v2a, epoch 2) fine-tuned on 558 train pairs at lr 5e-4, early-stopped. Greedy decoding eliminates the sampling noise that previously masked adapter gains on the full-30 eval.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner input"
+      "text": "Receive user one-liner topic"
     },
     {
       "kind": "generate",
-      "text": "Greedy draft with adapter-v2a-e2",
+      "text": "Draft 7 questions with adapter v2a epoch2",
       "knobs": {
         "sampling": "greedy",
         "model": "adapter-v2a-e2"
@@ -15,7 +17,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Return final 7 questions"
     }
   ],
   "label": "adapter_v2a_e2"

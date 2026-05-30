@@ -1,26 +1,28 @@
 {
   "summary": "Best-of-4 RAG sets, Swift coverage scorer selects",
+  "hypothesis": "Sampling RAG-augmented drafts at four temperatures and picking the one with the best dimension coverage should outperform a single-shot RAG draft, because a wider sampling spread raises the chance that at least one set covers all required dimensions.",
+  "technique": "Four parallel on-device RAG-augmented generation calls at temperatures [0.3, 0.6, 0.9, 1.0] produce four candidate question sets; a deterministic Swift scorer (weighted dimension-span: budget/timeline/scale/location/current-state bonuses, redundancy + already-stated penalties) then picks the best-covering set without any model involvement.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner topic input"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of exemplar sets"
+      "text": "RAG fetch of nearest exemplars"
     },
     {
       "kind": "ensemble",
-      "text": "Sample 4 RAG drafts at varied temps",
+      "text": "4 RAG drafts at varied temps",
       "knobs": {
         "n": "4",
-        "temp": "0.3,0.6,0.9,1.0"
+        "temp": "0.3/0.6/0.9/1.0"
       },
       "call_labels": [
-        "draft RAG set at temp 0.3",
-        "draft RAG set at temp 0.6",
-        "draft RAG set at temp 0.9",
-        "draft RAG set at temp 1.0"
+        "RAG draft at temp 0.3",
+        "RAG draft at temp 0.6",
+        "RAG draft at temp 0.9",
+        "RAG draft at temp 1.0"
       ]
     },
     {
@@ -28,7 +30,7 @@
       "text": "Swift coverage scorer picks best set",
       "knobs": {
         "k": "1",
-        "scoring": "weighted-dimension-span"
+        "scorer": "dimension-span weighted"
       }
     },
     {

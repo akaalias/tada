@@ -1,5 +1,7 @@
 {
-  "summary": "RAG best-of-4 with pairwise 3B tournament winner verbatim",
+  "summary": "RAG best-of-4 with pairwise 3B tournament",
+  "hypothesis": "A pairwise 3B tournament over 4 independent RAG draws should pick the best-coverage set better than absolute scoring, because relative judgment (\"which set is better?\") is an easier task for the 3B than absolute judgment.",
+  "technique": "Four independent RAG-prompted draws at temperatures [0.3, 0.5, 0.7, 0.9] feed a single-elimination pairwise tournament: each match shows the 3B both full 7-question sets in both orderings (two-order vote to damp position bias), ties broken to the lower-temperature incumbent; the tournament winner is returned verbatim.",
   "stages": [
     {
       "kind": "input",
@@ -7,17 +9,14 @@
     },
     {
       "kind": "retrieve",
-      "text": "Draw 4 independent RAG exemplar sets",
-      "knobs": {
-        "n": "4"
-      }
+      "text": "Fetch RAG exemplars for each draw"
     },
     {
       "kind": "ensemble",
-      "text": "Generate 4 RAG drafts at varied temps",
+      "text": "4 independent RAG draws at varied temps",
       "knobs": {
-        "temps": "0.3,0.5,0.7,0.9",
-        "n": "4"
+        "n": "4",
+        "temp": "0.3/0.5/0.7/0.9"
       },
       "call_labels": [
         "RAG draft at temp 0.3",
@@ -30,16 +29,15 @@
       "kind": "select",
       "text": "Single-elim pairwise 3B tournament, two-order vote",
       "knobs": {
-        "calls": "6",
-        "tiebreak": "lower-temp incumbent"
+        "calls": "6"
       },
       "call_labels": [
-        "semifinal: set A vs B (order 1)",
-        "semifinal: set A vs B (order 2)",
-        "semifinal: set C vs D (order 1)",
-        "semifinal: set C vs D (order 2)",
-        "final: winner AB vs winner CD (order 1)",
-        "final: winner AB vs winner CD (order 2)"
+        "semifinal 1: draft A vs B (order 1)",
+        "semifinal 1: draft A vs B (order 2)",
+        "semifinal 2: draft C vs D (order 1)",
+        "semifinal 2: draft C vs D (order 2)",
+        "final: winner1 vs winner2 (order 1)",
+        "final: winner1 vs winner2 (order 2)"
       ]
     },
     {

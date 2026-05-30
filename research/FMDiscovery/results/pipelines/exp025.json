@@ -1,20 +1,23 @@
 {
-  "summary": "In-schema givens-extract then 7 non-given questions",
+  "summary": "Givens-aware in-schema: extract facts, then 7 questions",
+  "hypothesis": "Extracting provided facts first (an easy reading task) and forbidding the 7 questions from re-asking any given should free wasted slots for real unknowns, because the model's coverage loss was assumed to come from re-stating already-known facts.",
+  "technique": "A single on-device model call using an in-schema prompt that adds a `providedFacts` field first \u2014 pulling concrete facts from the task text \u2014 followed by the 7 questions constrained to never re-ask a given, all in one coherent draw (no separate refill pass), building on the exp011 base prompt.",
   "stages": [
     {
       "kind": "input",
-      "text": "user task scenario one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "generate",
-      "text": "extract providedFacts + generate 7 questions in-schema",
+      "text": "In-schema: extract givens, then 7 questions",
       "knobs": {
-        "sampling": "greedy"
+        "sampling": "greedy",
+        "schema": "providedFacts+questions"
       }
     },
     {
       "kind": "output",
-      "text": "final 7 questions, no givens re-asked"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp025"

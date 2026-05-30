@@ -1,29 +1,31 @@
 {
-  "summary": "RAG few-shot: semantic k=3 over 117-set corpus",
+  "summary": "Corpus RAG (k=3, 117-set) + contrastive prompt",
+  "hypothesis": "Swapping the exemplar bank from 12 generic hardcoded exemplars to the full 117-item domain-matched corpus should break the RAG plateau, because prior retrieval failures (exp007/008) were diagnosed as a tiny, off-domain pool problem rather than a retrieval-is-useless verdict.",
+  "technique": "Semantic NLEmbedding retrieval of the k=3 nearest exemplars from a 117-item corpus of Sonnet-generated sets, injected as few-shot demonstrations into the exp011 contrastive base prompt \u2014 swapping only the exemplar bank, not the retrieval mechanism.",
   "stages": [
     {
       "kind": "input",
-      "text": "user topic one-liner"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "semantic NLEmbedding k=3 from 117-set corpus",
+      "text": "Semantic k=3 from 117-item corpus",
       "knobs": {
-        "retrieval": "semantic",
         "k": "3",
-        "bank": "117-corpus"
+        "method": "NLEmbedding",
+        "corpus": "117-set"
       }
     },
     {
       "kind": "generate",
-      "text": "draft 7 questions with RAG + contrastive prompt",
+      "text": "Draft 7 Qs with contrastive prompt + RAG",
       "knobs": {
-        "temp": "0.7"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "final 7 questions"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp014"
