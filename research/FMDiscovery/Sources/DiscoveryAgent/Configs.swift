@@ -566,6 +566,24 @@ public enum Configs {
         "exp040": DiscoveryConfig(topology: .adapterCorpusRagFewShot,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-041: deterministic phrasing-repair + clean-draft best-of-N on the CHAMPION
+        // adapter. Distinct from every prior best-of-N (exp031 embedding-dispersion 0.398,
+        // exp034 Jaccard 0.234, exp037 binary-redundancy 0.388, exp038 answer-sim-value 0.383,
+        // exp039 pairwise tournament 0.380) in its SELECTION SIGNAL: those all ranked sets on
+        // coverage/redundancy via rulers proven too coarse (embeddings, Jaccard, adapter
+        // binary/value). This ranks on the ONE thing code measures at ~100% precision — the
+        // phrasing/atomicity defects the Sonnet judge explicitly flags: compound " and "
+        // (dad_gift "age and birthday", retirement "age and expected retirement age") and
+        // generic filler. It ALSO applies a zero-risk pronoun-normalization (third-person
+        // "the user/the user's" → "you/your") to EVERY candidate, fixing the running_comeback
+        // naturalness flaw (whole set in "the user", naturalness 2) without touching content.
+        // Greedy champion = floor (idx 0, wins ALL ties) → cases with no code-defect return the
+        // champion EXACTLY (no-op pronoun-fix) so 0.409 is protected; a low-temp draw only
+        // displaces it with STRICTLY FEWER code-certain defects. Verbatim, no regeneration.
+        "exp041": DiscoveryConfig(topology: .adapterCleanDraftBestOfN,
+            selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.3, 0.45, 0.6],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

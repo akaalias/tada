@@ -1,0 +1,42 @@
+{
+  "summary": "Best-of-N adapter + phrasing-repair post-process",
+  "hypothesis": "Running best-of-N sampling on the champion adapter, then deterministically fixing 3rd-to-2nd person phrasing defects, should push quality above the current plateau \u2014 because the adapter already has strong judgment, and surface phrasing errors are the remaining correctable gap.",
+  "technique": "Multiple greedy/sampled drafts from the champion LoRA adapter (best-of-N ensemble), followed by a deterministic Swift select stage that filters on compound/filler defects, then a deterministic post-processing pass that repairs 3rd-to-2nd person phrasing. A greedy single-draft floor is also applied to anchor the selection.",
+  "result": "Scored 0.377 on the full-30 gate (1 win / 3 ties / 25 losses vs Sonnet), with specPass=100% and rubric scores atom=5, spec=3, cover=3, nat=4, nonRed=4. Despite perfect spec compliance and strong atomicity/naturalness, coverage remained at 3 and overall quality fell short \u2014 the hypothesis was not confirmed and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Best-of-N drafts from champion adapter",
+      "knobs": {
+        "model": "champion-adapter",
+        "sampling": "best-of-N"
+      },
+      "call_labels": [
+        "greedy floor draft",
+        "sampled draft variant 1",
+        "sampled draft variant 2",
+        "sampled draft variant 3"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Swift: filter on compound/filler defects",
+      "knobs": {
+        "sampling": "greedy-floor"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic 3rd->2nd person phrasing repair"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp041"
+}

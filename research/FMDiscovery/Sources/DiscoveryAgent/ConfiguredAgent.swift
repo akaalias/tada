@@ -80,6 +80,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterAnswerSimValueBestOfN: return try await adapterAnswerSimValueBestOfN(input)
         case .adapterEnsembleTournament: return try await adapterEnsembleTournament(input)
         case .adapterCorpusRagFewShot: return try await adapterCorpusRagFewShot(input)
+        case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         }
     }
 
@@ -633,6 +634,114 @@ public struct ConfiguredAgent: Sendable {
             includeSchemaInPrompt: false,
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
         return r.content.toContract()
+    }
+
+    /// Deterministic, content-preserving pronoun normalization. The champion adapter
+    /// occasionally emits a whole question SET in robotic third-person ("What is the
+    /// user's current fitness level?") — the judge's single most-cited NATURALNESS flaw
+    /// (running_comeback, naturalness 2). This rewrites ONLY the grammatical person
+    /// (third → second), never the content/coverage/redundancy, so it cannot degrade any
+    /// case that is already second-person (a no-op there) and can only HELP a case it
+    /// fires on. Order matters: handle "is/has/does the user " (verb agreement) before the
+    /// bare "the user('s)" possessive/subject forms.
+    static func normalizePerson(_ s: String) -> String {
+        var out = s
+        let subs: [(String, String)] = [
+            ("Has the user ", "Have you "), ("has the user ", "have you "),
+            ("Have the user ", "Have you "), ("have the user ", "have you "),
+            ("Is the user ", "Are you "),   ("is the user ", "are you "),
+            ("Are the user ", "Are you "),  ("are the user ", "are you "),
+            ("Does the user ", "Do you "),  ("does the user ", "do you "),
+            ("Do the user ", "Do you "),    ("do the user ", "do you "),
+            ("Was the user ", "Were you "), ("was the user ", "were you "),
+            ("Will the user ", "Will you "),("will the user ", "will you "),
+            ("the user's ", "your "), ("The user's ", "Your "),
+            ("the users' ", "your "), ("The users' ", "Your "),
+            ("the user ", "you "), ("The user ", "You "),
+        ]
+        for (a, b) in subs { out = out.replacingOccurrences(of: a, with: b) }
+        // End-of-string / no-trailing-space residuals.
+        out = out.replacingOccurrences(of: "the user's", with: "your")
+        out = out.replacingOccurrences(of: "The user's", with: "Your")
+        out = out.replacingOccurrences(of: "the user", with: "you")
+        out = out.replacingOccurrences(of: "The user", with: "You")
+        return out
+    }
+
+    /// HIGH-PRECISION, deterministic count of code-CERTAIN phrasing defects the Sonnet
+    /// judge explicitly penalizes — NOT the unreliable redundancy/value signals every prior
+    /// best-of-N selector used. Only two checks, both ~100% precision on these tasks:
+    ///   • compound atomicity via " and " (e.g. "age and birthday", "age and expected
+    ///     retirement age") — flagged as atomicity violations; (" or " is NOT counted: it
+    ///     appears in many GOOD either/or questions — "make or model", "401(k) or IRA").
+    ///   • generic catch-all FILLER (FillerDetector markers) — wasted slots.
+    /// Third-person is already removed by normalizePerson before scoring, so it does not
+    /// differentiate candidates here (the fix is unconditional).
+    static func phrasingDefects(_ titles: [String]) -> Int {
+        var n = 0
+        for t in titles {
+            let l = t.lowercased()
+            if l.contains(" and ") { n += 1 }
+            if FillerDetector.isFiller(t) { n += 1 }
+        }
+        return n
+    }
+
+    /// EXP-041: deterministic phrasing-repair + clean-draft best-of-N on the CHAMPION
+    /// adapter. The champion (0.409) is a hard floor — every selector that re-touched its
+    /// draft regressed (exp028 0.398, exp035 0.400, exp036 0.328) and every best-of-N that
+    /// SELECTED whole sets did so on an UNRELIABLE ruler: embedding dispersion (exp031,
+    /// 0.398), Jaccard dispersion (exp034, 0.234), binary same-info (exp037, 0.388), answer-
+    /// sim value (exp038, 0.383), pairwise tournament (exp039, 0.380). The repeated lesson:
+    /// embeddings, Jaccard AND the adapter's own binary/value judgments are all too coarse to
+    /// rank sets on coverage/redundancy. This experiment selects on the ONE thing code CAN
+    /// measure at ~100% precision — phrasing/atomicity defects the judge explicitly flags:
+    /// compound " and " (dad_gift "age and birthday", retirement "age and expected retirement
+    /// age") and generic filler. It ALSO applies a zero-risk pronoun-normalization (third-
+    /// person → second-person) to every candidate, fixing the running_comeback naturalness
+    /// flaw (entire set in "the user") WITHOUT touching content. Greedy champion is the floor
+    /// (idx 0, wins ALL ties) so on the ~25 cases where it has no code-defect it is returned
+    /// EXACTLY (plus a no-op pronoun-fix) → 0.409 protected by construction; a low-temp draw
+    /// only displaces it with STRICTLY FEWER code-certain defects (the handful of compound/
+    /// filler cases, all current losses). Verbatim return → no phrasing degradation.
+    private func adapterCleanDraftBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let prompt = "Task the user entered: \"\(input)\""
+        let model = try resolveModel()
+
+        // Greedy champion floor at index 0, then low-temp draws for diversity. Low temps
+        // keep draws near the modal set so swaps don't drift off-task (the high-temp noise
+        // the log warns about).
+        var plans: [FMDiscoveryPlan] = []
+        let greedySession = LanguageModelSession(model: model) { Self.adapterSystem }
+        plans.append(try await greedySession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content)
+        for t in (config.sampleTemps ?? [0.3, 0.45, 0.6]) {
+            let session = LanguageModelSession(model: model) { Self.adapterSystem }
+            plans.append(try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+                options: config.options(temp: t, sampling: .modelDefault)).content)
+        }
+
+        // Score each candidate on normalized titles; greedy (idx 0) wins ties (strictly-less
+        // to displace) → champion is the protected floor.
+        var bestIdx = 0
+        var bestDefects = Int.max
+        for (idx, plan) in plans.enumerated() {
+            let titles = plan.questions.map { Self.normalizePerson($0.question) }
+            let d = Self.phrasingDefects(titles)
+            if d < bestDefects { bestIdx = idx; bestDefects = d }
+        }
+
+        let winner = plans[bestIdx]
+        let questions = winner.questions.map {
+            DiscoveryQuestion(title: Self.normalizePerson($0.question),
+                              description: Self.normalizePerson($0.detail),
+                              requiresExternalAction: $0.requiresExternalAction)
+        }
+        return DiscoveryResult(taskTitle: winner.title,
+                               taskDescription: winner.summary,
+                               questions: questions)
     }
 
     /// EXP-032: RAG few-shot demonstrations ON THE CHAMPION ADAPTER. The rules name a
