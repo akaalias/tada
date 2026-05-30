@@ -106,6 +106,48 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
        judgment beats absolute scoring), not an absolute scorer; (c) self-consistency
        voting across diverse adapter generations.
 
+   RESEARCH-BACKED LEVERS (2024-2025 literature) — THE MISSING IDEA. A deep review found
+   that EVERY method that beats baselines scores a question NOT in isolation but against
+   an EXPLICIT, materialised set of competing solutions/interpretations it would
+   discriminate between. ALL our 27 experiments scored questions in isolation (absolute
+   rubric, vague "importance", or whole-set pairwise) — we never enumerated candidate
+   SOLUTIONS and asked which question separates them. That is very likely WHY coverage is
+   stuck: "which unknown is critical" is undefined until you have competing answers to be
+   critical about. The four highest-leverage untried levers (all INFERENCE-TIME, build on
+   the adapter):
+   (C) **Solution-space information gain (TOP PICK).** Stage 1: have the model generate
+       N (4-6) DIVERGENT candidate plans/interpretations for the task (e.g. for "plan a
+       trip": budget-backpacking vs luxury-anniversary vs business+1-free-day). Stage 2:
+       score each candidate question by how much the plans DISAGREE on its answer (a
+       question matters iff answering it changes which plan you'd pick); keep the
+       highest-discrimination questions. Grounds "which unknown matters" in concrete
+       competing answers. (Active Task Disambiguation, ICLR 2025; SAGE reports +39%
+       coverage on a 3B-scale setting.) DISTINCT from exp013, which drafted ONE plan and
+       extracted assumptions — this needs a SET of divergent plans scored by discrimination.
+   (D) **Principled covering-set selection (deterministic Swift).** Replace "top-7 by
+       score + threshold dedup" with a SET-LEVEL coverage objective: over-generate ~15-20
+       questions, embed (NLEmbedding), then GREEDILY pick 7 maximising coverage-volume —
+       a DPP/facility-location/submodular objective with a (1-1/e) guarantee. Axes are
+       derived from the candidates (task-adaptive), NOT a universal taxonomy (that's why
+       it differs from the failed exp015 dimensional schema). Pairs naturally with (C):
+       greedy submodular info-gain = pick the 7 that JOINTLY best discriminate the plans.
+   (E) **Answer-simulation verifier.** Judge a question by SIMULATING its plausible
+       answers and checking whether they'd change the downstream plan / cover distinct
+       interpretations — "does asking this actually change what I'd produce?" Grounded,
+       not rubric-based (replaces the failed reflexion critique). (Zhang, ICLR 2025.)
+   (F) **Decomposed binary verification.** Do NOT ask the 3B "are these 7 good?" (holistic
+       scoring it provably can't do — small models can't self-correct holistically but CAN
+       do local binary checks). Ask many TRIVIAL yes/no checks per question (answerable?
+       targets a real ambiguity? non-redundant with the others? atomic?) and aggregate the
+       verdicts in deterministic Swift. Enforce anything code-checkable (count=7, embedding
+       near-dupes, interrogative form) in Swift, not via the model. (FActScore-style
+       decompose-then-verify; CRITIC, ICLR 2024.)
+   NOTE — two FM-API limits confirmed: the Apple FM API exposes NO token logprobs (only
+   greedy / top-p `random(probabilityThreshold:seed:)` / top-k `random(top:seed:)` +
+   temperature) and NO custom-decoding hook. So logprob/self-certainty voting and diverse
+   beam search are NOT buildable — do not attempt them. (Seeded sampling IS available for
+   reproducible best-of-N diversity.)
+
    DRAW ON YOUR OWN KNOWLEDGE — you are NOT limited to the levers listed above. You have
    no web access, so you cannot look things up; instead apply what you already know about
    making small LMs strong on a narrow task. Established strategies worth adapting here
