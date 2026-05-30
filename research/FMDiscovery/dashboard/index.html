@@ -23,7 +23,9 @@
   <div class="card">
     <table id="tbl">
       <thead><tr>
-        <th>#</th><th>Label</th><th>Set</th><th>Quality</th>
+        <th>#</th><th>Label</th>
+        <th title="Who ran the experiment. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one experiment per iteration.">Operator</th>
+        <th>Set</th><th>Quality</th>
         <th title="Share of cases that pass the hard technical-spec gate: exactly 7 atomic questions, valid title, no emojis. Quality is forced to 0 for any case that fails.">Spec</th>
         <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
         <th title="Cost of the code-writing agent for this experiment (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>

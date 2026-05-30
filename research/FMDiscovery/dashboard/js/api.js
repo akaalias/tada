@@ -15,6 +15,11 @@ export async function fetchCosts() {
   catch (e) { return {}; }
 }
 
+export async function fetchOperators() {
+  try { return await (await fetch('../results/operators.json' + bust())).json(); }
+  catch (e) { return {}; }
+}
+
 const pipeCache = {};
 export async function fetchPipe(label) {
   if (pipeCache[label] !== undefined) return pipeCache[label];

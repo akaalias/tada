@@ -4,10 +4,10 @@
 is disjoint from the frozen eval gold/), so the adapter never sees eval cases.
 90/10 train/valid split. Output: adapter/data/{train,valid}.jsonl
 """
-import json, pathlib, random
+import json, os, pathlib, random
 
 PKG = pathlib.Path(__file__).resolve().parent.parent
-CORPUS = PKG / "corpus"
+CORPUS = PKG / os.environ.get("CORPUS_DIR", "corpus")
 OUT = PKG / "adapter" / "data"
 
 # Schema-free guided generation (toolkit docs/schema.md): one fixed output format,

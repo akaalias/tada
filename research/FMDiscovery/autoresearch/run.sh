@@ -91,6 +91,13 @@ while [ "$(count)" -lt "$TARGET" ]; do
     # Generate the pipeline diagram for the new experiment, then commit progress.
     NEWLABEL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r .label 2>/dev/null)
     [ -n "$NEWLABEL" ] && python3 "$AR/gen_pipeline.py" "$NEWLABEL" || true
+    # Tag the operator: this experiment was written+run by the autonomous agent.
+    # (The wrapper owns this write, not the agent; the manual track tags "human".)
+    if [ -n "$NEWLABEL" ]; then
+      OPF="$PKG/results/operators.json"
+      [ -f "$OPF" ] || echo '{}' > "$OPF"
+      tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"
+    fi
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
     python3 "$AR/gen_costs.py" 2>/dev/null || true   # refresh costs.json from the new commit
