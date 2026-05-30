@@ -68,6 +68,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragAntiModalContrast: return try await ragAntiModalContrast(input)
         case .adapterDirect:     return try await adapterDirect(input)
         case .adapterScopedCritique: return try await adapterScopedCritique(input)
+        case .adapterDivergeConverge: return try await adapterDivergeConverge(input)
         }
     }
 
@@ -196,6 +197,73 @@ public struct ConfiguredAgent: Sendable {
         questions[idx] = DiscoveryQuestion(title: cand, description: "",
                                            requiresExternalAction: fix.requiresExternalAction)
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
+    /// EXP-029: divergent → convergent free-text on the adapter (untried lever A).
+    /// EVERY call in the search so far — including all adapter calls — was SCHEMA-
+    /// CONSTRAINED: the model is forced straight into 7 typed slots, so the FIRST tokens
+    /// it commits to are already a question, not an analysis of the task. The champion
+    /// adapter (v2a_e1, 0.409) is strong on atomicity/specificity but PINNED at coverage
+    /// 3: its own losses recur on the ONE decision-critical, task-specific unknown
+    /// (starting point / current state / what's unique here) that never makes the 7. The
+    /// hypothesis: the schema straitjacket on the THINKING step is part of the cause —
+    /// forced to emit slots immediately, the adapter falls into its modal generic set
+    /// before the sharp task-specific unknowns can surface. exp028 (a scoped CRITIQUE
+    /// pass on the adapter) failed because that is JUDGMENT, which the adapter can't do
+    /// reliably. This is different: BOTH passes are GENERATION. Stage 1 is an
+    /// UNCONSTRAINED, plain-prose brainstorm (NO @Generable schema) where the adapter
+    /// freely reasons about what most determines how THIS task should go — the
+    /// task-specific unknowns, the user's starting point, the forks a plan hinges on.
+    /// Stage 2 is the native adapter format (the champion's exact call) but conditioned
+    /// on that prose, converging the surfaced unknowns into the 7 atomic questions. Both
+    /// greedy/deterministic (no diversity needed — breadth comes from the open format,
+    /// not from sampling). Falsifiable: if freeing the thinking step lets task-specific
+    /// unknowns surface, coverage lifts above 3; if the adapter just restates its modal
+    /// set after the brainstorm, it lands back at the champion's 0.409 (bounded downside).
+    private func adapterDivergeConverge(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: UNCONSTRAINED free-text brainstorm on the adapter. A thinking-oriented
+        // system prompt (NOT the question-formatting coach) + plain-text respond, so the
+        // adapter analyses the task in prose before any slot is committed.
+        let brainstormSystem = """
+        You are a sharp planning analyst. Before any clarifying questions are written, \
+        you think out loud — in plain prose, NOT a list of questions — about what would \
+        MOST determine how to actually do the user's task well.
+
+        Focus on what is SPECIFIC to THIS task, not generic planning boilerplate. Reason \
+        about: where the user is starting FROM (their current situation, what they \
+        already have or have done, the concrete thing they're starting with); the forks \
+        on which the whole plan hinges (the unknowns whose answer would most change the \
+        approach); the constraints, scale, audience, and stakes that are particular to \
+        this kind of task. Name the single most decision-critical unknown explicitly.
+
+        Write 4-8 sentences of analysis. Do NOT write any questions yet.
+        """
+        let brainSession = LanguageModelSession(model: try resolveModel()) { brainstormSystem }
+        let brainstorm = try await brainSession.respond(
+            to: "The user's task: \"\(input)\"\n\nThink through what matters most for this specific task.",
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Stage 2: the champion's native-format call, now CONDITIONED on the prose. Keep
+        // the training-format "Task the user entered:" anchor first so the adapter stays
+        // in distribution; append the analysis as decision-critical context to cover.
+        let convergeSession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let convergePrompt = """
+        Task the user entered: "\(input)"
+
+        Analysis of what matters most for this specific task:
+        \(brainstorm)
+
+        Using that analysis, write the 7 clarifying questions. Make sure the most \
+        decision-critical, task-specific unknowns it identified are covered, not generic \
+        filler.
+        """
+        let plan = try await convergeSession.respond(
+            to: convergePrompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+        return plan.toContract()
     }
 
     /// EXP-027: anti-modal self-contrast. The plateau is judgment-limited and exp010's

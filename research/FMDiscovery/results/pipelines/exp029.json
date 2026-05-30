@@ -1,0 +1,40 @@
+{
+  "summary": "Diverge-converge: free prose brainstorm then native convergence",
+  "hypothesis": "Freeing the brainstorm stage from the @Generable schema should unlock broader coverage by letting the adapter think without structural constraints, then the champion's native call can converge on those richer unknowns into the final 7 slots.",
+  "technique": "Two sequential on-device FM calls on the champion adapter, both greedy: stage 1 is an unconstrained plain-prose brainstorm (no @Generable schema) surfacing decision-critical unknowns; stage 2 is the champion's normal native-format generation conditioned on that prose output.",
+  "result": "Scored 0.344 on the full-30 greedy eval (1 win / 1 tie / 23 losses vs Sonnet), a real regression of \u22120.065 vs the champion's 0.409. Coverage stayed pinned at 3, and specificity and naturalness both dropped from 4\u21923; the convergence pass regressed toward generic and redundant sets, confirming the hypothesis was falsified \u2014 discarded, champion remains adapter_v2a_e1 at 0.409.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "Unconstrained prose brainstorm of unknowns",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy",
+        "schema": "none"
+      },
+      "call_labels": [
+        "free-text brainstorm of critical unknowns"
+      ]
+    },
+    {
+      "kind": "generate",
+      "text": "Champion native-format call conditioned on prose",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      },
+      "call_labels": [
+        "native convergence on prose brainstorm"
+      ]
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp029"
+}

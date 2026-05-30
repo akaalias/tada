@@ -357,6 +357,18 @@ public enum Configs {
         // task-specific starting-point question with filler/near-dup guards (≤1 changes).
         "exp028": DiscoveryConfig(topology: .adapterScopedCritique, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-029: divergent → convergent free-text on the champion adapter (untried
+        // lever A). EVERY prior call — including all adapter calls — was schema-
+        // constrained, forcing the model into 7 slots before it could analyse the task.
+        // Stage 1 is an UNCONSTRAINED plain-prose brainstorm (NO @Generable schema) where
+        // the adapter freely reasons about the decision-critical, task-specific unknowns
+        // (the starting point / forks the plan hinges on) — the coverage gap pinned at 3.
+        // Stage 2 is the champion's exact native-format call, conditioned on that prose,
+        // converging the surfaced unknowns into the 7 questions. Both passes are
+        // GENERATION (not the judgment that sank exp028), both greedy/deterministic.
+        "exp029": DiscoveryConfig(topology: .adapterDivergeConverge, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
