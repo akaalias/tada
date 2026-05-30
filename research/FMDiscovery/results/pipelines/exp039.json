@@ -1,0 +1,49 @@
+{
+  "summary": "Diverse-adapter pairwise SET tournament, champion floor",
+  "hypothesis": "Running a pairwise relative tournament across four fine-tuned adapters (v2a/v2b variants) should surface the best question set by direct head-to-head comparison, with a champion-floor fallback ensuring a quality baseline is always met.",
+  "technique": "Four adapter variants (v2a/v2b) each generate a candidate question set verbatim; a pairwise relative SET tournament (model-based) compares candidates head-to-head to crown a champion, with a deterministic champion-floor post-processing step as a safety net.",
+  "result": "Scored 0.380 on the full-30 gate (1 win / 4 ties / 24 losses vs Sonnet); rubric showed atomicity and naturalness at 4 but spec and coverage both at 3, meaning diversity across adapters did not unlock the coverage gains hoped for. Discarded \u2014 below the bar for a new best.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "ensemble",
+      "text": "4 adapter variants generate candidate sets",
+      "knobs": {
+        "n": "4"
+      },
+      "call_labels": [
+        "v2a adapter: draft question set",
+        "v2a adapter: draft question set (variant)",
+        "v2b adapter: draft question set",
+        "v2b adapter: draft question set (variant)"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Pairwise relative SET tournament, pick champion",
+      "knobs": {
+        "calls": "6"
+      },
+      "call_labels": [
+        "semifinal: set A vs set B",
+        "semifinal swapped: set B vs set A",
+        "semifinal: set C vs set D",
+        "semifinal swapped: set D vs set C",
+        "final: winner AB vs winner CD",
+        "final swapped: winner CD vs winner AB"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Champion floor fallback; verbatim output"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp039"
+}

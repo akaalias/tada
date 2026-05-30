@@ -535,6 +535,23 @@ public enum Configs {
         "exp038": DiscoveryConfig(topology: .adapterAnswerSimValueBestOfN,
             selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.5, 0.7],
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-039: diverse-adapter ENSEMBLE with pairwise relative SET selection (mixture-of-
+        // experts + LLM-as-judge tournament). Every best-of-N so far selected over the
+        // CHAMPION's OWN draws (exp031/034/037/038, all ≤ 0.409) — but the coverage wall is
+        // that the champion rarely GENERATES the missing unknown in any of its own draws, so
+        // selecting among them can't recover it. exp036 surfaced the one unused real signal:
+        // the coverage-FORCED v2b siblings WIN MORE held-out cases (4 vs 2) — a DIFFERENT
+        // training run generates the unknown the champion misses on some tasks — but exp036's
+        // dedup-MERGE mangled phrasing (0.328). Here candidates are whole GREEDY sets from 4
+        // diverse fine-tuned adapters (disciplined, not temperature noise) and selection is
+        // RELATIVE PAIRWISE judgment on the strong champion adapter (exp012's tournament was on
+        // the weak stock 3B over same-distribution draws). Winners returned VERBATIM (no merge/
+        // edit); champion seeded as incumbent + wins ties → 0.409 floor protected unless a
+        // sibling is robustly judged better in both orderings. Base/judge = v2a_e1 champion.
+        "exp039": DiscoveryConfig(topology: .adapterEnsembleTournament,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

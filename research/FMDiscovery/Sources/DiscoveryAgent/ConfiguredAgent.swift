@@ -78,6 +78,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterDualCoverageMerge: return try await adapterDualCoverageMerge(input)
         case .adapterLeastRedundantBestOfN: return try await adapterLeastRedundantBestOfN(input)
         case .adapterAnswerSimValueBestOfN: return try await adapterAnswerSimValueBestOfN(input)
+        case .adapterEnsembleTournament: return try await adapterEnsembleTournament(input)
         }
     }
 
@@ -446,6 +447,74 @@ public struct ConfiguredAgent: Sendable {
         }
         return plans[bestIdx].toContract()
     }
+
+    /// EXP-039: diverse-adapter ENSEMBLE with pairwise relative SET selection (mixture-of-
+    /// experts + LLM-as-judge tournament). The wall, restated from the log: the champion
+    /// (v2a_e1, 0.409) is pinned at coverage 3 because it rarely GENERATES the missing
+    /// decision-critical unknown in ANY of its own draws, so no selection/aggregation over its
+    /// OWN samples can recover it (exp031/034/037/038 all ≤ floor; every EDIT of the draft also
+    /// regressed). The one signal the log shows is REAL but unexploited: exp036 found the
+    /// coverage-FORCED sibling adapters (v2b family) WIN MORE held-out cases than the champion
+    /// (4 vs 2) — i.e. on some tasks a DIFFERENT fine-tuned run genuinely generates the unknown
+    /// the champion misses — but exp036's deterministic dedup-MERGE mangled phrasing (0.328) and
+    /// exp035's single-slot transplant under-fired. Two genuinely-untried elements combine here:
+    /// (1) CANDIDATES are whole greedy sets from FOUR diverse fine-tuned adapters (v2a_e1, v2a_e2,
+    /// v2b_e1, v2b_e2) — DISCIPLINED, internally-coherent draws from different training runs, NOT
+    /// the temperature noise that injected redundancy/off-task errors into exp034/037/038's pools;
+    /// (2) SELECTION is RELATIVE PAIRWISE judgment (a single-elimination tournament, two-order vote
+    /// to damp position bias) run on the STRONG champion adapter — exp012 tried a pairwise
+    /// tournament but on the WEAK stock 3B over same-distribution RAG draws, never on the adapter
+    /// over genuinely diverse experts. Winners are returned BYTE-FOR-BYTE (no merge/edit/regen, the
+    /// defect that sank exp036/028/029), so phrasing discipline is never mangled. The champion is
+    /// SEEDED as the incumbent (index 0) and pickBetterSet returns the incumbent on ties, so the
+    /// champion only loses a match if the judge prefers a sibling in BOTH orderings → the 0.409
+    /// floor is protected unless a sibling set is robustly judged better. Hypothesis: if the
+    /// adapter's relative SET judgment correlates with the metric, the ensemble keeps the champion
+    /// where it's best and swaps in a v2b set on exactly the cases v2b covers the missing unknown,
+    /// lifting coverage off 3. Falsifiable: if relative judgment is noise (as exp012 hinted on the
+    /// 3B), matches tie / mis-pick and it lands at/below 0.409, cleanly closing the diverse-expert
+    /// pairwise-ensemble route on the adapter.
+    private func adapterEnsembleTournament(_ input: String) async throws -> DiscoveryResult {
+        let prompt = "Task the user entered: \"\(input)\""
+
+        // Greedy whole sets from 4 diverse fine-tuned adapters. Champion (config.adapter =
+        // v2a_e1) is index 0 = the tournament incumbent / tie-winner = floor.
+        var paths: [String] = [config.adapter].compactMap { $0 }
+        paths.append(contentsOf: Self.siblingAdapterPaths.filter { $0 != config.adapter })
+        var sets: [DiscoveryResult] = []
+        for p in paths {
+            let session = LanguageModelSession(model: try resolveModel(path: p)) { Self.adapterSystem }
+            let plan = try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+                options: config.options(temp: 0, sampling: .greedy)).content
+            sets.append(plan.toContract())
+        }
+        guard sets.count > 1 else { return sets.first! }
+
+        // Single-elimination bracket; lower index = champion-favoured incumbent (tie-break).
+        // pickBetterSet/judgeBetter judge on resolveModel() = the champion adapter.
+        var bracket = sets
+        while bracket.count > 1 {
+            var next: [DiscoveryResult] = []
+            var i = 0
+            while i < bracket.count {
+                if i + 1 < bracket.count {
+                    next.append(try await pickBetterSet(input, bracket[i], bracket[i + 1]))
+                    i += 2
+                } else {
+                    next.append(bracket[i]); i += 1
+                }
+            }
+            bracket = next
+        }
+        return bracket[0]
+    }
+
+    private static let siblingAdapterPaths: [String] = {
+        let base = "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/"
+        return ["discovery_v2a_e1.fmadapter", "discovery_v2a_e2.fmadapter",
+                "discovery_v2b_e1.fmadapter", "discovery_v2b_e2.fmadapter"].map { base + $0 }
+    }()
 
     /// EXP-036: dual-adapter coverage merge. Two facts the log establishes: (1) the
     /// champion v2a_e1 (0.409, 2W/5T/22L) wastes 2-3 of its 7 slots on internally
