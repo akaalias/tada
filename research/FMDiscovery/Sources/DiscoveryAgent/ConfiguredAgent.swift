@@ -76,6 +76,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterCoverageFacilitySelect: return try await adapterCoverageFacilitySelect(input)
         case .adapterBinaryDedupTransplant: return try await adapterBinaryDedupTransplant(input)
         case .adapterDualCoverageMerge: return try await adapterDualCoverageMerge(input)
+        case .adapterLeastRedundantBestOfN: return try await adapterLeastRedundantBestOfN(input)
         }
     }
 
@@ -268,6 +269,102 @@ public struct ConfiguredAgent: Sendable {
         }
         // No novel donor → champion verbatim (FLOOR).
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
+    /// EXP-037: least-redundant best-of-N over the CHAMPION adapter, scored by BINARY
+    /// redundancy and returned VERBATIM. Two robust facts from the log: (1) the champion
+    /// v2a_e1 (0.409) loses on ~half its held-out cases to the SAME mechanism — it wastes
+    /// 2-3 of its 7 slots on INTERNALLY REDUNDANT/overlapping questions, crowding out the
+    /// missing decision-critical unknown (gp cov2 Q1/Q3/Q6/Q7 all "which clinic?";
+    /// household_budget Q2/Q3/Q4 the same expense three ways; find_therapist Q1≈Q2≈Q7;
+    /// dinner date+time; learn_guitar Q4≈Q6; resume mirror pairs). (2) every attempt to
+    /// FIX that by EDITING the draft regressed below the bare adapter, because inserting a
+    /// regenerated or donor question degrades the champion's hard-won phrasing/naturalness
+    /// (exp028 0.398, exp035 0.400, exp036 0.328). The only edits that held at the floor
+    /// returned WHOLE champion sets verbatim. So this NEVER edits: it picks among several
+    /// WHOLE champion draws the one that is internally LEAST redundant, byte-for-byte.
+    /// Redundancy is a SET-LEVEL property of a single greedy draw; OTHER low-temperature
+    /// draws from the same adapter spread their 7 slots across more distinct unknowns.
+    /// The genuinely-new lever is the SELECTION RULER. exp031 selected whole sets by
+    /// EMBEDDING dispersion (0.398) and exp034 by token-Jaccard dispersion (0.234); both
+    /// rulers MISS clarifying-question paraphrases that share few literal tokens AND sit
+    /// far apart in NLEmbedding space ("What date is the party?" vs "What time will it
+    /// start?"). exp035 showed the per-pair BINARY "do these ask for the same information?"
+    /// adapter check catches exactly those — but it spent that signal on a single-slot
+    /// donor transplant (phrasing-degrading). Here the binary signal is used at the SET
+    /// level: count each candidate set's binary-redundant pairs and keep the set with the
+    /// FEWEST, breaking ties by lower embedding dispersion (a high-recall secondary signal),
+    /// then by draw order so the GREEDY champion draft is the FLOOR and wins exact ties.
+    /// On cases where the greedy draft is already least-redundant → champion 0.409 verbatim
+    /// (downside-protected); only the redundant cases — exactly where the champion loses —
+    /// can swap to a cleaner verbatim draw. No regeneration, no donor, zero phrasing risk.
+    /// Falsifiable: if some low-temp draw genuinely disperses its slots across more distinct
+    /// unknowns AND the binary count ranks it correctly, non-redundancy/coverage tick up on
+    /// the redundant cases; if every draw is equally redundant or the binary count is noisy,
+    /// it lands back at the 0.409 floor (never below, by construction).
+    private func adapterLeastRedundantBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let prompt = "Task the user entered: \"\(input)\""
+        let model = try resolveModel()
+
+        // Candidate WHOLE sets: greedy champion floor (index 0) + low-temp draws.
+        var plans: [FMDiscoveryPlan] = []
+        let greedySession = LanguageModelSession(model: model) { Self.adapterSystem }
+        plans.append(try await greedySession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content)
+        for t in (config.sampleTemps ?? [0.5, 0.7]) {
+            let session = LanguageModelSession(model: model) { Self.adapterSystem }
+            plans.append(try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+                options: config.options(temp: t, sampling: .modelDefault)).content)
+        }
+
+        // Binary "same information?" check on the champion adapter (lever F): the redundancy
+        // signal that embeddings/Jaccard miss. Fresh session per call → no context bleed.
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let session = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await session.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+
+        // Score each candidate: primary = # binary-redundant pairs (fewer is better);
+        // secondary tie-break = embedding dispersion (sum of pairwise cosine, lower better).
+        var bestIdx = 0
+        var bestRedundant = Int.max
+        var bestCosSum = Double.greatestFiniteMagnitude
+        for (idx, plan) in plans.enumerated() {
+            let titles = plan.questions.map { $0.question }
+            var redundant = 0
+            for j in 1..<titles.count {
+                for i in 0..<j where await sameInfo(titles[i], titles[j]) { redundant += 1 }
+            }
+            let vecs = titles.map { SemanticRetrieval.vectors(for: [$0])?.first ?? [] }
+            var cosSum = 0.0
+            for j in 1..<vecs.count {
+                for i in 0..<j where !vecs[i].isEmpty && !vecs[j].isEmpty {
+                    cosSum += SemanticRetrieval.cos(vecs[i], vecs[j])
+                }
+            }
+            // Strictly better → swap. Equal redundancy → lower dispersion wins. Full tie →
+            // keep the earlier (greedy floor at idx 0).
+            if redundant < bestRedundant
+                || (redundant == bestRedundant && cosSum < bestCosSum - 1e-9) {
+                bestIdx = idx; bestRedundant = redundant; bestCosSum = cosSum
+            }
+        }
+        return plans[bestIdx].toContract()
     }
 
     /// EXP-036: dual-adapter coverage merge. Two facts the log establishes: (1) the

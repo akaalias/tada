@@ -41,6 +41,7 @@ public struct DiscoveryConfig: Sendable {
         case adapterCoverageFacilitySelect // over-generate a POOL of INDIVIDUAL questions across adapter draws (greedy champion + low-temp), dedup, then greedily pick 7 maximising a facility-location / max-sum dispersion objective (relevance + min-distance to chosen) VERBATIM — the literal Lever D over individual questions (exp031 selected whole sets only)
         case adapterBinaryDedupTransplant // champion draft → detect ONE redundant slot via per-pair BINARY adapter yes/no checks (lever F: small models can do local binary checks where embeddings/Jaccard can't) → replace it VERBATIM with the first novel question from a complementary donor adapter (v2b_e2); champion-verbatim floor
         case adapterDualCoverageMerge // champion greedy draft → greedily KEEP only non-redundant champion slots (combined embedding-OR-Jaccard ruler, higher recall than either alone) → fill freed slots VERBATIM from the complementary coverage-forced donor adapter (v2b_e2) with questions novel by the same ruler; champion-priority, verbatim, deterministic; floor = champion unchanged when nothing is redundant
+        case adapterLeastRedundantBestOfN // draw N champion sets → score each set's internal redundancy via per-pair BINARY "same information?" adapter checks (lever F signal embeddings/Jaccard miss) → return the WHOLE least-redundant set VERBATIM; greedy draft is the floor and wins ties (no donor, no regeneration → champion phrasing preserved)
     }
 
     public enum Sampling: Sendable {

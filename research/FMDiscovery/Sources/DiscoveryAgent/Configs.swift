@@ -495,6 +495,23 @@ public enum Configs {
         "exp036": DiscoveryConfig(topology: .adapterDualCoverageMerge,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-037: least-redundant best-of-N over the CHAMPION adapter, scored by BINARY
+        // redundancy, returned VERBATIM. The champion (0.409) loses ~half its cases to
+        // internal REDUNDANCY crowding out the missing unknown; every EDIT of the draft
+        // regressed (exp028 0.398, exp035 0.400, exp036 0.328) by degrading champion
+        // phrasing, while whole-set selection held the floor. exp031 (embedding dispersion,
+        // 0.398) and exp034 (Jaccard dispersion, 0.234) selected whole sets but with rulers
+        // that MISS low-overlap paraphrase dups; exp035 showed the per-pair BINARY "same
+        // information?" adapter check catches exactly those, but spent it on a phrasing-
+        // degrading single-slot transplant. Here that binary signal is used at the SET
+        // level: draw greedy floor + 2 low-temp champion sets, count each set's binary-
+        // redundant pairs, return the WHOLE least-redundant set verbatim (tie-break: lower
+        // embedding dispersion, then draw order → greedy floor wins exact ties → never
+        // below 0.409 by construction). No donor, no regeneration. Base = v2a_e1 champion.
+        "exp037": DiscoveryConfig(topology: .adapterLeastRedundantBestOfN,
+            selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.5, 0.7],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

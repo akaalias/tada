@@ -1,0 +1,29 @@
+{
+  "summary": "Least-redundant best-of-N on champion adapter",
+  "hypothesis": "Running best-of-N with the champion adapter and selecting the least-redundant set should push quality above the prior best, because redundancy is the remaining weak dimension and a whole-set binary redundancy count picks the verbatim candidate set that covers the most distinct information.",
+  "technique": "Multiple candidate sets are generated with the champion adapter, then a deterministic Swift selector scores each whole verbatim set by a binary same-information redundancy count (fewer redundant pairs = better), with a greedy-output floor to break ties \u2014 no model call in the selection step.",
+  "result": "Scored 0.388 on the full-30 gate (2 wins / 3 ties / 24 losses vs Sonnet); rubric showed atom=4, spec=4, cover=3, nat=3, nonRed=3 \u2014 redundancy did not improve meaningfully and coverage remained the binding constraint, falsifying the bet. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-produce N candidate sets via champion adapter",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Pick least-redundant set by binary redundancy count"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp037"
+}
