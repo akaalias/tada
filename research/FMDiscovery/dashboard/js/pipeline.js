@@ -110,7 +110,7 @@ export function renderPipeD3(spec, el) {
   // border/label/badge colour says WHO runs it; the specific stage kind is the text.
   //   FM = on-device model call (pink) · Swift = deterministic code (orange) · User = input (slate)
   const execType = d => d.model ? ['FM', '#db2777']
-    : d.kind === 'input' ? ['User', '#64748b']
+    : (d.kind === 'input' || d.kind === 'output') ? ['User', '#64748b']   // user-facing boundary
     : ['Swift', '#ea580c'];
   g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff')
     .attr('stroke', d => execType(d)[1]).attr('stroke-width', 2);
