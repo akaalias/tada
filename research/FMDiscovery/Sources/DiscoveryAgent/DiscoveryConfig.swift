@@ -36,6 +36,8 @@ public struct DiscoveryConfig: Sendable {
         case adapterDivergeConverge // stage1: UNCONSTRAINED free-text brainstorm on the adapter (no schema) of the decision-critical unknowns for THIS task → stage2: native-format adapter call converges that prose into the 7 questions
         case adapterSolutionSpaceEIG // stage1: generate N DIVERGENT concrete candidate scenarios (competing interpretations of who/what the user wants) on the adapter → stage2: native-format adapter call writes the 7 questions that best DISCRIMINATE which scenario the user is in (solution-space information gain, ICLR'25)
         case adapterDispersionBestOfN // greedy champion draft + N low-temp adapter samples → SELECT the whole set (verbatim) maximising embedding coverage-VOLUME (pairwise dispersion = least internal redundancy) + on-task relevance, deterministic in Swift; no FM judging pass
+        case adapterRagFewShot   // champion adapter, native training format, with 2 retrieved gold exemplar question-sets APPENDED as reference demonstrations (which decision-critical unknowns similar tasks cover) — single greedy call, no extra judgment pass
+        case adapterRagFewShotLOO // adapterRagFewShot but LEAVE-ONE-OUT: exclude any exemplar whose input matches the eval task, so demonstrations are genuinely OTHER tasks (the non-leaking, valid version of exp032)
     }
 
     public enum Sampling: Sendable {

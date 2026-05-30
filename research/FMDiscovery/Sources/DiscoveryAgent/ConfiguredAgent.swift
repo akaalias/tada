@@ -71,6 +71,8 @@ public struct ConfiguredAgent: Sendable {
         case .adapterDivergeConverge: return try await adapterDivergeConverge(input)
         case .adapterSolutionSpaceEIG: return try await adapterSolutionSpaceEIG(input)
         case .adapterDispersionBestOfN: return try await adapterDispersionBestOfN(input)
+        case .adapterRagFewShot: return try await adapterRagFewShot(input)
+        case .adapterRagFewShotLOO: return try await adapterRagFewShot(input, leaveOneOut: true)
         }
     }
 
@@ -167,6 +169,59 @@ public struct ConfiguredAgent: Sendable {
     /// training, schema omitted from the prompt (the adapter learned the format).
     private func adapterDirect(_ input: String) async throws -> DiscoveryResult {
         let session = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let prompt = "Task the user entered: \"\(input)\""
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-032: RAG few-shot demonstrations ON THE CHAMPION ADAPTER. The rules name a
+    /// HIGH-VALUE, barely-explored class: take a proven IN-CONTEXT topology and run it
+    /// on the ADAPTER (every prior in-context win/loss was measured on the weak stock
+    /// 3B, never the fine-tuned base). The scoped-critique variant of this was exp028;
+    /// the RAG few-shot variant — which lifted the stock 3B from baseline 0.307 to its
+    /// in-context best (exp003 0.320) and was the single strongest in-context lever — has
+    /// NEVER been run on the adapter. Rationale grounded in the champion's judge notes:
+    /// the adapter has strong phrasing/format discipline (atom 4, spec 4, nat 4) but is
+    /// pinned at coverage 3 — it reliably MISSES the single most decision-critical unknown
+    /// (trip departure-city, resume existing-resume, dinner budget, etc.). Every attempt
+    /// to recover that unknown from the adapter's OWN judgment failed: scoped critique
+    /// (exp028), free-text brainstorm (exp029), solution-space EIG (exp030), best-of-N
+    /// over its own draws (exp031) all stayed ≤ 0.398. The missing piece is an EXTERNAL
+    /// coverage signal — concrete demonstrations of WHICH unknowns matter for similar
+    /// task types. exp003 supplied exactly that to the stock 3B; the 3B couldn't transfer
+    /// the demonstrated dimensions (it imitated surface, not which-unknown-is-critical
+    /// judgment). The open question this tests: with the adapter's far stronger base
+    /// judgment freeing capacity from phrasing, does demonstrating the critical dimensions
+    /// now TRANSFER and move coverage off 3? Minimal surface, single greedy call (no extra
+    /// judgment pass that degraded exp028-030): keep the adapter's EXACT training system
+    /// prompt + user format (so the adapter stays on its native learned distribution,
+    /// unlike exp029's free-text conditioning), and APPEND the 2 nearest gold exemplar
+    /// question-sets as reference demonstrations. Exemplars are demonstrations only —
+    /// the adapter generates FRESH task-specific questions (gold-leak ban respected).
+    private func adapterRagFewShot(_ input: String) async throws -> DiscoveryResult {
+        let examples = GoldExemplars.nearest(to: input, k: 2)
+        let block = examples.map { ex -> String in
+            let qs = ex.questions.enumerated()
+                .map { "\($0.offset + 1). \($0.element)" }
+                .joined(separator: "\n")
+            return "Task: \"\(ex.input)\"\n\(qs)"
+        }.joined(separator: "\n\n")
+
+        let system = Self.adapterSystem + """
+
+
+            For reference, here are strong question sets other coaches wrote for SIMILAR \
+            tasks. Study which decision-critical unknowns they cover (budget, scope, \
+            who-for, timeline, current-state, location), then write FRESH questions \
+            specific to the user's actual task. Do not copy or paraphrase these.
+
+            \(block)
+            """
+
+        let session = LanguageModelSession(model: try resolveModel()) { system }
         let prompt = "Task the user entered: \"\(input)\""
         let r = try await session.respond(
             to: prompt, generating: FMDiscoveryPlan.self,

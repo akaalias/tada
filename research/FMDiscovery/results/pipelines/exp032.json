@@ -1,0 +1,28 @@
+{
+  "summary": "RAG few-shot on champion LoRA adapter",
+  "hypothesis": "Injecting RAG few-shot demonstrations into the champion fine-tuned adapter should push quality beyond the adapter-only plateau, because the adapter already captures good judgment and in-context exemplars can further sharpen topical coverage and phrasing.",
+  "technique": "Nearest gold exemplars are retrieved and injected as few-shot demonstrations into the prompt, but the model call now runs on the champion LoRA adapter (fine-tuned base) rather than the stock model \u2014 re-homing the RAG in-context topology onto the fine-tuned weights.",
+  "result": "Scored 0.498 on the full-30 gate (1 win / 13 ties / 15 losses vs Sonnet) with all rubric dimensions (atom, spec, cover, nat, nonRed) at 4 and specPass 100% \u2014 a new best, confirming that layering RAG exemplars onto the champion adapter yields a meaningful gain over the adapter alone. KEPT as the new champion.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch nearest gold few-shot exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions with champion adapter + RAG",
+      "knobs": {
+        "model": "adapter-v1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp032"
+}

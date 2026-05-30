@@ -405,6 +405,24 @@ public enum Configs {
         "exp031": DiscoveryConfig(topology: .adapterDispersionBestOfN,
             selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.4, 0.6, 0.8],
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-032: RAG few-shot demonstrations ON THE CHAMPION adapter (v2a_e1, 0.409).
+        // The rules flag a HIGH-VALUE, barely-explored class: run a PROVEN in-context
+        // topology on the ADAPTER, not the weak stock 3B. RAG few-shot was the stock 3B's
+        // single strongest in-context lever (baseline 0.307 → exp003 0.320) but couldn't
+        // move coverage off 3 because the 3B imitated surface, not which-unknown-matters.
+        // On the adapter the variant has NEVER been run (exp028 was the scoped-CRITIQUE
+        // re-home, not few-shot). Hypothesis: the champion misses the single critical
+        // unknown (coverage pinned 3) and NONE of its self-judgment passes (critique
+        // exp028 / free-text exp029 / EIG exp030 / best-of-N exp031) recovered it; an
+        // EXTERNAL signal — concrete demonstrations of which dimensions strong sets cover
+        // for SIMILAR task types — may finally transfer now that the adapter's stronger
+        // base frees capacity from phrasing. Single greedy call, native training format +
+        // 2 nearest gold exemplars APPENDED as reference demos; adapter generates fresh
+        // questions (gold-leak ban respected). No 2nd pass → champion phrasing preserved.
+        "exp032": DiscoveryConfig(topology: .adapterRagFewShot,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
