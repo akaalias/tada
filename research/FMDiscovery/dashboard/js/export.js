@@ -26,17 +26,21 @@ function wrap(s, maxChars) {
 function buildExportSVG(spec) {
   const { nodes, edges } = layoutPipe(spec);
   const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
-  const ADW = 132, ADH = 46, ADGAP = 44;
-  const PW = 134, PH = 50, PGAP = 30;
-  const hasAdapter = nodes.some(n => n.adapterName);
+  const ADW = 132, ADH = 46;
+  const PW = 160, PH = 74, PVGAP = 30, PSTEPH = PH + PVGAP, ADGAP = 52;
+  const adapterNodes = nodes.filter(n => n.adapterName);
+  const hasAdapter = adapterNodes.length > 0;
   const prov = (hasAdapter && Array.isArray(spec.adapterTraining)) ? spec.adapterTraining : [];
-  const PROVPAD = prov.length ? prov.length * (PW + PGAP) : 0;
-  const LEFTPAD = (hasAdapter ? ADW + ADGAP : 0) + PROVPAD;
+  const useChain = prov.length > 0;
+  const LEFTPAD = useChain ? PW + ADGAP : (hasAdapter ? ADW + ADGAP : 0);
   const byId = {}; nodes.forEach(n => byId[n.id] = n);
   const totalLanes = Math.max(1, ...nodes.map(n => n.rows));
   const maxCol = Math.max(0, ...nodes.map(n => n.col));
+  const CHAINLEN = prov.length + 1;
+  const anchorCol = hasAdapter ? Math.min(...adapterNodes.map(n => n.col)) : 0;
+  const YSHIFT = useChain ? Math.max(0, (CHAINLEN - 1) * PSTEPH + PH / 2 - NODEH / 2 - anchorCol * STEPH) : 0;
   const diagW = PADX * 2 + LEFTPAD + totalLanes * LANEW;
-  const diagH = PADY * 2 + maxCol * STEPH + NODEH;
+  const diagH = PADY * 2 + YSHIFT + maxCol * STEPH + NODEH;
 
   const fmCount = spec.stages.reduce((a, st) => a + callCount(st), 0);
   const adapter = spec.stages.some(isAdapter);
@@ -49,7 +53,7 @@ function buildExportSVG(spec) {
   const OY = MARGIN + HEAD;
   const pos = id => {
     const n = byId[id], laneOff = (totalLanes - n.rows) / 2;
-    const x = OX + PADX + LEFTPAD + (laneOff + n.row) * LANEW, y = OY + PADY + n.col * STEPH;
+    const x = OX + PADX + LEFTPAD + (laneOff + n.row) * LANEW, y = OY + PADY + YSHIFT + n.col * STEPH;
     return { x, y, topx: x + NODEW / 2, topy: y, botx: x + NODEW / 2, boty: y + NODEH };
   };
 
@@ -63,36 +67,41 @@ function buildExportSVG(spec) {
     const a = pos(e.from), b = pos(e.to), ty = b.topy - 5, my = (a.boty + ty) / 2;
     s += `<path d="M${a.botx},${a.boty} C${a.botx},${my} ${b.topx},${my} ${b.topx},${ty}" fill="none" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#exa)"/>`;
   }
-  const adapterNodes = nodes.filter(n => n.adapterName);
-  for (const n of adapterNodes) {
-    const p = pos(n.id), ax = p.x - ADGAP - ADW, ay = p.y + (NODEH - ADH) / 2;
-    const fx = ax + ADW, fy = ay + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (fx + tx) / 2;
-    s += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
-    s += `<rect x="${ax}" y="${ay}" width="${ADW}" height="${ADH}" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="2"/>`;
-    s += `<text x="${ax + 9}" y="${ay + 16}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="#ca8a04">LORA ADAPTER</text>`;
-    s += `<text x="${ax + 9}" y="${ay + 31}" font-family="${FONT}" font-size="11" fill="#334155">${xml(n.adapterName)}</text>`;
-  }
-  // training-provenance chain feeding the (topmost) adapter node
-  if (prov.length && adapterNodes.length) {
-    const anchor = adapterNodes.reduce((a, b) => (pos(a.id).y <= pos(b.id).y ? a : b));
-    const ap = pos(anchor.id), aLeft = ap.x - ADGAP - ADW, provY = ap.y + (NODEH - PH) / 2;
-    const stepX = i => aLeft - PGAP - PW - (prov.length - 1 - i) * (PW + PGAP);
-    const conns = [];
-    for (let i = 0; i < prov.length - 1; i++) conns.push([stepX(i) + PW, stepX(i + 1)]);
-    conns.push([stepX(prov.length - 1) + PW, aLeft]);
-    for (const [x0, x1] of conns) {
-      const y = provY + PH / 2;
-      s += `<path d="M${x0},${y} L${x1 - 5},${y}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+  // adapter + training chain (top-down column feeding the FM call)
+  if (useChain) {
+    const anchor = adapterNodes.reduce((a, b) => (a.col <= b.col ? a : b));
+    const ap = pos(anchor.id), colX = OX + PADX, fmCenterY = ap.y + NODEH / 2;
+    const chain = prov.map((st, i) => ({ type: 'prov', st, i })).concat([{ type: 'adapter', name: anchor.adapterName }]);
+    const L = chain.length;
+    const nodeY = i => fmCenterY - PH / 2 - (L - 1 - i) * PSTEPH;
+    for (let i = 0; i < L - 1; i++) {           // vertical dashed connectors
+      const x = colX + PW / 2;
+      s += `<path d="M${x},${nodeY(i) + PH} L${x},${nodeY(i + 1) - 5}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
     }
-    prov.forEach((st, i) => {
-      const x = stepX(i);
-      s += `<rect x="${x}" y="${provY}" width="${PW}" height="${PH}" rx="8" fill="#fffef5" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3 2"/>`;
-      s += `<text x="${x + 9}" y="${provY + 16}" font-family="${FONT}" font-size="9" font-weight="800" fill="#a16207">${xml((st.title || '').toUpperCase())}</text>`;
-      s += `<text x="${x + 9}" y="${provY + 32}" font-family="${FONT}" font-size="10" fill="#334155">${xml(st.sub || '')}</text>`;
-      const bw = (st.by || '').length * 5.0 + 8;
-      s += `<rect x="${x + PW - bw - 6}" y="${provY + 6}" width="${bw}" height="12" rx="3" fill="#a16207"/>`;
-      s += `<text x="${x + PW - bw / 2 - 6}" y="${provY + 15}" font-family="${FONT}" font-size="7.5" font-weight="800" fill="#fff" text-anchor="middle">${xml(st.by || '')}</text>`;
+    const adTopY = nodeY(L - 1), fy = adTopY + PH / 2, fx0 = colX + PW, tx = ap.x - 5, ty = fmCenterY, mx = (fx0 + tx) / 2;
+    s += `<path d="M${fx0},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+    chain.forEach((c, i) => {
+      const y = nodeY(i), isAd = c.type === 'adapter';
+      s += `<rect x="${colX}" y="${y}" width="${PW}" height="${PH}" rx="8" fill="${isAd ? '#fffbeb' : '#fffef5'}" stroke="#ca8a04" stroke-width="${isAd ? 2 : 1.5}"${isAd ? '' : ' stroke-dasharray="3 2"'}/>`;
+      const kind = isAd ? 'LORA ADAPTER' : (c.st.title || '').toUpperCase();
+      s += `<text x="${colX + 9}" y="${y + 17}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="${isAd ? '#ca8a04' : '#a16207'}">${xml(kind)}</text>`;
+      const subLines = isAd ? [c.name] : wrap(c.st.sub || '', 24).slice(0, 2);
+      subLines.forEach((ln, k) => { s += `<text x="${colX + 9}" y="${y + 34 + k * 14}" font-family="${FONT}" font-size="11" fill="#334155">${xml(ln)}</text>`; });
+      if (!isAd) {
+        const bw = (c.st.by || '').length * 5.4 + 9;
+        s += `<rect x="${colX + PW - bw - 7}" y="${y + 7}" width="${bw}" height="13" rx="3" fill="#a16207"/>`;
+        s += `<text x="${colX + PW - bw / 2 - 7}" y="${y + 16.5}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fff" text-anchor="middle">${xml(c.st.by || '')}</text>`;
+      }
     });
+  } else if (hasAdapter) {
+    for (const n of adapterNodes) {
+      const p = pos(n.id), ax = p.x - ADGAP - ADW, ay = p.y + (NODEH - ADH) / 2;
+      const fx = ax + ADW, fy = ay + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (fx + tx) / 2;
+      s += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+      s += `<rect x="${ax}" y="${ay}" width="${ADW}" height="${ADH}" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="2"/>`;
+      s += `<text x="${ax + 9}" y="${ay + 16}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="#ca8a04">LORA ADAPTER</text>`;
+      s += `<text x="${ax + 9}" y="${ay + 31}" font-family="${FONT}" font-size="11" fill="#334155">${xml(n.adapterName)}</text>`;
+    }
   }
   for (const n of nodes) {
     const p = pos(n.id), [blab, bcol] = execType(n);

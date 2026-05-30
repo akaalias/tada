@@ -56,22 +56,32 @@ export function renderPipeD3(spec, el) {
   if (!spec || !spec.stages || !el || !window.d3) return;
   const { nodes, edges } = layoutPipe(spec);
   const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
-  const ADW = 132, ADH = 46, ADGAP = 44;                       // adapter side-node
-  const PW = 134, PH = 50, PGAP = 30;                          // training-provenance chain nodes
-  const hasAdapter = nodes.some(n => n.adapterName);
-  // Provenance chain (Sonnet corpus -> format -> fine-tune) that produced the adapter.
+  const ADW = 132, ADH = 46;                                   // adapter side-node (fallback, no provenance)
+  const PW = 160, PH = 74, PVGAP = 30, PSTEPH = PH + PVGAP;    // vertical training-chain nodes
+  const ADGAP = 52;                                            // gap from the left chain column to the pipeline
+  const adapterNodes = nodes.filter(n => n.adapterName);
+  const hasAdapter = adapterNodes.length > 0;
+  // The training chain (Sonnet corpus -> format -> fine-tune -> adapter) that PRODUCED
+  // the weights. Drawn TOP-DOWN as a left column (sequential = vertical, like the rest
+  // of the diagram), feeding horizontally into the FM call. Falls back to a single side
+  // node if no provenance data is available.
   const prov = (hasAdapter && Array.isArray(spec.adapterTraining)) ? spec.adapterTraining : [];
-  const PROVPAD = prov.length ? prov.length * (PW + PGAP) : 0;
-  const LEFTPAD = (hasAdapter ? ADW + ADGAP : 0) + PROVPAD;    // room on the left for adapter + its provenance
+  const useChain = prov.length > 0;
+  const LEFTPAD = useChain ? PW + ADGAP : (hasAdapter ? ADW + ADGAP : 0);
   const byId = {}; nodes.forEach(n => byId[n.id] = n);
   const totalLanes = Math.max(1, ...nodes.map(n => n.rows));
   const maxCol = Math.max(0, ...nodes.map(n => n.col));
-  const W = PADX * 2 + LEFTPAD + totalLanes * LANEW, H = PADY * 2 + maxCol * STEPH + NODEH;
+  // The chain extends UPWARD from the adapter (aligned to its FM node). Shift the whole
+  // pipeline down by enough that the topmost chain node never clips above the canvas.
+  const CHAINLEN = prov.length + 1;                            // provenance steps + the adapter node
+  const anchorCol = hasAdapter ? Math.min(...adapterNodes.map(n => n.col)) : 0;
+  const YSHIFT = useChain ? Math.max(0, (CHAINLEN - 1) * PSTEPH + PH / 2 - NODEH / 2 - anchorCol * STEPH) : 0;
   const pos = id => {
     const n = byId[id], laneOff = (totalLanes - n.rows) / 2;
-    const x = PADX + LEFTPAD + (laneOff + n.row) * LANEW, y = PADY + n.col * STEPH;
+    const x = PADX + LEFTPAD + (laneOff + n.row) * LANEW, y = PADY + YSHIFT + n.col * STEPH;
     return { x, y, topx: x + NODEW / 2, topy: y, botx: x + NODEW / 2, boty: y + NODEH };
   };
+  const W = PADX * 2 + LEFTPAD + totalLanes * LANEW, H = PADY * 2 + YSHIFT + maxCol * STEPH + NODEH;
   el.innerHTML = '';
   const svg = d3.select(el).append('svg').attr('width', W).attr('height', H).attr('viewBox', '0 0 ' + W + ' ' + H);
 
@@ -95,54 +105,64 @@ export function renderPipeD3(spec, el) {
     .attr('fill', 'none').attr('stroke', '#cbd5e1').attr('stroke-width', 1.5).attr('marker-end', 'url(#' + uid + 'arrow)')
     .attr('d', d => { const a = pos(d.from), b = pos(d.to), ty = b.topy - 5, my = (a.boty + ty) / 2; return 'M' + a.botx + ',' + a.boty + ' C' + a.botx + ',' + my + ' ' + b.topx + ',' + my + ' ' + b.topx + ',' + ty; });
 
-  // adapter side-nodes: gold weights artifact feeding INTO their FM node (edge from the left)
-  const adapterNodes = nodes.filter(n => n.adapterName);
-  const adX = n => pos(n.id).x - ADGAP - ADW, adY = n => pos(n.id).y + (NODEH - ADH) / 2;
-  svg.append('g').selectAll('path.feed').data(adapterNodes).join('path').attr('class', 'feed')
-    .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
-    .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
-  const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
-    .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
-  ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#fffbeb').attr('stroke', '#ca8a04').attr('stroke-width', 2);
-  const afo = ag.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', ADW).attr('height', ADH - 6);
-  const abox = afo.append('xhtml:div').attr('class', 'nodebox');
-  abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
-  abox.append('xhtml:div').attr('class', 'nb-sub').text(n => n.adapterName);
-  ag.on('mousemove', (e, n) => showTip(e, 'LoRA adapter “' + esc(n.adapterName) + '” — fine-tuned weights feeding this on-device call')).on('mouseleave', hideTip);
+  // adapter + its training chain. With provenance: a TOP-DOWN left column
+  //   [gold corpus] ↓ [format] ↓ [fine-tune] ↓ ADAPTER ⇢ FM call
+  // (sequential reads vertically, matching the main pipeline). Without provenance:
+  // a single horizontal side-node feeding the FM call from the left.
+  if (useChain) {
+    const anchor = adapterNodes.reduce((a, b) => (a.col <= b.col ? a : b));
+    const aPos = pos(anchor.id), colX = PADX, fmCenterY = aPos.y + NODEH / 2;
+    // chain top→bottom: provenance steps, then the adapter node (bottom, beside its FM call)
+    const chain = prov.map((s, i) => ({ type: 'prov', s, i })).concat([{ type: 'adapter', name: anchor.adapterName }]);
+    const L = chain.length;
+    const nodeY = i => fmCenterY - PH / 2 - (L - 1 - i) * PSTEPH;   // i=0 top … i=L-1 adapter (bottom)
 
-  // training-provenance chain: how the adapter was MADE (dev-time). Drawn as a
-  // gold dashed chain to the LEFT of the (topmost) adapter node, flowing into it:
-  //   [gold corpus] ⇢ [format] ⇢ [fine-tune] ⇢ ADAPTER ⇢ FM call
-  if (prov.length && adapterNodes.length) {
-    const anchor = adapterNodes.reduce((a, b) => (pos(a.id).y <= pos(b.id).y ? a : b));
-    const aPos = pos(anchor.id), aLeft = adX(anchor);          // adapter node's left edge
-    const provY = adY(anchor) + (ADH - PH) / 2;                // vertically centre on the adapter
-    const stepX = i => aLeft - PGAP - PW - (prov.length - 1 - i) * (PW + PGAP);
+    // vertical dashed connectors between consecutive chain nodes
+    const vconns = [];
+    for (let i = 0; i < L - 1; i++) vconns.push([nodeY(i) + PH, nodeY(i + 1)]);
+    svg.append('g').selectAll('path.provv').data(vconns).join('path').attr('class', 'provv')
+      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('d', d => { const x = colX + PW / 2; return 'M' + x + ',' + d[0] + ' L' + x + ',' + (d[1] - 5); });
+    // horizontal dashed feed: adapter (bottom node) → FM node
+    const adTopY = nodeY(L - 1), fy = adTopY + PH / 2, fx0 = colX + PW, tx = aPos.x - 5, ty = fmCenterY, mx = (fx0 + tx) / 2;
+    svg.append('g').append('path')
+      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('d', 'M' + fx0 + ',' + fy + ' C' + mx + ',' + fy + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty);
 
-    // gold dashed connectors: step→step, and last step→adapter
-    const connectors = [];
-    for (let i = 0; i < prov.length - 1; i++) connectors.push([stepX(i) + PW, stepX(i + 1)]);
-    connectors.push([stepX(prov.length - 1) + PW, aLeft]);     // into the adapter node
-    svg.append('g').selectAll('path.prov').data(connectors).join('path').attr('class', 'prov')
-      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3')
-      .attr('marker-end', 'url(#' + uid + 'arrowGold)')
-      .attr('d', d => { const y = provY + PH / 2, x0 = d[0], x1 = d[1] - 5; return 'M' + x0 + ',' + y + ' L' + x1 + ',' + y; });
-
-    const pg = svg.append('g').selectAll('g.prov-node').data(prov.map((s, i) => ({ s, i }))).join('g')
-      .attr('transform', d => 'translate(' + stepX(d.i) + ',' + provY + ')');
-    pg.append('rect').attr('width', PW).attr('height', PH).attr('rx', 8)
-      .attr('fill', '#fffef5').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '3 2');
-    const pfo = pg.append('foreignObject').attr('x', 0).attr('y', 3).attr('width', PW).attr('height', PH - 4);
-    const pbox = pfo.append('xhtml:div').attr('class', 'nodebox');
-    pbox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#a16207').text(d => (d.s.title || '').toUpperCase());
-    pbox.append('xhtml:div').attr('class', 'nb-sub').text(d => d.s.sub || '');
-    // small actor badge (Sonnet / Python / Toolkit) — who produces this artifact
-    const pbw = d => (d.s.by || '').length * 5.2 + 8;
-    const pbg = pg.append('g').attr('transform', d => 'translate(' + (PW - pbw(d) - 6) + ',6)');
-    pbg.append('rect').attr('width', d => pbw(d)).attr('height', 12).attr('rx', 3).attr('fill', '#a16207');
-    pbg.append('text').attr('x', d => pbw(d) / 2).attr('y', 9.5).attr('text-anchor', 'middle').attr('font-size', 7.5)
-      .attr('font-weight', 800).attr('fill', '#fff').text(d => d.s.by || '');
-    pg.on('mousemove', (e, d) => showTip(e, '<b>' + esc(d.s.title) + '</b> · ' + esc(d.s.by) + ' (dev-time)<span class="t-note">' + esc(d.s.sub) + '</span>')).on('mouseleave', hideTip);
+    // chain nodes
+    const cg = svg.append('g').selectAll('g.chain').data(chain.map((c, i) => ({ c, i }))).join('g')
+      .attr('transform', d => 'translate(' + colX + ',' + nodeY(d.i) + ')');
+    cg.append('rect').attr('width', PW).attr('height', PH).attr('rx', 8)
+      .attr('fill', d => d.c.type === 'adapter' ? '#fffbeb' : '#fffef5')
+      .attr('stroke', '#ca8a04').attr('stroke-width', d => d.c.type === 'adapter' ? 2 : 1.5)
+      .attr('stroke-dasharray', d => d.c.type === 'adapter' ? null : '3 2');
+    const cfo = cg.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', PW).attr('height', PH - 6);
+    const cbox = cfo.append('xhtml:div').attr('class', 'nodebox');
+    cbox.append('xhtml:div').attr('class', 'nb-kind').style('color', d => d.c.type === 'adapter' ? '#ca8a04' : '#a16207')
+      .text(d => d.c.type === 'adapter' ? 'LORA ADAPTER' : (d.c.s.title || '').toUpperCase());
+    cbox.append('xhtml:div').attr('class', 'nb-sub').text(d => d.c.type === 'adapter' ? d.c.name : (d.c.s.sub || ''));
+    // actor badge (Sonnet / Python / Toolkit) on the provenance nodes
+    const pbw = by => (by || '').length * 5.4 + 9;
+    const pbg = cg.filter(d => d.c.type === 'prov').append('g').attr('transform', d => 'translate(' + (PW - pbw(d.c.s.by) - 7) + ',7)');
+    pbg.append('rect').attr('width', d => pbw(d.c.s.by)).attr('height', 13).attr('rx', 3).attr('fill', '#a16207');
+    pbg.append('text').attr('x', d => pbw(d.c.s.by) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
+      .attr('font-weight', 800).attr('fill', '#fff').text(d => d.c.s.by);
+    cg.on('mousemove', (e, d) => showTip(e, d.c.type === 'adapter'
+      ? 'LoRA adapter “' + esc(d.c.name) + '” — fine-tuned weights feeding this on-device call'
+      : '<b>' + esc(d.c.s.title) + '</b> · ' + esc(d.c.s.by) + ' (dev-time)<span class="t-note">' + esc(d.c.s.sub) + '</span>')).on('mouseleave', hideTip);
+  } else if (hasAdapter) {
+    const adX = n => pos(n.id).x - ADGAP - ADW, adY = n => pos(n.id).y + (NODEH - ADH) / 2;
+    svg.append('g').selectAll('path.feed').data(adapterNodes).join('path').attr('class', 'feed')
+      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
+    const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
+      .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
+    ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#fffbeb').attr('stroke', '#ca8a04').attr('stroke-width', 2);
+    const afo = ag.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', ADW).attr('height', ADH - 6);
+    const abox = afo.append('xhtml:div').attr('class', 'nodebox');
+    abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
+    abox.append('xhtml:div').attr('class', 'nb-sub').text(n => n.adapterName);
+    ag.on('mousemove', (e, n) => showTip(e, 'LoRA adapter “' + esc(n.adapterName) + '” — fine-tuned weights feeding this on-device call')).on('mouseleave', hideTip);
   }
 
   // main nodes

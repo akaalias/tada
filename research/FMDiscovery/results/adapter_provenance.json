@@ -1,25 +1,25 @@
 {
-  "_meta": "Training provenance for the LoRA adapters, keyed by adapter version FAMILY. Each entry is the dev-time chain that PRODUCED the adapter weights (Sonnet gold corpus -> format to chat JSONL -> LoRA fine-tune), shown left-of the gold adapter node in the diagram. These are DETERMINISTIC recorded facts (not LLM-generated). The renderer resolves an adapter name like 'adapter-v2a-e2' to a family by normalising dashes->underscores and matching 'v2b'/'v2a' substrings, else v1.",
+  "_meta": "Training provenance for the LoRA adapters, keyed by adapter version FAMILY. Each entry is the dev-time chain that PRODUCED the adapter weights (Sonnet gold corpus -> format to chat JSONL -> LoRA fine-tune), shown as a top-down column feeding the gold adapter node in the diagram. These are DETERMINISTIC recorded facts (not LLM-generated). The renderer resolves an adapter name like 'adapter-v2a-e2' to a family by normalising dashes->underscores and matching 'v2b'/'v2a' substrings, else v1.",
   "families": {
     "v1": {
       "steps": [
-        { "by": "Sonnet", "title": "Gold corpus", "sub": "288 task -> 7-question pairs" },
+        { "by": "Sonnet", "title": "Gold corpus", "sub": "288 task→question pairs" },
         { "by": "Python", "title": "Format", "sub": "chat JSONL, 90/10 split" },
-        { "by": "Toolkit", "title": "LoRA fine-tune", "sub": "lr 1e-3 - 6 epochs - epoch 1 kept" }
+        { "by": "Toolkit", "title": "Fine-tune", "sub": "lr 1e-3 · 6 epochs · epoch 1" }
       ]
     },
     "v2a": {
       "steps": [
-        { "by": "Sonnet", "title": "Gold corpus", "sub": "619 task -> 7-question pairs" },
+        { "by": "Sonnet", "title": "Gold corpus", "sub": "619 task→question pairs" },
         { "by": "Python", "title": "Format", "sub": "558 train / 61 valid" },
-        { "by": "Toolkit", "title": "LoRA fine-tune", "sub": "lr 5e-4 - 8 epochs - early-stop e1" }
+        { "by": "Toolkit", "title": "Fine-tune", "sub": "lr 5e-4 · 8 epochs · early-stop e1" }
       ]
     },
     "v2b": {
       "steps": [
         { "by": "Sonnet", "title": "Gold corpus", "sub": "617 coverage-forced pairs" },
         { "by": "Python", "title": "Format", "sub": "556 train / 61 valid" },
-        { "by": "Toolkit", "title": "LoRA fine-tune", "sub": "lr 5e-4 - 8 epochs" }
+        { "by": "Toolkit", "title": "Fine-tune", "sub": "lr 5e-4 · 8 epochs" }
       ]
     }
   }
