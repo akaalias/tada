@@ -32,6 +32,7 @@ public struct DiscoveryConfig: Sendable {
         case ragCompositeBestOfN // best-of-N over the exp011 contrastive-RAG generator, selected by a COMPOSITE deterministic ruler (coverage span − filler − near-dup − compound/atomicity penalties), low-temp floor — fixes exp004's coverage-only scorer flaw, no 3B judgment
         case ragAntiModalContrast // stage1: greedy (most-modal=most-generic) draft; stage2: generate FRESH questions told to SURPASS that self-draft — a DIRECTED, task-specific push off the model's own modal cluster (vs exp011's fixed neutral anchor, exp024's undirected temperature)
         case adapterDirect       // single call on a fine-tuned LoRA adapter, schema-free guided generation (system+user match the training format; includeSchemaInPrompt:false)
+        case adapterScopedCritique // adapterDirect draft (champion) → ONE scoped starting-point critique ON THE ADAPTER → swap ≤1 redundant/weak slot for a task-specific starting-point question
     }
 
     public enum Sampling: Sendable {

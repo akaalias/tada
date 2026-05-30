@@ -342,6 +342,21 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2b_e1.fmadapter"),
         "adapter_v2b_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2b_e2.fmadapter"),
+
+        // EXP-028: scoped starting-point critique ON THE CHAMPION ADAPTER (v2a_e1, 0.409).
+        // The champion is pinned at coverage 3; its OWN judge notes name ONE recurring
+        // miss — the user's STARTING POINT / current state (does the user already know
+        // ceramics; prior dog experience; medical clearance to run; whether a resume
+        // exists; build-yourself-vs-hire) — while the same sets waste a slot on a
+        // redundant near-dupe. exp023 ran this minimal-surface single-slot repair on the
+        // STOCK 3B and landed in the noise; the rules' highest-value untapped lever is to
+        // re-home a proven topology ON the adapter (higher per-call judgment). Stage 1 =
+        // the champion VERBATIM (native adapter format, greedy). Stage 2 = ONE scoped
+        // critique judging ONLY starting-point coverage, run on the adapter: if covered,
+        // champion returned untouched; if not, swap exactly the weakest slot for a
+        // task-specific starting-point question with filler/near-dup guards (≤1 changes).
+        "exp028": DiscoveryConfig(topology: .adapterScopedCritique, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

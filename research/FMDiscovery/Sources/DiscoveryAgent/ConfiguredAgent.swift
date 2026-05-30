@@ -67,6 +67,7 @@ public struct ConfiguredAgent: Sendable {
         case .ragCompositeBestOfN: return try await ragCompositeBestOfN(input)
         case .ragAntiModalContrast: return try await ragAntiModalContrast(input)
         case .adapterDirect:     return try await adapterDirect(input)
+        case .adapterScopedCritique: return try await adapterScopedCritique(input)
         }
     }
 
@@ -100,6 +101,101 @@ public struct ConfiguredAgent: Sendable {
             includeSchemaInPrompt: false,
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
         return r.content.toContract()
+    }
+
+    /// EXP-028: scoped starting-point critique ON THE ADAPTER. exp023 ran this exact
+    /// minimal-surface single-slot repair on the STOCK 3B's contrastive-RAG draft and
+    /// landed in the noise (0.273 dev) — the documented reason every prior multi-FM
+    /// loss occurred: extra passes on the weak 3B compound weak judgment. The rules'
+    /// highest-value untapped lever is to re-home a proven in-context topology ON the
+    /// adapter, whose per-call judgment is the only thing that ever beat the plateau.
+    /// The champion adapter (v2a_e1, 0.409) is strong on atomicity but PINNED at
+    /// coverage 3, and its OWN judge notes name ONE recurring miss across the held set:
+    /// the user's STARTING POINT / current state (side_business: does the user already
+    /// know ceramics; adopt_dog: prior dog experience + living situation; running:
+    /// medical clearance; resume: whether a resume already exists; portfolio:
+    /// build-yourself-vs-hire; buy_used_car: is a car already chosen) — and these miss
+    /// while the SAME sets waste slots on redundant near-dupes. Stage 1 is the champion
+    /// VERBATIM (native adapter format, greedy = its 0.409 output). Stage 2 is ONE
+    /// scoped critique — judging ONLY starting-point coverage — run ON THE ADAPTER, not
+    /// the stock 3B. If covered, the champion is returned untouched (zero rewrite risk).
+    /// If not, the model names the single weakest slot and writes one task-specific
+    /// starting-point question; Swift swaps exactly that slot with deterministic
+    /// filler/near-dup guards (≤1 slot changes, ≥6 verbatim). Bounded downside, attacks
+    /// the one coverage gap that recurs in the champion's own losses.
+    private func adapterScopedCritique(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: the champion draft, byte-for-byte identical to adapterDirect.
+        let draftSession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let plan = try await draftSession.respond(
+            to: "Task the user entered: \"\(input)\"",
+            generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        let titles = questions.map { $0.title }
+        let numbered = titles.enumerated().map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+
+        // Stage 2: ONE scoped critique — starting-point coverage ONLY — on the ADAPTER.
+        let critiqueSystem = """
+        You are reviewing a set of 7 clarifying questions a coach will ask BEFORE \
+        planning the user's task. Focus on ONE thing only: the user's STARTING POINT.
+
+        Almost every plan depends on where the user is starting FROM — their current \
+        situation, what they already have or have done, or the concrete thing they are \
+        starting with. Examples: for a trip, the city they are departing from; for a \
+        resume, their current role and whether a resume already exists; for learning an \
+        instrument, their current skill level; for buying something used, whether they \
+        have already picked a specific one; for an event, whether the venue is booked.
+
+        Read the 7 draft questions. Decide: do ANY of them establish the user's \
+        STARTING POINT for THIS task?
+        • If YES, set startingPointCovered = true (everything else is ignored).
+        • If NO, set startingPointCovered = false, give the 1-based position of the \
+          single WEAKEST question (the most generic, premature, or least \
+          decision-critical one), and write ONE natural, task-specific question that \
+          establishes the starting point — 5-12 words, asking exactly ONE thing, \
+          addressed to the user, never generic filler, never restating a fact the \
+          task already gives.
+
+        Judge ONLY starting-point coverage. Do not comment on anything else.
+        """
+        let critiqueSession = LanguageModelSession(model: try resolveModel()) { critiqueSystem }
+        let critiquePrompt = """
+        Task the user entered: "\(input)"
+
+        Draft questions:
+        \(numbered)
+
+        Does any draft question establish the user's starting point for this task?
+        """
+        let fix = try await critiqueSession.respond(
+            to: critiquePrompt, generating: FMStartingPointFix.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content
+
+        // Covered → return the champion draft verbatim (no rewrite, no risk).
+        if fix.startingPointCovered {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+
+        // Not covered → swap exactly the named weakest slot, with defensive guards.
+        let idx = fix.weakestIndex - 1
+        let cand = fix.startingPointQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard questions.indices.contains(idx), !cand.isEmpty, !FillerDetector.isFiller(cand) else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+        // Don't introduce a near-duplicate of any slot we are KEEPING.
+        let kept = titles.enumerated().filter { $0.offset != idx }.map { $0.element }
+        if kept.contains(where: { FillerDetector.jaccard(cand, $0) >= 0.5 }) {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+        questions[idx] = DiscoveryQuestion(title: cand, description: "",
+                                           requiresExternalAction: fix.requiresExternalAction)
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
     }
 
     /// EXP-027: anti-modal self-contrast. The plateau is judgment-limited and exp010's

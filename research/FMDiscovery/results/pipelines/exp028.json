@@ -1,0 +1,33 @@
+{
+  "summary": "Scoped starting-point critique on champion adapter",
+  "hypothesis": "Adding a scoped critique pass (judging only starting-point coverage) on top of the champion adapter's draft should patch the single biggest coverage gap without disturbing its other strengths, because the adapter already produces high-quality drafts and a targeted 2nd pass should reliably identify the one missing decision-critical unknown.",
+  "technique": "The champion adapter (v2a_e1) generates a draft verbatim, then a second adapter call acts as a scoped critic judging only starting-point coverage and swapping at most one weak or redundant slot for a task-specific starting-point question \u2014 a minimal-surface single-slot repair ported from exp023 onto the adapter.",
+  "result": "Scored 0.398 on the full-30 greedy eval (2 wins / 4 ties / 23 losses vs Sonnet), down \u22120.011 from the champion's 0.409 \u2014 discarded. Coverage stayed pinned at 3 and the same starting-point misses recurred, confirming the adapter's scoped critique returns drafts as \"covered\" too readily and cannot reliably self-identify its own biggest coverage gap via a targeted 2nd pass.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter drafts 7 questions",
+      "knobs": {
+        "model": "v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Adapter: scoped starting-point coverage audit",
+      "knobs": {
+        "model": "v2a_e1",
+        "swaps": "\u22641"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp028"
+}
