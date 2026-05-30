@@ -1,0 +1,33 @@
+{
+  "summary": "Over-count(8) + deterministic dedup on champion adapter",
+  "hypothesis": "Asking the champion adapter to generate 8 questions instead of 7, then deterministically dropping the redundant one, should recover the wasted redundancy slot without the specificity penalty \u2014 because the spare question comes from the champion's own native voice, not a generic foreign source.",
+  "technique": "The champion adapter v2a_e1 is prompted with a schema set to count=8 in a single greedy call, then a deterministic Swift post-processing pass drops the later member of the first redundant pair (redundant defined as binary same-info adapter check OR embedding cosine \u22650.75 OR Jaccard \u22650.5), leaving 7 questions.",
+  "result": "Scored 0.430 on the full-30 greedy eval (4 wins / 3 ties / 22 losses vs Sonnet), a marginal but cautious new best (+0.021 vs champion 0.409, within the \u22640.03 judge-noise band). Rubric: atomicity 4 / specificity 4 (held \u2014 the first nonRedundancy fix that did NOT tax specificity) / coverage 3 / naturalness 4 / nonRedundancy 4 (3\u21924). Kept as new best; the spec\u2194nonRed tradeoff that capped all prior donor-backfill approaches at ~0.40 was an artifact of generic backfill source, not fundamental.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter generates 8 questions natively",
+      "knobs": {
+        "model": "v2a_e1",
+        "sampling": "greedy",
+        "count": "8"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic dedup: drop redundant 8th, keep 7",
+      "knobs": {
+        "redundancy": "cos\u22650.75 OR Jaccard\u22650.5 OR same-info"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp046"
+}

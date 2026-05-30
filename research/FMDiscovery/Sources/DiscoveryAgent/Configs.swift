@@ -640,6 +640,17 @@ public enum Configs {
         "exp045": DiscoveryConfig(topology: .adapterEIGSystemPrompt,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-046: over-count-then-dedup on the champion adapter (v2a_e1, 0.409). One greedy
+        // native call with schema .count(8) — the champion writes ONE extra question in its
+        // own native voice — then deterministically drop the LATER member of the first
+        // redundant pair (binary same-info OR embedding-cos ≥0.75 OR Jaccard ≥0.5), leaving 7.
+        // Tests whether a champion-native spare recovers the wasted nonRed slot WITHOUT the
+        // specificity drop (4→3) that capped every donor/corpus backfill (exp035/044 ≤0.400).
+        // No redundancy → drop the 8th (≈champion first-7). Single greedy call + Swift dedup.
+        "exp046": DiscoveryConfig(topology: .adapterOverCountDedup,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

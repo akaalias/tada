@@ -85,6 +85,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         case .adapterDeterministicRepair: return try await adapterDeterministicRepair(input)
         case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
+        case .adapterOverCountDedup: return try await adapterOverCountDedup(input)
         }
     }
 
@@ -898,6 +899,84 @@ public struct ConfiguredAgent: Sendable {
             includeSchemaInPrompt: false,
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
         return r.content.toContract()
+    }
+
+    /// EXP-046: over-count-then-dedup on the CHAMPION adapter (v2a_e1, 0.409). The champion
+    /// is pinned at non-redundancy 3 — its judge notes repeatedly flag ONE wasted slot per
+    /// losing case (date+time, total/fixed/variable expense triples, two scheduling/venue Qs).
+    /// EVERY prior fix that lifted nonRed 3→4 ALSO dropped specificity 4→3, netting ≤0.400
+    /// (exp035 donor transplant 0.400/spec3, exp044 corpus refill 0.393/spec3, exp042 de-split
+    /// 0.397/spec3): the replacement question was always MORE GENERIC than the champion's own,
+    /// so the set lost specificity exactly as it gained non-redundancy. The unbroken assumption:
+    /// the spare question has to come from a generic donor/corpus/scoped FM call. It doesn't.
+    /// Here the schema is .count(8) — the champion generates ONE EXTRA question in its OWN
+    /// native voice (as specific as the other 7) in a SINGLE greedy call. Then, deterministically,
+    /// drop the LATER member of the first redundant pair (redundant := binary same-info adapter
+    /// check OR embedding cos ≥0.75 OR Jaccard ≥0.5, the high-recall union the log validated),
+    /// leaving 7 champion-native questions. If no pair is redundant, drop the 8th (≈champion
+    /// first-7 floor). Hypothesis: a champion-native spare lets us recover the wasted slot
+    /// WITHOUT the specificity tax that capped every donor backfill — gaining nonRed 3→4 while
+    /// holding spec 4. Risk: count=8 may perturb the native first-7 (off-distribution); if it
+    /// degrades the draft below 0.409, the bet fails and is logged honestly. Distinct from
+    /// every prior dedup (those kept count=7 and backfilled from a foreign source).
+    private func adapterOverCountDedup(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        // Defensive: if the adapter under/over-fills, fall back to the first 7 (or pad-safe).
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+
+        // High-recall redundancy union: binary same-info (catches paraphrases embeddings miss)
+        // OR embedding cosine OR token-Jaccard.
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosHigh(_ i: Int, _ j: Int) -> Bool {
+            guard let v = vecs else { return false }
+            return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosHigh(i, j) { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        // First redundant LATER slot (keep the earlier/higher-priority member).
+        var dropIdx = qs.count - 1   // default: drop the 8th → ≈champion first-7 floor.
+        outer: for j in 1..<qs.count {
+            for i in 0..<j where await redundant(i, j) { dropIdx = j; break outer }
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                  requiresExternalAction: $0.requiresExternalAction) })
     }
 
     /// Deterministic, content-preserving pronoun normalization. The champion adapter
@@ -2735,6 +2814,19 @@ struct FMDiscoveryPlan {
         DiscoveryResult(taskTitle: title, taskDescription: summary,
                         questions: questions.map { DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction) })
     }
+}
+
+/// EXP-046: identical to FMDiscoveryPlan but emits 8 questions, so the champion produces
+/// ONE extra question in its own native voice that a deterministic dedup pass can swap in
+/// for a redundant slot (champion-native replacement → no specificity tax).
+@Generable
+struct FMDiscoveryPlan8 {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "Exactly 8 clarifying questions.", .count(8))
+    var questions: [FMQuestion]
 }
 
 @Generable
