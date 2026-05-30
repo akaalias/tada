@@ -69,6 +69,11 @@ export function renderPipeD3(spec, el) {
   el.innerHTML = '';
   const svg = d3.select(el).append('svg').attr('width', W).attr('height', H).attr('viewBox', '0 0 ' + W + ' ' + H);
 
+  // Hover tooltip (SVG <title> gets swallowed by the foreignObject HTML, so use a JS tip).
+  const tip = document.getElementById('tip');
+  const showTip = (e, html) => { if (tip) { tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; } };
+  const hideTip = () => { if (tip) tip.style.opacity = 0; };
+
   // arrowhead markers (define once; one per edge colour)
   const defs = svg.append('defs');
   const arrowMarker = (id, color) => defs.append('marker')
@@ -96,7 +101,7 @@ export function renderPipeD3(spec, el) {
   const abox = afo.append('xhtml:div').attr('class', 'nodebox');
   abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
   abox.append('xhtml:div').attr('class', 'nb-sub').text(n => n.adapterName);
-  ag.append('title').text(n => 'LoRA adapter "' + n.adapterName + '" — fine-tuned weights feeding this on-device call');
+  ag.on('mousemove', (e, n) => showTip(e, 'LoRA adapter “' + esc(n.adapterName) + '” — fine-tuned weights feeding this on-device call')).on('mouseleave', hideTip);
 
   // main nodes
   const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
@@ -111,12 +116,11 @@ export function renderPipeD3(spec, el) {
   // code) · User (the input) · Out (the final output).
   const badgeFor = d => d.model ? ['FM', '#db2777']
     : d.kind === 'input' ? ['User', '#64748b']
-    : d.kind === 'output' ? ['Out', '#16a34a']
-    : ['Swift', '#ea580c'];
+    : ['Swift', '#ea580c'];   // retrieve/select/post/output are all deterministic Swift
   const bwid = t => t.length * 5.7 + 9;
   const bg = g.append('g').attr('transform', d => 'translate(' + (NODEW - bwid(badgeFor(d)[0]) - 6) + ',6)');
   bg.append('rect').attr('width', d => bwid(badgeFor(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => badgeFor(d)[1]);
   bg.append('text').attr('x', d => bwid(badgeFor(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
     .attr('font-weight', 800).attr('fill', '#fff').text(d => badgeFor(d)[0]);
-  g.append('title').text(d => d.full);
+  g.on('mousemove', (e, d) => showTip(e, esc(d.full))).on('mouseleave', hideTip);
 }

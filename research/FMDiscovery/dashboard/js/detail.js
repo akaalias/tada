@@ -29,13 +29,15 @@ export async function renderDetail(label, cell) {
       const [cls, txt] = pw(s.verdict.pairwise);
       head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;
     }
-    const note = s.verdict ? `<div class="note">judge: ${esc(relabelSets(s.verdict.notes))}</div>` : '';
+    const judgeText = s.verdict ? esc(relabelSets(s.verdict.notes))
+      : refused ? esc(s.error) : '<span class="disc">not judged</span>';
     return `<div class="case">
       <div class="case-head"><span class="case-task">${esc(s.input)}</span> ${head}</div>
       <div class="cmp">
         <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div>${goldQs}</div>
         <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div>${fmQs}</div>
-      </div>${note}</div>`;
+        <div class="col col-judge"><div class="col-head">Judge</div><div class="judge-note">${judgeText}</div></div>
+      </div></div>`;
   }).join('');
 
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
