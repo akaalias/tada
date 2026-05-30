@@ -74,6 +74,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterRagFewShot: return try await adapterRagFewShot(input)
         case .adapterRagFewShotLOO: return try await adapterRagFewShot(input, leaveOneOut: true)
         case .adapterCoverageFacilitySelect: return try await adapterCoverageFacilitySelect(input)
+        case .adapterBinaryDedupTransplant: return try await adapterBinaryDedupTransplant(input)
         }
     }
 
@@ -165,6 +166,111 @@ public struct ConfiguredAgent: Sendable {
         let adapter = try SystemLanguageModel.Adapter(fileURL: URL(filePath: path))
         return SystemLanguageModel(adapter: adapter)
     }
+
+    private func resolveModel(path: String) throws -> SystemLanguageModel {
+        let adapter = try SystemLanguageModel.Adapter(fileURL: URL(filePath: path))
+        return SystemLanguageModel(adapter: adapter)
+    }
+
+    /// EXP-035: decomposed BINARY redundancy verification (lever F) + verbatim
+    /// cross-adapter transplant. The champion (v2a_e1, 0.409) is pinned at coverage 3,
+    /// but its OWN judge notes name a more concrete, code-aggregatable failure in
+    /// roughly half the held-out losses: it WASTES 2-3 of its 7 slots on internally
+    /// REDUNDANT / overlapping questions, which crowds out the missing decision-critical
+    /// unknown (gp cov2: Q1/Q3/Q6/Q7 all "which clinic?"; household_budget Q2/Q3/Q4 the
+    /// same expense ask three ways; find_therapist Q1≈Q2≈Q7; dinner date+time; learn_guitar
+    /// Q4≈Q6; move Q3/Q4; resume mirror pairs; ceramics Q5/Q7 where-to-sell). Two prior
+    /// dedup attempts FAILED because their redundancy ruler was too coarse: embeddings
+    /// (exp031) and token-Jaccard (exp034) both miss clarifying-question paraphrases that
+    /// share FEW literal tokens ("What date is the party?" vs "What time will it start?").
+    /// Lever F (FActScore/CRITIC decompose-then-verify) says a small model CANNOT score a
+    /// set holistically but CAN answer many TRIVIAL local binary checks. So: (1) detect
+    /// the single redundant slot via per-pair binary "do these ask for essentially the
+    /// same information?" adapter yes/no checks — the one redundancy signal embeddings
+    /// can't supply; (2) replace ONLY that wasted slot, VERBATIM, with the first question
+    /// from a COMPLEMENTARY donor adapter (v2b_e2, the coverage-forced sibling: 0.394, 4
+    /// wins, polarised) that the binary check confirms is NOVEL vs the kept 6. No
+    /// from-scratch regeneration (which dup-out/degraded phrasing in exp009/exp028) — both
+    /// the kept questions and the transplant come straight from a fine-tuned adapter, so
+    /// phrasing discipline is preserved. Minimal surface (≤1 slot changes) with a
+    /// champion-verbatim FLOOR: if no redundant pair is detected or no novel donor exists,
+    /// return the champion draft unchanged (0.409). Falsifiable: if binary redundancy
+    /// detection works where embeddings/Jaccard failed AND the donor supplies a genuinely
+    /// missing unknown, non-redundancy and coverage tick up on the redundant cases; if the
+    /// binary check is noisy or the donor adds nothing useful, it lands back at ~0.409.
+    private func adapterBinaryDedupTransplant(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: champion draft (config.adapter = v2a_e1), the verbatim base.
+        let baseSession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let plan = try await baseSession.respond(
+            to: "Task the user entered: \"\(input)\"",
+            generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        let titles = questions.map { $0.title }
+
+        // Binary "same information?" check on the (stronger) champion adapter. A fresh
+        // session per call keeps each check independent (no context bleed).
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let judgeModel = try resolveModel()
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let session = LanguageModelSession(model: judgeModel) { dedupSystem }
+            let prompt = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await session.respond(
+                to: prompt, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+
+        // Stage 2: find the FIRST redundant later slot (the "extra" member of a pair).
+        var redundantIdx: Int? = nil
+        outer: for j in 1..<titles.count {
+            for i in 0..<j where await sameInfo(titles[i], titles[j]) {
+                redundantIdx = j; break outer
+            }
+        }
+        guard let ri = redundantIdx else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions) // FLOOR
+        }
+
+        // Stage 3: donor pool from the complementary adapter (v2b_e2), greedy, verbatim.
+        let donorModel = try resolveModel(path: Self.donorAdapterPath)
+        let donorSession = LanguageModelSession(model: donorModel) { Self.adapterSystem }
+        let donorPlan = try await donorSession.respond(
+            to: "Task the user entered: \"\(input)\"",
+            generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        // Stage 4: pick the first donor question that is non-filler, lexically distinct,
+        // and BINARY-verified novel against the 6 kept champion questions. Verbatim swap.
+        let kept = titles.enumerated().filter { $0.offset != ri }.map { $0.element }
+        for dq in donorPlan.questions {
+            let d = dq.question.trimmingCharacters(in: .whitespacesAndNewlines)
+            if d.isEmpty || FillerDetector.isFiller(d) { continue }
+            if kept.contains(where: { FillerDetector.jaccard($0, d) >= 0.5 }) { continue }
+            var novel = true
+            for k in kept where await sameInfo(k, d) { novel = false; break }
+            if novel {
+                questions[ri] = DiscoveryQuestion(title: d, description: "",
+                                                  requiresExternalAction: dq.requiresExternalAction)
+                return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+            }
+        }
+        // No novel donor → champion verbatim (FLOOR).
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
+    private static let donorAdapterPath =
+        "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2b_e2.fmadapter"
 
     /// Schema-free guided generation on the fine-tuned adapter: same system+user as
     /// training, schema omitted from the prompt (the adapter learned the format).
@@ -1975,6 +2081,14 @@ struct FMTaskFraming {
     var title: String
     @Guide(description: "One plain sentence summarising the task.")
     var summary: String
+}
+
+/// EXP-035: a single binary verdict — the atomic unit of decomposed binary
+/// verification (lever F). One trivial yes/no the small model CAN answer locally.
+@Generable
+struct FMYesNo {
+    @Guide(description: "Answer exactly true or false.")
+    var yes: Bool
 }
 
 @Generable

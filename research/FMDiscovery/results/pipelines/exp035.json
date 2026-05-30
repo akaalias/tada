@@ -1,0 +1,44 @@
+{
+  "summary": "Binary redundancy check + verbatim cross-adapter transplant",
+  "hypothesis": "The champion's main loss is redundant/overlapping question slots, and a binary \"do these ask the same thing?\" per-pair adapter check would be a more precise redundancy ruler than embeddings or token-Jaccard \u2014 enabling surgical slot replacement with a novel donor question from a complementary adapter rather than full regeneration.",
+  "technique": "Per-pair binary redundancy verification (lever F / FActScore-style decompose-then-verify): the on-device adapter answers a local yes/no \"sameInfo?\" check for each question pair; any flagged redundant slot is replaced verbatim with the first binary-verified-novel question from the complementary coverage-forced donor adapter (v2b_e2), with the champion draft held as the verbatim floor everywhere no swap fires.",
+  "result": "Scored 0.400 on the full-30 greedy eval (2 wins / 4 ties / 23 losses vs Sonnet, 1 refusal), a slight regression of \u22120.009 vs the champion (0.409) and discarded. NonRedundancy nudged 3\u21924 in aggregate but did not lift the headline; all other rubric dimensions held (atom 4, spec 3, cover 3, nat 4). The hypothesis was falsified: the binary sameInfo check returned FALSE on pairs the Sonnet judge explicitly labels redundant, meaning the 3B adapter is too conservative/unreliable as a semantic-redundancy detector \u2014 closing the entire decomposed-binary-verification family on this axis.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 questions from champion adapter",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Per-pair binary sameInfo redundancy check",
+      "knobs": {
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Fetch novel donor question from v2b_e2",
+      "knobs": {
+        "model": "v2b_e2",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Verbatim transplant into redundant slot"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp035"
+}

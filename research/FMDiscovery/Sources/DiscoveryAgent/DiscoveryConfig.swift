@@ -39,6 +39,7 @@ public struct DiscoveryConfig: Sendable {
         case adapterRagFewShot   // champion adapter, native training format, with 2 retrieved gold exemplar question-sets APPENDED as reference demonstrations (which decision-critical unknowns similar tasks cover) — single greedy call, no extra judgment pass
         case adapterRagFewShotLOO // adapterRagFewShot but LEAVE-ONE-OUT: exclude any exemplar whose input matches the eval task, so demonstrations are genuinely OTHER tasks (the non-leaking, valid version of exp032)
         case adapterCoverageFacilitySelect // over-generate a POOL of INDIVIDUAL questions across adapter draws (greedy champion + low-temp), dedup, then greedily pick 7 maximising a facility-location / max-sum dispersion objective (relevance + min-distance to chosen) VERBATIM — the literal Lever D over individual questions (exp031 selected whole sets only)
+        case adapterBinaryDedupTransplant // champion draft → detect ONE redundant slot via per-pair BINARY adapter yes/no checks (lever F: small models can do local binary checks where embeddings/Jaccard can't) → replace it VERBATIM with the first novel question from a complementary donor adapter (v2b_e2); champion-verbatim floor
     }
 
     public enum Sampling: Sendable {

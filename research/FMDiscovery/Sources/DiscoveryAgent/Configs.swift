@@ -462,6 +462,26 @@ public enum Configs {
         "exp034": DiscoveryConfig(topology: .adapterCoverageFacilitySelect,
             selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.4, 0.6, 0.8],
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-035: decomposed BINARY redundancy verification (lever F) + verbatim
+        // cross-adapter transplant. The champion's #1 concrete, code-aggregatable loss
+        // is REDUNDANCY — its own judge notes flag 2-3 wasted/overlapping slots in ~half
+        // the held-out losses (gp cov2 Q1/Q3/Q6/Q7; household_budget Q2/Q3/Q4; find_therapist
+        // Q1≈Q2≈Q7; dinner date+time; learn_guitar Q4≈Q6). The two prior dedup attempts lost
+        // because their ruler was too coarse: embeddings (exp031, 0.398) and token-Jaccard
+        // (exp034, 0.234) both miss paraphrases sharing few literal tokens. Lever F (the only
+        // untried verification form): a small model can't score a set holistically but CAN do
+        // trivial local binary checks. So detect ONE redundant slot via per-pair binary yes/no
+        // "same information?" adapter checks (the redundancy signal embeddings can't give),
+        // then replace ONLY that wasted slot VERBATIM with the first donor question from the
+        // complementary coverage-forced adapter (v2b_e2) that the binary check confirms is
+        // NOVEL vs the kept 6. No from-scratch regeneration (the defect that dup-out/degraded
+        // exp009/exp028); both kept + transplant come from a fine-tuned adapter so phrasing
+        // discipline holds. Champion-verbatim FLOOR: no redundant pair or no novel donor →
+        // unchanged champion (0.409). Base adapter (judge + base draft) = v2a_e1 champion.
+        "exp035": DiscoveryConfig(topology: .adapterBinaryDedupTransplant,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
