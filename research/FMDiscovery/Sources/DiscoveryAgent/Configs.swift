@@ -584,6 +584,22 @@ public enum Configs {
         "exp041": DiscoveryConfig(topology: .adapterCleanDraftBestOfN,
             selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.3, 0.45, 0.6],
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-042: deterministic, FLOOR-PROTECTED repair of the GREEDY champion. exp041
+        // showed the zero-risk pronoun-fix + compound DETECTION are reliable, but it buried
+        // them in a best-of-N SELECTION (low-temp draws → pick fewest defects) that displaced
+        // good greedy drafts (0.377 < 0.409) — exactly how every best-of-N regressed. The
+        // selection was the regressor, not the deterministic fix. This strips the selection:
+        // ONE greedy champion draft (identical to adapter_v2a_e1) + ONLY two content-preserving
+        // transforms — (a) third→second person (fixes running_comeback naturalness 2), and
+        // (b) NEW high-precision compound DE-SPLITTING that truncates "X and <second-ask>?" to
+        // its primary atom (exp041 only penalized compounds; never repaired them), restoring
+        // atomicity on dad_birthday_gift / retirement_savings. No sampling, no 2nd FM pass, no
+        // selection → every defect-free case returns the champion EXACTLY (0.409 is the literal
+        // floor); only person/compound cases change, each strictly toward judge-rewarded shape.
+        "exp042": DiscoveryConfig(topology: .adapterDeterministicRepair,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

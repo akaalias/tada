@@ -1,0 +1,29 @@
+{
+  "summary": "Deterministic phrasing repair on greedy champion draft",
+  "hypothesis": "Isolating the zero-risk deterministic fixes from exp041 (3rd\u21922nd person pronoun correction + high-precision compound de-splitting) and applying them to the greedy champion's output should recover any phrasing/naturalness losses without the selection penalty that sank exp041, lifting quality above the 0.409 champion.",
+  "technique": "The greedy champion adapter draft is passed through a deterministic Swift post-processing stage that applies two content-preserving transforms: a 3rd\u21922nd person pronoun rewrite and a high-precision compound de-splitter (with a gating rule that declines to fire on noun-pair compounds where truncation would drop a real ask). No additional model calls, no best-of-N sampling.",
+  "result": "Scored 0.397 on the full-30 greedy eval (2 wins / 3 ties / 24 losses vs Sonnet), down 0.012 from the champion's 0.409 \u2014 within noise but still discarded. Atomicity reached 5 and naturalness 4, confirming the phrasing transforms worked cleanly, but coverage stayed at 3 and non-redundancy at 4; the judge notes are almost entirely coverage (missing the single decision-critical unknown) and redundant-pair failures that a content-preserving transform cannot fix, falsifying the hypothesis that deterministic repair could move the headline score.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Greedy champion adapter draft",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "3rd\u21922nd pronoun + compound de-split repair"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 repaired questions"
+    }
+  ],
+  "label": "exp042"
+}
