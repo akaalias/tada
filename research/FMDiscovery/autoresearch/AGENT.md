@@ -66,8 +66,13 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
      question-sets from the demonstration bank (`corpus/`, may be grown), inject
      as dynamic few-shot (on-device). On-device embeddings: `NLEmbedding`/`NLContextualEmbedding`.
    - **adapter (NOW AVAILABLE, and it's the best base):** `adapter_v2a_e1` (0.409).
-     Use it via `config.adapter` (see `resolveModel()`); build multi-call topologies
-     ON the adapter, not the stock 3B — every prior multi-FM loss was on the weak 3B.
+     EVERY session in `ConfiguredAgent` now routes through `resolveModel()`, so simply
+     setting `adapter: "<path>"` on ANY config runs that ENTIRE topology on the adapter
+     (one-line change — no per-call edits). Available `.fmadapter` files: `ls
+     research/FMDiscovery/adapter/exports/`; copy a path from an existing `adapter_*`
+     config in `Configs.swift`. HIGH-VALUE, barely-explored class: take a proven
+     in-context topology (RAG few-shot, contrastive, scoped critique) and run it ON the
+     adapter — every prior multi-FM loss was on the weak stock 3B, never the adapter.
    Build on the current BEST config (the adapter); periodically try a bold, different idea.
 
    WHAT THE DATA SAYS — the LoRA adapter (`adapter_v2a_e1`, 0.409 full-30 greedy) is

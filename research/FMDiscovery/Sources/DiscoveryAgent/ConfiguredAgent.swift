@@ -127,7 +127,7 @@ public struct ConfiguredAgent: Sendable {
 
         // Stage 1: the MODAL set — greedy decoding = the model's single most-confident
         // (= most generic, per exp019) draw. This is the concrete anchor to surpass.
-        let modalSession = LanguageModelSession { baseSystem }
+        let modalSession = LanguageModelSession(model: try resolveModel()) { baseSystem }
         let modal = try await modalSession.respond(
             to: prompt, generating: FMDiscoveryPlan.self,
             options: config.options(temp: 0.0, sampling: .greedy)
@@ -154,7 +154,7 @@ public struct ConfiguredAgent: Sendable {
             draft happened to include, but spend most of your 7 slots on the \
             higher-leverage, more task-specific unknowns it overlooked.
             """
-        let session = LanguageModelSession { baseSystem + antiModal }
+        let session = LanguageModelSession(model: try resolveModel()) { baseSystem + antiModal }
         let r = try await session.respond(
             to: prompt, generating: FMDiscoveryPlan.self,
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -189,7 +189,7 @@ public struct ConfiguredAgent: Sendable {
         var best: DiscoveryResult?
         var bestScore = -Double.greatestFiniteMagnitude
         for t in temps {   // ascending temps; strict `>` keeps the lower-temp set on ties
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let cand = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                                   options: config.options(temp: t, sampling: .modelDefault))
                 .content.toContract()
@@ -234,7 +234,7 @@ public struct ConfiguredAgent: Sendable {
     /// freeing those slots — in one coherent draw, no separate refill pass — lets the
     /// 7 span more genuine unknowns. Built on the exp011 contrastive RAG base (best).
     private func ragGivensAware(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.givensGuidance }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson + Self.givensGuidance }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -287,7 +287,7 @@ public struct ConfiguredAgent: Sendable {
     /// is less likely to spend it on "any other preferences?". Single call on the
     /// exp011 contrastive RAG base (best); the rationales are discarded from output.
     private func ragJustifiedQuestions(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.justifiedGuidance }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson + Self.justifiedGuidance }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -346,7 +346,7 @@ public struct ConfiguredAgent: Sendable {
         var title = ""
         var summary = ""
         for (i, frame) in Self.perspectiveFrames.enumerated() {
-            let session = LanguageModelSession { base + frame }
+            let session = LanguageModelSession(model: try resolveModel()) { base + frame }
             let plan = try await session.respond(
                 to: prompt, generating: FMDiscoveryPlan.self,
                 options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
@@ -426,7 +426,7 @@ public struct ConfiguredAgent: Sendable {
         var title = ""
         var summary = ""
         for (i, t) in temps.enumerated() {
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let plan = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                                   options: config.options(temp: t, sampling: .modelDefault)).content
             if i == 0 { title = plan.title; summary = plan.summary }
@@ -457,7 +457,7 @@ public struct ConfiguredAgent: Sendable {
     /// good critical-unknown identification looks like (classic CoT few-shot), atop the
     /// exp011 contrastive RAG base (current best).
     private func ragReasonedFewShot(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.reasonedGuidance }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson + Self.reasonedGuidance }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -513,7 +513,7 @@ public struct ConfiguredAgent: Sendable {
     /// the minimal-surface 2nd pass, attacking the one gap that recurs everywhere.
     private func ragStartingPointCritique(_ input: String) async throws -> DiscoveryResult {
         // Stage 1: contrastive RAG draft (= exp011, the current best base).
-        let draftSession = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
+        let draftSession = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let plan = try await draftSession.respond(
             to: prompt, generating: FMDiscoveryPlan.self,
@@ -550,7 +550,7 @@ public struct ConfiguredAgent: Sendable {
 
         Judge ONLY starting-point coverage. Do not comment on anything else.
         """
-        let critiqueSession = LanguageModelSession { critiqueSystem }
+        let critiqueSession = LanguageModelSession(model: try resolveModel()) { critiqueSystem }
         let critiquePrompt = """
         Task the user entered: "\(input)"
 
@@ -601,7 +601,7 @@ public struct ConfiguredAgent: Sendable {
     /// question for any refill that is itself filler or duplicates a kept slot.
     private func ragFillerRepair(_ input: String) async throws -> DiscoveryResult {
         // Stage 1: contrastive RAG draft (= exp011, the current best base).
-        let draftSession = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
+        let draftSession = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let plan = try await draftSession.respond(
             to: prompt, generating: FMDiscoveryPlan.self,
@@ -640,7 +640,7 @@ public struct ConfiguredAgent: Sendable {
         ("any other...", "anything else?", "any specific preferences?"). Each asks exactly \
         ONE thing, 5-12 words, addressed to the user ("you"/"your"), no emojis.
         """
-        let repairSession = LanguageModelSession { repairSystem }
+        let repairSession = LanguageModelSession(model: try resolveModel()) { repairSystem }
         let refilled = try await repairSession.respond(
             to: "Task the user entered: \"\(input)\"\n\nWrite the \(n) new clarifying question\(plural).",
             generating: FMQuestionList.self,
@@ -677,7 +677,7 @@ public struct ConfiguredAgent: Sendable {
         let system = ragSystemPrompt(input)
 
         // Task framing (title + one-sentence summary) in one small call.
-        let framingSession = LanguageModelSession { system }
+        let framingSession = LanguageModelSession(model: try resolveModel()) { system }
         let framing = try await framingSession.respond(
             to: "Task the user entered: \"\(input)\"\n\nRestate this task as a short specific title (4-9 words) and a one-sentence summary.",
             generating: FMTaskFraming.self,
@@ -709,7 +709,7 @@ public struct ConfiguredAgent: Sendable {
             specific to THIS task, ask exactly one thing, and not restate a fact the \
             task already gives.
             """
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let q = try await session.respond(
                 to: prompt, generating: FMSingleQuestion.self,
                 options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
@@ -738,7 +738,7 @@ public struct ConfiguredAgent: Sendable {
     /// allows graceful adaptation when a dimension is moot (ask the closest applicable
     /// unknown), and the exp011 RAG+contrastive system prompt anchors phrasing/atomicity.
     private func ragDimensionalSchema(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson + Self.dimensionalGuidance }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson + Self.dimensionalGuidance }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -787,7 +787,7 @@ public struct ConfiguredAgent: Sendable {
     /// current-best base) to suppress the off-task/compound/filler anti-patterns.
     private func ragCorpusFewShot(_ input: String) async throws -> DiscoveryResult {
         let examples = CorpusBank.nearestSemantic(to: input, k: 3)
-        let session = LanguageModelSession { ragSystemPrompt(input, examples: examples) + Self.contrastLesson }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input, examples: examples) + Self.contrastLesson }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -812,7 +812,7 @@ public struct ConfiguredAgent: Sendable {
 
         var plans: [DiscoveryResult] = []
         for t in temps {
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                               options: config.options(temp: t, sampling: .modelDefault))
             plans.append(r.content.toContract())
@@ -851,7 +851,7 @@ public struct ConfiguredAgent: Sendable {
         func numbered(_ r: DiscoveryResult) -> String {
             r.questions.enumerated().map { "\($0.offset + 1). \($0.element.title)" }.joined(separator: "\n")
         }
-        let session = LanguageModelSession { Prompts.setComparator }
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.setComparator }
         let p = """
         Task the user entered: "\(input)"
 
@@ -878,7 +878,7 @@ public struct ConfiguredAgent: Sendable {
     /// off-task/self-defeating questions, vague filler, compound asks, redundant
     /// pairs), so the model learns by example what NOT to spend a slot on.
     private func ragContrastiveFewShot(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) + Self.contrastLesson }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + Self.contrastLesson }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -901,7 +901,7 @@ public struct ConfiguredAgent: Sendable {
         var title = ""
         var summary = ""
         for (s, t) in temps.enumerated() {
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let plan = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                                   options: config.options(temp: t, sampling: .modelDefault)).content
             if s == 0 { title = plan.title; summary = plan.summary }
@@ -913,7 +913,7 @@ public struct ConfiguredAgent: Sendable {
 
         guard let selected = SelfConsistency.select(items, count: 7), selected.count == 7 else {
             // Fallback: return the first (lowest-temp) sample verbatim.
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             return try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                               options: config.options(temp: temps.first, sampling: .modelDefault))
                 .content.toContract()
@@ -926,7 +926,7 @@ public struct ConfiguredAgent: Sendable {
     // MARK: topologies
 
     private func singleShot(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { Prompts.singleShot }
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.singleShot }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -938,14 +938,14 @@ public struct ConfiguredAgent: Sendable {
     }
 
     private func brainstormSelect(_ input: String) async throws -> DiscoveryResult {
-        let bs = LanguageModelSession { Prompts.brainstorm }
+        let bs = LanguageModelSession(model: try resolveModel()) { Prompts.brainstorm }
         let unknowns = try await bs.respond(
             to: "The user wants to: \"\(input)\"\n\nList the candidate unknowns you'd want to learn before planning this. Do not ask about anything the task already states.",
             generating: FMUnknowns.self,
             options: config.options(temp: config.brainstormTemp, sampling: config.brainstormSampling)
         ).content.unknowns
 
-        let sel = LanguageModelSession { Prompts.select }
+        let sel = LanguageModelSession(model: try resolveModel()) { Prompts.select }
         let list = unknowns.map { "- \($0)" }.joined(separator: "\n")
         let prompt = """
         The user wants to: "\(input)"
@@ -1030,7 +1030,7 @@ public struct ConfiguredAgent: Sendable {
         does not apply here. Prefer covering a critical missing dimension over adding a \
         second question about something you already covered.
         """
-        let session = LanguageModelSession { ragSystemPrompt(input) + scaffold }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + scaffold }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -1038,7 +1038,7 @@ public struct ConfiguredAgent: Sendable {
     }
 
     private func ragFewShot(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { ragSystemPrompt(input) }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -1057,7 +1057,7 @@ public struct ConfiguredAgent: Sendable {
     /// questions using the proven exp003 RAG exemplars to anchor phrasing/atomicity.
     private func ragPlanAssumptions(_ input: String) async throws -> DiscoveryResult {
         // Stage 1: draft a concrete plan and surface the assumptions it required.
-        let planner = LanguageModelSession { Prompts.planAssumptions }
+        let planner = LanguageModelSession(model: try resolveModel()) { Prompts.planAssumptions }
         let pa = try await planner.respond(
             to: "The user wants to: \"\(input)\"\n\nDraft a concrete plan to accomplish this, then list the specific assumptions you had to make because the task didn't tell you.",
             generating: FMPlanAssumptions.self,
@@ -1081,7 +1081,7 @@ public struct ConfiguredAgent: Sendable {
         answers or that are trivial, and put the single most important missing thing \
         first. Ask each as a natural question; do not mention the word "assumption".
         """
-        let session = LanguageModelSession { ragSystemPrompt(input) + scaffold }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) + scaffold }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions, each probing one assumed unknown above."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -1093,7 +1093,7 @@ public struct ConfiguredAgent: Sendable {
     /// few-shot demonstrations are the nearest task TYPE even with no shared words.
     private func ragFewShotSemantic(_ input: String) async throws -> DiscoveryResult {
         let examples = GoldExemplars.nearestSemantic(to: input, k: 2)
-        let session = LanguageModelSession { ragSystemPrompt(input, examples: examples) }
+        let session = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input, examples: examples) }
         let prompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                           options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
@@ -1149,7 +1149,7 @@ public struct ConfiguredAgent: Sendable {
           outside the app (call, email, visit). False for in-app data entry.
         • Do NOT use emojis.
         """
-        let session = LanguageModelSession { system }
+        let session = LanguageModelSession(model: try resolveModel()) { system }
         let prompt = """
         Task the user entered: "\(input)"
 
@@ -1171,7 +1171,7 @@ public struct ConfiguredAgent: Sendable {
     /// six draft questions untouched. Coverage gets fixed without mangling the draft.
     private func ragCoverageRepair(_ input: String) async throws -> DiscoveryResult {
         let exemplars = GoldExemplars.nearest(to: input, k: 2)
-        let draftSession = LanguageModelSession { ragSystemPrompt(input, examples: exemplars) }
+        let draftSession = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input, examples: exemplars) }
         let draftPrompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let plan = try await draftSession.respond(
             to: draftPrompt, generating: FMDiscoveryPlan.self,
@@ -1209,7 +1209,7 @@ public struct ConfiguredAgent: Sendable {
         \(alreadyAsked)
         • No emojis.
         """
-        let repairSession = LanguageModelSession { repairSystem }
+        let repairSession = LanguageModelSession(model: try resolveModel()) { repairSystem }
         let adapted = try await repairSession.respond(
             to: "Task the user entered: \"\(input)\"\n\nWrite the one clarifying question.",
             generating: FMSingleQuestion.self,
@@ -1234,7 +1234,7 @@ public struct ConfiguredAgent: Sendable {
         var best: DiscoveryResult?
         var bestScore = -Double.greatestFiniteMagnitude
         for t in temps {
-            let session = LanguageModelSession { system }
+            let session = LanguageModelSession(model: try resolveModel()) { system }
             let r = try await session.respond(to: prompt, generating: FMDiscoveryPlan.self,
                                               options: config.options(temp: t, sampling: .modelDefault))
             let cand = r.content.toContract()
@@ -1252,7 +1252,7 @@ public struct ConfiguredAgent: Sendable {
     /// while keeping the strong draft questions verbatim to preserve naturalness.
     private func ragCritiqueRevise(_ input: String) async throws -> DiscoveryResult {
         // Stage 1: strong RAG draft (= exp003 best).
-        let draftSession = LanguageModelSession { ragSystemPrompt(input) }
+        let draftSession = LanguageModelSession(model: try resolveModel()) { ragSystemPrompt(input) }
         let draftPrompt = "Task the user entered: \"\(input)\"\n\nGenerate exactly 7 clarifying questions."
         let draft = try await draftSession.respond(
             to: draftPrompt, generating: FMDiscoveryPlan.self,
@@ -1265,7 +1265,7 @@ public struct ConfiguredAgent: Sendable {
             .map { "\($0.offset + 1). \($0.element.question)" }
             .joined(separator: "\n")
         let editorSystem = ragSystemPrompt(input) + "\n\n" + Prompts.critiqueEditor
-        let editorSession = LanguageModelSession { editorSystem }
+        let editorSession = LanguageModelSession(model: try resolveModel()) { editorSystem }
         let editorPrompt = """
         Task the user entered: "\(input)"
 
@@ -1287,7 +1287,7 @@ public struct ConfiguredAgent: Sendable {
     }
 
     private func overGenerateScore(_ input: String) async throws -> DiscoveryResult {
-        let session = LanguageModelSession { Prompts.overGenerate }
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.overGenerate }
         let prompt = """
         The user wants to: "\(input)"
 
