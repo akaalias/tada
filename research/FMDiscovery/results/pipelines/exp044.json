@@ -1,0 +1,43 @@
+{
+  "summary": "Corpus-grounded coverage-gap refill on champion adapter",
+  "hypothesis": "Adding a corpus-grounded coverage-gap refill pass on top of the champion adapter should push coverage higher by detecting and replacing questions that leave known topic gaps, while a redundancy gate keeps nonRedundancy gains from earlier work.",
+  "technique": "The champion adapter's draft output is post-processed by a deterministic coverage-gap detector (corpus-grounded) that identifies uncovered atoms, then a model-based refill call replaces low-coverage questions; a redundancy gate filters duplicates before final selection.",
+  "result": "Scored 0.393 on the full-30 gate (2 wins / 3 ties / 24 losses vs Sonnet), with specPass=100% and rubric scores atom=4, spec=3, cover=3, nat=4, nonRed=4. Coverage remained at 3 despite the refill mechanism, indicating the gap-filling did not lift the persistent coverage ceiling; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch corpus-grounded coverage exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter drafts 7 questions",
+      "knobs": {
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Detect coverage gaps vs corpus atoms"
+    },
+    {
+      "kind": "critique",
+      "text": "Refill model call patches coverage gaps",
+      "knobs": {
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Redundancy gate: dedup and filter"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp044"
+}

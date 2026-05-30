@@ -83,6 +83,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterMMRRagFewShot: return try await adapterMMRRagFewShot(input)
         case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         case .adapterDeterministicRepair: return try await adapterDeterministicRepair(input)
+        case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
         }
     }
 
@@ -341,6 +342,138 @@ public struct ConfiguredAgent: Sendable {
         }
         // No novel donor → champion verbatim (FLOOR).
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
+    /// EXP-044: redundancy-gated coverage-gap REFILL on the champion adapter, grounded in
+    /// an EXTERNAL corpus coverage prior. Synthesis of the two strongest signals the 54-
+    /// experiment log surfaced: (1) the lever-F per-pair BINARY "same information?" adapter
+    /// check is the ONLY reliable redundancy detector (exp037; embeddings/Jaccard miss
+    /// paraphrase pairs like "What date?"/"What time?"), and (2) the ONLY inference-time
+    /// signal that ever matched the champion was an EXTERNAL coverage prior from the corpus
+    /// (exp040, 0.405) — the adapter cannot self-identify its missing decision-critical
+    /// unknown (exp028/029/030 all failed), but the questions Sonnet asks for the NEAREST
+    /// corpus task type name exactly those axes. Every prior repair lost because it either
+    /// edited a GOOD slot (exp028 0.398) or filled from a WEAKER donor adapter not
+    /// conditioned on the kept set or on a coverage gap (exp035 0.400, exp036 0.328). Here:
+    ///   1. greedy champion draft = the FLOOR.
+    ///   2. find the FIRST binary-redundant later slot (lever F). If NONE → champion
+    ///      VERBATIM (most cases → 0.409 protected by construction).
+    ///   3. else free that wasted slot and do ONE CHAMPION call generating a FRESH question,
+    ///      conditioned on the 6 KEPT questions (must not overlap) AND on the corpus
+    ///      reference questions for similar tasks that the draft does NOT already cover
+    ///      (uncovered = max embedding cosine to any draft question < 0.55) — the external
+    ///      "what's missing" signal the adapter lacks alone. The corpus questions are shown
+    ///      strictly as topic inspiration (exp040 framing) and the fill is GENERATED fresh.
+    ///   4. anti-leak + novelty guards on the generated fill: reject (→ champion floor) if it
+    ///      is filler, Jaccard≥0.5 to any kept, binary same-info to any kept, OR Jaccard≥0.6
+    ///      to any corpus reference (so no corpus question is ever transcribed one-to-one).
+    /// Only fires when BOTH a redundant slot AND a usable fresh fill exist → converts a
+    /// confirmed wasted slot into a coverage slot, never touching a good slot; deterministic.
+    private func adapterRedundancyGapFill(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+
+        // Stage 1: champion greedy draft = the verbatim floor.
+        let baseSession = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await baseSession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+        var questions = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail,
+                              requiresExternalAction: $0.requiresExternalAction)
+        }
+        let titles = questions.map { $0.title }
+        func floor() -> DiscoveryResult {
+            DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+        }
+
+        // Lever-F binary "same information?" check on the champion (exp035/037 ruler).
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let session = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await session.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+
+        // Stage 2: first redundant later slot (the "extra" member of a pair).
+        var redundantIdx: Int? = nil
+        outer: for j in 1..<titles.count {
+            for i in 0..<j where await sameInfo(titles[i], titles[j]) {
+                redundantIdx = j; break outer
+            }
+        }
+        guard let ri = redundantIdx else { return floor() }   // FLOOR: no waste to recover.
+        let kept = titles.enumerated().filter { $0.offset != ri }.map { $0.element }
+
+        // External coverage prior: corpus reference questions for similar tasks that the
+        // draft does NOT already cover (uncovered = max embedding cosine to any kept < 0.55).
+        // LOO + near-dup ceiling already enforced by CorpusBank (no eval-case self-feed).
+        let refQs = CorpusBank.nearestSemantic(to: input, k: 3, jaccardCeiling: 0.5)
+            .flatMap { $0.questions }
+        var uncovered: [String] = []
+        if let keptVecs = SemanticRetrieval.vectors(for: kept),
+           let refVecs = SemanticRetrieval.vectors(for: refQs) {
+            for (idx, rv) in refVecs.enumerated() {
+                let maxCos = keptVecs.map { SemanticRetrieval.cos(rv, $0) }.max() ?? 1.0
+                if maxCos < 0.55 { uncovered.append(refQs[idx]) }
+            }
+        }
+
+        // Stage 3: ONE champion call → a FRESH fill question targeting a missing axis.
+        let keptList = kept.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        var fillSystem = Self.adapterSystem + """
+
+
+            You are adding ONE more clarifying question to an existing set for the user's task. \
+            It must probe a DIFFERENT decision-critical unknown not already covered by the \
+            questions already chosen. Ask exactly one thing, 5-12 words, addressed to the user.
+            """
+        if !uncovered.isEmpty {
+            let hint = uncovered.prefix(6).map { "- \($0)" }.joined(separator: "\n")
+            fillSystem += """
+
+
+                For reference, coaches planning SIMILAR tasks also probe unknowns like these. \
+                Do NOT copy or paraphrase them — write a FRESH question specific to the user's \
+                actual task that fills an important gap the chosen questions miss:
+                \(hint)
+                """
+        }
+        let fillPrompt = """
+        \(prompt)
+
+        Questions already chosen:
+        \(keptList)
+
+        Write ONE more clarifying question covering an important decision-critical unknown \
+        these miss.
+        """
+        let fillSession = LanguageModelSession(model: model) { fillSystem }
+        guard let fill = try? await fillSession.respond(
+            to: fillPrompt, generating: FMSingleQuestion.self,
+            options: config.options(temp: 0, sampling: .greedy)).content else { return floor() }
+        let q = fill.question.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Stage 4: novelty + anti-leak guards. Any failure → champion floor (downside-safe).
+        if q.isEmpty || FillerDetector.isFiller(q) { return floor() }
+        if kept.contains(where: { FillerDetector.jaccard($0, q) >= 0.5 }) { return floor() }
+        if refQs.contains(where: { FillerDetector.jaccard($0, q) >= 0.6 }) { return floor() } // anti-leak
+        for k in kept where await sameInfo(k, q) { return floor() }                            // binary novel
+
+        questions[ri] = DiscoveryQuestion(title: q, description: "",
+                                          requiresExternalAction: fill.requiresExternalAction)
+        return floor()
     }
 
     /// EXP-037: least-redundant best-of-N over the CHAMPION adapter, scored by BINARY

@@ -614,6 +614,24 @@ public enum Configs {
         "exp043": DiscoveryConfig(topology: .adapterMMRRagFewShot,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-044: redundancy-gated, corpus-grounded coverage-gap REFILL on the champion
+        // adapter (v2a_e1, 0.409). Synthesis of the two strongest signals in the log: the
+        // lever-F binary same-info check is the only reliable redundancy detector (exp037),
+        // and an EXTERNAL corpus coverage prior is the only signal that ever matched the
+        // champion (exp040, 0.405) since the adapter cannot self-name its missing unknown
+        // (exp028/029/030 failed). Greedy champion draft = floor; find ONE binary-redundant
+        // slot; if none → champion verbatim (0.409 protected on most cases). Else free that
+        // wasted slot and do ONE champion call generating a FRESH question conditioned on the
+        // 6 kept questions AND on the nearest-corpus axes the draft MISSES (uncovered by
+        // embedding cosine), with strict novelty + anti-leak (Jaccard-vs-corpus) guards that
+        // fall back to the floor. Converts a confirmed wasted slot into a coverage slot
+        // without ever touching a good slot; deterministic. Distinct from exp035 (donor
+        // adapter, no coverage grounding) and exp009 (stock 3B, embedding gap, no redundancy
+        // gating). All greedy.
+        "exp044": DiscoveryConfig(topology: .adapterRedundancyGapFill,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
