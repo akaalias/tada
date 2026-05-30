@@ -482,6 +482,19 @@ public enum Configs {
         "exp035": DiscoveryConfig(topology: .adapterBinaryDedupTransplant,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-036: dual-adapter coverage merge (champion-priority dedup-and-fill). exp035's
+        // single-slot binary-check swap failed because (a) the adapter's binary "same info?"
+        // check returned FALSE on truly-redundant pairs and (b) only ONE slot moved. This
+        // makes detection DETERMINISTIC + COMBINED (content-word Jaccard OR embedding cosine —
+        // either signal firing flags a dup, higher recall than exp031's embedding-only 0.398
+        // or exp034's Jaccard-only 0.234) and fills MULTIPLE freed slots VERBATIM from the
+        // complementary coverage-forced donor v2b_e2 (4 wins vs champion's 2; trained to span
+        // one question per distinct axis). Champion-priority, verbatim, deterministic; floor =
+        // champion 0.409 unchanged when no slot is redundant. Base adapter = v2a_e1 champion.
+        "exp036": DiscoveryConfig(topology: .adapterDualCoverageMerge,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

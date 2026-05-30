@@ -1,0 +1,35 @@
+{
+  "summary": "Dual-adapter coverage merge with deterministic dedup",
+  "hypothesis": "Merging a coverage-forced donor adapter (v2b_e2) into the champion pipeline via deterministic dedup should plug coverage gaps without sacrificing the champion's strengths, because verbatim fill from a coverage-biased adapter adds missing topics while Jaccard/cosine dedup prevents redundancy.",
+  "technique": "Two adapter outputs are combined: the champion adapter generates a primary set, then a coverage-forced donor adapter (v2b_e2) supplies verbatim fill for any gaps; a deterministic Swift dedup pass (Jaccard OR cosine similarity) removes near-duplicates with champion-priority, keeping the best 7.",
+  "result": "Scored 0.328 on the full-30 gate (1 win / 1 tie / 27 losses vs Sonnet), with specPass=100% but rubric scores of atom=4, spec=3, cover=3, nat=3, nonRed=3. Coverage did not improve meaningfully over prior attempts despite the donor merge, confirming the hypothesis was falsified; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter drafts primary question set",
+      "knobs": {
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Coverage-forced donor v2b_e2 drafts gap-filling set",
+      "knobs": {
+        "model": "v2b_e2"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Champion-priority Jaccard/cosine dedup + verbatim fill"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp036"
+}

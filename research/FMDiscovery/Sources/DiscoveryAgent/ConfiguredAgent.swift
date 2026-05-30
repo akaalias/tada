@@ -75,6 +75,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterRagFewShotLOO: return try await adapterRagFewShot(input, leaveOneOut: true)
         case .adapterCoverageFacilitySelect: return try await adapterCoverageFacilitySelect(input)
         case .adapterBinaryDedupTransplant: return try await adapterBinaryDedupTransplant(input)
+        case .adapterDualCoverageMerge: return try await adapterDualCoverageMerge(input)
         }
     }
 
@@ -267,6 +268,109 @@ public struct ConfiguredAgent: Sendable {
         }
         // No novel donor → champion verbatim (FLOOR).
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: questions)
+    }
+
+    /// EXP-036: dual-adapter coverage merge. Two facts the log establishes: (1) the
+    /// champion v2a_e1 (0.409, 2W/5T/22L) wastes 2-3 of its 7 slots on internally
+    /// REDUNDANT questions in roughly half its losses (its own judge notes), which crowds
+    /// out the one missing decision-critical unknown; (2) the donor v2b_e2 (0.394, 4W/0T/25L)
+    /// — its coverage-FORCED sibling, trained to write exactly one atomic question per
+    /// distinct axis (scope/people/context/constraints/preferences/success/logistics) — WINS
+    /// MORE cases than the champion (4 vs 2) but ties fewer, i.e. it covers a COMPLEMENTARY
+    /// set of unknowns the champion misses while being more redundant itself. So the two are
+    /// complementary: champion = disciplined phrasing, donor = forced coverage breadth.
+    /// exp035 tried to exploit this with a SINGLE-slot swap gated by a per-pair BINARY adapter
+    /// "same information?" check and FAILED on TWO counts — the binary check returned FALSE on
+    /// pairs the Sonnet judge calls redundant (under-detection), and only ONE slot ever moved.
+    /// This fixes BOTH: detection is DETERMINISTIC and uses a COMBINED ruler (content-word
+    /// Jaccard OR embedding cosine — two orthogonal signals; either firing flags a dup, so it
+    /// catches both lexical dups embeddings miss AND semantic dups Jaccard misses, raising
+    /// recall over exp031's embedding-only 0.398 and exp034's Jaccard-only 0.234), and MULTIPLE
+    /// freed slots can be filled. Champion-PRIORITY: greedily keep each champion question in
+    /// order iff it is non-redundant with those already kept; every dropped slot is refilled
+    /// VERBATIM from the donor's questions that are novel by the same ruler (the donor supplies
+    /// exactly the complementary axes it was trained to span). Verbatim throughout (both sources
+    /// are fine-tuned adapters, so phrasing discipline holds — no from-scratch regeneration, the
+    /// defect that dup-out/degraded exp009/exp028/exp030). Champion-verbatim FLOOR: if no
+    /// champion slot is redundant, the donor is never consulted and the output is the champion's
+    /// 0.409 set unchanged; a final top-up from the dropped champion slots guarantees exactly 7.
+    /// Distinct from exp034 (dispersion over a NOISY single-adapter temperature pool → cov 2):
+    /// here the pool is TWO disciplined greedy adapter sets and selection is champion-priority
+    /// dedup-and-fill, not dispersion-maximisation. Falsifiable: if combined deterministic
+    /// detection fires on the champion's real redundancy and the donor fills the freed slots
+    /// with genuinely complementary covered axes, non-redundancy and coverage tick up; if
+    /// detection under-fires (paraphrase dups with few shared tokens AND low cosine) or the
+    /// donor adds nothing the champion lacks, it lands back at the 0.409 floor.
+    private func adapterDualCoverageMerge(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: champion greedy draft (config.adapter = v2a_e1), the verbatim base.
+        let champSession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let plan = try await champSession.respond(
+            to: "Task the user entered: \"\(input)\"",
+            generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+        let champQs: [DiscoveryQuestion] = plan.questions.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail,
+                              requiresExternalAction: $0.requiresExternalAction)
+        }
+
+        // Combined redundancy ruler: a candidate is redundant vs a kept set if it shares
+        // content-word Jaccard >= 0.45 (lexical dup) OR embedding cosine >= 0.62 (semantic
+        // dup) with ANY kept question. Empty vec ([]) → that comparison falls back to Jaccard.
+        func vec(_ s: String) -> [Double] { SemanticRetrieval.vectors(for: [s])?.first ?? [] }
+        func redundant(_ title: String, _ v: [Double], keptTitles: [String], keptVecs: [[Double]]) -> Bool {
+            for (i, kt) in keptTitles.enumerated() {
+                if FillerDetector.jaccard(title, kt) >= 0.45 { return true }
+                if !v.isEmpty, i < keptVecs.count, !keptVecs[i].isEmpty,
+                   SemanticRetrieval.cos(v, keptVecs[i]) >= 0.62 { return true }
+            }
+            return false
+        }
+
+        // Stage 2: greedy keep of NON-redundant champion slots, in original order.
+        var keptQ: [DiscoveryQuestion] = []
+        var keptTitles: [String] = []
+        var keptVecs: [[Double]] = []
+        var dropped: [DiscoveryQuestion] = []
+        for q in champQs {
+            let v = vec(q.title)
+            if redundant(q.title, v, keptTitles: keptTitles, keptVecs: keptVecs) {
+                dropped.append(q)
+            } else {
+                keptQ.append(q); keptTitles.append(q.title); keptVecs.append(v)
+            }
+        }
+
+        // FLOOR: nothing redundant → champion verbatim, never consult the donor.
+        if dropped.isEmpty {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: champQs)
+        }
+
+        // Stage 3: fill freed slots VERBATIM from the complementary donor (v2b_e2), greedy,
+        // skipping filler and anything redundant vs the kept set by the same combined ruler.
+        let donorModel = try resolveModel(path: Self.donorAdapterPath)
+        let donorSession = LanguageModelSession(model: donorModel) { Self.adapterSystem }
+        let donorPlan = try await donorSession.respond(
+            to: "Task the user entered: \"\(input)\"",
+            generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+        for dq in donorPlan.questions {
+            if keptQ.count >= 7 { break }
+            let d = dq.question.trimmingCharacters(in: .whitespacesAndNewlines)
+            if d.isEmpty || FillerDetector.isFiller(d) { continue }
+            let dv = vec(d)
+            if redundant(d, dv, keptTitles: keptTitles, keptVecs: keptVecs) { continue }
+            keptQ.append(DiscoveryQuestion(title: d, description: dq.detail,
+                                           requiresExternalAction: dq.requiresExternalAction))
+            keptTitles.append(d); keptVecs.append(dv)
+        }
+
+        // Stage 4: guarantee exactly 7 — if the donor couldn't fill every freed slot, top up
+        // from the dropped champion questions (still verbatim) in their original order.
+        var di = 0
+        while keptQ.count < 7 && di < dropped.count { keptQ.append(dropped[di]); di += 1 }
+        if keptQ.count > 7 { keptQ = Array(keptQ.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary, questions: keptQ)
     }
 
     private static let donorAdapterPath =
