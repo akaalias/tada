@@ -667,6 +667,23 @@ public enum Configs {
         "exp047": DiscoveryConfig(topology: .adapterOverCountDedupRepair,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-048: generalize the champion exp046 (0.430) over-count-then-dedup to TWO
+        // spares. exp046 used .count(8) and dropped exactly ONE redundant slot, so the
+        // multi-redundant cases the judge keeps flagging (gp Q3/Q4, team_offsite date×2 +
+        // venue×2, household_budget total+fixed+variable, find_therapist Q1≈Q2≈Q7) were only
+        // HALF-fixed — one redundant pair cleared, a second left standing in the final 7.
+        // This sets schema .count(9) so the champion writes TWO extra native-voice questions
+        // in ONE greedy call, then ITERATIVELY drops the later member of each redundant pair
+        // (high-recall union: binary same-info OR cos ≥0.75 OR Jaccard ≥0.5) until 7 remain,
+        // tail-dropping the off-distribution extras when no redundancy is left. Every
+        // backfill slot is champion-native (no specificity tax, unlike donor/corpus refills).
+        // Bet: clearing the SECOND redundant pair lifts nonRed further on the multi-dup
+        // cases. Risk: count=9 is more off-distribution than count=8 (exp047 saw count=8
+        // re-introduce noun-pair compounds) — a fair test of whether two spares pay off.
+        "exp048": DiscoveryConfig(topology: .adapterOverCountDedup9,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -87,6 +87,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
         case .adapterOverCountDedup: return try await adapterOverCountDedup(input, repair: false)
         case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
+        case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
         }
     }
 
@@ -989,6 +990,73 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-048: generalizes exp046's over-count-then-dedup to TWO spares. Schema .count(9)
+    /// lets the champion write two extra native-voice questions; we then ITERATIVELY drop
+    /// the later member of each redundant pair (high-recall union: binary same-info OR
+    /// embedding-cos ≥0.75 OR token-Jaccard ≥0.5) until exactly 7 remain. If a draw has no
+    /// remaining redundancy but still >7, drop from the TAIL (the off-distribution extras,
+    /// ≈ champion's later questions). Targets the multi-redundant cases (gp/team_offsite/
+    /// household_budget) that waste 2-3 slots — which exp046's single drop could only
+    /// half-fix — while keeping every backfill slot champion-native (no specificity tax).
+    private func adapterOverCountDedup9(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan9.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+
+        // Iteratively remove redundancy (keep the earlier/higher-priority member) until 7.
+        while qs.count > 7 {
+            let titles = qs.map { $0.question }
+            let vecs = SemanticRetrieval.vectors(for: titles)
+            func cosHigh(_ i: Int, _ j: Int) -> Bool {
+                guard let v = vecs else { return false }
+                return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+            }
+            func redundant(_ i: Int, _ j: Int) async -> Bool {
+                if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+                if cosHigh(i, j) { return true }
+                return await sameInfo(titles[i], titles[j])
+            }
+            var dropIdx: Int? = nil
+            outer: for j in 1..<qs.count {
+                for i in 0..<j where await redundant(i, j) { dropIdx = j; break outer }
+            }
+            // No redundant pair left → drop the off-distribution tail extra.
+            qs.remove(at: dropIdx ?? (qs.count - 1))
+        }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 
@@ -2839,6 +2907,16 @@ struct FMDiscoveryPlan8 {
     @Guide(description: "One plain sentence summarising the task.")
     var summary: String
     @Guide(description: "Exactly 8 clarifying questions.", .count(8))
+    var questions: [FMQuestion]
+}
+
+@Generable
+struct FMDiscoveryPlan9 {
+    @Guide(description: "The user's task restated as a short specific title, 4-9 words, in their own words. Never a generic label like 'Clarifying Questions'.")
+    var title: String
+    @Guide(description: "One plain sentence summarising the task.")
+    var summary: String
+    @Guide(description: "Exactly 9 clarifying questions.", .count(9))
     var questions: [FMQuestion]
 }
 

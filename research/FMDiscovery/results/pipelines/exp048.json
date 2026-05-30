@@ -1,0 +1,30 @@
+{
+  "summary": "Over-count(9) + iterative dedup on champion adapter",
+  "hypothesis": "Generating 9 questions (two native spares) and iteratively deduplicating should clear multi-redundant cases that exp046's single spare left behind, because the extra slot gives the dedup pass a second chance to evict a surviving near-duplicate pair.",
+  "technique": "The champion adapter is prompted with schema count=9 (two over-count spares), then a deterministic iterative Swift dedup loop drops the later member of each redundant pair \u2014 using a high-recall union detector (binary same-info OR cosine \u2265 0.75 OR Jaccard \u2265 0.5) \u2014 until 7 remain, with any tail extras dropped by position.",
+  "result": "Scored 0.423 on the full-30 greedy eval (4 wins / 2 ties / 23 losses vs Sonnet, 1 refusal), down from champion exp046's 0.430. Specificity fell from 4 to 3 \u2014 the extra count=9 perturbation pulled slots toward generic phrasing \u2014 while nonRed and coverage were unchanged; the hypothesis was falsified on two axes (iterative dedup still couldn't evict the deep-duplicate pairs the union detector under-fires on, and the extra off-distribution question cost spec-4). Discarded; exp046 remains champion.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter drafts 9 questions",
+      "knobs": {
+        "model": "adapter-exp046",
+        "count": "9",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Iterative dedup: union detector, tail-drop to 7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp048"
+}
