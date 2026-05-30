@@ -91,8 +91,7 @@ export function renderPipeD3(spec, el) {
     .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
   const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
     .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
-  ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#fffbeb').attr('stroke', '#ca8a04');
-  ag.append('rect').attr('width', ADW).attr('height', 3).attr('fill', '#ca8a04');
+  ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#fffbeb').attr('stroke', '#ca8a04').attr('stroke-width', 2);
   const afo = ag.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', ADW).attr('height', ADH - 6);
   const abox = afo.append('xhtml:div').attr('class', 'nodebox');
   abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
@@ -102,17 +101,22 @@ export function renderPipeD3(spec, el) {
   // main nodes
   const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
     .attr('transform', d => { const p = pos(d.id); return 'translate(' + p.x + ',' + p.y + ')'; });
-  g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff').attr('stroke', '#e2e8f0');
-  g.append('rect').attr('width', NODEW).attr('height', 3).attr('fill', d => KINDC[d.kind] || '#64748b');
+  g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff')
+    .attr('stroke', d => KINDC[d.kind] || '#64748b').attr('stroke-width', 2);   // full-colour border = stage kind
   const fo = g.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', NODEW).attr('height', NODEH - 6);
   const box = fo.append('xhtml:div').attr('class', 'nodebox');
   box.append('xhtml:div').attr('class', 'nb-kind').style('color', d => KINDC[d.kind] || '#64748b').text(d => (d.title || '').toUpperCase());
   box.append('xhtml:div').attr('class', 'nb-sub').text(d => d.sub || '');
-  // FM badge on EVERY on-device model call — including adapter-backed ones (an
-  // adapter call is still an FM call; the gold adapter node feeding in is additional).
-  const badge = g.filter(d => d.model).append('g').attr('transform', 'translate(' + (NODEW - 24) + ',6)');
-  badge.append('rect').attr('width', 18).attr('height', 12).attr('rx', 3).attr('fill', '#db2777');
-  badge.append('text').attr('x', 9).attr('y', 9.5).attr('text-anchor', 'middle').attr('font-size', 8)
-    .attr('font-weight', 800).attr('fill', '#fff').text('FM');
+  // Per-node execution badge: who runs it — FM (model call) · Swift (deterministic
+  // code) · User (the input) · Out (the final output).
+  const badgeFor = d => d.model ? ['FM', '#db2777']
+    : d.kind === 'input' ? ['User', '#64748b']
+    : d.kind === 'output' ? ['Out', '#16a34a']
+    : ['Swift', '#ea580c'];
+  const bwid = t => t.length * 5.7 + 9;
+  const bg = g.append('g').attr('transform', d => 'translate(' + (NODEW - bwid(badgeFor(d)[0]) - 6) + ',6)');
+  bg.append('rect').attr('width', d => bwid(badgeFor(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => badgeFor(d)[1]);
+  bg.append('text').attr('x', d => bwid(badgeFor(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
+    .attr('font-weight', 800).attr('fill', '#fff').text(d => badgeFor(d)[0]);
   g.append('title').text(d => d.full);
 }
