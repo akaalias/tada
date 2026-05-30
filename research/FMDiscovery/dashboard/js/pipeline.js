@@ -4,6 +4,8 @@
 
 import { esc, KINDC, callCount, isAdapter, callLabels } from './util.js';
 
+let pipeUid = 0;   // unique marker-id namespace per render (avoids cross-SVG <marker> id collisions)
+
 export function pipeSummary(spec) {
   if (!spec || !spec.stages) return '';
   const fmCount = spec.stages.reduce((a, s) => a + callCount(s), 0);
@@ -74,25 +76,26 @@ export function renderPipeD3(spec, el) {
   const showTip = (e, html) => { if (tip) { tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; } };
   const hideTip = () => { if (tip) tip.style.opacity = 0; };
 
-  // arrowhead markers (define once; one per edge colour)
+  // arrowhead markers — unique ids per render so multiple panels don't collide
+  const uid = 'pp' + (++pipeUid) + '-';
   const defs = svg.append('defs');
   const arrowMarker = (id, color) => defs.append('marker')
     .attr('id', id).attr('viewBox', '0 0 10 10').attr('refX', 8).attr('refY', 5)
     .attr('markerWidth', 7).attr('markerHeight', 7).attr('orient', 'auto')
     .append('path').attr('d', 'M0,0 L10,5 L0,10 z').attr('fill', color);
-  arrowMarker('arrow', '#94a3b8');       // main flow
-  arrowMarker('arrowGold', '#ca8a04');   // adapter feed
+  arrowMarker(uid + 'arrow', '#94a3b8');       // main flow
+  arrowMarker(uid + 'arrowGold', '#ca8a04');   // adapter feed
 
   // main-flow edges (vertical: depth → depth), arrowhead pointing into the target
   svg.append('g').selectAll('path.flow').data(edges).join('path').attr('class', 'flow')
-    .attr('fill', 'none').attr('stroke', '#cbd5e1').attr('stroke-width', 1.5).attr('marker-end', 'url(#arrow)')
+    .attr('fill', 'none').attr('stroke', '#cbd5e1').attr('stroke-width', 1.5).attr('marker-end', 'url(#' + uid + 'arrow)')
     .attr('d', d => { const a = pos(d.from), b = pos(d.to), ty = b.topy - 5, my = (a.boty + ty) / 2; return 'M' + a.botx + ',' + a.boty + ' C' + a.botx + ',' + my + ' ' + b.topx + ',' + my + ' ' + b.topx + ',' + ty; });
 
   // adapter side-nodes: gold weights artifact feeding INTO their FM node (edge from the left)
   const adapterNodes = nodes.filter(n => n.adapterName);
   const adX = n => pos(n.id).x - ADGAP - ADW, adY = n => pos(n.id).y + (NODEH - ADH) / 2;
   svg.append('g').selectAll('path.feed').data(adapterNodes).join('path').attr('class', 'feed')
-    .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#arrowGold)')
+    .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
     .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
   const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
     .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
