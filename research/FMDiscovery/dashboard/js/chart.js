@@ -41,7 +41,7 @@ export function drawChart(runs) {
   // running-best step line, computed independently PER subset (no cross-denominator line)
   const drawBest = (subset, color, width, dash) => {
     let best = -1; const pts = [];
-    runs.forEach((r, i) => { if ((r.subset || 'full') !== subset) return; if (r.quality > best) best = r.quality; pts.push([i, best]); });
+    runs.forEach((r, i) => { if ((r.subset || 'full') !== subset) return; if (r.invalid) return; if (r.quality > best) best = r.quality; pts.push([i, best]); });
     if (!pts.length) return;
     ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.beginPath();
     pts.forEach(([i, b], k) => {
@@ -54,10 +54,16 @@ export function drawChart(runs) {
   drawBest('dev', GREEN, 2.5, []);
   drawBest('full', GREEN, 2.5, []);
 
-  // points (discarded = grey, kept = green; labelled when kept)
+  // points (discarded = grey, kept = green, invalid = red ✕; labelled when kept/invalid)
   runs.forEach((r, i) => {
     const x = X(i), y = Y(r.quality);
     chartPoints.push({ x, y, r });
+    if (r.invalid) {                          // invalid (e.g. gold leak): red ✕, excluded from best-line
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
+      ctx.fillStyle = '#dc2626'; ctx.font = '12px system-ui'; ctx.fillText(r.label + ' (invalid)', x + 9, y - 9);
+      return;
+    }
     ctx.beginPath(); ctx.arc(x, y, r.kept ? 6 : 5, 0, 7);
     ctx.fillStyle = r.kept ? GREEN : GREY; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
@@ -75,7 +81,8 @@ export function initChartHover() {
     for (const p of chartPoints) { const d = (p.x - mx) ** 2 + (p.y - my) ** 2; if (d < bd) { bd = d; hit = p; } }
     if (hit) {
       const r = hit.r;
-      tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.kept ? 'kept' : 'discarded'}`
+      tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.invalid ? 'INVALID' : r.kept ? 'kept' : 'discarded'}`
+        + (r.invalid && r.invalidReason ? `<span class="t-note">⚠ ${r.invalidReason}</span>` : '')
         + (r.note ? `<span class="t-note">${r.note}</span>` : '');
       tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;
     } else tip.style.opacity = 0;
