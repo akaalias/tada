@@ -45,7 +45,10 @@ enum CorpusBank {
     /// k nearest corpus exemplars by on-device semantic similarity (NLEmbedding
     /// cosine), with a word-overlap Jaccard fallback when embeddings are absent.
     static func nearestSemantic(to query: String, k: Int) -> [GoldExemplar] {
-        let pool = load()
+        // Enforced leave-one-out: drop any corpus exemplar whose input matches the
+        // query (corpus is meant to be disjoint from eval, but guard regardless).
+        let qn = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let pool = load().filter { $0.input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) != qn }
         return SemanticRetrieval.nearest(query: query, candidates: pool, k: k,
                                          fallback: { q, kk in jaccardNearest(q, in: pool, k: kk) })
     }

@@ -39,6 +39,13 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
   match the exemplar bank, so the model must always generate fresh questions for
   the specific task. An experiment that transcribes/adapts gold questions as its
   output is INVALID even if it scores well — do not pursue that class of idea.
+- LEAVE-ONE-OUT IS MANDATORY for ANY retrieval/RAG config. The `GoldExemplars` bank
+  inputs OVERLAP the full-30 eval inputs, so retrieving the nearest exemplar for an
+  eval case can return that case's OWN gold question-set — a silent leak that inflates
+  the score (this invalidated exp032, a fake 0.498). The retrieval helpers now drop any
+  exemplar whose input matches the query, but you MUST still verify your config never
+  feeds an eval case its own (or a near-duplicate) gold set. If in doubt, it's a leak —
+  do not log it as a win.
 - CORPUS MAY GROW (encouraged): generating MORE Sonnet (task→questions) pairs for
   NEW, different tasks — to broaden the retrieval/demonstration bank or to build
   adapter-training data — is allowed and valuable. Those live under

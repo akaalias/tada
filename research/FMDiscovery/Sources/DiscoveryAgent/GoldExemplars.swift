@@ -213,8 +213,13 @@ enum GoldExemplars {
         let qWords = wordSet(query)
         let norm: (String) -> String = { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
         let ex = excluded.map(norm)
+        // ENFORCED leave-one-out: ALWAYS drop any exemplar whose input matches the
+        // query. The bank overlaps the eval set, so a case must never retrieve its
+        // OWN gold — that silent leak invalidated exp032 (a fake 0.498). The explicit
+        // `excluded` is additional. Makes gold leak via this helper structurally impossible.
+        let qn = norm(query)
         return all
-            .filter { ex == nil || norm($0.input) != ex! }
+            .filter { norm($0.input) != qn && (ex == nil || norm($0.input) != ex!) }
             .map { e in (e, jaccard(qWords, wordSet(e.input))) }
             .sorted { $0.1 > $1.1 }
             .prefix(k)
@@ -223,9 +228,12 @@ enum GoldExemplars {
 
     /// EXP-007: semantic nearest via on-device NLEmbedding (cosine), with the
     /// word-overlap `nearest` as fallback when embeddings are unavailable.
+    /// Enforced leave-one-out: the query's own exemplar is dropped from the pool.
     static func nearestSemantic(to query: String, k: Int) -> [GoldExemplar] {
-        SemanticRetrieval.nearest(query: query, candidates: all, k: k,
-                                  fallback: { q, kk in nearest(to: q, k: kk) })
+        let qn = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let pool = all.filter { $0.input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) != qn }
+        return SemanticRetrieval.nearest(query: query, candidates: pool, k: k,
+                                         fallback: { q, kk in nearest(to: q, k: kk) })
     }
 
     /// EXP-006: task-conditioned coverage checklist. Aggregate the dimension labels
