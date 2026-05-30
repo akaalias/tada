@@ -1,0 +1,33 @@
+{
+  "summary": "LOO RAG few-shot on champion adapter v2a_e1",
+  "hypothesis": "Injecting genuinely non-leaking RAG few-shot demos (leave-one-out) into the champion adapter should push quality above 0.409, because concrete exemplars from other tasks might tighten coverage and phrasing further.",
+  "technique": "The champion adapter (v2a_e1) is prompted with 2 retrieved few-shot exemplars fetched via leave-one-out RAG \u2014 any exemplar whose input matches the current eval task is excluded before retrieval, preventing gold-leak. This is the honest repair of exp032's invalid gold-leaking RAG setup.",
+  "result": "Scored 0.372 on the full-30 greedy gate (2 wins / 3 ties / 24 losses vs Sonnet), a real regression of \u22120.037 below the champion's clean 0.409. Rubric showed atom=4 / spec=3 / cover=3 / nat=3 / nonRed=3, with atomicity violations, redundant pairs, and a cross-task hallucination introduced by demo bleed; the hypothesis was falsified \u2014 RAG few-shot is a net negative on the adapter, which already encodes stronger signal than any retrieved demo can add. Discarded; champion remains adapter_v2a_e1 at 0.409.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "LOO RAG: fetch 2 non-leaking exemplars",
+      "knobs": {
+        "k": "2",
+        "loo": "true"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Champion adapter draft with RAG few-shot",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp033"
+}

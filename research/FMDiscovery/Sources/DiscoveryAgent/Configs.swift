@@ -423,6 +423,24 @@ public enum Configs {
         "exp032": DiscoveryConfig(topology: .adapterRagFewShot,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-033: RAG few-shot ON THE CHAMPION adapter, but LEAVE-ONE-OUT — the
+        // HONEST version of exp032. CRITICAL CORRECTION: exp032 (0.498) is INVALID
+        // under the gold-leak ban. GoldExemplars holds 12 cases that the comment
+        // claims are "not in dev-10" — but the gate MOVED to full-30, and ALL 12
+        // exemplar inputs are EXACT eval-gold inputs (Renovate my kitchen=kitchen_reno,
+        // Quit smoking=quit_smoking, Adopt a dog=adopt_dog, ...). So for 12/30 cases
+        // exp032 retrieved each case's OWN gold 7 questions and showed them to the
+        // model as a "demonstration" → it paraphrased gold, and the judge scored vs
+        // that same gold. That is transcribing exemplars one-to-one = banned, and
+        // explains the +0.089 mirage. exp033 fixes it: leaveOneOut excludes any
+        // exemplar whose input matches the eval task, so the 2 retrieved demos are
+        // GENUINELY OTHER tasks (kitchen → apartment_move/declutter). This is the
+        // first VALID test of "does RAG few-shot lift the adapter's coverage off 3?"
+        // on the full-30 gate. Single greedy call, native format, no 2nd pass.
+        "exp033": DiscoveryConfig(topology: .adapterRagFewShotLOO,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

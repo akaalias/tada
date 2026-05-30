@@ -204,10 +204,18 @@ enum GoldExemplars {
     }
 
     /// Return the k exemplars whose input is most similar to the query (word overlap).
-    static func nearest(to query: String, k: Int) -> [GoldExemplar] {
+    /// `excludingInput`: if non-nil, drop any exemplar whose input matches it
+    /// (case/whitespace-insensitive). Used for leave-one-out retrieval so that an
+    /// eval case never receives its OWN gold question-set as a demonstration — the
+    /// non-leaking version of RAG few-shot now that the exemplar bank overlaps the
+    /// full-30 gate (EXP-033).
+    static func nearest(to query: String, k: Int, excludingInput excluded: String? = nil) -> [GoldExemplar] {
         let qWords = wordSet(query)
+        let norm: (String) -> String = { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        let ex = excluded.map(norm)
         return all
-            .map { ex in (ex, jaccard(qWords, wordSet(ex.input))) }
+            .filter { ex == nil || norm($0.input) != ex! }
+            .map { e in (e, jaccard(qWords, wordSet(e.input))) }
             .sorted { $0.1 > $1.1 }
             .prefix(k)
             .map { $0.0 }

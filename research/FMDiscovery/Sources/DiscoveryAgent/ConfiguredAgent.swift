@@ -201,8 +201,8 @@ public struct ConfiguredAgent: Sendable {
     /// unlike exp029's free-text conditioning), and APPEND the 2 nearest gold exemplar
     /// question-sets as reference demonstrations. Exemplars are demonstrations only —
     /// the adapter generates FRESH task-specific questions (gold-leak ban respected).
-    private func adapterRagFewShot(_ input: String) async throws -> DiscoveryResult {
-        let examples = GoldExemplars.nearest(to: input, k: 2)
+    private func adapterRagFewShot(_ input: String, leaveOneOut: Bool = false) async throws -> DiscoveryResult {
+        let examples = GoldExemplars.nearest(to: input, k: 2, excludingInput: leaveOneOut ? input : nil)
         let block = examples.map { ex -> String in
             let qs = ex.questions.enumerated()
                 .map { "\($0.offset + 1). \($0.element)" }
