@@ -1,0 +1,82 @@
+{
+  "id": "review_and_update_my_life_insurance_beneficiarie",
+  "input": "Review and update my life insurance beneficiaries",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may have one policy or several (employer-provided, individual, term, whole life) \u2014 knowing how many and what types determines the full scope of the review."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Understanding who the current beneficiaries are and who the user wants to add, remove, or change determines what updates actually need to be made."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "A life event (marriage, divorce, new child, death of a beneficiary) is often the trigger \u2014 knowing this shapes the urgency and specific changes needed."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user knows how to access their policy documents and insurer portal \u2014 or needs guidance locating them \u2014 determines the very first action step."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Some policies require notarized forms, spousal consent, or have processing windows \u2014 knowing if there is a deadline or legal requirement affects how to sequence the task."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may want a simple primary beneficiary update, or a more thorough setup with contingent beneficiaries and specific percentage splits \u2014 this affects depth of the plan."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user may consider this done when the form is submitted, or only when written confirmation from the insurer is received \u2014 this defines the finish line."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Review and update life insurance beneficiaries",
+    "taskDescription": "The user wants to review who is currently named as beneficiaries on their life insurance policy and make any necessary updates to those designations.",
+    "questions": [
+      {
+        "title": "How many life insurance policies do you currently have?",
+        "description": "Identify whether this covers one policy or multiple (e.g., employer group plan, individual term, whole life) to determine the full scope of the review.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What life event is prompting this review right now?",
+        "description": "Understand the trigger (e.g., marriage, divorce, new child, death of a beneficiary, or just routine review) to clarify what specific changes are needed.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who do you want named as your beneficiaries going forward?",
+        "description": "Establish the target beneficiary lineup \u2014 names, relationships, and whether one person or multiple people are involved \u2014 to define exactly what needs updating.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want contingent beneficiaries and percentage splits set up?",
+        "description": "Determine the desired depth of the designation \u2014 a single primary beneficiary vs. a structured setup with backups and allocated percentages.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have access to your insurer's portal or paper forms?",
+        "description": "Find out if the user knows where to get the change-of-beneficiary form or log in to their insurer's system, which determines the immediate first action.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a deadline or legal requirement you are working against?",
+        "description": "Identify any time pressure, such as an open enrollment window, court order, divorce decree, or spousal consent requirement, that would affect how quickly and carefully this must be done.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What would make you feel this task is fully complete?",
+        "description": "Clarify the finish line \u2014 whether it is submitting the form, receiving written confirmation from the insurer, or verifying the change appears on the policy documents.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

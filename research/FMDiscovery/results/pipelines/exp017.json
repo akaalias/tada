@@ -1,7 +1,8 @@
 {
-  "summary": "Deterministic filler/dupe detect, scoped FM refill",
-  "hypothesis": "Freeing wasted slots (filler phrases and near-duplicate questions) and refilling only those with a scoped model call should recover coverage, because the 3B already knows task-specific unknowns but wastes slots on redundant or vague catch-alls.",
-  "technique": "On top of the exp011 contrastive-RAG draft, deterministic Swift detects wasted slots via curated filler-phrase patterns and Jaccard near-dupe pairs, then a single scoped FM call refills only those slots (shown the kept questions, given no universal checklist). Strong slots are kept verbatim and a defensive re-check reverts any refills that are themselves filler or dupes.",
+  "summary": "Filler/dupe detect-and-repair with scoped refill",
+  "hypothesis": "Deterministic detection of wasted slots (filler phrases + Jaccard near-dupes) on the exp011 draft, then refilling only those slots with a scoped model call, should recover coverage without needing a ranking judgment \u2014 because the 3B often knows task-specific unknowns but wastes slots on redundant/vague questions.",
+  "technique": "A deterministic Swift pass identifies wasted slots on the exp011 contrastive-RAG draft using curated filler-phrase patterns and content-word Jaccard near-dupe detection; a single scoped model call then refills only those flagged slots (shown the kept set, no universal checklist, instructed to be specific); a defensive Swift re-check reverts any refills that are themselves filler or dupes, leaving strong slots verbatim.",
+  "result": "Scored 0.282 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), down 0.041 from the exp011 best of 0.323 and 0.025 below the 0.307 baseline \u2014 discarded. NonRed held at 4 (the detector worked mechanically) but the refill step introduced new low-value/niche questions and fresh atomicity violations (atom=4, cover=3), confirming that deterministic detection can find the wasted slot but cannot tell the 3B what critical unknown should replace it \u2014 closing the detect-and-repair lever entirely.",
   "stages": [
     {
       "kind": "input",
@@ -20,15 +21,15 @@
       "text": "Swift detects filler phrases + Jaccard near-dupes"
     },
     {
-      "kind": "generate",
-      "text": "Scoped refill call for wasted slots only",
+      "kind": "critique",
+      "text": "Scoped refill call: replace wasted slots only",
       "knobs": {
-        "scope": "bad-slots-only"
+        "n": "1"
       }
     },
     {
       "kind": "post",
-      "text": "Defensive re-check; revert refills that are filler/dupes"
+      "text": "Defensive re-check: revert filler/dupe refills"
     },
     {
       "kind": "output",

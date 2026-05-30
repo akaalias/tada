@@ -55,10 +55,11 @@ export async function renderDetail(label, cell) {
   }).join('');
 
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
-  // Right-hand explanation: the human-readable hypothesis + technique for this run.
-  const explain = spec && (spec.hypothesis || spec.technique) ? `<div class="explain">`
+  // Right-hand explanation: human-readable hypothesis (bet) → method (how) → result (what happened).
+  const explain = spec && (spec.hypothesis || spec.technique || spec.result) ? `<div class="explain">`
     + (spec.hypothesis ? `<div class="explain-block eb-hyp"><div class="explain-h">Hypothesis — the bet</div><p>${esc(spec.hypothesis)}</p></div>` : '')
-    + (spec.technique ? `<div class="explain-block eb-tech"><div class="explain-h">Technique — how we test it</div><p>${esc(spec.technique)}</p></div>` : '')
+    + (spec.technique ? `<div class="explain-block eb-tech"><div class="explain-h">Method — how we test it</div><p>${esc(spec.technique)}</p></div>` : '')
+    + (spec.result ? `<div class="explain-block eb-res"><div class="explain-h">Result — what happened</div><p>${esc(spec.result)}</p></div>` : '')
     + `</div>` : '';
   cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div>`
     + `<div class="pipe-grid"><div class="pipe-diagram"><div class="pipe-d3"></div></div>${explain}</div>`

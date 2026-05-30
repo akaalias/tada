@@ -1,0 +1,82 @@
+{
+  "id": "schedule_a_hearing_test_at_the_audiologist",
+  "input": "Schedule a hearing test at the audiologist",
+  "keyUnknowns": [
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is for the user themselves or someone else (e.g., a child, elderly parent) affects who needs to be contacted, what type of test is needed, and who manages the booking."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The reason for the test \u2014 routine check, suspected hearing loss, tinnitus, follow-up \u2014 determines the type of appointment to request and what to tell the clinic."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user already has a specific audiologist/clinic in mind or needs help finding one is the most immediate next action determining factor."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A referral may be required by insurance or a healthcare system before booking; if so, that step must happen first."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The user's availability and preferred timeframe (e.g., urgency, days of week, time of day) directly shapes which appointment slots to target."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Preferences around location, travel distance, or whether in-person vs. telehealth is acceptable narrow down which providers are suitable."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether 'done' means the appointment is confirmed on the calendar, or just that the user has the clinic's contact details and next steps, defines where the task ends."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Schedule a hearing test at the audiologist",
+    "taskDescription": "The user wants to book an appointment for a hearing test with an audiologist.",
+    "questions": [
+      {
+        "title": "Who is this hearing test for?",
+        "description": "Establish whether the appointment is for the user themselves or for another person (e.g., child, parent, partner), as this affects the booking process and test type.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is the main reason for getting tested?",
+        "description": "Clarify the purpose \u2014 routine check-up, noticeable hearing loss, tinnitus, post-illness follow-up, etc. \u2014 so the right type of appointment is requested from the clinic.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have an audiologist or clinic in mind?",
+        "description": "Determine whether the user has a preferred provider or needs help identifying one before the booking call or form can be initiated.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a doctor's referral before booking?",
+        "description": "Find out if the user's insurance plan or healthcare system requires a GP/physician referral first, which would make that an essential prerequisite step.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How soon do you need this appointment?",
+        "description": "Understand the urgency and any preferred days or times of day, so the search for available slots can be appropriately targeted.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How far are you willing to travel to the clinic?",
+        "description": "Capture location or distance preferences, and whether telehealth/remote consultations are acceptable, to filter suitable providers.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does 'done' look like \u2014 confirmed booking or just next steps?",
+        "description": "Clarify whether the task is complete once the appointment is confirmed on the calendar, or if the user just needs the clinic details and a clear action to take next.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

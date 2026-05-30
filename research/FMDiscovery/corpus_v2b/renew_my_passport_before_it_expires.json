@@ -1,0 +1,82 @@
+{
+  "id": "renew_my_passport_before_it_expires",
+  "input": "Renew my passport before it expires",
+  "keyUnknowns": [
+    {
+      "axis": "constraints",
+      "whyItMatters": "How soon the passport expires determines urgency, whether expedited processing is needed, and if emergency appointments are required."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The country of citizenship dictates the exact agency, forms, fees, and procedures involved \u2014 the entire process differs by country."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether the user needs the passport for an upcoming trip changes priorities \u2014 they may need it by a specific date well before expiry, or just want it renewed proactively."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing where the user is in the process (nothing started vs. photos taken vs. forms filled) determines what the immediate next action should be."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If renewing for a child or a dependent, the requirements (parental consent, in-person appearance, different forms) are substantially different from an adult self-renewal."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer to handle everything online/by mail vs. visiting an office in person, which affects which renewal route to recommend."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what a successful outcome looks like \u2014 passport in hand by a certain date, minimal cost, minimal effort \u2014 shapes how to prioritise trade-offs like cost vs. speed."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Renew passport before expiration deadline",
+    "taskDescription": "The user needs to complete their passport renewal in time before their current passport expires.",
+    "questions": [
+      {
+        "title": "When exactly does your current passport expire?",
+        "description": "The expiration date determines urgency and whether standard, expedited, or emergency renewal is the right path.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which country issued your passport?",
+        "description": "The issuing country defines the agency, forms, fees, and full procedure to follow.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a specific trip or travel date driving this?",
+        "description": "An upcoming trip creates a hard deadline that may be sooner than the expiry date itself, changing the priority level.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How far along in the renewal process are you?",
+        "description": "Knowing whether the user has started (gathered documents, completed photos, filled forms) determines what the very next action should be.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this renewal for yourself or someone else?",
+        "description": "Renewing for a minor or dependent involves different forms, parental consent rules, and in-person requirements.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer to handle this by mail or in person?",
+        "description": "The preferred channel affects which renewal route is recommended and what steps are included in the plan.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most \u2014 getting it fast or keeping costs low?",
+        "description": "Expedited processing and courier options cost significantly more; knowing the user's priority shapes which trade-offs to recommend.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

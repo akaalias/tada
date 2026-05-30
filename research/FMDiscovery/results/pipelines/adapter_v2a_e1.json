@@ -1,23 +1,24 @@
 {
-  "summary": "LoRA adapter v2a epoch1, greedy decoding",
-  "hypothesis": "Training the on-device model on a larger set of distilled question pairs (558 train pairs, up from the prior corpus) should push quality above the in-context plateau, because more examples give the adapter stronger signal on specificity and naturalness \u2014 dimensions where the base model consistently underperforms Sonnet.",
-  "technique": "A single greedy (deterministic) on-device call using a LoRA adapter (adapter_v2a_e1) fine-tuned on 558 training pairs at lr 5e-4, early-stopped at epoch 1. Greedy decoding was adopted to eliminate sampling noise that had previously masked adapter gains.",
+  "summary": "v2a adapter epoch1, 2x corpus, greedy decoding",
+  "hypothesis": "Doubling the training corpus (312\u2192619) and switching to greedy decoding should push the adapter meaningfully above the ~0.32 in-context plateau, because more diverse training pairs improve generalisation and greedy decoding removes the sampling noise that was masking the adapter's real quality.",
+  "technique": "A single greedy on-device call using the v2a LoRA adapter (fine-tuned on 558 train pairs from the expanded 619-item corpus, lr 5e-4, early-stopped at epoch 1 before overfitting). Decoding switched from stochastic sampling to deterministic greedy to eliminate small-model output noise.",
+  "result": "Scored 0.409 on the full-30 gate (2 wins / 5 ties / 22 losses vs Sonnet), a real step above the v1 adapter (0.362) and the ~0.32 in-context plateau; specificity and naturalness rose to 4 but coverage stayed at 3, so the bet partly paid off \u2014 kept as the new best, still short of parity.",
   "stages": [
     {
       "kind": "input",
-      "text": "Receive user topic one-liner"
+      "text": "User one-liner topic in"
     },
     {
       "kind": "generate",
-      "text": "Single greedy call, adapter v2a epoch 1",
+      "text": "Greedy decode with v2a epoch1 adapter",
       "knobs": {
         "sampling": "greedy",
-        "model": "adapter_v2a_e1"
+        "model": "adapter-v2a-e1"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "adapter_v2a_e1"

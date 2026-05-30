@@ -1,11 +1,12 @@
 {
   "summary": "RAG sequential one-at-a-time forced-novelty generation",
-  "hypothesis": "Generating questions one-at-a-time, each conditioned on the already-asked set, should push the 3B off its modal cluster into the task-specific tail of its distribution \u2014 because forcing explicit novelty relative to prior questions is a different generation dynamic than emitting all 7 at once and collapsing onto the generic center.",
-  "technique": "An 8-call RAG-grounded pipeline: 1 framing call followed by 7 sequential question calls, each shown the already-asked set in-context and instructed to probe a genuinely different unknown, built on the exp003 RAG few-shot base.",
+  "hypothesis": "Generating questions one at a time, each conditioned on the already-asked set, should push the 3B off its modal cluster and into the task-specific tail of its distribution \u2014 because forcing explicit novelty relative to prior questions changes the generation dynamic in a way that flat single-call emission cannot.",
+  "technique": "Eight sequential on-device model calls (1 framing + 7 question calls) built on the exp003 RAG few-shot base; each question call receives the already-asked questions in-context and is instructed to probe a genuinely different unknown, aiming to prevent modal collapse through explicit per-step novelty conditioning.",
+  "result": "Scored 0.245 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), \u22120.075 below the exp003/exp011 best of ~0.32 and \u22120.062 below the 0.307 baseline \u2014 discarded. Coverage stayed pinned at 3, naturalness dropped to 3 (robotic yes/no status checks), and nonRed regressed to 3 despite the explicit do-not-repeat conditioning, with the judge flagging severe near-duplicate pairs across multiple tasks; the hypothesis was fully falsified, as sequential novelty conditioning neither pushed into the task-specific tail nor bought the non-redundancy it structurally promised.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner"
     },
     {
       "kind": "retrieve",
@@ -20,24 +21,23 @@
     },
     {
       "kind": "generate",
-      "text": "7 sequential calls, each conditioned on prior Qs",
+      "text": "Q1: first question, no prior set",
       "knobs": {
-        "n": "7",
         "sampling": "greedy"
       },
       "call_labels": [
-        "Q1: first unknown, no prior context",
-        "Q2: novel unknown given Q1",
-        "Q3: novel unknown given Q1\u2013Q2",
-        "Q4: novel unknown given Q1\u2013Q3",
-        "Q5: novel unknown given Q1\u2013Q4",
-        "Q6: novel unknown given Q1\u2013Q5",
-        "Q7: novel unknown given Q1\u2013Q6"
+        "Q1: generate with no prior questions",
+        "Q2: conditioned on Q1",
+        "Q3: conditioned on Q1\u2013Q2",
+        "Q4: conditioned on Q1\u2013Q3",
+        "Q5: conditioned on Q1\u2013Q4",
+        "Q6: conditioned on Q1\u2013Q5",
+        "Q7: conditioned on Q1\u2013Q6"
       ]
     },
     {
       "kind": "output",
-      "text": "Final 7 sequential questions emitted"
+      "text": "Final 7 sequentially generated questions"
     }
   ],
   "label": "exp016"

@@ -1,0 +1,82 @@
+{
+  "id": "create_a_personalized_workout_split_for_the_next",
+  "input": "Create a personalized workout split for the next cycle",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The type of split (e.g., Push/Pull/Legs, Upper/Lower, Full Body, Body Part) fundamentally changes the structure of the entire plan."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The user's current training experience level (beginner, intermediate, advanced) dictates volume, intensity, and exercise complexity."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Where they train (home, commercial gym, garage gym) determines which equipment and exercises are actually available to them."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The number of days per week they can train is the single hardest limit that shapes the entire split structure."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Their primary goal (muscle gain, fat loss, strength, endurance, general fitness) determines how sessions are programmed \u2014 rep ranges, rest periods, intensity."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what a successful cycle looks like (e.g., hit a PR, improve a lagging muscle group, lose X lbs) defines how progress will be measured and what to prioritize."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "How long each session can last affects how much volume can be packed in per day and whether accessory work is realistic."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Create a personalized workout split for next cycle",
+    "taskDescription": "Design a structured, repeating workout schedule tailored to the user's fitness goals, available days, and training preferences for their upcoming training cycle.",
+    "questions": [
+      {
+        "title": "What is your primary goal for this training cycle?",
+        "description": "Understand whether the user is targeting muscle hypertrophy, strength gains, fat loss, improved endurance, or general fitness \u2014 this is the north star for all programming decisions.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many days per week can you commit to training?",
+        "description": "Determine the hard weekly availability limit, which directly dictates which split structures are even possible (e.g., 3-day vs. 5-day splits).",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How long have you been training consistently?",
+        "description": "Establish the user's experience level \u2014 beginner, intermediate, or advanced \u2014 to calibrate appropriate volume, intensity, and exercise selection.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Where will you be doing most of your training?",
+        "description": "Identify the training environment (commercial gym, home gym, garage gym, bodyweight only) to ensure the split is built around actually available equipment.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a preferred split style in mind?",
+        "description": "Find out if the user has a preference for a specific structure such as Push/Pull/Legs, Upper/Lower, Full Body, or a body-part bro split, versus being open to a recommendation.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How long can each workout session realistically last?",
+        "description": "Determine per-session time budget (e.g., 45 min, 60 min, 90 min) to know how much volume and how many exercises can fit into each day.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does a successful end to this cycle look like for you?",
+        "description": "Clarify the user's concrete success marker \u2014 hitting a specific lift PR, visibly improving a lagging body part, completing all sessions \u2014 to ensure the plan is built toward a measurable outcome.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

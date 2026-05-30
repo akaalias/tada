@@ -1,15 +1,16 @@
 {
-  "summary": "LoRA adapter v2a epoch2, greedy decoding",
-  "hypothesis": "A larger fine-tuning corpus (619 total, 558 train pairs) should push the adapter above the in-context plateau, because more diverse examples give the model better judgment about question quality \u2014 not just stylistic cues.",
-  "technique": "A single greedy (deterministic) on-device call using a LoRA adapter (v2a, epoch 2) fine-tuned on 558 train pairs at lr 5e-4, early-stopped. Greedy decoding eliminates the sampling noise that previously masked adapter gains on the full-30 eval.",
+  "summary": "v2a adapter epoch 2, greedy decoding",
+  "hypothesis": "Training on a larger corpus (619 examples) with greedy decoding should push quality further above the ~0.32 in-context plateau, since more data gives the adapter better generalisation and greedy eliminates sampling noise that was masking real gains.",
+  "technique": "A single greedy on-device call using a LoRA adapter (v2a, epoch 2) fine-tuned on 558 train pairs (corpus 312\u2192619, lr 5e-4, early-stopped at epoch 2 before overfitting). Deterministic greedy decoding is used throughout, locking the methodology established in this experiment.",
+  "result": "Scored 0.368 on full-30 greedy (1 win / 2 ties / 26 losses vs Sonnet); rubric atom=4, spec=3, cover=3, nat=4, nonRed=4. Weaker than its sibling epoch 1 (0.409, the new best) and below the v2a_e1 bar on most dimensions \u2014 discarded. Confirms that epoch 2 overfit, validating the early-stop decision.",
   "stages": [
     {
       "kind": "input",
-      "text": "Receive user one-liner topic"
+      "text": "User one-liner topic in"
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions with adapter v2a epoch2",
+      "text": "Greedy draft via v2a epoch-2 adapter",
       "knobs": {
         "sampling": "greedy",
         "model": "adapter-v2a-e2"
@@ -17,7 +18,7 @@
     },
     {
       "kind": "output",
-      "text": "Return final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "adapter_v2a_e2"

@@ -1,0 +1,82 @@
+{
+  "id": "get_an_allergy_panel_test_done_this_month",
+  "input": "Get an allergy panel test done this month",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Allergy panels vary widely \u2014 food, environmental, skin, respiratory, comprehensive \u2014 and the type determines which specialist or lab to go to."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is for themselves or someone else (e.g., a child) affects referral requirements, consent, and booking logistics."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether they already have a doctor's referral or need to get one first changes the sequence of steps entirely."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Insurance coverage or out-of-pocket budget directly determines which labs, clinics, or specialists are viable options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Preferred location or willingness to travel affects which facilities are on the shortlist and how quickly they can get an appointment."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Whether they need results interpreted by a doctor or just raw lab results changes whether they need a follow-up appointment planned as part of this task."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people prefer a hospital/specialist setting while others want a quick walk-in lab \u2014 this shapes which path to recommend."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get an allergy panel test done this month",
+    "taskDescription": "The user wants to schedule and complete an allergy panel test within the current month.",
+    "questions": [
+      {
+        "title": "Which type of allergies are you testing for?",
+        "description": "Identify the category of allergy panel needed \u2014 food, environmental/seasonal, skin, respiratory, or a broad comprehensive panel \u2014 to determine the right specialist or lab.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this test for yourself or someone else?",
+        "description": "Determine who the patient is, as testing a child or another person involves different referral, consent, and booking requirements.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a doctor's referral for this?",
+        "description": "Establish whether a referral is in hand, in progress, or not yet started, since this is often the very first step before booking.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you be using insurance, or paying out of pocket?",
+        "description": "Clarify the payment method to filter clinics and labs by what is covered or affordable, and to flag any pre-authorization steps needed.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How far are you willing to travel for the appointment?",
+        "description": "Understand the geographic range the user is comfortable with to narrow down which facilities are realistically on the shortlist.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a doctor to review and explain your results?",
+        "description": "Find out whether a follow-up consultation to interpret results is part of what 'done' means, or if receiving the raw lab report is sufficient.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a specialist clinic or a walk-in lab?",
+        "description": "Gauge whether the user wants a formal allergist/specialist setting with deeper expertise, or a faster, more convenient walk-in or direct-to-consumer lab option.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,11 +1,12 @@
 {
-  "summary": "RAG draft + reflexion editor with checklist",
-  "hypothesis": "Adding a second-pass FM auditor with a universal decision-critical checklist (budget/timeline/who-for/etc.) should improve question quality by pruning low-value or compound questions and injecting missing high-value unknowns \u2014 because the RAG draft's main weakness is wrongly-scoped questions, not its retrieval or phrasing.",
-  "technique": "Two-stage FM pipeline: stage 1 is the exp003 RAG-generate draft; stage 2 is a second on-device FM call (reflexion/critique) given the draft plus a hard universal checklist of decision-critical dimensions, instructed to delete already-given/low-value/compound questions and fill the single highest-value missing unknown while keeping strong questions verbatim.",
+  "summary": "RAG draft + reflexion critique editor",
+  "hypothesis": "Adding a reflexion editor to the RAG draft should improve coverage and question quality by dropping already-given or low-value questions and filling in decision-critical unknowns (budget/timeline/goal etc.) that the initial draft missed.",
+  "technique": "Two-stage pipeline: stage 1 is the exp003 RAG-generate draft; stage 2 is a second FM call (auditor) given the draft plus a fixed universal decision-critical checklist (budget/who-for/timeline/scale/location/current-state/goal), instructed to delete given/low-value/compound questions and insert the highest-value missing unknown while keeping strong questions verbatim.",
+  "result": "Scored 0.315 on dev-10 (0 wins / 1 tie / 9 losses vs Sonnet), down \u22120.005 from the exp003 best of 0.320; coverage stayed at 3 while nonRedundancy also held at 3, confirming the hypothesis was falsified \u2014 the hard universal checklist caused the auditor to mechanically inject irrelevant dimensions (budget/timeline into tasks where they're noise) and introduced new redundancy, swapping one set of wrong slots for another. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task description"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
@@ -20,9 +21,9 @@
     },
     {
       "kind": "critique",
-      "text": "Auditor: prune/fill via checklist",
+      "text": "Auditor: drop weak Qs, fill checklist gaps",
       "knobs": {
-        "checklist": "budget/who-for/timeline/scale/location/current-state/goal"
+        "calls": "1"
       }
     },
     {

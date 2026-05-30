@@ -1,7 +1,8 @@
 {
-  "summary": "Contrastive RAG at temp 1.2 (upper decoding endpoint)",
-  "hypothesis": "Raising temperature to 1.2 on the best contrastive-RAG base should surface sharper, task-specific tail questions that greedy/default decoding misses \u2014 because the critical unknowns are hypothesised to live in the tail of the distribution.",
-  "technique": "The exp011 contrastive-RAG pipeline (good-vs-bad exemplar retrieval injected as few-shot context) is run with decoding temperature raised to 1.2 \u2014 the upper endpoint of the decoding lever \u2014 to sample deeper into the tail and test whether coverage-filling questions can be surfaced that way.",
+  "summary": "Contrastive RAG at temp 1.2 to surface tail questions",
+  "hypothesis": "Raising temperature to 1.2 on the contrastive-RAG best base (exp011) should surface sharper, task-specific unknown questions that live in the tail of the distribution \u2014 the complementary upper endpoint to exp019's greedy floor.",
+  "technique": "The exp011 contrastive few-shot RAG pipeline is run unchanged but with decoding temperature raised to 1.2 (vs. model default), sampling deeper into the tail to test whether high-temperature draws can unlock coverage-improving questions that greedy/default decoding misses.",
+  "result": "Scored 0.267 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), a regression of \u22120.056 vs the exp011 best (0.323) and \u22120.040 vs baseline (0.307). Coverage stayed pinned at 3 with identical recurring gaps, while high temperature introduced atomicity/naturalness degradation and catastrophic context leakage (demo-bleed from the contrastive prompt), falsifying the tail hypothesis and closing the decoding lever entirely; discarded.",
   "stages": [
     {
       "kind": "input",
@@ -9,7 +10,7 @@
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive good-vs-bad exemplar lookup",
+      "text": "Fetch contrastive good/bad RAG exemplars",
       "knobs": {
         "sampling": "contrastive"
       }

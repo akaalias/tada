@@ -1,26 +1,30 @@
 {
   "summary": "RAG few-shot + retrieved coverage checklist, single call",
-  "hypothesis": "Injecting a task-conditioned coverage checklist \u2014 dimensions aggregated from the same nearest exemplars used for RAG \u2014 should beat a universal checklist by giving the model decision-critical dimension labels tailored to the specific task, nudging it toward the right coverage axes.",
-  "technique": "At runtime, retrieve the 2 nearest gold exemplars (same as exp003), aggregate their tagged decision-critical dimension labels into a coverage checklist, and inject both the exemplars and the checklist into a single on-device generation call \u2014 no separate auditor or post-processing pass.",
+  "hypothesis": "Injecting a task-conditioned coverage checklist derived from the nearest retrieved exemplars \u2014 rather than a universal one \u2014 should better steer the model toward the decision-critical dimensions for each specific task, improving coverage scores.",
+  "technique": "At runtime, the 2 nearest gold exemplars are retrieved (same as exp003); their tagged dimension labels are aggregated into a task-conditioned coverage checklist and injected into a single on-device model call alongside the few-shot exemplars \u2014 no auditor or second pass.",
+  "result": "Scored 0.290 on dev-10 (0 wins / 1 tie / 9 losses vs Sonnet), a drop of \u22120.030 from the exp003 best of 0.320; coverage remained at 3 and atomicity at 4, confirming that a retrieved dimension-label checklist is no better than a universal one. Hypothesis falsified \u2014 discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "Accept user task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch 2 nearest gold exemplars + dimension labels",
+      "text": "Fetch 2 nearest gold exemplars + aggregate dimension labels",
       "knobs": {
         "k": "2"
       }
     },
     {
       "kind": "generate",
-      "text": "Single call: RAG few-shot + coverage checklist injected"
+      "text": "Single call: few-shot + coverage checklist injected",
+      "knobs": {
+        "sampling": "greedy"
+      }
     },
     {
       "kind": "output",
-      "text": "Emit final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp006"

@@ -1,0 +1,82 @@
+{
+  "id": "get_the_car_s_brakes_inspected_this_month",
+  "input": "Get the car's brakes inspected this month",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether this is just an inspection or if suspected repair/replacement is also expected changes what kind of appointment to book and how long to allow."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user has a preferred mechanic or dealership already in mind determines if they need to research providers or simply call a known one."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Understanding what prompted this \u2014 a noise, a warning light, routine maintenance \u2014 affects the urgency and what to tell the mechanic."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget ceiling affects whether to go to a dealership, independent shop, or chain \u2014 and whether to pre-authorise any repair work found."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether the user needs alternative transport while the car is in the shop (ride, loaner car) is a critical next-action dependency."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Clarifying what 'done well' means \u2014 a written report, a pass/fail verdict, a cost estimate \u2014 shapes what to ask the shop to provide."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user's preferred day or time window within the month affects when to schedule and how much lead time is needed to secure a slot."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get car brakes inspected this month",
+    "taskDescription": "Arrange and complete a brake inspection for the user's car within the current month.",
+    "questions": [
+      {
+        "title": "Is this inspection only, or do you expect repairs too?",
+        "description": "Determine whether the goal is purely a diagnostic inspection or if the user anticipates brake repairs or part replacements as part of this visit.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a mechanic or shop already in mind?",
+        "description": "Find out if the user has a trusted provider to call, or if they need help identifying and vetting a brake specialist.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What prompted you to get the brakes checked now?",
+        "description": "Understand the trigger \u2014 unusual noise, spongy pedal, warning light, or routine mileage interval \u2014 to gauge urgency and inform the mechanic accurately.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a budget limit for this visit?",
+        "description": "Establish a spending ceiling so the user can choose the right type of shop and decide in advance whether to authorise any repair work discovered.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you need alternative transport while the car is in?",
+        "description": "Determine if the user needs to arrange a loaner car, ride-share, or other transport on the day of the inspection, as this affects scheduling.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What do you want the shop to give you at the end?",
+        "description": "Clarify the expected output \u2014 a written inspection report, a verbal pass/fail, a repair cost estimate \u2014 so the user knows what to request when booking.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which days or times this month work best for you?",
+        "description": "Pin down the user's available windows so the appointment can be booked with enough lead time to secure a suitable slot before month end.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

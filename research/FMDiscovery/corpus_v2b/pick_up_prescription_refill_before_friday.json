@@ -1,0 +1,82 @@
+{
+  "id": "pick_up_prescription_refill_before_friday",
+  "input": "Pick up prescription refill before Friday",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether the refill has already been requested/approved or still needs to be ordered determines how many steps are involved \u2014 it could be ready to collect, or require calling a doctor or pharmacy first."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Which pharmacy and its location, hours, and distance affect when and how the user can realistically get there before Friday."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The user's available days and times before Friday constrain when the pickup window actually is, especially if they have work or other commitments."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user needs to go in person or if delivery or curbside pickup is an option changes the action plan entirely."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If someone else \u2014 a family member, caregiver, or friend \u2014 could pick it up on the user's behalf, that opens up more scheduling flexibility."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding why Friday is the deadline (e.g., running out of medication, leaving town) clarifies the urgency level and whether an earlier pickup is safer."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want a simple reminder, others want a step-by-step action plan with calls to make \u2014 knowing the preferred level of support shapes how the plan is structured."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Pick up prescription refill before Friday",
+    "taskDescription": "The user needs to collect a prescription refill from a pharmacy before a Friday deadline.",
+    "questions": [
+      {
+        "title": "Has the refill already been sent to the pharmacy?",
+        "description": "Determine whether the prescription has been requested from the doctor and approved, or whether that step still needs to happen before pickup is possible.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which pharmacy are you picking it up from?",
+        "description": "Identify the specific pharmacy \u2014 name, location, and operating hours \u2014 so the plan can account for travel and timing realistically.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which days and times are you free before Friday?",
+        "description": "Understand the user's available windows so the pickup can be scheduled at a realistic and convenient time.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Can this prescription be delivered instead of picked up?",
+        "description": "Check whether home delivery, mail-order, or curbside pickup is an option, which could simplify or eliminate an in-person trip.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Could someone else pick it up on your behalf?",
+        "description": "Establish whether a family member, friend, or caregiver is available and authorized to collect the prescription, adding scheduling flexibility.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Why is Friday the hard deadline for this pickup?",
+        "description": "Clarify the reason for the deadline \u2014 such as running out of medication or traveling \u2014 to gauge true urgency and whether an earlier pickup is advisable.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want reminders or a full step-by-step action plan?",
+        "description": "Determine whether the user needs only a nudge reminder or a detailed plan that includes calls to make, steps to confirm, and a pickup checklist.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

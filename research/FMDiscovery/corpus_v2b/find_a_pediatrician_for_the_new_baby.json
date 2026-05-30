@@ -1,0 +1,82 @@
+{
+  "id": "find_a_pediatrician_for_the_new_baby",
+  "input": "Find a pediatrician for the new baby",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the baby is already born or due soon changes the urgency and timeline of the search \u2014 many parents need a pediatrician lined up before the birth."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Insurance coverage is a hard limit that filters which pediatricians are actually available; without knowing the plan, any list of candidates could be useless."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The geographic area or proximity requirement directly determines which practices are even worth considering."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If there are specific health needs or conditions for the baby (e.g., prematurity, known diagnosis), that narrows the type of specialist or practice required."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Parents often have strong preferences around care philosophy (e.g., vaccine schedule flexibility, holistic approach, solo vs. group practice) that act as a primary filter."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what 'done' looks like \u2014 a shortlist of names, a confirmed appointment, or a signed-on pediatrician \u2014 defines how far the plan needs to go."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether the user wants help with the full search process (research, vetting, interviewing) or just a specific step like finding in-network names changes the plan entirely."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Find a pediatrician for the new baby",
+    "taskDescription": "Research and select a pediatrician for a new baby, covering the full process from identifying candidates to booking a first appointment.",
+    "questions": [
+      {
+        "title": "When is your baby due or already born?",
+        "description": "Determine the baby's arrival status to set the urgency and timeline for the search.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which health insurance plan does your baby have?",
+        "description": "Identify the insurance plan so the search can be filtered to in-network providers only.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city, neighborhood, or max distance are you searching in?",
+        "description": "Establish the geographic boundaries to make the candidate list practical and usable.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does your baby have any special health needs or conditions?",
+        "description": "Understand any medical specifics that would require a particular type of practice or specialist experience.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a preferred care philosophy or practice style?",
+        "description": "Capture preferences such as approach to vaccines, solo vs. group practice, or integrative care to filter candidates meaningfully.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does success look like \u2014 a shortlist, or a booked appointment?",
+        "description": "Define the end goal so the plan covers exactly the right number of steps.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want help with the full search or one specific step?",
+        "description": "Clarify the scope \u2014 whether the user needs end-to-end guidance or help with just one part, like finding names or preparing interview questions.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

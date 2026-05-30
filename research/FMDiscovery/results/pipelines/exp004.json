@@ -1,19 +1,20 @@
 {
-  "summary": "Best-of-4 RAG sets, Swift coverage scorer selects",
-  "hypothesis": "Sampling RAG-augmented drafts at four temperatures and picking the one with the best dimension coverage should outperform a single-shot RAG draft, because a wider sampling spread raises the chance that at least one set covers all required dimensions.",
-  "technique": "Four parallel on-device RAG-augmented generation calls at temperatures [0.3, 0.6, 0.9, 1.0] produce four candidate question sets; a deterministic Swift scorer (weighted dimension-span: budget/timeline/scale/location/current-state bonuses, redundancy + already-stated penalties) then picks the best-covering set without any model involvement.",
+  "summary": "Best-of-4 RAG temps, Swift coverage select",
+  "hypothesis": "Sampling RAG-augmented drafts at multiple temperatures and picking the best by coverage should outperform a single-temperature RAG call, because diversity across temperatures should surface a set that spans more question dimensions.",
+  "technique": "Four RAG-retrieval + generate calls at temperatures [0.3, 0.6, 0.9, 1.0] produce four candidate question sets; a deterministic Swift scorer (weighted dimension-span across budget/timeline/scale/location/current-state with redundancy and \"how many\"-already-stated penalties) selects the highest-coverage set.",
+  "result": "Scored 0.245 on dev-10 (0 wins / 0 ties / 9 losses vs Sonnet), down \u22120.075 from exp003 and \u22120.062 vs baseline; rubric atom=4, spec=3, cover=3, nat=3, nonRed=3 \u2014 discarded. Coverage did not improve (still 3), and high-temp sampling actively degraded atomicity and specificity in ways the keyword-only Swift scorer could not detect, confirming the hypothesis was falsified: a coverage-only proxy ruler backfires when it cannot penalise compound questions or generic framing.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner topic in"
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of nearest exemplars"
+      "text": "Fetch RAG exemplars for context"
     },
     {
       "kind": "ensemble",
-      "text": "4 RAG drafts at varied temps",
+      "text": "Generate 4 RAG drafts at varied temps",
       "knobs": {
         "n": "4",
         "temp": "0.3/0.6/0.9/1.0"
@@ -30,12 +31,12 @@
       "text": "Swift coverage scorer picks best set",
       "knobs": {
         "k": "1",
-        "scorer": "dimension-span weighted"
+        "scoring": "weighted-dimension-span"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Best-coverage question set out"
     }
   ],
   "label": "exp004"

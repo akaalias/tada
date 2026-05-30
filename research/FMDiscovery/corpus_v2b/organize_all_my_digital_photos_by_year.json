@@ -1,0 +1,82 @@
+{
+  "id": "organize_all_my_digital_photos_by_year",
+  "input": "Organize all my digital photos by year",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Photos may be scattered across multiple devices, drives, or cloud services \u2014 knowing exactly what is included determines the complexity and starting point of the task."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The operating system, storage location (local vs. cloud), and existing folder structure determine which tools and methods are practical."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The total number of photos and available storage space affects whether a manual, semi-automated, or fully automated approach is needed."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The year assigned to each photo could come from the file name, EXIF metadata, or date modified \u2014 this choice directly affects accuracy and the tools required."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may want only top-level year folders, or sub-folders by month or event within each year \u2014 this shapes the entire folder structure."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If duplicates exist across devices or accounts, the user needs to decide whether to deduplicate as part of this task, which significantly changes the scope."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the original file locations should be preserved, moved, or copied determines whether this is a destructive reorganization or a safe, reversible one."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Organize all digital photos by year",
+    "taskDescription": "Sort and restructure the user's entire digital photo collection into a year-based organizational system.",
+    "questions": [
+      {
+        "title": "Where are your photos currently stored?",
+        "description": "Identify all source locations \u2014 e.g., a single PC folder, multiple external drives, iCloud, Google Photos, phone storage \u2014 to determine what needs to be consolidated.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What device and operating system will you use?",
+        "description": "Establish the working environment (Windows, Mac, Linux, mobile) and whether photos live locally or in the cloud, which determines which tools and scripts are available.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Roughly how many photos are you dealing with?",
+        "description": "Get an order-of-magnitude estimate (hundreds, thousands, tens of thousands) to decide whether a manual, bulk-rename tool, or custom script approach is most practical.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What date source should determine each photo's year?",
+        "description": "Clarify whether to use EXIF capture date, file creation date, file modification date, or file name \u2014 this directly affects sorting accuracy, especially for scanned or downloaded photos.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should year folders contain sub-folders like months or events?",
+        "description": "Determine the desired depth of the folder hierarchy \u2014 year-only, year/month, or year/event \u2014 which defines the entire target structure before any files are moved.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want duplicates removed as part of this process?",
+        "description": "Find out if deduplication is in scope, since many collections have duplicate files across devices or backups, which would meaningfully expand the task.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should files be moved or copied to the new structure?",
+        "description": "Establish whether the original file locations must be preserved as a safety backup (copy) or whether files should be relocated permanently (move), determining risk and storage requirements.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

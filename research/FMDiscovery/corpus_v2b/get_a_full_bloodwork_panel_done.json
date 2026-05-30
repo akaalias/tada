@@ -1,0 +1,82 @@
+{
+  "id": "get_a_full_bloodwork_panel_done",
+  "input": "Get a full bloodwork panel done",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "A 'full panel' means different things \u2014 basic metabolic, CBC, lipids, hormones, thyroid, vitamins, etc. Knowing which markers they want determines exactly what to request."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether a doctor is already involved (ordering the test) vs. the user going direct-to-consumer (e.g. Quest, LabCorp, private services) completely changes the path forward."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Is this routine/preventive, driven by specific symptoms, or for a condition they're already managing? The reason shapes which tests are prioritised and how urgently."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Whether they have health insurance, a budget cap, or no coverage determines which route (insurance-covered, employer benefit, or out-of-pocket direct-to-consumer) is viable."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Their location and access to labs or clinics determines which specific lab facilities or services to recommend and what prep (fasting, scheduling) is needed."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people want to interpret results themselves, others want a doctor to walk them through them \u2014 this affects whether to use a concierge service, a GP, or a telehealth provider."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what 'done well' looks like \u2014 e.g. having results in hand, understanding the numbers, or sharing them with a provider \u2014 defines where the task actually ends."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a full bloodwork panel done",
+    "taskDescription": "The user wants to complete a comprehensive blood test, which involves deciding what tests to get, who orders them, where to go, and how to act on the results.",
+    "questions": [
+      {
+        "title": "Which specific markers do you want tested?",
+        "description": "Clarify whether the user wants a basic panel (CBC, metabolic) or an expanded one covering lipids, hormones, thyroid, vitamins, inflammatory markers, etc.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a doctor who will order this?",
+        "description": "Determine whether the user has a primary care provider to write the order, or if they need to use a direct-to-consumer lab service.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this routine, symptom-driven, or for a known condition?",
+        "description": "Understand the medical reason behind the request so the right tests and urgency level can be prioritised.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you use insurance, or are you paying out of pocket?",
+        "description": "Identify the user's coverage situation to determine which service options (insurance lab, employer benefit, or self-pay services like Ulta Lab Tests) are realistic.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What country or city are you located in?",
+        "description": "Pinpoint the user's location to suggest accessible lab facilities, walk-in options, or mail-in kits available to them.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a professional to review your results with you?",
+        "description": "Find out if the user wants a doctor or clinician to interpret results, or if they prefer to review them independently.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does 'done' look like \u2014 results in hand, or action taken?",
+        "description": "Clarify whether the task ends when results are received, when they are understood, or when a follow-up action (e.g. medication, lifestyle change) has been decided.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

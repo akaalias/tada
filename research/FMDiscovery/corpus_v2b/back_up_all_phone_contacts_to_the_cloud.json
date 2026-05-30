@@ -1,0 +1,82 @@
+{
+  "id": "back_up_all_phone_contacts_to_the_cloud",
+  "input": "Back up all phone contacts to the cloud",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "iPhone and Android have completely different native backup paths (iCloud vs Google Contacts), so the phone type determines the whole approach."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether this is a one-time backup or an ongoing automatic sync changes whether we set up a recurring process or just do it once."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the contacts belong to a personal account vs a work account (e.g., Exchange, Microsoft 365), the tools and permissions involved differ significantly."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The preferred cloud destination (Google, iCloud, Outlook, a third-party app) determines which specific steps to follow."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The user may already have a cloud account set up, or may need to create one \u2014 this determines how many prerequisite steps are needed."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what 'done well' means \u2014 e.g., contacts accessible on another device, exportable as a file, or shareable \u2014 shapes how to verify the backup worked."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want full automation with no manual steps; others prefer to export a file they control. This affects which solution to recommend."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Back up all phone contacts to the cloud",
+    "taskDescription": "The user wants to save their phone's contacts to a cloud service so they are preserved and accessible beyond the device.",
+    "questions": [
+      {
+        "title": "What type of phone do you have, iPhone or Android?",
+        "description": "Identifies the operating system, which determines the entire backup workflow and available native tools.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should this be a one-time backup or automatic ongoing sync?",
+        "description": "Determines whether to configure a recurring sync process or just perform a single manual export.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are these personal contacts, work contacts, or both?",
+        "description": "Clarifies account ownership, which affects which service handles the backup and what permissions or policies apply.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which cloud service do you want to back up to?",
+        "description": "Identifies the target destination (e.g., Google Contacts, iCloud, Outlook, a third-party app) to tailor the step-by-step instructions.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a cloud account set up and ready?",
+        "description": "Establishes whether account creation and login steps need to be included before the backup itself can begin.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How will you confirm the backup actually worked correctly?",
+        "description": "Defines the success condition \u2014 e.g., viewing contacts on another device, receiving a confirmation email, or downloading an export file.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer full automation or keeping a manual file you control?",
+        "description": "Captures the user's preference between a hands-off sync solution versus an exportable file (e.g., .vcf) they store themselves.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

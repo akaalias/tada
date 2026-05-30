@@ -1,0 +1,82 @@
+{
+  "id": "sign_up_for_a_beginner_s_glassblowing_workshop_n",
+  "input": "Sign up for a beginner's glassblowing workshop nearby",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing the user's location determines which studios and workshops are actually 'nearby' and searchable."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "The user may have a specific window of availability, which narrows which workshop dates are viable."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Beginner glassblowing workshops vary widely in price; a budget ceiling filters out unaffordable options."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is just for the user or for a group (e.g., friends, a partner, a gift) changes how many spots to book and what type of session to seek."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Some workshops focus on specific techniques or produce a specific object (e.g., ornament, vase, paperweight); knowing a preference narrows the search meaningfully."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what the user most values \u2014 hands-on time, a take-home piece, a certified instructor, small class size \u2014 helps prioritise between comparable options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing how far the user is willing to travel defines the practical search radius and transport considerations."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Sign up for a local beginner glassblowing workshop",
+    "taskDescription": "Find and register for a beginner-level glassblowing workshop at a nearby studio or venue.",
+    "questions": [
+      {
+        "title": "What city or neighbourhood are you based in?",
+        "description": "The user's location is needed to search for workshops that are actually nearby.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How far are you willing to travel to the studio?",
+        "description": "Defines the practical search radius \u2014 e.g., within 5 miles, 15 miles, or happy to drive 30+ minutes.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a target date or timeframe in mind?",
+        "description": "Identifies whether the user needs a session in the next week, a specific weekend, or is flexible.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget for the workshop fee?",
+        "description": "Beginner sessions typically range from $50 to $200+; a ceiling helps filter options quickly.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this just for you, or are you booking for others too?",
+        "description": "Determines whether to look for individual spots or a group/private session booking.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a specific item you want to make, like an ornament or vase?",
+        "description": "Many studios offer theme-specific sessions; a preference narrows the search to the right workshop type.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most to you in choosing a workshop?",
+        "description": "Helps prioritise between options \u2014 e.g., maximum hands-on time, a take-home piece, small class size, or a highly rated instructor.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

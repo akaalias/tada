@@ -1,0 +1,82 @@
+{
+  "id": "map_all_the_hiking_trails_within_two_hours_away",
+  "input": "Map all the hiking trails within two hours away",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The starting point determines the entire geographic search area \u2014 without it, no trails can be identified."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Two hours could mean driving, public transit, or walking, which dramatically changes the radius covered."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Trail difficulty, length, or elevation filters determine which trails are actually relevant vs. noise."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is for solo use, a group, or people with specific physical needs changes which trails qualify."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The output format \u2014 a printed map, a saved list in an app, a shared link \u2014 shapes the entire workflow."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Trail character preferences (scenic views, waterfalls, forests, dog-friendly, etc.) narrow down what to highlight on the map."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the goal is a quick personal reference or a thorough shareable resource sets the depth of research needed."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Map hiking trails within two hours away",
+    "taskDescription": "Find and map all hiking trails reachable within a two-hour travel radius from the user's location.",
+    "questions": [
+      {
+        "title": "What city or address are you starting from?",
+        "description": "Identify the user's starting location to define the geographic search area for the two-hour radius.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does two hours mean driving, transit, or walking?",
+        "description": "Determine the mode of travel used to calculate the two-hour boundary.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there difficulty or length limits for the trails?",
+        "description": "Establish any filters such as easy/moderate/hard, minimum or maximum trail length, or elevation gain thresholds.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who will be hiking \u2014 solo, family, or a group?",
+        "description": "Understand the hiking party composition to account for accessibility, pace, or group-specific trail requirements.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What tool should the final map be built in?",
+        "description": "Determine whether the output should be in Google Maps, AllTrails, a printed map, a spreadsheet, or another format.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What kind of scenery or trail features matter most to you?",
+        "description": "Capture preferences such as waterfalls, viewpoints, forests, dog-friendly paths, or loop vs. out-and-back trails.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this a quick personal list or a thorough shareable resource?",
+        "description": "Clarify the intended depth and audience of the final map to set the right level of research and detail.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

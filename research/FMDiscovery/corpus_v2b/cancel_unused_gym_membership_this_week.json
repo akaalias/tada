@@ -1,0 +1,82 @@
+{
+  "id": "cancel_unused_gym_membership_this_week",
+  "input": "Cancel unused gym membership this week",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The gym's cancellation policy and process vary widely \u2014 some require in-person visits, others accept phone or online cancellations \u2014 which determines the entire action plan."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Whether the user is still within a contract period or has a minimum notice requirement affects timing and whether fees will be incurred."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing what cancellation materials or account details the user has on hand (membership ID, contract, payment info) determines what needs to be gathered first."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may have multiple memberships or add-ons (e.g., personal training, a family plan) \u2014 clarifying what exactly needs to be cancelled prevents incomplete action."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the membership is shared or under someone else's name, a different person may need to be involved or authorize the cancellation."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user's definition of 'done' matters \u2014 is it submitting the cancellation request, receiving written confirmation, or seeing the charge stop on their bank statement?"
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want to avoid any confrontation or upselling from gym staff and would prefer a non-verbal method; others are fine calling or going in person, which shapes the recommended approach."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Cancel unused gym membership this week",
+    "taskDescription": "The user wants to successfully cancel a gym membership they are no longer using, completing the process within this week.",
+    "questions": [
+      {
+        "title": "Which gym or membership provider needs to be cancelled?",
+        "description": "Identify the specific gym chain or provider so the correct cancellation policy and process can be looked up.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you still inside a contract or minimum commitment period?",
+        "description": "Determine whether the membership is month-to-month or locked into a term, as this affects whether early-termination fees apply.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have your membership details and contract documents handy?",
+        "description": "Check whether the user has their membership ID, original agreement, or payment method details readily accessible before starting.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there any add-ons like personal training or family plans to cancel too?",
+        "description": "Clarify the full scope of what needs to be cancelled to avoid leaving active paid components behind.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is the membership solely in your name to cancel?",
+        "description": "Establish whether anyone else is named on the account or needs to authorize the cancellation.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What will make this feel fully done to you \u2014 a confirmation email, charge stopped, or something else?",
+        "description": "Define the user's personal finish line so the plan includes the right final verification step.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer to cancel online or by phone rather than in person?",
+        "description": "Understand the user's preferred method of contact to tailor the approach and avoid unwanted in-person upsell conversations.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

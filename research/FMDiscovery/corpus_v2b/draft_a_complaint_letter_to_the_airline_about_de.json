@@ -1,0 +1,82 @@
+{
+  "id": "draft_a_complaint_letter_to_the_airline_about_de",
+  "input": "Draft a complaint letter to the airline about delays",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The specific details of the delay (duration, number of flights affected, whether it caused a missed connection) determine what incidents and consequences to include in the letter."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the letter is for one traveller or a group affects how it is framed and whether collective damages should be mentioned."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The airline name, flight number, route, and date ground the letter in verifiable facts and make it actionable."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Knowing whether the user has already contacted the airline or has a response deadline affects urgency and tone."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The desired tone \u2014 firm and legal, polite and diplomatic, or assertive \u2014 shapes the entire voice of the letter."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "What the user wants as an outcome (refund, compensation voucher, miles, formal apology) determines what the letter demands and how strongly."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the letter will be sent by email, physical mail, or via an online portal affects formatting, length, and whether attachments are referenced."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Draft airline complaint letter about delays",
+    "taskDescription": "Write a formal complaint letter to an airline addressing a flight delay experience.",
+    "questions": [
+      {
+        "title": "How long was the delay, and did it cause any knock-on issues?",
+        "description": "Capture the delay duration and any cascading consequences such as missed connections, extra hotel stays, or lost bookings.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which airline, flight number, route, and travel date are involved?",
+        "description": "Identify the specific flight details needed to make the letter verifiable and credible.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who is the letter being written for \u2014 just you, or a group?",
+        "description": "Determine whether this is a solo complaint or on behalf of multiple passengers, which affects the framing and claimed damages.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What outcome are you hoping to receive from the airline?",
+        "description": "Clarify the desired resolution \u2014 refund, compensation, flight voucher, miles, or a formal apology \u2014 so the letter can make a clear demand.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What tone should the letter strike \u2014 polite, firm, or legally assertive?",
+        "description": "Establish the voice and register of the letter to match the user's preferred style and relationship with the airline.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you already contacted the airline, or is this the first attempt?",
+        "description": "Knowing if prior contact was made (and what the airline's response was) affects whether this is an initial complaint or an escalation.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will this letter be sent by email, post, or an online complaints portal?",
+        "description": "The delivery method determines formatting choices, appropriate length, and whether supporting documents should be referenced as attachments.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

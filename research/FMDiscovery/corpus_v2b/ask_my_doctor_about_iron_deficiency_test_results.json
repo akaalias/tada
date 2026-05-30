@@ -1,0 +1,82 @@
+{
+  "id": "ask_my_doctor_about_iron_deficiency_test_results",
+  "input": "Ask my doctor about iron deficiency test results",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing which specific markers or results (e.g. ferritin, hemoglobin, serum iron) to ask about determines how focused and prepared the conversation needs to be."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the appointment is already scheduled, upcoming, or still needs to be booked completely changes what the immediate next step is."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether this is an in-person visit, a phone call, or a patient portal message affects how the user should prepare and communicate."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is the user's primary care doctor, a specialist (e.g. hematologist), or another provider affects the level of detail and type of questions to prepare."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "If the user has a hard deadline (e.g. symptoms worsening, a follow-up window closing), that urgency shapes how quickly this needs to happen."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people want a full list of questions prepared in advance; others just need a single reminder note \u2014 knowing their preferred preparation style shapes the plan."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user's end goal \u2014 whether it's understanding the results, getting a diagnosis, starting treatment, or getting a referral \u2014 defines what a successful conversation looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Ask doctor about iron deficiency test results",
+    "taskDescription": "The user wants to follow up with their doctor regarding iron deficiency test results, but key details about timing, format, and what specifically to ask are unclear.",
+    "questions": [
+      {
+        "title": "Which specific test results do you want to discuss?",
+        "description": "Identify the exact markers or panels the user wants to ask about, such as ferritin levels, hemoglobin, serum iron, or the full iron panel.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have an appointment booked?",
+        "description": "Determine whether the user needs to schedule an appointment first or is preparing for an existing one.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will this be in-person, by phone, or via a patient portal?",
+        "description": "Clarify the communication channel so the preparation format (written questions vs. verbal notes) can be matched accordingly.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this your GP or a specialist you are seeing?",
+        "description": "Knowing the type of doctor helps tailor the depth and technical level of the questions the user should prepare.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a deadline or urgency driving this follow-up?",
+        "description": "Understand whether symptoms, a treatment window, or a required callback date makes timing critical.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a structured list of questions to bring?",
+        "description": "Find out whether the user wants a written question list prepared in advance or just a simple reminder to follow up.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What outcome do you need from this conversation?",
+        "description": "Clarify whether the goal is to understand the results, confirm a diagnosis, begin treatment, or get referred to a specialist.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

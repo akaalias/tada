@@ -1,0 +1,82 @@
+{
+  "id": "file_a_claim_for_the_damaged_luggage_from_my_fli",
+  "input": "File a claim for the damaged luggage from my flight",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The extent and type of damage determines whether this is an airline claim, travel insurance claim, or both \u2014 and affects what compensation is realistically available."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user is filing alone or needs help from a travel agent, insurance broker, or airline rep changes what steps they need to take themselves."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The airline and whether the flight was domestic or international (governed by different conventions, e.g. Montreal Convention) fundamentally changes the claims process and liability limits."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Airlines and insurers have strict deadlines \u2014 often 7 days for damage claims \u2014 so knowing how much time has passed since the flight is critical to the plan."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user has already reported the damage at the airport (Property Irregularity Report) determines whether there is a reference number to build the claim on or if that step is still needed."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user's goal \u2014 full reimbursement, repair cost, or a replacement \u2014 shapes what evidence to gather and how assertively to pursue the claim."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Whether the user prefers to file online, by phone, or in person, and whether they want step-by-step guidance or just a checklist, determines the format of the plan."
+    }
+  ],
+  "gold": {
+    "taskTitle": "File a damaged luggage claim for flight",
+    "taskDescription": "The user wants to submit a claim for luggage that was damaged during a flight, which involves identifying the right process, gathering documentation, and contacting the right parties.",
+    "questions": [
+      {
+        "title": "Which airline operated the flight with the damaged bag?",
+        "description": "Identifying the airline determines exactly where and how to file, what their specific claims portal or process is, and what liability limits apply.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Was this a domestic or international flight?",
+        "description": "Domestic vs. international flights are governed by different legal frameworks (e.g. Montreal Convention for international), which changes compensation limits and filing rules.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many days ago did the flight land?",
+        "description": "Most airlines require damage to be reported within 7 days; knowing the timeline determines urgency and whether the standard deadline has passed.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Did you file a Property Irregularity Report at the airport?",
+        "description": "A PIR filed at the airport is often a prerequisite for a formal claim; knowing whether one exists determines the starting point of the plan.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you claiming through the airline, travel insurance, or both?",
+        "description": "The claiming route changes the documentation required, the process to follow, and the realistic compensation outcome.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What outcome are you hoping to get from this claim?",
+        "description": "Whether the user wants full replacement value, repair reimbursement, or a travel voucher shapes how to frame the claim and what evidence to prioritise.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer to handle this online, by phone, or in person?",
+        "description": "The user's preferred channel determines whether the plan focuses on the airline's web portal, a customer service call script, or visiting an airport desk.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

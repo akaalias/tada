@@ -1,0 +1,82 @@
+{
+  "id": "sign_up_for_a_local_volunteer_cleanup_event",
+  "input": "Sign up for a local volunteer cleanup event",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The user's city or neighborhood determines which specific events and organizations are actually available to them."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Cleanup events vary widely \u2014 parks, beaches, rivers, streets, etc. \u2014 and the user may have a specific environment in mind, which narrows the search."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Knowing which dates or days of the week the user is available rules out events that don't fit their schedule before wasting time researching them."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user is signing up solo, with friends, or as a group (e.g., family with kids) affects which events are suitable and how many spots need to be reserved."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer a one-time event vs. an ongoing commitment, or a large organized event vs. a small community gathering \u2014 this shapes which options to prioritize."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Understanding whether the user already has a specific organization or event in mind vs. needing to discover options determines the very first action to take."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Some users just want to show up once; others want to build a volunteer habit or earn hours for a requirement \u2014 knowing this shapes how thoroughly to vet the event."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Sign up for a local volunteer cleanup event",
+    "taskDescription": "The user wants to find and register for a volunteer cleanup event happening in their local area.",
+    "questions": [
+      {
+        "title": "What city or neighborhood are you based in?",
+        "description": "The user's location is essential for finding relevant local cleanup events and organizations.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What type of environment do you want to clean up?",
+        "description": "Identifying a preferred setting \u2014 park, beach, river, urban streets, trails \u2014 narrows the search to matching events.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which dates or days of the week are you available?",
+        "description": "Availability constraints immediately filter out events the user cannot attend, making the search more efficient.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you signing up alone, or bringing others with you?",
+        "description": "Knowing whether this is a solo signup or a group (friends, family, children) affects which events are appropriate and how many registrations are needed.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a one-time event or a recurring commitment?",
+        "description": "Some users want a single Saturday event; others want to join an ongoing volunteer program \u2014 this shapes which options to surface.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have an organization or event in mind?",
+        "description": "If the user already knows of a specific group or event, the task is registration only; if not, discovery is the first step.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need to log volunteer hours for any requirement?",
+        "description": "If the user needs certified hours for school, work, or court, the event must offer official verification \u2014 a key filter for choosing the right one.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

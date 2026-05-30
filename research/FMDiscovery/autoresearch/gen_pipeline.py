@@ -23,6 +23,7 @@ TOOL = {
             "summary": {"type": "string", "description": "<=10 words naming the core idea of this experiment."},
             "hypothesis": {"type": "string", "description": "1-2 plain sentences for a human skimming the dashboard: the BELIEF this experiment tests — what we expected to improve and WHY we thought it would. Frame as a testable bet, e.g. 'Distilling Sonnet's question-style into the weights should beat any in-context prompt, because the gap is per-call judgment, not instructions.' Do NOT describe the mechanism here (that's 'technique')."},
             "technique": {"type": "string", "description": "1-2 plain sentences: the concrete METHOD used to test the hypothesis — the actual change/mechanism in plain language, naming the lever (decoding, retrieval/RAG, multi-call pipeline, guided-schema design, deterministic post-processing, LoRA adapter, etc.). e.g. 'A single greedy on-device call using a LoRA adapter fine-tuned on 558 Sonnet task->questions pairs.'"},
+            "result": {"type": "string", "description": "1-2 plain sentences: what ACTUALLY happened when this ran. You MUST use the EXACT metrics given in the user message (quality score, win/tie/loss vs Sonnet, the rubric, kept-or-discarded) — do not invent numbers. State the headline quality and how it compared to the prior best/baseline/plateau, what the judge/rubric revealed (esp. the coverage dimension if relevant), and the takeaway (was the hypothesis confirmed or falsified). e.g. 'Scored 0.409 on the full-30 gate (2 wins / 5 ties / 22 losses vs Sonnet), a real step above the v1 adapter (0.362) and the ~0.32 in-context plateau; specificity and naturalness rose to 4 but coverage stayed at 3, so the bet partly paid off — kept as the new best, still short of parity.'"},
             "stages": {
                 "type": "array",
                 "description": "Ordered left-to-right stages of the on-device pipeline (NOT the eval/judge).",
@@ -39,13 +40,13 @@ TOOL = {
                 }
             }
         },
-        "required": ["summary", "hypothesis", "technique", "stages"]
+        "required": ["summary", "hypothesis", "technique", "result", "stages"]
     }
 }
 
 SYSTEM = """You convert a one-line description of an on-device LLM pipeline experiment into a structured stage list, using ONLY the fixed stage vocabulary in the tool. Goal: a consistent visual language — the SAME building block always gets the SAME kind, so similar experiments look similar.
 
-You ALSO write two short human-readable fields for the dashboard: 'hypothesis' (the testable bet — what we expected to improve and why) and 'technique' (the concrete method/lever used to test it). Ground both in the log entry and note; if the description is sparse, infer the most reasonable bet and method from the technique named. Keep each to 1-2 plain sentences, no jargon dumps. The hypothesis is the WHY/what-we-believe; the technique is the HOW/what-we-did — keep them distinct.
+You ALSO write three short human-readable fields for the dashboard: 'hypothesis' (the testable bet — what we expected to improve and why), 'technique' (the concrete method/lever used to test it), and 'result' (what actually happened). Ground hypothesis/technique in the log entry and note; if the description is sparse, infer the most reasonable bet and method from the technique named. Keep each to 1-2 plain sentences, no jargon dumps. The hypothesis is the WHY/what-we-believe; the technique is the HOW/what-we-did; the result is the WHAT-HAPPENED — keep them distinct. For 'result', you MUST use the exact metrics provided in the user message (quality, win/tie/loss, rubric, kept/discarded) and never invent numbers; if no metrics are provided, summarise the outcome qualitatively from the log entry.
 CRITICAL FACTUAL GUARD: 'full-30', 'dev-10', 'full-30 greedy', 'dev' etc. refer to the EVALUATION subset — the 30 or 10 frozen HELD-OUT eval cases the run is scored on — NOT the training-set size. NEVER state or imply a training-set/corpus size unless an explicit number appears in the log entry (e.g. '558 train pairs', 'corpus 619'). If the training size is not given, do not mention it. Do not confuse eval-subset size with training-set size.
 
 Rules:
@@ -105,6 +106,7 @@ def main():
                 entry = line.strip()
                 break
     note = ""
+    metrics = ""
     runs = PKG / "results" / "runs.jsonl"
     if runs.exists():
         for l in runs.read_text(encoding="utf-8").splitlines():
@@ -112,12 +114,23 @@ def main():
                 r = json.loads(l)
                 if r.get("label") == label:
                     note = r.get("note", "")
+                    # Exact metrics for a FACTUAL result field (use the last/most-recent run).
+                    metrics = (
+                        f"quality={r.get('quality'):.3f} on {r.get('subset','full')}-{r.get('n','')} "
+                        f"(W/T/L vs Sonnet = {r.get('wins')}/{r.get('ties')}/{r.get('losses')}), "
+                        f"specPass={round(r.get('specPass',0)*100)}%, "
+                        f"rubric atom={r.get('atomicity')} spec={r.get('specificity')} cover={r.get('coverage')} "
+                        f"nat={r.get('naturalness')} nonRed={r.get('nonRedundancy')}, "
+                        f"{'KEPT (new best)' if r.get('kept') else 'discarded'}"
+                    )
             except Exception:
                 pass
     if not entry and not note:
         fail(f"no description found for {label}")
 
-    user = f"Experiment label: {label}\nShort note: {note}\nFull log entry: {entry}\n\nProduce the pipeline_spec."
+    user = (f"Experiment label: {label}\nShort note: {note}\nFull log entry: {entry}\n"
+            f"Measured metrics (use these EXACT numbers for 'result'): {metrics or 'none recorded'}\n\n"
+            f"Produce the pipeline_spec.")
     body = json.dumps({
         "model": "claude-sonnet-4-6",
         "max_tokens": 900,

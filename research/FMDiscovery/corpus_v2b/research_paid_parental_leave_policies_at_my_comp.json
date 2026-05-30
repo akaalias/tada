@@ -1,0 +1,82 @@
+{
+  "id": "research_paid_parental_leave_policies_at_my_comp",
+  "input": "Research paid parental leave policies at my company",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Parental leave policies can vary by leave type (birth, adoption, foster), employee type (full-time, part-time, contractor), and whether the user wants to understand the full policy or just a specific aspect like pay rate or duration."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The policy details that matter most depend on who is taking leave \u2014 a primary caregiver vs. secondary caregiver often have very different entitlements, and the user's role or tenure may affect eligibility."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user is actively planning to take leave soon or just doing early exploratory research changes how urgent and deep the research needs to be."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The user may have a specific timeline \u2014 e.g., a baby due in a few months \u2014 which creates a hard deadline for when this information must be gathered and acted on."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing where to look (HR portal, employee handbook, direct HR contact, manager) determines the immediate first action and how easy the research will be."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user may simply want a summary of what they're entitled to, or they may need a full comparison of policy options, or they may want to identify gaps to negotiate \u2014 this shapes how thorough the output needs to be."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer to research quietly on their own (e.g., not ready to tell their employer) vs. being comfortable asking HR directly, which significantly changes the research approach."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Research paid parental leave policies at your company",
+    "taskDescription": "Find and understand the paid parental leave policies that apply to the user at their current employer.",
+    "questions": [
+      {
+        "title": "Which type of leave are you researching \u2014 birth, adoption, or foster?",
+        "description": "Identify the specific parental leave scenario so the research focuses on the right policy category, as entitlements often differ significantly by leave type.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you the primary or secondary caregiver in this situation?",
+        "description": "Determine the caregiver role, since most companies offer different durations and pay rates for primary vs. secondary caregivers.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this for imminent planning, or early exploratory research?",
+        "description": "Understand the urgency of the research to calibrate how quickly and thoroughly the information needs to be gathered.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a specific leave start date or due date in mind?",
+        "description": "A known timeline creates a hard deadline for completing the research and initiating any required HR processes before leave begins.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you know where your company stores its leave policy documents?",
+        "description": "Identify the starting point for research \u2014 HR portal, employee handbook, intranet, or direct HR contact \u2014 to determine the immediate next action.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does a useful outcome look like \u2014 a quick summary or a detailed breakdown?",
+        "description": "Clarify the depth of output needed, whether a simple overview of entitlements or a thorough breakdown covering pay, duration, eligibility, and process steps.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you comfortable asking HR directly, or do you prefer researching privately?",
+        "description": "Understand the user's comfort level with visibility, since this determines whether the research strategy relies on self-serve documents or direct conversations with HR or a manager.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

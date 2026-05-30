@@ -1,0 +1,82 @@
+{
+  "id": "call_the_insurance_company_about_the_roof_claim",
+  "input": "Call the insurance company about the roof claim",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether this is opening a new claim, following up on an existing one, or disputing a decision changes what the user needs to prepare and say."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Understanding what caused the roof damage (storm, leak, fallen tree, age) determines the right language to use and what documentation is relevant."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing if there is a specific adjuster, claim number, or department to ask for affects how to route the call efficiently."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A deadline (e.g., claim filing window, scheduled inspection, contractor waiting) changes how urgently this call needs to happen."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing what documents or information the user has on hand (policy number, photos, estimates) determines what they need to gather before calling."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The desired outcome \u2014 approval, a scheduled inspection, a payout amount, or just an update \u2014 shapes what the user should ask for and how to close the call."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "If the user has had prior difficult interactions or wants to take notes, escalate, or record the call, the plan should reflect that communication strategy."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Call insurance company about roof claim",
+    "taskDescription": "The user needs to make a phone call to their insurance company to handle a roof-related insurance claim.",
+    "questions": [
+      {
+        "title": "Is this a new claim or an existing follow-up?",
+        "description": "Determine whether the user is filing a roof claim for the first time or following up on a claim already in progress.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What caused the roof damage?",
+        "description": "Identify the event or condition that damaged the roof (e.g., storm, hail, fallen tree, slow leak) so the right claim category and terminology can be used.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a claim number or adjuster contact?",
+        "description": "Find out if the user already has a claim number, a named adjuster, or a specific department to reach, which determines how to route the call.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a deadline or time pressure on this?",
+        "description": "Check whether there is a filing window, scheduled inspection, contractor start date, or other deadline making this call urgent.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What documents or info do you have ready?",
+        "description": "Assess what the user currently has available \u2014 policy number, damage photos, contractor estimates \u2014 to identify any gaps before calling.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What specific outcome do you need from this call?",
+        "description": "Clarify the desired result \u2014 a claim approval, inspection scheduling, payout update, or coverage question answered \u2014 to keep the call focused.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you had trouble with this insurer before?",
+        "description": "Understand if the user has faced pushback, delays, or disputes with this company, which would affect tone, escalation strategy, and note-taking approach.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

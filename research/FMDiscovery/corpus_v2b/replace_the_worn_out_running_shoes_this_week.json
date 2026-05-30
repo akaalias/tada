@@ -1,0 +1,82 @@
+{
+  "id": "replace_the_worn_out_running_shoes_this_week",
+  "input": "Replace the worn-out running shoes this week",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing what type of running the shoes are for (road, trail, track, treadmill) completely changes which shoe models and features are relevant."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the shoes are for the user themselves or as a gift for someone else changes who needs to be involved in fitting, sizing, and preference decisions."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Budget is a hard limit that narrows the field dramatically \u2014 entry-level shoes start around $60 while performance models can exceed $250."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user plans to shop in-store or online affects the immediate next steps \u2014 in-store allows fitting and gait analysis, online requires knowing size and specs in advance."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Specific needs like arch support, cushioning level, or a preferred brand will steer the recommendation toward a much shorter list of options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether they already have a shortlist of shoes or are starting from scratch determines whether the first step is research or going straight to purchase."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what went wrong with the current shoes (too little cushioning, wrong fit, durability issues) defines what 'done well' looks like for the replacement."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Replace worn-out running shoes this week",
+    "taskDescription": "The user wants to buy a new pair of running shoes to replace their current worn-out pair within this week.",
+    "questions": [
+      {
+        "title": "What surface or terrain do you mainly run on?",
+        "description": "Determines the shoe category needed \u2014 road, trail, track, or treadmill \u2014 which is the single biggest filter when choosing a model.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you buying these for yourself or someone else?",
+        "description": "Establishes who needs to be involved in sizing, fitting, and preference decisions throughout the process.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget for this purchase?",
+        "description": "A hard financial limit that immediately narrows the pool of viable shoe options.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you plan to shop in-store or buy online?",
+        "description": "Dictates the entire action path \u2014 in-store enables gait analysis and fitting, while online requires upfront research into size and specs.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have any fit or support preferences, like cushioning level?",
+        "description": "Specific preferences such as arch support type, heel drop, or cushioning thickness steer recommendations toward a much shorter list.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have specific models in mind to consider?",
+        "description": "Determines whether the first step is broad research or skipping straight to comparison and purchase of a known shortlist.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What was the main problem with your current shoes?",
+        "description": "Identifies the failure point of the old pair \u2014 poor cushioning, wrong fit, durability \u2014 which defines what success looks like for the replacement.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

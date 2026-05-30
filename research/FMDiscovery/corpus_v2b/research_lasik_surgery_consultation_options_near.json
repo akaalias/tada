@@ -1,0 +1,82 @@
+{
+  "id": "research_lasik_surgery_consultation_options_near",
+  "input": "Research LASIK surgery consultation options nearby",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing the user's city or region is essential to finding geographically relevant clinics and surgeons \u2014 without it, no meaningful local search is possible."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may want only an initial free consultation, or a full clinical evaluation including eye exams and candidacy assessment \u2014 this changes which providers to target."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is for the user themselves or someone else (e.g., a spouse or parent) affects what criteria matter most, such as age-related eligibility or prescription range."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "LASIK procedure costs vary widely ($1,000\u2013$4,000+ per eye); knowing the budget determines whether to include premium providers or focus on affordable/financing options."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people prioritize surgeon reputation and reviews, others prioritize technology used (e.g., bladeless, wavefront-guided), and others want the fastest appointment \u2014 this shapes how to rank options."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The output of this research could be a shortlist of clinics, a comparison table, booked appointments, or just a vetted single recommendation \u2014 defining 'done' prevents over- or under-researching."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether the user wants to do this research online themselves, have a list of calls to make, or get help booking directly determines the immediate next action and format of the plan."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Research nearby LASIK surgery consultation options",
+    "taskDescription": "Find and evaluate LASIK surgery consultation options available in the user's local area.",
+    "questions": [
+      {
+        "title": "What city or zip code should the search be centered on?",
+        "description": "Identify the user's location to scope the search to genuinely nearby clinics and avoid irrelevant results.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you researching for yourself or someone else?",
+        "description": "Determine whose eyes and eligibility criteria are being evaluated, which affects the type of consultation and candidacy factors to investigate.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want free consultations, full clinical evaluations, or both?",
+        "description": "Clarify the scope of the consultation being sought \u2014 free screenings vs. comprehensive pre-op evaluations differ significantly in what they include.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your approximate budget for the full LASIK procedure?",
+        "description": "Budget determines whether to include premium laser centers, mid-range providers, or clinics offering financing plans in the research.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most to you when comparing clinics?",
+        "description": "Understanding whether the user prioritizes surgeon experience, specific technology, patient reviews, or speed of appointment shapes how options are ranked.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does a useful end result of this research look like to you?",
+        "description": "Define done \u2014 is it a shortlist of 3 clinics, a single booked appointment, a comparison spreadsheet, or something else?",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want to research online, make calls, or book directly?",
+        "description": "Determines the format and immediate next action \u2014 whether to produce a web research checklist, a call script, or steps to schedule an appointment online.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

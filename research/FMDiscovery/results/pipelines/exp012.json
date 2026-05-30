@@ -1,7 +1,8 @@
 {
-  "summary": "RAG best-of-4 with pairwise 3B tournament",
-  "hypothesis": "A pairwise 3B tournament over 4 independent RAG draws should pick the best-coverage set better than absolute scoring, because relative judgment (\"which set is better?\") is an easier task for the 3B than absolute judgment.",
-  "technique": "Four independent RAG-prompted draws at temperatures [0.3, 0.5, 0.7, 0.9] feed a single-elimination pairwise tournament: each match shows the 3B both full 7-question sets in both orderings (two-order vote to damp position bias), ties broken to the lower-temperature incumbent; the tournament winner is returned verbatim.",
+  "summary": "RAG best-of-4 with pairwise 3B tournament select",
+  "hypothesis": "A pairwise 3B tournament over 4 RAG-drawn sets should outperform absolute scoring (exp004) and frequency clustering (exp010) because the 3B is better at relative than absolute judgment, letting it pick the coverage-richer set and lift quality above a single draw.",
+  "technique": "Four independent RAG sets are drawn at temperatures [0.3, 0.5, 0.7, 0.9], then a single-elimination pairwise tournament uses the on-device 3B as judge \u2014 each match is run in both orderings (two-order vote, tie goes to lower-temp incumbent) to damp position bias; the tournament winner is returned verbatim.",
+  "result": "Scored 0.297 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), a step below the exp003 best (0.320), below exp011 (0.323), and even below the baseline (0.307). Coverage stayed at 3 and off-task questions persisted in the tournament winners, showing the 3B's pairwise verdict is not correlated with coverage of decision-critical unknowns \u2014 hypothesis falsified, discarded.",
   "stages": [
     {
       "kind": "input",
@@ -9,35 +10,35 @@
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG exemplars for each draw"
+      "text": "Fetch RAG exemplars for each of 4 sets"
     },
     {
       "kind": "ensemble",
-      "text": "4 independent RAG draws at varied temps",
+      "text": "Draw 4 RAG sets at varied temps",
       "knobs": {
         "n": "4",
-        "temp": "0.3/0.5/0.7/0.9"
+        "temps": "0.3,0.5,0.7,0.9"
       },
       "call_labels": [
-        "RAG draft at temp 0.3",
-        "RAG draft at temp 0.5",
-        "RAG draft at temp 0.7",
-        "RAG draft at temp 0.9"
+        "RAG draft temp 0.3",
+        "RAG draft temp 0.5",
+        "RAG draft temp 0.7",
+        "RAG draft temp 0.9"
       ]
     },
     {
       "kind": "select",
-      "text": "Single-elim pairwise 3B tournament, two-order vote",
+      "text": "Single-elim pairwise 3B tournament, verbatim winner",
       "knobs": {
         "calls": "6"
       },
       "call_labels": [
-        "semifinal 1: draft A vs B (order 1)",
-        "semifinal 1: draft A vs B (order 2)",
-        "semifinal 2: draft C vs D (order 1)",
-        "semifinal 2: draft C vs D (order 2)",
-        "final: winner1 vs winner2 (order 1)",
-        "final: winner1 vs winner2 (order 2)"
+        "semifinal 1: set A vs B (order 1)",
+        "semifinal 1: set A vs B (order 2)",
+        "semifinal 2: set C vs D (order 1)",
+        "semifinal 2: set C vs D (order 2)",
+        "final: winner 1 vs winner 2 (order 1)",
+        "final: winner 1 vs winner 2 (order 2)"
       ]
     },
     {

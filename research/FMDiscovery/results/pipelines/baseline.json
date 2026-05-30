@@ -1,19 +1,20 @@
 {
-  "summary": "Single-shot baseline, direct generation",
-  "hypothesis": "A plain single-shot prompt should establish a reasonable quality floor, because without any retrieval or multi-step refinement the model's out-of-the-box instruction-following sets the minimum bar.",
-  "technique": "A single greedy on-device model call with no retrieval, expansion, or post-processing \u2014 a direct port of the EXP-000 single-shot pipeline.",
+  "summary": "Single-shot baseline port from EXP-000",
+  "hypothesis": "A direct single-shot prompt port from EXP-000 should establish a working baseline on-device, because it replicates a known configuration and gives us a quality floor to beat.",
+  "technique": "A single greedy on-device model call with no retrieval, expansion, or post-processing \u2014 a plain one-shot prompt producing 7 questions directly.",
+  "result": "Scored 0.307 on dev-10 (0 wins / 1 tie / 9 losses vs Sonnet), with specPass 100% but rubric dimensions atomicity=5, spec=3, coverage=3, naturalness=3, non-redundancy=3 \u2014 coverage and spec are the clear gaps. Kept as the new best and quality floor.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner in"
     },
     {
       "kind": "generate",
-      "text": "Single-shot direct question generation"
+      "text": "Single-shot question draft"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "baseline"

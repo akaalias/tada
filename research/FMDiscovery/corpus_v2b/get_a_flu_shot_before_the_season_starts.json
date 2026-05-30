@@ -1,0 +1,82 @@
+{
+  "id": "get_a_flu_shot_before_the_season_starts",
+  "input": "Get a flu shot before the season starts",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing their country or region determines when flu season typically starts, which sets the deadline for getting the shot."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Whether they have health insurance or a preferred provider affects where they can go and what the cost will be."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether they already have a doctor, pharmacy, or clinic in mind determines the immediate next action \u2014 booking vs. finding a location."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If this is for multiple family members (e.g., children), the planning steps, locations, and scheduling complexity change significantly."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Some people want only the standard flu vaccine; others want to combine this visit with other vaccines (e.g., COVID booster, TDAP), which affects what to prepare and ask for."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Availability on certain days or times (work schedule, childcare) affects which types of locations \u2014 walk-in pharmacy vs. scheduled clinic appointment \u2014 are realistic."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Some people just want the shot done; others want a specific vaccine type (e.g., high-dose for seniors, egg-free), which affects which providers to target."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a flu shot before season starts",
+    "taskDescription": "The user wants to get a flu shot proactively before flu season begins, and needs a plan to make that happen.",
+    "questions": [
+      {
+        "title": "What country or city are you located in?",
+        "description": "The user's location determines when flu season typically peaks and therefore the ideal timing window for getting vaccinated.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have health insurance that covers vaccines?",
+        "description": "Insurance status affects which providers are in-network and whether there will be any out-of-pocket cost.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a clinic, pharmacy, or doctor in mind?",
+        "description": "Having a preferred location in mind changes the next step from 'find a place' to 'book an appointment.'",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this just for you, or for family members too?",
+        "description": "If children or other family members also need flu shots, scheduling and location requirements become more complex.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want to combine this with any other vaccines?",
+        "description": "Pairing with other boosters (e.g., COVID, TDAP) affects what to request and what providers can administer in one visit.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there days or times you are unavailable for an appointment?",
+        "description": "Scheduling constraints determine whether a walk-in pharmacy or a pre-booked clinic appointment is the more realistic path.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a specific flu vaccine formulation?",
+        "description": "Certain groups (seniors, egg-allergy sufferers) require specific formulations like high-dose or recombinant vaccines, which not all providers stock.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

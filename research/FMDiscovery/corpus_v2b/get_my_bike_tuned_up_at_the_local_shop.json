@@ -1,0 +1,82 @@
+{
+  "id": "get_my_bike_tuned_up_at_the_local_shop",
+  "input": "Get my bike tuned up at the local shop",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "A basic tune-up (brakes, gears) differs greatly from a full overhaul (bearings, cables, full clean); knowing what is needed determines which service package to book and the likely cost."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The timing of when the bike is needed affects how urgently the appointment must be made and whether same-day drop-off is acceptable or advance booking is required."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The user may not yet have a specific shop in mind; knowing whether they need help finding one changes the first action entirely."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget cap determines which service tier the user can choose and whether extra repairs flagged by the mechanic should be approved."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the bike belongs to someone else (e.g. a child or partner) it affects who transports it and who communicates with the shop."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing the primary problem symptoms (squeaky brakes, slipping gears, flat tyres) helps the user communicate clearly with the mechanic and verify the job is done right."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want to stay involved (approve extra repairs, pick up same day), while others prefer to hand it off completely; this shapes how the task is structured."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get bike tuned up at local shop",
+    "taskDescription": "Take the user's bike to a local repair shop to have it serviced and tuned up.",
+    "questions": [
+      {
+        "title": "What specific issues does your bike currently have?",
+        "description": "Understanding the known problems (e.g. slipping gears, squeaky brakes, flat tyre) helps define what to tell the mechanic and what a successful tune-up looks like.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a basic tune-up or a full service?",
+        "description": "Clarifies the scope of work \u2014 from a simple adjustment of brakes and gears to a comprehensive overhaul including cables, bearings, and deep cleaning.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a local shop in mind?",
+        "description": "Determines whether the first action is booking an appointment or first researching and choosing a nearby shop.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "When do you need the bike ready to use again?",
+        "description": "The deadline or target date drives the urgency of booking and whether a quick turnaround must be requested from the shop.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget for this service?",
+        "description": "A spending limit determines which service tier fits and whether to pre-authorise the shop for any additional repairs they may discover.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this bike yours, or does it belong to someone else?",
+        "description": "If the bike belongs to a child, partner, or someone else, it affects who is responsible for drop-off, pick-up, and decision-making at the shop.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How involved do you want to be during the repair process?",
+        "description": "Some people want to approve any extra work before it is done; others prefer to be hands-off. This shapes how the task handoff to the shop is structured.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

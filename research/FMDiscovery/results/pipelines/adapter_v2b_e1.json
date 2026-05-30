@@ -1,0 +1,25 @@
+{
+  "summary": "Coverage-forced gold LoRA adapter, epoch 1, greedy",
+  "hypothesis": "Distilling Sonnet's coverage-forced reasoning \u2014 where Sonnet explicitly reasons across seven decision axes before writing one atomic question per axis \u2014 into the 3B adapter weights should lift the coverage dimension that every in-context lever failed to move, because the gap is per-task judgment about which axes matter, not instructions.",
+  "technique": "A single greedy on-device call using a LoRA adapter (adapter_v2b_e1) fine-tuned for one epoch on 556 training pairs whose gold questions were regenerated with a coverage-forcing prompt (Sonnet reasons over seven distinct axes then writes one atomic question per axis); same lr 5e-4 recipe as v2a.",
+  "result": "Scored 0.314 on the full-30 gate (0 wins / 0 ties / 29 losses vs Sonnet), rubric atom 5 / spec 3 / cover 3 / nat 4 / nonRed 3 \u2014 well below the v2a_e1 champion (0.409); critically, coverage stayed pinned at 3, the exact dimension the coverage-forced gold was built to move. The hypothesis was falsified: distilling dimensional-coverage targets does not transfer the per-task judgment of which axes matter, and the experiment was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Greedy decode with adapter_v2b_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2b_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "adapter_v2b_e1"
+}

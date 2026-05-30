@@ -1,15 +1,16 @@
 {
-  "summary": "LoRA adapter (epoch 2), schema-free single-shot",
-  "hypothesis": "A LoRA adapter trained for 2 epochs should bake in question-generation judgment well enough to match or beat prompt-engineered baselines, because the fine-tuned weights encode task-specific style without needing a structured schema.",
-  "technique": "A single greedy on-device call using a LoRA adapter (adapter_e2, epoch 2) fine-tuned on the target task, with no schema or post-processing constraints applied.",
+  "summary": "LoRA adapter epoch 2, schema-free single-shot",
+  "hypothesis": "A LoRA adapter trained for 2 epochs should match or beat the in-context prompt plateau, because fine-tuning the model's weights encodes task-specific judgment that a prompt alone cannot.",
+  "technique": "A single greedy on-device call using the adapter_e2 LoRA adapter (epoch 2), schema-free \u2014 no guided output structure, no multi-stage pipeline.",
+  "result": "Scored 0.320 on dev-10 (0 wins / 1 tie / 8 losses vs Sonnet), merely tying the existing ~0.32 in-context plateau; rubric showed atomicity at 5 but specificity, coverage, naturalness, and non-redundancy all at 3, with specPass at 90%. The adapter failed to move the needle beyond the plateau and was discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User topic one-liner in"
+      "text": "User one-liner topic input"
     },
     {
       "kind": "generate",
-      "text": "adapter_e2 schema-free single-shot draft",
+      "text": "Schema-free draft via adapter_e2",
       "knobs": {
         "model": "adapter_e2",
         "sampling": "greedy"
@@ -17,7 +18,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "adapter_e2"

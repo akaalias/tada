@@ -1,0 +1,82 @@
+{
+  "id": "book_a_flight_for_the_family_reunion_in_august",
+  "input": "Book a flight for the family reunion in August",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the exact departure and destination cities is the most fundamental requirement \u2014 without it, no search can begin."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The number of passengers and their ages (adults, children, infants) directly affects pricing, seat selection, and booking complexity."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "August spans 31 days; the specific travel dates (outbound and return) determine availability and fare options."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget ceiling determines which fare classes, airlines, and routing trade-offs are acceptable."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Preferences like non-stop vs. connecting, preferred airlines, or cabin class significantly narrow the search."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether to book through a specific site, travel agent, or airline directly affects the next immediate action."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "What the user values most \u2014 lowest price, shortest travel time, flexibility to change \u2014 defines what a 'good' booking outcome looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book August family reunion flight",
+    "taskDescription": "Research and book flights for the user and their family to attend a family reunion in August.",
+    "questions": [
+      {
+        "title": "What are the departure and destination cities?",
+        "description": "Identify the origin airport or city the user is flying from, and the destination airport or city closest to the reunion venue.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many passengers are traveling, and what are their ages?",
+        "description": "Determine the total headcount and whether any travelers are children or infants, which affects ticket pricing and seat requirements.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What are the exact outbound and return travel dates?",
+        "description": "Pin down the specific departure and return dates in August to enable accurate flight searches.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your total budget for the flights?",
+        "description": "Establish a maximum spend ceiling (per person or total) to filter fare options appropriately.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer non-stop flights or is a connection acceptable?",
+        "description": "Understand routing preferences, including any preferred airlines or cabin class (economy, business), to guide the search.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which platform or method do you want to use to book?",
+        "description": "Determine whether the user wants to book via a specific travel site (e.g., Google Flights, Expedia), airline directly, or a travel agent.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most \u2014 lowest price, shortest travel time, or flexibility?",
+        "description": "Clarify the top priority so trade-offs between cost, convenience, and refundable/changeable tickets can be made correctly.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

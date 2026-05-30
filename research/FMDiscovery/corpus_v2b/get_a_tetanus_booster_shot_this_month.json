@@ -1,0 +1,82 @@
+{
+  "id": "get_a_tetanus_booster_shot_this_month",
+  "input": "Get a tetanus booster shot this month",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing whether they have a primary care doctor or prefer a walk-in clinic/pharmacy determines where they should go and how much scheduling effort is involved."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Whether they have health insurance \u2014 and what it covers \u2014 affects cost, provider choice, and urgency of finding a low-cost option."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing if they have their vaccination records tells us whether they need to retrieve records first before a provider can confirm the booster is due."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Tetanus boosters come as Td (tetanus + diphtheria) or Tdap (adds pertussis); the right formulation depends on their last shot type and age, which changes what they ask for."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If this is for themselves vs. arranging it for a dependent (child, elderly parent) the steps, providers, and consent requirements differ significantly."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what is blocking them right now (fear of needles, forgetting to book, not knowing where to go) shapes which part of the plan needs the most support."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people want to get this done in one errand (pharmacy, no appointment); others prefer their own doctor for continuity of care \u2014 this changes the recommended next action."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a tetanus booster shot this month",
+    "taskDescription": "The user wants to obtain a tetanus booster (Td or Tdap) vaccination within the current month.",
+    "questions": [
+      {
+        "title": "Do you have a regular doctor or prefer a walk-in?",
+        "description": "Identifies the care setting \u2014 primary care provider, urgent care, or retail pharmacy \u2014 which determines the scheduling path.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does your insurance cover preventive vaccinations?",
+        "description": "Determines out-of-pocket cost and which providers are in-network, affecting where to book.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you know when you last had a tetanus shot?",
+        "description": "Establishes whether vaccination records need to be tracked down before booking, and confirms the booster is actually due.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need Td or Tdap (the whooping cough version)?",
+        "description": "Clarifies which formulation to request, since Tdap is recommended if the last shot was Td and pertussis protection is needed.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this shot for yourself or someone you care for?",
+        "description": "Determines whether consent, guardianship, or age-specific provider requirements come into play.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is the main thing stopping you from booking right now?",
+        "description": "Surfaces the real blocker \u2014 anxiety, time, information gap \u2014 so the plan can directly address it.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a quick pharmacy visit or a scheduled appointment?",
+        "description": "Guides the recommended next-action format \u2014 walk-in retail clinic vs. booked appointment \u2014 based on the user's convenience preference.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

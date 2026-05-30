@@ -1,23 +1,24 @@
 {
-  "summary": "LoRA adapter, single-shot greedy decode",
-  "hypothesis": "A LoRA adapter fine-tuned on task-specific question generation should outperform the stock base model, because the adapter bakes in the right question style and judgment directly into the weights rather than relying on prompt instructions alone.",
-  "technique": "A single greedy on-device call using a LoRA adapter (adapter_e1_g) in place of the stock base model \u2014 no sampling, no multi-call pipeline, just one forward pass to produce the final 7 questions.",
+  "summary": "v1 adapter, epoch 1, greedy decoding",
+  "hypothesis": "Fine-tuning the on-device model into a LoRA adapter should outperform any in-context prompt baseline, because the task-specific question style is baked into the weights rather than re-instructed each call.",
+  "technique": "A single greedy on-device call using a v1 LoRA adapter (epoch 1 checkpoint), no sampling \u2014 serving as the full-30 gate baseline for the adapter series.",
+  "result": "Scored 0.362 on the full-30 gate (1 win / 3 ties / 25 losses vs Sonnet); rubric showed atomicity at 4 but specificity, coverage, naturalness, and non-redundancy all at 3. Kept as the new best \u2014 establishing the adapter series baseline to beat.",
   "stages": [
     {
       "kind": "input",
-      "text": "Receive user one-liner"
+      "text": "User one-liner in"
     },
     {
       "kind": "generate",
-      "text": "Adapter greedy single-shot generation",
+      "text": "v1 adapter epoch-1 greedy draft",
       "knobs": {
-        "sampling": "greedy",
-        "model": "adapter_e1_g"
+        "model": "adapter-v1-e1",
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "adapter_e1_g"

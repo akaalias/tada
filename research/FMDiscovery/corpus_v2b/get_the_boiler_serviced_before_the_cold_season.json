@@ -1,0 +1,82 @@
+{
+  "id": "get_the_boiler_serviced_before_the_cold_season",
+  "input": "Get the boiler serviced before the cold season",
+  "keyUnknowns": [
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "Knowing the target deadline (e.g. end of September, before October) determines how urgently a booking needs to be made and whether there is buffer time if something goes wrong."
+    },
+    {
+      "axis": "context / current boiler state",
+      "whyItMatters": "If the boiler has known faults or has not been serviced in many years, the scope of work may extend beyond a standard annual service, changing what engineer or parts are needed."
+    },
+    {
+      "axis": "people / who arranges it",
+      "whyItMatters": "Whether the user is a homeowner, a tenant, or a landlord determines who is responsible for booking and paying, and whether a landlord or letting agent needs to be involved."
+    },
+    {
+      "axis": "logistics / engineer or provider",
+      "whyItMatters": "Whether the user already has a preferred engineer, a boiler cover plan (e.g. British Gas HomeCare), or needs to find and vet a new Gas Safe registered engineer changes the immediate next steps entirely."
+    },
+    {
+      "axis": "scope / what is included",
+      "whyItMatters": "A basic annual service differs from a full inspection with a gas safety certificate (CP12), or a service combined with a system flush or thermostat check \u2014 knowing what is needed scopes the job and cost."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Budget affects whether the user can go with a premium provider or needs to compare quotes, and whether optional extras (e.g. powerflush, new controls) are in scope."
+    },
+    {
+      "axis": "success criteria / what done well looks like",
+      "whyItMatters": "The user may consider the task done when a booking is confirmed, when the service is physically completed, or when a certificate/report is in hand \u2014 this shapes where the plan ends."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get boiler serviced before cold season",
+    "taskDescription": "Arrange and complete a professional boiler service in time for the heating season.",
+    "questions": [
+      {
+        "title": "What is your firm deadline for the service to be done?",
+        "description": "Identify the specific date or month by which the boiler must be serviced \u2014 e.g. end of September, before October half-term \u2014 so the plan can be time-boxed correctly.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "When was the boiler last serviced, and are there known issues?",
+        "description": "Establish the service history and any existing faults (e.g. strange noises, pressure drops) to determine whether this is a routine annual service or something more involved.",
+        "coversAxis": "context / current boiler state",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you the homeowner, a tenant, or a landlord for this property?",
+        "description": "Clarify ownership and responsibility so the plan correctly identifies who books, who pays, and whether a landlord or letting agent needs to be looped in.",
+        "coversAxis": "people / who is involved",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have an engineer or boiler cover plan in place?",
+        "description": "Find out whether the user has an existing relationship with an engineer or a cover plan (e.g. a manufacturer warranty, British Gas HomeCare) to determine if finding a new engineer is part of the task.",
+        "coversAxis": "logistics / engineer or provider",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a gas safety certificate alongside the service?",
+        "description": "Determine whether the scope is a standard annual service or whether a formal CP12 gas safety certificate is also required (commonly needed by landlords or mortgage lenders).",
+        "coversAxis": "scope / what is included",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a budget limit you want to stay within for this?",
+        "description": "Establish any maximum spend so the plan can guide the user toward comparing quotes or accepting a known provider's pricing without unnecessary back-and-forth.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What would make this task feel fully complete to you?",
+        "description": "Clarify whether 'done' means a booking is confirmed, the engineer has visited, or a written service report is received and filed \u2014 this sets the finish line for the plan.",
+        "coversAxis": "success criteria / what done well looks like",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

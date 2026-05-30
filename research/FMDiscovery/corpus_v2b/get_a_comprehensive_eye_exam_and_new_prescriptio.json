@@ -1,0 +1,82 @@
+{
+  "id": "get_a_comprehensive_eye_exam_and_new_prescriptio",
+  "input": "Get a comprehensive eye exam and new prescription",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing whether they already have an eye doctor or need to find one entirely changes the first steps of the plan."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "A basic refractive exam differs significantly from a comprehensive medical eye exam that checks for conditions like glaucoma or macular degeneration \u2014 this determines what type of appointment to book."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The exam may be for the user alone or also for family members, which affects scheduling complexity and provider selection."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Whether they have vision insurance \u2014 and which plan \u2014 directly determines which providers are in-network and what the out-of-pocket cost will be."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Their location and preferred appointment timeframe determine which providers are reachable and how urgently the plan needs to move."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Whether they want glasses, contacts, or both affects which tests the doctor needs to run and what the prescription outcome should include."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the prescription is just for record-keeping or immediately needed for ordering new eyewear sets the urgency and the definition of 'done.'"
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a comprehensive eye exam and new prescription",
+    "taskDescription": "The user wants to schedule and complete a full eye exam to obtain an updated vision prescription.",
+    "questions": [
+      {
+        "title": "Do you have an existing eye doctor to return to?",
+        "description": "Determines whether the first step is booking with a known provider or researching and selecting a new one.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a full medical eye exam or just a vision check?",
+        "description": "Distinguishes between a comprehensive ophthalmological exam (checking eye health) and a standard optometry refraction for a glasses/contacts prescription.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this exam just for you or for others too?",
+        "description": "Identifies whether family members are also being scheduled, which affects provider selection and appointment logistics.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have vision insurance coverage to use?",
+        "description": "Determines whether in-network filtering is needed and what cost constraints apply when choosing a provider.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city or area are you looking for providers in?",
+        "description": "Establishes the geographic scope for finding and recommending nearby eye care providers.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will the prescription be for glasses, contacts, or both?",
+        "description": "Affects which tests the doctor needs to perform during the exam and what the final prescription document should cover.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need the prescription urgently to order new eyewear?",
+        "description": "Sets the timeline and urgency of the plan \u2014 whether this is time-sensitive or can be scheduled at leisure.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

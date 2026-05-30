@@ -1,7 +1,8 @@
 {
   "summary": "RAG few-shot with semantic NLEmbedding retrieval",
-  "hypothesis": "Replacing Jaccard word-overlap retrieval with semantic sentence-embedding cosine similarity would better match exemplar task types to novel queries, improving coverage of decision-critical unknowns where Jaccard found near-zero overlap.",
-  "technique": "A RAG pipeline using on-device NLEmbedding cosine similarity (instead of Jaccard) to retrieve the 2 nearest exemplars by semantic task type, injected as few-shot demonstrations into a single on-device FM call.",
+  "hypothesis": "Replacing Jaccard word-overlap retrieval with on-device NLEmbedding cosine similarity would surface better-matched few-shot exemplars and improve coverage, because exp003's gains came from well-matched demonstrations and Jaccard's near-zero matches on topically distinct queries were leaving quality on the table.",
+  "technique": "Swapped exp003's Jaccard word-overlap exemplar retrieval for on-device NLEmbedding sentence-embedding cosine similarity, so the 2 injected few-shot demonstrations are the nearest task-type match even with zero shared vocabulary \u2014 everything else in the single FM call pipeline remained identical.",
+  "result": "Scored 0.273 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), down 0.047 from the exp003 best of 0.320 and losing exp003's lone tie; rubric atom=4, spec=3, cover=3, nat=3, nonRed=3. Coverage stayed flat at 3 and the same failure modes recurred verbatim, falsifying the hypothesis \u2014 better-matched exemplars did not move the coverage wall, confirming that retrieval/prompt-quality levers alone cannot overcome the 3B's which-unknowns-matter judgment gap. Discarded.",
   "stages": [
     {
       "kind": "input",
@@ -17,7 +18,7 @@
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions with few-shot context",
+      "text": "Single FM call with few-shot demonstrations",
       "knobs": {
         "sampling": "greedy"
       }

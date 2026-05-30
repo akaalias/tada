@@ -1,11 +1,12 @@
 {
-  "summary": "LoRA epoch-1 adapter, single-shot generation",
-  "hypothesis": "A LoRA adapter trained for one epoch should generate better questions than the stock base model, because fine-tuning bakes task-specific judgment directly into the weights rather than relying on prompt instructions alone.",
-  "technique": "A single greedy on-device call using a LoRA adapter fine-tuned for one epoch, evaluated on the full 30-case held-out set to confirm adapter quality vs. the base model baseline.",
+  "summary": "LoRA epoch-1 adapter, full-30 confirmation",
+  "hypothesis": "A LoRA adapter trained for one epoch should outperform the in-context baseline on the full-30 held-out set, because fine-tuning bakes task-specific question style into the weights rather than relying on prompt instructions at inference time.",
+  "technique": "Single greedy on-device call using a LoRA adapter (epoch 1) fine-tuned on the target task; no retrieval or multi-call pipeline \u2014 the adapter's weights carry all the learned behaviour.",
+  "result": "Scored 0.274 on the full-30 gate (0 wins / 0 ties / 29 losses vs Sonnet); specPass was high at 97% and atomicity reached 4, but spec, coverage, naturalness, and non-redundancy all sat at 3, keeping quality below parity. Despite the weak win-rate this was retained as the new best, establishing the epoch-1 adapter as the baseline to beat.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner in"
     },
     {
       "kind": "generate",
@@ -17,7 +18,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "adapter_e1_full"

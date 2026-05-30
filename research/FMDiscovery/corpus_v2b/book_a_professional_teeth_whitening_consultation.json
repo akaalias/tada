@@ -1,0 +1,82 @@
+{
+  "id": "book_a_professional_teeth_whitening_consultation",
+  "input": "Book a professional teeth whitening consultation",
+  "keyUnknowns": [
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether the user already has a dentist or needs to find a new provider entirely changes the first step \u2014 searching vs. calling."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The user's location determines which clinics or dental offices are actually reachable and relevant."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "Whether there is urgency (e.g., a wedding or event coming up) affects how quickly the appointment needs to be secured and which providers are viable."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Professional whitening varies widely in cost; knowing the budget helps filter between a cosmetic dentist, a dental chain, or a dental school clinic."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The consultation could be just an information-gathering chat, or the user may want to immediately follow up with the whitening treatment \u2014 this changes what to ask the provider."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users prefer in-chair laser/light treatments, others want take-home trays recommended by a professional \u2014 the preference shapes which specialist to seek."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether the user wants to book online, by phone, or needs help drafting a message determines the very next concrete action."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book a teeth whitening consultation",
+    "taskDescription": "The user wants to schedule a professional teeth whitening consultation with a dental provider.",
+    "questions": [
+      {
+        "title": "Do you have an existing dentist to contact?",
+        "description": "Establish whether the user already has a dental provider relationship or needs to find and vet a new clinic from scratch.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city or area should the clinic be in?",
+        "description": "Identify the user's location or preferred area so that only nearby, accessible providers are considered.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a specific date you need this done by?",
+        "description": "Determine whether a deadline or upcoming event creates urgency that should prioritise speed of booking.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your approximate budget for this consultation?",
+        "description": "Understand the price range the user is comfortable with to filter between premium cosmetic dentists, dental chains, and budget options like dental schools.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should the consultation lead straight into treatment, or is it purely exploratory?",
+        "description": "Clarify whether the user wants to gather information only, or is ready to commit to a whitening treatment immediately after the consultation.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer in-chair whitening or professional take-home trays?",
+        "description": "Identify the user's treatment preference so the right type of specialist or clinic is targeted from the start.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How do you want to make the booking \u2014 online, by phone, or via a message?",
+        "description": "Determine the user's preferred booking method so the immediate next action can be made as concrete and frictionless as possible.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

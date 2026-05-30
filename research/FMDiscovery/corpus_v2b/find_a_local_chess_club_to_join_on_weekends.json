@@ -1,0 +1,82 @@
+{
+  "id": "find_a_local_chess_club_to_join_on_weekends",
+  "input": "Find a local chess club to join on weekends",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing the user's city or neighborhood is essential to finding geographically relevant clubs \u2014 without a location, no search can begin."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Chess clubs vary widely \u2014 some are casual drop-in groups, others are competitive/tournament-focused. The type of club determines which options to prioritize."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Some clubs cater to specific age groups (juniors, seniors, adults). Knowing who the user is \u2014 or who they are finding the club for \u2014 narrows the right fit."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Many clubs charge membership fees or require equipment. A budget limit affects which clubs are realistic options."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user's skill level (beginner to advanced) shapes which club environment they would thrive in and enjoy."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Weekend availability varies \u2014 Saturday morning vs. Sunday afternoon affects which clubs actually fit the user's schedule."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "What the user ultimately wants from joining \u2014 socializing, improving their game, competing \u2014 determines what 'the right club' actually looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Find and join a local weekend chess club",
+    "taskDescription": "The user wants to locate and sign up for a chess club in their area that meets on weekends.",
+    "questions": [
+      {
+        "title": "What city or neighborhood are you based in?",
+        "description": "Identifies the user's location so the search can be geographically targeted.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you looking for casual play or competitive tournaments?",
+        "description": "Determines the type of club environment \u2014 relaxed social games vs. rated/tournament-level play.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your current chess skill level?",
+        "description": "Helps match the user to a club suited to their experience, from beginner-friendly to advanced.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which part of the weekend works best for you?",
+        "description": "Pinpoints whether Saturday, Sunday, mornings, or afternoons fit the user's availability.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this club for yourself or someone else, like a child?",
+        "description": "Identifies the intended participant to filter for age-appropriate clubs (junior, adult, mixed).",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a budget for membership or club fees?",
+        "description": "Determines whether paid memberships or free community clubs are the right target.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What do you most hope to get out of joining a club?",
+        "description": "Clarifies the user's primary goal \u2014 socializing, skill improvement, competition \u2014 to define what a successful find looks like.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

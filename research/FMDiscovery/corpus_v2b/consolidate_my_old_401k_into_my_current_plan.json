@@ -1,0 +1,82 @@
+{
+  "id": "consolidate_my_old_401k_into_my_current_plan",
+  "input": "Consolidate my old 401k into my current plan",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may have one old 401k or several \u2014 and may also be considering an IRA rollover \u2014 which changes the number of steps and institutions involved."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user is handling this entirely themselves or has a financial advisor involved changes who initiates contact and who owns each step."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing whether the old 401k provider and current plan provider have already been identified (and contacted) tells us where in the process the user actually is."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "There are tax implications \u2014 traditional vs. Roth accounts \u2014 and the rollover method (direct vs. indirect) affects whether taxes or penalties apply, which is a hard constraint on the approach."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The immediate next action depends on whether the user needs to gather account statements, call a plan administrator, or complete a specific rollover form \u2014 the format of the next step matters."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user's definition of done \u2014 funds fully transferred and confirmed, or just the paperwork initiated \u2014 determines how far the plan needs to extend."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want to understand every detail and make active investment choices in the new plan; others just want the money moved with minimal involvement, which affects how much guidance to include."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Roll Over Old 401k Into Current Plan",
+    "taskDescription": "The user wants to consolidate one or more old 401k accounts from previous employers into their current employer's retirement plan.",
+    "questions": [
+      {
+        "title": "How many old 401k accounts are you consolidating?",
+        "description": "Determines whether this is a single rollover or a multi-account consolidation requiring parallel tracks.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you already contacted your old or current plan provider?",
+        "description": "Establishes where in the process the user currently stands so the plan starts at the right step.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is your old 401k traditional, Roth, or do you not know?",
+        "description": "The account type determines tax treatment during the rollover and which receiving account is eligible.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you working with a financial advisor on this?",
+        "description": "Identifies who is responsible for key decisions and whether professional guidance is already in the loop.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a direct rollover or will you handle the check yourself?",
+        "description": "The rollover method \u2014 direct institution-to-institution vs. indirect \u2014 has different logistics, deadlines, and tax-withholding implications.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does fully done look like to you \u2014 funds confirmed and invested?",
+        "description": "Clarifies whether the plan ends at initiating the transfer or extends to confirming the funds are received and re-invested in the new plan.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How hands-on do you want to be with investment choices in the new plan?",
+        "description": "Determines whether the plan should include a step for selecting new investment allocations or just focus on moving the money.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

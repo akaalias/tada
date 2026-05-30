@@ -1,7 +1,8 @@
 {
-  "summary": "Over-generate at 3 temps, rank by Sonnet corpus embedding",
-  "hypothesis": "Ranking a diverse candidate pool by embedding similarity to Sonnet's actual corpus questions should surface higher-quality, coverage-rich selections \u2014 because it replaces weak 3B self-judgment with an external, Sonnet-grounded relevance signal.",
-  "technique": "A contrastive-RAG generator (exp011 style) over-produces 21 candidates at three temperatures (0.4, 0.7, 1.0); Swift then ranks each candidate by max cosine similarity to the nearest-corpus Sonnet questions (k=3, 300+ corpus bank) and greedily selects 7 with embedding-based redundancy suppression (\u22650.80 cosine threshold). All generation stays on-device (3B); the corpus is a ranking prior only.",
+  "summary": "Corpus-grounded embedding ranking over 3-temp pool",
+  "hypothesis": "Ranking the 3B's candidate pool by embedding similarity to real Sonnet corpus questions should surface the decision-critical unknowns that weak 3B self-judgment misses, because it substitutes an external, Sonnet-grounded relevance signal for the 3B's own biased scoring.",
+  "technique": "Over-generate 21 candidates via the contrastive-RAG generator at three temperatures (0.4, 0.7, 1.0), then in Swift rank each candidate by max cosine similarity to the k=3 nearest corpus task types (300+ Sonnet question bank), greedily selecting 7 with embedding redundancy suppression at \u22650.80 threshold \u2014 corpus used as a ranking prior only, never injected into the prompt.",
+  "result": "Scored 0.195 on dev-10 (0 wins / 0 ties / 9 losses vs Sonnet), \u22120.128 below the best prior (~0.32) and \u22120.112 below baseline (0.307); discarded. Max-cosine ranking concentrated near-duplicate candidates around the same strong Sonnet reference, crashing nonRedundancy to 2, while coverage stayed pinned at 3 with the same recurring gaps \u2014 falsifying both the dedup mechanism and the hypothesis that an external resemblance prior can recover coverage the 3B's pool doesn't reliably produce.",
   "stages": [
     {
       "kind": "input",
@@ -11,28 +12,31 @@
       "kind": "retrieve",
       "text": "Fetch k=3 nearest Sonnet corpus task types",
       "knobs": {
-        "k": "3"
+        "k": "3",
+        "bank": "300+"
       }
     },
     {
       "kind": "ensemble",
       "text": "Over-generate 21 candidates at 3 temps",
       "knobs": {
+        "model": "contrastive-RAG-generator",
         "n": "3",
         "temps": "0.4,0.7,1.0"
       },
       "call_labels": [
-        "draft candidates at temp 0.4",
-        "draft candidates at temp 0.7",
-        "draft candidates at temp 1.0"
+        "generate 7 candidates at temp 0.4",
+        "generate 7 candidates at temp 0.7",
+        "generate 7 candidates at temp 1.0"
       ]
     },
     {
       "kind": "select",
-      "text": "Rank by max cosine to corpus; pick top 7",
+      "text": "Rank by max corpus cosine, dedup \u22650.80, pick 7",
       "knobs": {
         "k": "7",
-        "dedup_threshold": "0.80"
+        "dedup_threshold": "0.80",
+        "signal": "max-cosine-to-corpus"
       }
     },
     {

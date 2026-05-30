@@ -1,0 +1,82 @@
+{
+  "id": "get_a_referral_for_a_sleep_specialist_this_month",
+  "input": "Get a referral for a sleep specialist this month",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the specific sleep issue (insomnia, sleep apnea, restless legs, etc.) determines what type of specialist or referral pathway is needed."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user has a current primary care physician or GP determines whether they can request a referral directly or need to establish care first."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Insurance type and coverage rules (e.g., HMO requiring referrals vs. PPO allowing self-referral) completely change the steps involved."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A specific deadline within the month (e.g., before the 15th vs. end of month) affects how urgently the first action needs to happen."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user prefers an in-person appointment or telehealth affects which doctors and platforms are viable options."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing if 'done' means referral in hand, appointment booked, or first consultation completed clarifies the finish line."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Whether the user has already spoken to their doctor about this issue determines whether they are starting from scratch or following up on an existing conversation."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a sleep specialist referral this month",
+    "taskDescription": "The user wants to obtain a referral to see a sleep specialist within the current month.",
+    "questions": [
+      {
+        "title": "What specific sleep problem are you seeking help for?",
+        "description": "Identify the sleep issue (e.g., insomnia, suspected sleep apnea, excessive daytime sleepiness) to determine the right type of specialist and referral pathway.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a primary care doctor you can contact?",
+        "description": "Determine whether the user has an existing GP or PCP relationship, or whether they need to establish care first before requesting a referral.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What type of health insurance do you have?",
+        "description": "Understand whether the plan (HMO, PPO, etc.) requires a formal referral from a PCP or allows direct specialist booking, as this drives the entire process.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a specific date by which you need this done?",
+        "description": "Clarify urgency within the month so the plan can prioritize immediate actions appropriately.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer an in-person visit or a telehealth appointment?",
+        "description": "Determine the preferred format for both the referral conversation and the specialist visit, which affects which providers are viable.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does success look like \u2014 referral received, or appointment booked?",
+        "description": "Clarify the finish line so the plan knows whether to stop at obtaining the referral document or continue through to scheduling with the specialist.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you already brought up this issue with your doctor?",
+        "description": "Find out if this is a fresh conversation or a follow-up, which determines whether the first step is a new appointment or a simple callback/message.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

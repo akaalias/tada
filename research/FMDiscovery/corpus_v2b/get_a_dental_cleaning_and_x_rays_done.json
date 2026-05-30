@@ -1,0 +1,82 @@
+{
+  "id": "get_a_dental_cleaning_and_x_rays_done",
+  "input": "Get a dental cleaning and X-rays done",
+  "keyUnknowns": [
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is for the user alone or also for family members changes the number of appointments to book and the coordination required."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether they already have a dentist or need to find a new one fundamentally changes the first steps of the plan."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "A target date or deadline determines urgency and how quickly they need to act on booking."
+    },
+    {
+      "axis": "logistics / insurance",
+      "whyItMatters": "Whether they have dental insurance affects which providers they can use and what out-of-pocket costs to plan for."
+    },
+    {
+      "axis": "constraints / availability",
+      "whyItMatters": "Knowing their scheduling constraints (weekdays, weekends, mornings, evenings) directly impacts which appointment slots are viable."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Understanding if there are any additional concerns beyond a routine cleaning and X-rays (e.g., pain, sensitivity) changes the type of appointment needed."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what is blocking them right now \u2014 procrastination, finding a provider, cost \u2014 clarifies where the plan needs to focus most."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get dental cleaning and X-rays done",
+    "taskDescription": "The user wants to schedule and complete a routine dental cleaning and X-rays appointment.",
+    "questions": [
+      {
+        "title": "Is this appointment just for you, or others too?",
+        "description": "Determine whether the user is booking for themselves only or also coordinating appointments for family members or dependents.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a dentist you go to?",
+        "description": "Establish whether the user has an existing dental provider or needs to research and select a new one.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a target date to get this done by?",
+        "description": "Identify any deadline or preferred timeframe so the plan can reflect the appropriate level of urgency.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have dental insurance that will cover this?",
+        "description": "Clarify whether insurance is available, which affects provider selection and budget considerations.",
+        "coversAxis": "logistics / insurance",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What days or times are you available for appointments?",
+        "description": "Understand the user's scheduling availability to identify realistic appointment windows to target.",
+        "coversAxis": "constraints / availability",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there any dental concerns beyond routine cleaning?",
+        "description": "Find out if the user has specific symptoms, pain, or issues that may require a different type of appointment or specialist.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What has been the main thing stopping you so far?",
+        "description": "Identify the primary blocker \u2014 such as procrastination, cost, finding a provider, or anxiety \u2014 so the plan addresses the real obstacle first.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

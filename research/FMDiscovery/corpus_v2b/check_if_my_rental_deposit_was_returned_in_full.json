@@ -1,0 +1,82 @@
+{
+  "id": "check_if_my_rental_deposit_was_returned_in_full",
+  "input": "Check if my rental deposit was returned in full",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may need to check just the amount received, or also investigate deductions, itemised breakdowns, or legal compliance \u2014 this defines how deep the task goes."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether the deposit was held by a landlord, letting agency, or a government-backed deposit protection scheme changes who to contact and what records to pull."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The country or region determines the legal rules around deposit returns \u2014 timelines, required documentation, and dispute resolution processes vary widely."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "There are often legal deadlines to raise a dispute after a tenancy ends; knowing how long ago the tenancy ended affects urgency and available options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Understanding what records the user already has (bank statements, deposit receipts, move-out inspection reports) determines the immediate next action."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user may just want to confirm the amount, or they may want to dispute deductions and recover money \u2014 the definition of 'done' shapes the whole plan."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want to handle this themselves; others want help drafting a formal letter or escalating to a dispute service \u2014 preferred approach affects the output."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Verify rental deposit was returned in full",
+    "taskDescription": "Confirm whether the full rental deposit amount was returned, and identify any discrepancies or deductions made by the landlord or agency.",
+    "questions": [
+      {
+        "title": "What specifically do you want to check about the deposit?",
+        "description": "Does the user want to verify only the total amount returned, or also review individual deductions, cleaning fees, damage charges, or legal compliance?",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who held your deposit \u2014 landlord, agency, or protection scheme?",
+        "description": "Identifies the party responsible for returning the deposit, which determines who to contact and what process to follow.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which country or region was the rental property in?",
+        "description": "Deposit return laws, deadlines, and dispute mechanisms differ significantly by jurisdiction.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How long ago did your tenancy officially end?",
+        "description": "Legal windows to raise a deposit dispute are time-limited in most places, so this determines urgency and available options.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What deposit-related documents do you currently have?",
+        "description": "Knowing whether the user has a deposit receipt, move-out inspection report, or bank statements determines the immediate next action.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is your goal to confirm the amount, or to dispute a deduction?",
+        "description": "Defines what 'done' looks like \u2014 a simple verification task versus an active effort to recover withheld funds.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want to handle this yourself or send a formal letter?",
+        "description": "Establishes whether the user wants a DIY checklist, a drafted dispute letter, or guidance on escalating to a third-party resolution service.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

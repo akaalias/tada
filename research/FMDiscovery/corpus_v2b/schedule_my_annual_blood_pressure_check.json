@@ -1,0 +1,82 @@
+{
+  "id": "schedule_my_annual_blood_pressure_check",
+  "input": "Schedule my annual blood pressure check",
+  "keyUnknowns": [
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing which doctor or clinic to contact (GP, cardiologist, pharmacy, etc.) determines who needs to be reached and how to book."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user has already chosen a preferred date or timeframe affects how urgently the task needs to be actioned and what slots to look for."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing how they plan to book \u2014 phone, online portal, app, walk-in \u2014 determines the immediate next step."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Availability constraints such as days of the week or times they cannot attend narrows down suitable appointment slots."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether this is a standalone BP check or part of a broader annual physical changes the type of appointment to book and its likely duration."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what 'done' looks like \u2014 e.g., confirmation received, reminder set, results reviewed \u2014 defines when the task is truly complete."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Whether the user prefers an in-person visit, telehealth, or a self-service option like a pharmacy kiosk shapes which provider or format to pursue."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Schedule annual blood pressure check appointment",
+    "taskDescription": "The user wants to book their yearly blood pressure check with a relevant healthcare provider.",
+    "questions": [
+      {
+        "title": "Which doctor or clinic will you book this with?",
+        "description": "Identify the specific provider \u2014 GP, cardiologist, local pharmacy, or other \u2014 so the right contact can be reached.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a target date or month in mind?",
+        "description": "Establish whether there is a preferred or medically recommended timeframe to guide urgency and slot selection.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How do you plan to book the appointment?",
+        "description": "Determine the booking method \u2014 phone call, online portal, app, or walk-in \u2014 to define the immediate next action.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there days or times you are not available?",
+        "description": "Capture scheduling constraints such as work hours or weekly commitments to filter suitable appointment slots.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this a standalone BP check or part of a full physical?",
+        "description": "Clarify the scope of the appointment to ensure the right type and length of visit is requested.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What will make this task feel fully complete to you?",
+        "description": "Define the end state \u2014 confirmation received, calendar reminder set, results reviewed \u2014 so the task has a clear finish line.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer in-person, telehealth, or a pharmacy visit?",
+        "description": "Understand the preferred format for the appointment to match the right provider type and setting.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

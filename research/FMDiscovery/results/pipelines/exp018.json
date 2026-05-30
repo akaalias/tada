@@ -1,29 +1,28 @@
 {
   "summary": "In-schema CoT: name 7 unknowns, then question each",
-  "hypothesis": "Forcing the model to explicitly name the 7 most decision-critical unknowns before phrasing questions should prevent generic catch-alls, because committing to the unknowns first conditions the questions on what actually matters.",
-  "technique": "A single on-device FM call using a guided output schema that first populates a `criticalUnknowns` list of 7 short phrases and then emits one question per unknown in order \u2014 in-schema CoT via field-declaration ordering. The prompt is anchored with exp011's contrastive RAG retrieval plus a worked reasoning demo (the \"Organize my garage\" unknowns example) as classic CoT few-shot.",
+  "hypothesis": "Forcing the model to explicitly name the 7 most decision-critical unknowns before phrasing questions would stop it defaulting to generic catch-alls, because committing to the unknowns first should condition and sharpen the questions that follow \u2014 all in a single call, avoiding the compounding weak-judgment of multi-call think-first pipelines.",
+  "technique": "A single on-device FM call using a guided output schema that forces the model to first fill a `criticalUnknowns: [String].count(7)` field (naming the 7 highest-leverage unknowns) before writing one question per unknown in order \u2014 in-schema CoT via field-ordering \u2014 anchored by a worked reasoning demo plus exp011's contrastive RAG few-shot exemplars.",
+  "result": "Scored 0.247 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), the worst of the RAG-derived family and a sharp regression of \u22120.073 below the exp003/exp011 plateau (~0.32) and \u22120.060 below the 0.307 baseline; rubric atom=4, spec=3, cover=3, nat=3, nonRed=3. The hypothesis was falsified: the 3B model fills the reasoning slot with the same generic/confused content it would emit anyway, hard-wiring wrong coverage into the questions, and the added abstraction actively introduced catastrophic perspective errors (e.g. asking \"how much experience do you have as a therapist?\" to the user). Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "RAG: fetch exp011 contrastive exemplars + demo",
-      "knobs": {
-        "base": "exp011"
-      }
+      "text": "Fetch exp011 contrastive RAG exemplars + CoT demo"
     },
     {
       "kind": "generate",
-      "text": "Single call: schema-guided CoT then 7 questions",
+      "text": "Single call: fill criticalUnknowns then 7 questions",
       "knobs": {
-        "sampling": "guided-schema"
+        "schema": "criticalUnknowns+questions",
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp018"

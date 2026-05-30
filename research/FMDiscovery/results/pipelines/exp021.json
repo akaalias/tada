@@ -1,15 +1,16 @@
 {
-  "summary": "Prompt-diverse frame ensemble + round-robin merge",
-  "hypothesis": "Sampling from three systematically different prompt frames (execution, scope, domain-expert) should push the model into distinct decision regions whose union covers more question dimensions than any single-prompt multi-temperature draw, because prior multi-sample configs all drew from the same generic modal cluster.",
-  "technique": "Three independent RAG-augmented generation calls, each using a different perspective frame prompt, produce three full 7-question sets; these are merged deterministically in Swift via round-robin interleaving by emission order with near-duplicate suppression (no model ranking pass).",
+  "summary": "Prompt-diverse perspective ensemble + round-robin merge",
+  "hypothesis": "Generating three full question-sets from systematically different prompt frames (execution/logistics, scope/goals, domain-expert) should push the model into different decision regions, whose union spans more coverage dimensions than any single-prompt multi-temperature draw \u2014 because prior multi-sample configs all sampled one prompt at varying temperatures and landed in the same generic modal cluster.",
+  "technique": "Three independent RAG-backed on-device FM calls, each using a differently framed generation prompt (execution, scope, domain-expert), followed by a deterministic Swift round-robin interleave by emission order plus near-duplicate suppression (NL-embedding cosine + content-Jaccard) to merge the three 7-sets into one final set \u2014 no model-based selection pass.",
+  "result": "Scored 0.177 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), the worst non-error config yet \u2014 \u22120.130 vs the baseline (0.307) and \u22120.146 vs the best prior run (~0.32). The round-robin merge foregrounded the same top-priority topic across all three frames as near-duplicates, which the deterministic deduper could not reliably catch (nonRed crashed to 2, with the judge flagging verbatim or near-verbatim duplicates in nearly every case); the duplicate storm consumed the slot budget so coverage collapsed to 2, and cross-frame blending introduced pronoun drift and nonsensical artifacts (nat=2). Hypothesis falsified: prompt diversity did broaden per-frame exploration, but the merge \u2014 not the frames \u2014 caused the failure, and the embedding-based dedup wall (confirmed across exp009/010/020/021) makes deterministic assembly of multiple diverse drafts unreliable. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of exemplar questions"
+      "text": "RAG fetch of few-shot exemplars"
     },
     {
       "kind": "ensemble",
@@ -25,11 +26,11 @@
     },
     {
       "kind": "post",
-      "text": "Round-robin merge + near-dup suppression"
+      "text": "Round-robin interleave + near-dup suppression"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp021"

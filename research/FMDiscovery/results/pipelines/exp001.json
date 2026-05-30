@@ -1,29 +1,30 @@
 {
   "summary": "Brainstorm then select+phrase (two FM calls)",
-  "hypothesis": "Running a first model call to brainstorm raw question candidates, then a second call to select and phrase the best 7, should outperform single-shot generation because separating ideation from editorial judgment lets each pass specialise.",
-  "technique": "A two-call on-device pipeline: the first FM call freely brainstorms candidate questions, and the second FM call selects and phrases the final 7 from that candidate pool \u2014 splitting generation from selection/phrasing across two sequential model calls.",
+  "hypothesis": "Running a two-step FM pipeline \u2014 first brainstorming candidate questions, then a second model call to select and phrase the best seven \u2014 should outperform single-shot generation by separating ideation from judgment, giving the model a chance to surface sharper, more domain-specific unknowns before committing to a final set.",
+  "technique": "Two sequential on-device FM calls: the first generates a broad brainstorm of candidate questions, and the second selects and rephrases the best seven from that pool \u2014 using the model itself as both ideator and selector/phraser.",
+  "result": "Scored 0.235 on dev-10 (0 wins / 0 ties / 9 losses vs Sonnet), with specPass 90% and rubric atom=4, spec=3, cover=3, nat=3, nonRed=3. The select-and-phrase second pass did not improve coverage or specificity over single-shot baselines, and the experiment was discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "generate",
-      "text": "Brainstorm raw question candidates",
-      "call_labels": [
-        "brainstorm candidate questions"
-      ]
+      "text": "Brainstorm candidate questions broadly",
+      "knobs": {
+        "sampling": "greedy"
+      }
     },
     {
       "kind": "generate",
-      "text": "Select and phrase final 7 questions",
+      "text": "Select and phrase best 7 from brainstorm",
       "call_labels": [
-        "select and phrase final 7"
+        "select and phrase top 7 from brainstorm"
       ]
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp001"

@@ -1,23 +1,24 @@
 {
   "summary": "Interleaved per-question CoT rationale before each slot",
-  "hypothesis": "Forcing a concrete decision-impact justification immediately before each question (rather than a batch list up front) should suppress generic catch-alls at the point of emission and nudge specificity and non-redundancy, because a per-slot gate is harder to satisfy with filler than a single one-shot list.",
-  "technique": "A single on-device generate call using a guided JSON schema that interleaves a \"decision-impact rationale\" field immediately before each question field, so that guided generation conditions each question on its own rationale at emission time. An explicit instruction warns that vague rationales signal filler slots and should be replaced.",
+  "hypothesis": "Forcing a concrete decision-impact rationale immediately before each question (interleaved) should suppress catch-all/generic questions at the point of emission better than exp018's batch list, because a per-slot justification gate is harder to satisfy with filler than a one-shot upfront list.",
+  "technique": "A single guided-schema on-device generation call (exp011 base) where the schema declares a decision-impact rationale field immediately before each question field; because guided generation emits fields in declared order, slot k's rationale conditions slot k's question, with an explicit instruction to replace any vague rationale with a concrete plan-fork justification.",
+  "result": "Scored 0.302 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), falling below the exp011 best (0.323) and even the baseline (0.307). Coverage stayed pinned at 3 \u2014 identical gap patterns appeared verbatim across cases \u2014 while nonRed held at 4, but compound option-lists leaked into atomicity. The hypothesis was falsified: the model fabricates plausible-sounding concrete rationales for whatever generic question it intended to ask anyway, so the interleaved justification gate rationalises filler rather than blocking it. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner in"
     },
     {
       "kind": "generate",
-      "text": "Interleaved rationale-then-question schema call",
+      "text": "Interleaved rationale-then-question guided schema",
       "knobs": {
         "sampling": "greedy",
-        "schema": "interleaved-CoT"
+        "schema": "rationale+question\u00d77"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp022"

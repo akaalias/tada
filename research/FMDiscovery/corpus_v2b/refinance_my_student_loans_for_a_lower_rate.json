@@ -1,0 +1,82 @@
+{
+  "id": "refinance_my_student_loans_for_a_lower_rate",
+  "input": "Refinance my student loans for a lower rate",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether they want to refinance federal loans, private loans, or both changes the strategy entirely \u2014 refinancing federal loans means losing income-driven repayment and forgiveness protections."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Their credit score and income level are the primary factors lenders use to determine eligibility and rate offers, so knowing these shapes which lenders to target."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether a co-signer is available or being considered significantly affects the rates and lenders they can qualify for."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing the current loan balance and interest rate tells us how much room there is to improve and which lenders offer competitive alternatives."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prioritize a lower monthly payment (longer term) vs. less total interest paid (shorter term) \u2014 these lead to very different refinancing targets."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether they are currently employed, in a grace period, or struggling with payments affects urgency and which refinancing programs are accessible."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what 'done well' means \u2014 a specific rate target, a monthly savings amount, or simply getting approved \u2014 determines when the task is complete."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Refinance Student Loans for a Lower Interest Rate",
+    "taskDescription": "The user wants to refinance their existing student loans to secure a lower interest rate, reducing their monthly payments or total repayment cost.",
+    "questions": [
+      {
+        "title": "Are your loans federal, private, or a mix?",
+        "description": "Identifies whether the user has federal loans (which carry forgiveness/repayment protections that are lost upon refinancing), private loans, or both \u2014 this is the single biggest factor in shaping the plan.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your current total balance and interest rate?",
+        "description": "Knowing the existing loan amount and rate helps quantify the potential savings and identifies how aggressively to shop for lenders.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your approximate credit score right now?",
+        "description": "Credit score is the primary eligibility and rate-determination factor for private refinancing lenders, so this narrows down realistic options.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you currently employed with a steady income?",
+        "description": "Employment status and income stability affect lender eligibility requirements and the urgency of the refinancing decision.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have or plan to use a co-signer?",
+        "description": "A creditworthy co-signer can unlock better rates and more lender options, so this meaningfully changes which paths are available.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a lower monthly payment or less total interest paid?",
+        "description": "This preference determines the target loan term \u2014 a longer term lowers monthly payments but increases total interest, while a shorter term does the opposite.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What rate or monthly savings would make this feel successful?",
+        "description": "Defines a concrete finish line \u2014 whether that is a specific APV target, a dollar amount saved per month, or simply getting approved with any improvement.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

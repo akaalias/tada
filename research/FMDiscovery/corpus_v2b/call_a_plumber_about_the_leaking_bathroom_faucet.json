@@ -1,0 +1,82 @@
+{
+  "id": "call_a_plumber_about_the_leaking_bathroom_faucet",
+  "input": "Call a plumber about the leaking bathroom faucet",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether this is just a call to enquire, get a quote, or book a confirmed repair determines how much preparation is needed and what outcome counts as done."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user already has a specific plumber in mind vs. needing to find one changes the first action entirely \u2014 research vs. direct call."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The severity and type of leak (slow drip vs. active gush, hot/cold, type of faucet) affects urgency and what information to communicate to the plumber."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget cap or rental/ownership situation could limit which plumbers are viable or who is responsible for the repair cost."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing when the user is available for the call and for a plumber visit determines scheduling and the immediate next action."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what 'done' looks like \u2014 a call made, a quote received, or a repair booked \u2014 defines the finish line for this task."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer a local independent plumber, a franchised service, or one with specific credentials (licensed, insured, reviewed), which filters the options."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Call a plumber about the leaking bathroom faucet",
+    "taskDescription": "Contact a plumber to address a leaking bathroom faucet and get it resolved.",
+    "questions": [
+      {
+        "title": "Do you want to book a repair, or just get a quote?",
+        "description": "Clarifies whether the goal of the call is to schedule a confirmed fix, compare prices, or simply get information \u2014 which shapes what to say on the call.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a plumber in mind to call?",
+        "description": "Determines whether the first step is finding and researching plumbers or going straight to making the call.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How severe is the leak right now?",
+        "description": "Understanding urgency (slow drip vs. steady stream) sets the priority level and how quickly the task needs to happen.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a budget limit for this repair?",
+        "description": "A spending cap or landlord responsibility could filter which plumbers to contact and whether to get multiple quotes first.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "When are you available for a plumber to visit?",
+        "description": "Knowing the user's availability windows lets them communicate concrete scheduling options during the call.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What counts as this task being fully complete for you?",
+        "description": "Defines the finish line \u2014 is it the call made, a visit confirmed, or the faucet actually fixed \u2014 so progress can be tracked clearly.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a licensed independent plumber or a larger service company?",
+        "description": "User preferences around trust signals (reviews, licensing, brand) narrow down the right type of plumber to search for or contact.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

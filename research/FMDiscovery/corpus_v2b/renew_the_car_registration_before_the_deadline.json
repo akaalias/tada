@@ -1,0 +1,82 @@
+{
+  "id": "renew_the_car_registration_before_the_deadline",
+  "input": "Renew the car registration before the deadline",
+  "keyUnknowns": [
+    {
+      "axis": "constraints",
+      "whyItMatters": "Knowing the exact deadline determines how urgent the plan is and whether there is time for mail-in or slower methods."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The state or country governs the specific steps, fees, required documents, and available renewal channels."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Some renewals require a smog/emissions test or safety inspection first, which adds separate subtasks and lead time."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user plans to renew online, by mail, or in person at the DMV changes every step of the process."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the vehicle is under someone else's name or a lien holder is involved, additional authorisation or coordination steps are needed."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Knowing whether they already have the renewal notice or need to locate account details shapes the very first action."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Clarifying whether they need just the sticker on the plate or also a paper registration card in hand affects when the task is truly done."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Renew car registration before the deadline",
+    "taskDescription": "Complete the car registration renewal process in full before the expiry date to stay legally compliant.",
+    "questions": [
+      {
+        "title": "When exactly does your registration expire?",
+        "description": "Identify the exact expiry date to calibrate urgency and rule out or include slower renewal methods.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which state or country is the vehicle registered in?",
+        "description": "Determine the jurisdiction to apply the correct steps, fees, and document requirements.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does your vehicle need a smog or safety inspection first?",
+        "description": "Establish whether a pre-renewal inspection is required, which adds lead time and a separate step.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you plan to renew online, by mail, or in person?",
+        "description": "Identify the preferred renewal channel, as each has a completely different set of actions.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is the vehicle registered solely in your name?",
+        "description": "Determine if a co-owner, lien holder, or another party must be involved in the renewal process.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have your renewal notice or account details handy?",
+        "description": "Find out if the user has the notice with their renewal ID, which is needed to start the process.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does completion look like \u2014 sticker received and displayed on plate?",
+        "description": "Confirm what the user considers the task fully done, such as having the new sticker affixed or also holding a registration card.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "book_connecting_train_tickets_for_the_coastal_tr",
+  "input": "Book connecting train tickets for the coastal trip",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the full route \u2014 origin, destination, and any intermediate stops \u2014 determines how many legs need to be booked and whether a single operator covers them all."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The travel date and time of day affects which trains are available, connection viability, and whether peak/off-peak pricing applies."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The number and type of passengers (adults, children, seniors, railcard holders) directly changes pricing, seat requirements, and booking complexity."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget ceiling or a fixed maximum connection time limit narrows which ticket options and fare classes are viable."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Preferences such as seat class, window vs. aisle, direct vs. fastest vs. cheapest route, and flexibility to change tickets shape which booking options to prioritise."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether to book through a specific platform, app, or rail operator (and whether e-tickets are acceptable) determines the exact booking method to use."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what a successful booking looks like \u2014 guaranteed connections, specific arrival window, all tickets under one booking reference \u2014 defines what done well means."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book connecting train tickets for coastal trip",
+    "taskDescription": "The user wants to book a multi-leg train journey with connecting services for a coastal trip.",
+    "questions": [
+      {
+        "title": "What is the full route, including origin and destination stations?",
+        "description": "Identify the departure station, arrival station, and any required intermediate stops to map out all the legs that need to be booked.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What date and approximate time do you need to travel?",
+        "description": "Pin down the travel date and preferred departure or arrival time so that available train services and connection windows can be identified.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many passengers are travelling, and do any hold railcards?",
+        "description": "Confirm the number and type of travellers \u2014 adults, children, seniors \u2014 and any discount cards, as these affect pricing and seat allocation.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a maximum budget you want to stay within?",
+        "description": "Establish a price ceiling per person or in total to filter fare classes and booking options accordingly.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer the cheapest fare, the fastest journey, or flexible tickets?",
+        "description": "Understand whether cost, travel time, or the ability to change/cancel tickets is the top priority when selecting between available options.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which platform or app should the booking be made through?",
+        "description": "Determine whether to use a specific rail operator's site, a third-party aggregator, or a mobile app, and whether e-tickets or physical tickets are needed.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need all legs under one booking reference to protect connections?",
+        "description": "Clarify whether the connecting tickets must be linked under a single booking so that delays on one leg are covered by the operator for the next.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

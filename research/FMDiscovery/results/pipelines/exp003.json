@@ -1,7 +1,8 @@
 {
-  "summary": "RAG few-shot with 2 nearest gold exemplars",
-  "hypothesis": "Injecting the 2 most similar gold exemplars as few-shot demonstrations should improve question quality \u2014 especially non-redundancy and coverage \u2014 because seeing worked examples of decision-critical unknowns gives the 3B a concrete pattern to follow at inference time.",
-  "technique": "At runtime, 2 nearest non-dev gold exemplars are retrieved by word-overlap Jaccard similarity from a hard-coded pool of 12, then injected as few-shot demonstrations into the system prompt, followed by a single greedy FM call to generate the 7 questions.",
+  "summary": "RAG few-shot: 2 nearest exemplars injected",
+  "hypothesis": "Injecting the 2 most similar gold exemplars as few-shot demonstrations should help the 3B model produce less redundant, more decision-critical questions, because seeing worked examples of high-quality question sets at inference time gives the model a concrete pattern to follow.",
+  "technique": "At runtime, 2 nearest non-dev gold exemplars are retrieved from a hard-coded pool of 12 via word-overlap Jaccard similarity, then injected as few-shot demonstrations into the system prompt, followed by a single greedy FM call to generate the final questions.",
+  "result": "Scored 0.320 on dev-10 (0 wins / 1 tie / 9 losses vs Sonnet), a +0.013 gain over the baseline and a new best. Non-redundancy improved from 3 to 4, and the experiment produced the first tie vs gold, but coverage stayed at 3 with critical gaps (budget, departure city, group size) and the model still made catastrophic errors \u2014 confirming RAG scaffolding helps non-redundancy but cannot reliably surface decision-critical unknowns.",
   "stages": [
     {
       "kind": "input",
@@ -12,7 +13,8 @@
       "text": "Fetch 2 nearest gold exemplars via Jaccard",
       "knobs": {
         "k": "2",
-        "similarity": "jaccard"
+        "pool": "12",
+        "similarity": "Jaccard word-overlap"
       }
     },
     {

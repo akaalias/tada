@@ -1,0 +1,82 @@
+{
+  "id": "book_a_whale_watching_tour_for_the_trip_north",
+  "input": "Book a whale watching tour for the trip north",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The specific northern destination determines which operators, whale species, and seasonal availability are relevant \u2014 the entire search changes based on location."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The travel dates determine which tours are actually available and whether whales are likely to be present, since sightings are highly seasonal."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The number of people and any special needs (e.g. children, elderly, mobility issues) affects which tour types and vessels are suitable."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A budget ceiling directly limits which operators and tour tiers (budget shared boat vs. private charter) can be considered."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Tour style preferences \u2014 such as small-group vs. large boat, duration, or focus (photography, education, luxury) \u2014 narrow down the right operator significantly."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether the user wants help finding and comparing options vs. wants a specific booking made determines the immediate next action."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what a great outcome looks like \u2014 guaranteed sightings policy, reviews threshold, flexibility to cancel \u2014 sets the standard for choosing between options."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book a whale watching tour up north",
+    "taskDescription": "The user wants to research and book a whale watching tour as part of an upcoming trip to a northern destination.",
+    "questions": [
+      {
+        "title": "What is the specific northern destination or region?",
+        "description": "Identify the exact location (e.g. Iceland, Norway, Alaska, Pacific Northwest) to find relevant tour operators and whale species.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What dates do you need the tour booked for?",
+        "description": "Pin down the travel dates to check tour availability and seasonal whale activity windows.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many people are going on the tour?",
+        "description": "Establish group size and whether anyone has special requirements such as young children, elderly guests, or mobility considerations.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget per person for this tour?",
+        "description": "Set a spend ceiling to filter between shared group tours, premium small-group experiences, and private charters.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a short trip or a full-day excursion?",
+        "description": "Clarify preferred tour duration and style \u2014 e.g. a 2-3 hour boat trip vs. a full-day expedition \u2014 to shortlist the right operators.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should I find options to compare, or book a specific one?",
+        "description": "Determine whether the immediate next action is researching and presenting options or proceeding directly to making a booking.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most when choosing between tour operators?",
+        "description": "Identify the key decision criteria \u2014 such as a whale-sighting guarantee, cancellation flexibility, review ratings, or eco-certification \u2014 to rank the options correctly.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

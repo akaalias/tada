@@ -1,0 +1,82 @@
+{
+  "id": "sync_my_doctor_s_records_to_a_new_practice",
+  "input": "Sync my doctor's records to a new practice",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing which records are needed (full history, recent visit notes, test results, prescriptions, referrals, imaging, etc.) determines how much to request and from how many sources."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is for the user themselves, a child, or another dependent changes who must sign the release form and who manages the process."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the old practice is local, in another city, or a different country affects the transfer method (in-person, mail, electronic portal) and timeline."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Some practices charge fees for record transfers; knowing if there is a cost limit shapes whether the user pursues free electronic transfer vs. paid options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether both practices use compatible electronic health record (EHR) systems determines if transfer can happen digitally or must go through paper/fax."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding the urgency \u2014 e.g., an upcoming appointment with the new doctor \u2014 sets the deadline and which steps to prioritise first."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer to handle everything themselves, or may want to delegate steps to the new practice's admin team, which changes who takes the lead."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Transfer medical records to a new practice",
+    "taskDescription": "The user wants to move their medical records from their current or previous doctor's practice to a new one.",
+    "questions": [
+      {
+        "title": "Which specific records do you need transferred?",
+        "description": "Identify whether the user needs their full medical history, recent visit notes, lab results, prescriptions, imaging, referral letters, or a specific subset.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are these records for yourself or someone else?",
+        "description": "Determine if the user is the patient or acting as a guardian/proxy for a child or dependent, which affects who signs the release authorisation.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is the old practice local, or in a different city or country?",
+        "description": "Understand the geographic relationship between the old and new practices to determine the most practical transfer method.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do both practices use an online patient portal?",
+        "description": "Find out if electronic health record systems are in place at either end, which determines whether transfer can be done digitally or requires paper/fax/post.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a deadline, such as an upcoming appointment?",
+        "description": "Establish urgency so that steps can be prioritised and a realistic timeline can be set for the transfer to be completed in time.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you aware of any fees your old practice charges for this?",
+        "description": "Understand any cost constraints that might steer the user toward free electronic transfer options over paid printing or courier services.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want to manage this yourself or have the new practice handle it?",
+        "description": "Clarify the user's preferred level of involvement so the plan can either guide them step-by-step or instruct them to delegate to the new practice's admin team.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

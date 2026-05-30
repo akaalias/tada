@@ -1,15 +1,16 @@
 {
-  "summary": "Self-consistency: 4 RAG sets, embedding-cluster, keep 7",
-  "hypothesis": "Aggregating 4 independent RAG-drafted sets should surface decision-critical unknowns (they recur) and suppress niche/redundant ones (they don't), giving a new criticality signal that beats single-sample RAG.",
-  "technique": "Four independent exp003-style RAG calls at temperatures [0.4, 0.6, 0.8, 1.0] produce 28 candidate questions; all 28 are embedding-clustered (NLEmbedding cosine, merge threshold \u2265 0.62) in Swift, and the 7 clusters with the broadest cross-sample agreement are kept, each represented by its centroid-nearest member.",
+  "summary": "RAG self-consistency: 4 samples, embed-cluster, keep 7",
+  "hypothesis": "Aggregating 4 independent RAG drafts via embedding-cluster consensus should surface decision-critical unknowns (which recur across samples) and suppress niche/redundant ones \u2014 providing a new criticality signal beyond exp002's self-rated importance or exp004's keyword scoring.",
+  "technique": "Four independent RAG-prompted on-device drafts are drawn at temperatures [0.4, 0.6, 0.8, 1.0], producing 28 candidate questions; NLEmbedding cosine clustering (merge threshold \u2265 0.62, greedy) collapses near-duplicates, then the 7 clusters with the broadest cross-sample agreement (distinct-sample count, tiebroken by avg position) are kept, each represented by its centroid-nearest member \u2014 all deterministic Swift post-processing after the model calls.",
+  "result": "Scored 0.222 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), a sharp drop of \u22120.098 below the exp003 best (0.320) and \u22120.085 below baseline. Coverage collapsed to 2: embedding clustering failed to merge question paraphrases (cosine too coarse), so near-duplicate pairs survived, and cross-sample frequency surfaced generic filler (\"any additional factors?\") rather than sharp task-specific unknowns \u2014 confirming the 3B's modal output is the generic one and that aggregating more of its own samples cannot recover Sonnet-level judgment. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch nearest gold exemplars for RAG"
+      "text": "Fetch RAG exemplars for generation"
     },
     {
       "kind": "ensemble",
@@ -27,19 +28,23 @@
     },
     {
       "kind": "post",
-      "text": "Embed-cluster 28 Qs, merge \u22650.62",
+      "text": "NLEmbedding cluster 28 Qs, merge \u22650.62",
       "knobs": {
         "merge_threshold": "0.62",
-        "embedding": "NLEmbedding-cosine"
+        "method": "greedy cosine"
       }
     },
     {
       "kind": "select",
-      "text": "Keep 7 broadest cross-sample clusters"
+      "text": "Keep 7 broadest cross-sample agreement clusters",
+      "knobs": {
+        "k": "7",
+        "tiebreak": "avg position"
+      }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp010"

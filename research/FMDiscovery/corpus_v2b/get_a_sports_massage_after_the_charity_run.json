@@ -1,0 +1,82 @@
+{
+  "id": "get_a_sports_massage_after_the_charity_run",
+  "input": "Get a sports massage after the charity run",
+  "keyUnknowns": [
+    {
+      "axis": "context / when",
+      "whyItMatters": "The date of the charity run determines the booking deadline and how much lead time exists to find and secure a therapist."
+    },
+    {
+      "axis": "logistics / where",
+      "whyItMatters": "Whether the massage is on-site at the event, at a nearby clinic, or at home affects which providers are even options."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Sports massages vary widely in price; the budget determines which therapists or services are realistic."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "How soon after finishing the run the user wants the massage affects scheduling \u2014 same day, same hour, or the day after are very different logistics."
+    },
+    {
+      "axis": "scope / treatment specifics",
+      "whyItMatters": "Duration and focus area (e.g. legs only vs. full body) changes what to look for and what to communicate to the therapist."
+    },
+    {
+      "axis": "people / therapist preference",
+      "whyItMatters": "Whether the user already has a trusted therapist or needs to find a new one determines whether this is a booking task or also a research task."
+    },
+    {
+      "axis": "success criteria / what done looks like",
+      "whyItMatters": "Knowing whether success means a confirmed booking in hand vs. just a shortlist of options shapes how far to take the plan."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book a sports massage after the charity run",
+    "taskDescription": "The user wants to arrange a sports massage as recovery following a charity run event.",
+    "questions": [
+      {
+        "title": "When exactly is the charity run taking place?",
+        "description": "Establish the date (and approximate finish time) of the run to set the booking deadline and available lead time.",
+        "coversAxis": "context / when",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Where do you want the massage to happen?",
+        "description": "Clarify whether the user wants an on-site therapist at the event venue, a nearby clinic they travel to, or a mobile therapist who comes to them.",
+        "coversAxis": "logistics / where",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How soon after finishing do you want it?",
+        "description": "Determine the desired timing \u2014 immediately post-race, later the same day, or the following day \u2014 to identify realistic booking windows.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a therapist in mind, or need to find one?",
+        "description": "Find out if the user has an existing preferred therapist or if sourcing and vetting a new one is part of the task.",
+        "coversAxis": "people / therapist preference",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget for the session?",
+        "description": "Establish a price range so that only suitably priced therapists and clinics are considered.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How long a session, and which body areas should it cover?",
+        "description": "Clarify the desired treatment duration and focus \u2014 legs only, full body, etc. \u2014 to communicate clearly with the therapist and filter providers.",
+        "coversAxis": "scope / treatment specifics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does this task look like when it is done?",
+        "description": "Determine whether success means a fully confirmed, paid booking or simply a curated shortlist of options ready to choose from.",
+        "coversAxis": "success criteria / what done looks like",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "get_the_piano_tuned_before_the_holidays",
+  "input": "Get the piano tuned before the holidays",
+  "keyUnknowns": [
+    {
+      "axis": "constraints",
+      "whyItMatters": "The specific holiday deadline determines the urgency of the booking and how much lead time is available to find a tuner."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The type and condition of the piano (e.g. upright vs. grand, last tuned 1 year ago vs. 10 years ago) affects the complexity, duration, and cost of the tuning job."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether a preferred or previously used tuner exists changes the first action \u2014 re-booking a known contact vs. searching for someone new."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The location of the piano determines where the tuner must travel and may affect availability, travel fees, or scheduling windows."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may want only a standard tuning, or may also need repairs, voicing, or regulation \u2014 this changes cost and appointment length."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding the purpose (casual holiday gathering, a child's recital, a performance) sets the quality bar and whether concert-pitch precision matters."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Budget awareness affects which tuner tier to target and whether cost is a deciding factor when comparing options."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get the piano tuned before the holidays",
+    "taskDescription": "Arrange and complete a professional piano tuning session in time for an upcoming holiday period.",
+    "questions": [
+      {
+        "title": "Which holiday are you trying to beat the deadline for?",
+        "description": "Identifies the hard deadline so urgency and lead time can be calculated.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What type of piano is it, and when was it last tuned?",
+        "description": "Determines the complexity of the job \u2014 upright vs. grand, and whether a pitch raise may be needed on top of a standard tuning.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a piano tuner you have used before?",
+        "description": "Establishes whether the first step is a simple re-booking or a fresh search for a qualified technician.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city or area is the piano located in?",
+        "description": "Pinpoints the geographic area to scope tuner availability and any travel-fee considerations.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need anything beyond a standard tuning, such as repairs or voicing?",
+        "description": "Clarifies whether additional services are needed, which would require a longer appointment or a specialist.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What will the piano mainly be used for over the holidays?",
+        "description": "Reveals the quality bar required \u2014 casual background playing versus a performance or recital demands a higher standard of precision.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a budget in mind for the tuning service?",
+        "description": "Determines whether cost is a filtering factor when selecting between tuner options.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

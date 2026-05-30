@@ -1,0 +1,82 @@
+{
+  "id": "test_and_replace_all_smoke_detector_batteries",
+  "input": "Test and replace all smoke detector batteries",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the total number of detectors determines the scale of the task and how many batteries to buy."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The location (single home, multi-floor building, rental property) affects access, logistics, and whether a ladder is needed."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Knowing whether any detectors are hardwired vs. battery-only changes what the replacement step actually involves."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether replacement batteries are already on hand determines if a shopping trip is needed before starting."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing if this is for the user alone or coordinating with housemates/tenants affects scheduling and who needs to be notified about alarm tests."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Whether the goal is just battery replacement or also includes checking expiry dates and replacing aging detector units changes the definition of done."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "A preferred target date (e.g., tied to a seasonal reminder or move-in) helps prioritise urgency and schedule the task."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Test and replace all smoke detector batteries",
+    "taskDescription": "Check every smoke detector in the home, test that each unit works, and replace batteries as needed.",
+    "questions": [
+      {
+        "title": "How many smoke detectors are in your home?",
+        "description": "The total count determines the scale of the task and exactly how many replacement batteries to purchase.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are the detectors battery-only or hardwired with backup batteries?",
+        "description": "Hardwired units require an extra step to disconnect power before replacing the backup battery, changing the procedure.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which rooms or floors are the detectors located on?",
+        "description": "Knowing the locations helps map out the task route and flag any that require a ladder or special access.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have replacement batteries at home?",
+        "description": "If batteries are not on hand, a shopping trip becomes the immediate first action before anything else can proceed.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you need to notify anyone before testing the alarms?",
+        "description": "Housemates, family members, or tenants may need advance warning so the alarm sound does not cause alarm or disruption.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should expired or aging detector units also be replaced, not just batteries?",
+        "description": "Smoke detectors over 10 years old should be fully replaced; knowing if this is in scope defines what 'done' looks like.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a specific date you want this completed by?",
+        "description": "A target date (e.g., before a trip, seasonal check, or move-in) sets the urgency and helps schedule the task appropriately.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "download_offline_maps_for_my_hiking_trip",
+  "input": "Download offline maps for my hiking trip",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The geographic area to cover determines how many maps to download, their file size, and whether one app can cover it all or multiple are needed."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is for solo hiking or a group affects whether maps need to be shared across devices or synced with others."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The terrain type (mountain, forest, coastal, etc.) and trail difficulty influence which map app provides the most relevant detail and overlays."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Available storage on the device limits how many or how detailed the offline maps can be, which may force trade-offs."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may already have a preferred mapping app (AllTrails, Gaia GPS, Maps.me, Google Maps, etc.), which completely determines the download steps."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what features matter most \u2014 turn-by-turn navigation, topographic contours, waypoints, trail ratings \u2014 defines what 'good enough' looks like for the maps."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The device type (iOS vs Android) and when the trip starts affects which format is compatible and how urgently the download needs to happen."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Download offline maps for hiking trip",
+    "taskDescription": "The user wants to download offline maps in preparation for an upcoming hiking trip, ensuring navigation is available without cell service.",
+    "questions": [
+      {
+        "title": "Which specific region or trail are you hiking?",
+        "description": "Identify the geographic area or named trail to determine what map tiles or regions need to be downloaded.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you hiking solo or with others needing maps?",
+        "description": "Determine if maps need to be downloaded and shared across multiple devices or accounts.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What type of terrain and trails does this trip involve?",
+        "description": "Understand whether the hike is on marked trails, backcountry, mountain ridges, etc., to recommend the right map detail level.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How much free storage do you have on your device?",
+        "description": "Storage availability may limit the size or resolution of offline maps that can realistically be downloaded.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already use a preferred hiking or maps app?",
+        "description": "Knowing the app (e.g., AllTrails, Gaia GPS, Google Maps, Maps.me) determines the exact download steps to follow.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which map features matter most to you on the trail?",
+        "description": "Clarify whether topographic contours, waypoints, trail ratings, or turn-by-turn navigation are priorities, to ensure the right map type is selected.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What device are you using, and when is your trip?",
+        "description": "Device type (iOS or Android) affects app availability, and the trip date sets urgency for completing the download.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

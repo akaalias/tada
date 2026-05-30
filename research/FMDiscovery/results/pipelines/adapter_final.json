@@ -1,23 +1,24 @@
 {
-  "summary": "LoRA adapter (epoch 6) schema-free single-shot",
-  "hypothesis": "A LoRA adapter trained to convergence (epoch 6) should internalize the right question-generation style without any schema constraints, producing strong questions purely from learned weights.",
-  "technique": "A single greedy on-device call using the adapter_final LoRA adapter (epoch 6), with no guided schema or post-processing \u2014 the adapter alone is expected to carry all the task knowledge.",
+  "summary": "LoRA adapter (epoch 6), schema-free, single-shot",
+  "hypothesis": "A LoRA adapter trained for more epochs (epoch 6) should produce better question quality by learning more signal from the training pairs \u2014 we expected further fine-tuning to push quality above earlier adapter checkpoints.",
+  "technique": "A single greedy on-device call using a LoRA adapter checkpoint at epoch 6 (adapter_final), with no guided schema or post-processing \u2014 testing whether longer training improves or overfits the adapter.",
+  "result": "Scored 0.307 on dev-10 (0 wins / 1 tie / 8 losses vs Sonnet), the worst result recorded and exactly as predicted for an overfit checkpoint; rubric showed coverage and non-redundancy at 3 with atomicity and naturalness at 4, but specPass of 90% could not compensate for poor coverage. Discarded \u2014 the hypothesis was falsified; epoch 6 overfit and regressed below earlier checkpoints.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner in"
     },
     {
       "kind": "generate",
-      "text": "Schema-free draft via adapter_final (epoch 6)",
+      "text": "Single-shot adapter_final (epoch 6) call",
       "knobs": {
-        "sampling": "greedy",
-        "model": "adapter_final"
+        "model": "adapter_final",
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "adapter_final"

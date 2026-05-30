@@ -1,0 +1,82 @@
+{
+  "id": "batch_cook_and_freeze_three_soups_this_weekend",
+  "input": "Batch cook and freeze three soups this weekend",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing which three soups to make determines the ingredient list, equipment needed, and whether recipes overlap in prep steps \u2014 which affects how efficiently they can be batched."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The number of people being fed and for how many meals determines the batch size (portion count per soup), which drives quantities and container sizing."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Dietary restrictions or allergies (e.g. gluten-free, dairy-free, vegetarian) could rule out certain recipes entirely and must be known before any recipe is chosen."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Kitchen equipment available (e.g. one vs. two large pots, an Instant Pot, a blender) determines whether all three soups can realistically be cooked in parallel or must be done sequentially."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The type and number of freezer containers already on hand affects whether a shopping trip for containers is needed and how the soups should be portioned (individual vs. family servings)."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Flavour style preferences (e.g. hearty/chunky, blended/smooth, cuisine type like Asian or Mediterranean) narrow down recipe choices and ensure the soups are ones the user actually wants to eat."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing the target time window for the cooking session (e.g. Saturday morning, all day Sunday) and how long the soups need to last in the freezer helps prioritise recipes by cook time and guides labelling/rotation planning."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Batch cook and freeze three soups this weekend",
+    "taskDescription": "Plan and execute a weekend session of cooking three soups in bulk and storing them in the freezer for future meals.",
+    "questions": [
+      {
+        "title": "Which three soups do you want to make?",
+        "description": "Identify the specific soup recipes \u2014 whether already chosen, loosely in mind, or needing suggestions \u2014 so the ingredient list and cook plan can be built around them.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many people and meals are you cooking for?",
+        "description": "Establish the total number of portions needed per soup to determine batch sizes and quantities to purchase.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are there any dietary restrictions to cook around?",
+        "description": "Capture any allergies, intolerances, or dietary preferences (e.g. vegetarian, gluten-free, dairy-free) that must be respected across all three soups.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What large cooking equipment do you have available?",
+        "description": "Find out whether the kitchen has multiple large pots, a slow cooker, an Instant Pot, or a blender, which determines whether soups can be cooked simultaneously or must be staggered.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What freezer containers do you already own?",
+        "description": "Determine the type, size, and quantity of containers on hand so the plan can include a container shopping list if needed and advise on portioning strategy.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What flavour styles or cuisines are you most drawn to?",
+        "description": "Capture taste preferences \u2014 such as chunky vs. blended, spicy vs. mild, or a particular cuisine \u2014 to guide recipe selection if soups are not yet decided.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many hours do you have free for cooking this weekend?",
+        "description": "Establish the available time window so recipes can be chosen and sequenced to fit realistically, and so the plan can flag whether any prep should start the night before.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

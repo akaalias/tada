@@ -1,0 +1,82 @@
+{
+  "id": "get_a_referral_letter_from_my_gp_for_a_specialis",
+  "input": "Get a referral letter from my GP for a specialist",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing which type of specialist is needed determines what medical information the GP must include and whether a specific referral pathway applies."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The referral could be for the user themselves or someone they care for, which affects who needs to attend the appointment and who communicates with the GP."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user has already spoken to their GP or is starting from scratch changes the very next action \u2014 booking an appointment vs. following up."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Urgency level (routine vs. urgent) shapes the timeline and the approach \u2014 e.g., requesting an emergency slot vs. a standard consultation."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The preferred method of contacting the GP (phone, online portal, in-person) determines the immediate next step the user needs to take."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Whether the user has a preferred specialist or clinic in mind affects what information they need to bring to the GP and how the letter should be addressed."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding whether the goal is just getting the letter or also booking the specialist appointment defines when this task is truly complete."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a GP referral letter for a specialist",
+    "taskDescription": "The user wants to obtain a referral letter from their general practitioner to see a medical specialist.",
+    "questions": [
+      {
+        "title": "Which type of specialist do you need a referral to?",
+        "description": "Identify the medical specialty (e.g., cardiologist, dermatologist, orthopaedic surgeon) so the correct referral pathway and required information are clear.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this referral for yourself or someone else?",
+        "description": "Clarify whether the user is the patient or acting on behalf of another person, such as a child or elderly relative.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you already spoken to your GP about this referral?",
+        "description": "Determine whether this is a first conversation with the GP or a follow-up to an existing discussion, to identify the correct next action.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How urgently do you need to see the specialist?",
+        "description": "Establish whether this is a routine, soon, or urgent referral, as this affects the timeline and how the GP appointment should be framed.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How do you usually contact or book with your GP?",
+        "description": "Identify the available contact method \u2014 phone, online portal, walk-in \u2014 so the immediate next step can be tailored accordingly.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a specific specialist or clinic in mind?",
+        "description": "Find out if the user has a preferred provider, which affects what details they need to supply to the GP for the letter to be addressed correctly.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is your goal just the letter, or also booking the specialist?",
+        "description": "Clarify the full scope of the task \u2014 whether success means obtaining the referral letter alone, or also securing and attending the specialist appointment.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

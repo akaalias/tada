@@ -1,0 +1,82 @@
+{
+  "id": "book_a_window_seat_for_my_flight_to_tokyo",
+  "input": "Book a window seat for my flight to Tokyo",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The flight date and departure city determine urgency and whether seat selection is still open \u2014 seats fill up fast on popular routes and close-in bookings may have limited options."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether the booking is already made (just needs a seat assigned) or needs to be made from scratch completely changes what steps are required."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If traveling with others, multiple seats need to be coordinated together, which affects which window seats are even viable."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The airline and booking platform determine exactly where and how to change or assign the seat \u2014 each airline has a different process."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Some airlines charge extra for seat selection, especially window seats in preferred rows; knowing the budget limit affects which seats to target."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Window seat preference can vary \u2014 over the wing for stability, front for quicker exit, or rear/upper deck on a 747/A380 \u2014 and cabin class narrows the options further."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user may want just any window seat confirmed, or may want help checking seatmaps, comparing options, and verifying the seat is good \u2014 defining done shapes how far the plan goes."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Book a window seat on Tokyo flight",
+    "taskDescription": "The user wants to secure a window seat assignment for an upcoming flight to Tokyo.",
+    "questions": [
+      {
+        "title": "What is your flight date and departure city?",
+        "description": "Knowing the travel date and origin establishes urgency and whether seat selection is likely still available on this route.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is your flight already booked, or not yet?",
+        "description": "If the flight is already booked, only a seat assignment is needed. If not, the full booking process must be handled first.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which airline are you flying with?",
+        "description": "The airline determines the exact platform, process, and tools needed to select or change a seat assignment.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you traveling alone or with other passengers?",
+        "description": "Group travel requires coordinating adjacent window seats, which limits available options and adds complexity to the selection.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a maximum fee you are willing to pay for the seat?",
+        "description": "Many airlines charge a premium for window seat selection; a budget ceiling determines which seat rows or tiers are worth pursuing.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a specific cabin class or part of the plane?",
+        "description": "Preferences such as economy vs. business, front vs. rear, or over-the-wing vs. nose dramatically narrow the target seats on the seatmap.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does success look like \u2014 any window seat confirmed, or the best one available?",
+        "description": "Clarifies whether the task ends at any confirmed window seat, or requires researching the seatmap to identify and secure the optimal choice.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,7 +1,8 @@
 {
-  "summary": "Plan-then-assumptions RAG: draft plan, surface unknowns, phrase questions",
-  "hypothesis": "Having the model draft a concrete plan first should force it to commit to real decision-critical assumptions (budget, departure city, scale), which can then be turned into better-targeted questions than abstract brainstorming produces.",
-  "technique": "A two-FM-call pipeline: the first call has the stock 3B draft a concrete plan and explicitly surface the assumptions it was forced to make; the second call feeds those surfaced assumptions into the exp003 RAG few-shot scaffold to phrase and atomise them into 7 questions.",
+  "summary": "Plan-then-surface-assumptions RAG phrasing",
+  "hypothesis": "Asking the model to draft a concrete plan first will force it to commit to task-specific assumptions (budget, dates, scale), and those assumptions will be more grounded decision-critical unknowns than abstract brainstorming \u2014 yielding better coverage than prior RAG variants.",
+  "technique": "A two-stage FM pipeline: stage 1 uses the stock 3B to draft a concrete execution plan and explicitly surface the assumptions it was forced to make; stage 2 feeds those surfaced assumptions into the exp003 RAG few-shot scaffold to phrase and atomise them into 7 final questions.",
+  "result": "Scored 0.245 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), the worst of any RAG-derived variant and \u22120.075 below the exp003 best (0.320). Coverage collapsed to 2 (down from 3), because planning-first causes the 3B to surface minor logistical specifics (seating, transport, paperwork) rather than high-level decision-critical unknowns, and the extra FM stage reintroduced naturalness and sanity failures; hypothesis firmly falsified \u2014 discarded.",
   "stages": [
     {
       "kind": "input",
@@ -9,20 +10,23 @@
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG few-shot exemplars for phrasing"
+      "text": "Fetch RAG few-shot phrasing exemplars",
+      "knobs": {
+        "sampling": "RAG"
+      }
     },
     {
       "kind": "generate",
       "text": "Draft concrete plan, surface forced assumptions",
       "knobs": {
-        "sampling": "greedy"
+        "temp": "0.7"
       }
     },
     {
       "kind": "generate",
       "text": "RAG-phrase assumptions into 7 questions",
       "knobs": {
-        "sampling": "greedy"
+        "temp": "0.7"
       }
     },
     {

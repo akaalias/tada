@@ -1,0 +1,82 @@
+{
+  "id": "get_my_eyes_tested_for_new_glasses",
+  "input": "Get my eyes tested for new glasses",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether the goal is just the eye test itself, or also choosing and ordering new glasses, determines how many steps the plan needs to cover."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user already has a preferred optician or needs to find one changes the first action entirely \u2014 searching vs. booking."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "An urgency or deadline (e.g. prescription expiring, important event) affects how quickly to act and which appointment slots to prioritise."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing how they prefer to book (phone, online, walk-in) determines the immediate next action to put in the plan."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Budget shapes whether to look at NHS-funded tests, private opticians, budget chains, or independent specialists, and how to approach the glasses purchase."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If this is for one person or multiple family members, the plan may need multiple appointments coordinated together."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The type of glasses needed (reading, distance, varifocal, contact lenses as an alternative) affects what to discuss with the optician and what to look for."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get eyes tested and new glasses",
+    "taskDescription": "The user wants to book and attend an eye test, with the likely goal of getting a new glasses prescription or pair of glasses.",
+    "questions": [
+      {
+        "title": "Is the goal just the test, or buying glasses too?",
+        "description": "Clarify whether the task ends at receiving a prescription or includes selecting and purchasing new glasses.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have an optician you use?",
+        "description": "Determine whether the user needs to research and choose an optician or can go straight to booking.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How soon do you need this done?",
+        "description": "Establish whether there is a deadline or urgency driving the timing of the appointment.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How do you prefer to book the appointment?",
+        "description": "Find out whether the user wants to book online, by phone, or walk in, to shape the immediate next action.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you looking to keep costs low or flexible on budget?",
+        "description": "Understand budget expectations to guide choice of provider and glasses options (NHS, budget chain, independent).",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this just for you or others in your household?",
+        "description": "Check whether multiple people need appointments so they can be coordinated together.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What type of glasses do you think you need?",
+        "description": "Clarify the likely prescription need \u2014 reading, distance, varifocal, or whether contact lenses are also being considered.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

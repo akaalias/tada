@@ -1,0 +1,82 @@
+{
+  "id": "take_a_one_day_cheese_making_workshop_nearby",
+  "input": "Take a one-day cheese making workshop nearby",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing the user's location or city determines which workshops are actually 'nearby' and searchable."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "A target date or timeframe narrows down available sessions and affects urgency of booking."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Cheese making covers many styles (soft, hard, aged, mozzarella, etc.); knowing a preference focuses the search on relevant workshops."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is solo, with a partner, or a group changes booking logistics, seat count, and possibly the type of workshop (private vs. public)."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Workshop prices vary widely ($50\u2013$300+); a budget ceiling filters out options and affects decision-making."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some workshops are purely hands-on, others lecture-based or include meals/tastings; knowing the preferred experience style helps prioritise options."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding whether the goal is a fun experience, a practical skill to use at home, or a gift/activity for someone else shapes which workshop qualities matter most."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Find and attend a local one-day cheese making workshop",
+    "taskDescription": "The user wants to sign up for and complete a one-day, in-person cheese making workshop in their local area.",
+    "questions": [
+      {
+        "title": "What city or neighbourhood should the search focus on?",
+        "description": "Establish the user's location so 'nearby' workshops can be identified accurately.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a target date or timeframe in mind?",
+        "description": "Identify when the user wants to attend so available sessions can be matched.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is there a specific type of cheese you want to make?",
+        "description": "Determine if the user has a preference (e.g. mozzarella, brie, cheddar) to filter relevant workshops.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you be attending alone or bringing others?",
+        "description": "Clarify the number of attendees to handle seat bookings and check group-friendly options.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your maximum budget per person for the workshop?",
+        "description": "Set a price ceiling so only financially suitable workshops are considered.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a fully hands-on class or one that includes tastings and theory?",
+        "description": "Understand the user's preferred workshop format to prioritise experience style.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this mainly for fun, building a home skill, or another reason?",
+        "description": "Clarify the primary goal so the most fitting workshop outcome can be matched.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

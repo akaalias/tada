@@ -1,29 +1,30 @@
 {
   "summary": "Over-generate 12 candidates, pick top-7 in Swift",
-  "hypothesis": "Generating more than 7 candidates and then selecting the best 7 via a deterministic Swift scorer should improve quality, because a larger candidate pool increases the chance of covering more question dimensions before the final cut.",
-  "technique": "A single on-device FM call over-produces 12 candidate questions, then a deterministic Swift ranker scores and selects the top 7 for output \u2014 no additional model calls involved in selection.",
+  "hypothesis": "Generating more candidate questions (12) than needed and selecting the best 7 via a deterministic Swift scorer should yield higher-quality output than a single-shot generate, because a larger candidate pool gives the ranker more to work with and filters weaker questions before output.",
+  "technique": "A single on-device FM call over-produces 12 candidate questions, then a deterministic Swift coverage/ranking scorer selects the top 7 for output \u2014 no additional model calls involved.",
+  "result": "Scored 0.263 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), with rubric atom=5, spec=3, cover=2, nat=3, nonRed=4. Coverage collapsed to 2 despite high atomicity, indicating the expand+select approach does not reliably surface dimension-spanning questions; discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "expand",
-      "text": "FM over-generates 12 candidate questions",
+      "text": "Over-generate 12 candidate questions",
       "knobs": {
         "n": "12"
       }
     },
     {
       "kind": "select",
-      "text": "Swift scorer picks top-7 deterministically",
+      "text": "Deterministic Swift top-7 picker",
       "knobs": {
         "k": "7"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions"
     }
   ],
   "label": "exp002"

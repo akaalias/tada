@@ -1,29 +1,27 @@
 {
   "summary": "Contrastive GOOD-vs-BAD few-shot on RAG base",
-  "hypothesis": "Prepending a GOOD-vs-BAD worked example should teach the model which anti-patterns to avoid better than positive-only demos or instruction checklists, because the contrast directly demonstrates the failure modes the judge flags rather than just showing success cases.",
-  "technique": "Built on exp003's RAG positive few-shot single-call pipeline, but prepended one fixed contrastive worked example on a neutral non-eval task (\"Organize my garage\") whose WEAK set demonstrates the exact anti-patterns flagged by the judge (restating facts, off-task questions, vague filler, compound asks, redundant pairs). No extra model calls \u2014 the contrast is baked into the prompt as a negative demonstration.",
+  "hypothesis": "Prepending a GOOD-vs-BAD worked example should teach the 3B by contrast what positive-only demos and instruction checklists couldn't \u2014 specifically, that demonstrating the exact anti-patterns (restating facts, vague filler, compound asks) alongside a good response might suppress those errors and unlock coverage gains without adding a runtime judging step.",
+  "technique": "Built on the exp003 RAG positive few-shot base, then prepended one fixed contrastive worked example on a neutral non-eval task (\"Organize my garage\") whose weak set explicitly demonstrates the anti-patterns the judge flags \u2014 restating given facts, off-task questions, vague filler, compound asks, and redundant pairs \u2014 paired with a strong counterexample. No extra model calls; the contrast is baked into the prompt.",
+  "result": "Scored 0.323 on the dev-10 eval (0 wins / 1 tie / 9 losses vs Sonnet), a marginal +0.003 over exp003's 0.320 \u2014 within run-to-run noise, treated as a tie. All five rubric dimensions were identical to exp003 (atom 5, spec 3, cover 3, nat 3, nonRed 3), with coverage pinned at 3 and the same per-case misses recurring verbatim. Kept as new best, but the hypothesis is essentially falsified: contrastive negative demonstrations confer no coverage benefit beyond the ~0.32 in-context plateau.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Fetch nearest positive RAG exemplars",
-      "knobs": {
-        "k": "2"
-      }
+      "text": "Fetch nearest positive few-shot exemplars"
     },
     {
       "kind": "generate",
-      "text": "Single call with contrastive GOOD/BAD prompt",
+      "text": "Single call: contrastive few-shot prompt",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp011"

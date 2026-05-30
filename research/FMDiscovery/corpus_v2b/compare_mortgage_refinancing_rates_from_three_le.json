@@ -1,0 +1,82 @@
+{
+  "id": "compare_mortgage_refinancing_rates_from_three_le",
+  "input": "Compare mortgage refinancing rates from three lenders",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The type of refinance (rate-and-term vs. cash-out) and loan type (fixed vs. ARM, 15 vs. 30 year) completely changes which rates to look for and how to compare them."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The borrower's credit score, income, and existing equity directly affect which lenders are relevant and what rates they will qualify for."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The current loan balance and home value determine the LTV ratio, which is a core driver of the rate offered by any lender."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A deadline (e.g., rate lock expiry, financial urgency) or a hard limit on closing costs changes how aggressively and quickly the comparison needs to happen."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user wants to compare online quotes, work with a broker, or get formal Loan Estimates from lenders determines the entire method of gathering data."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prioritize lowest interest rate, lowest APR, lowest closing costs, or lender reputation \u2014 these trade-offs lead to different recommendations."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what the final output looks like \u2014 a simple side-by-side table, a recommendation, or a full decision \u2014 defines how deep the comparison needs to go."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Compare mortgage refinancing rates from three lenders",
+    "taskDescription": "Research and compare mortgage refinancing rates from three lenders to find the best option.",
+    "questions": [
+      {
+        "title": "What type of refinance are you pursuing?",
+        "description": "Determine whether this is a rate-and-term refinance, a cash-out refinance, or a specific product like an FHA streamline \u2014 this defines which loan products and rates to compare.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your approximate credit score range?",
+        "description": "The borrower's credit score tier (e.g., 620\u2013679, 680\u2013739, 740+) is one of the biggest factors lenders use to set rates, so it determines which quotes are realistic.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your current loan balance and home value?",
+        "description": "These two figures establish the loan-to-value ratio, which directly influences the rate tiers each lender will offer.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a deadline or urgency driving this comparison?",
+        "description": "A time constraint \u2014 such as a rate lock expiring, a planned move, or financial pressure \u2014 affects how quickly quotes need to be gathered and whether speed outweighs thoroughness.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How do you want to gather the rate quotes?",
+        "description": "Clarifies whether the user plans to use online rate tools, contact lenders directly, use a mortgage broker, or request official Loan Estimates \u2014 this determines the entire workflow.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most to you in a refinance offer?",
+        "description": "Identifies whether the user's top priority is the lowest interest rate, lowest APR, minimal closing costs, shortest break-even period, or lender trustworthiness \u2014 these trade-offs point to different winners.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What should the final output of this comparison look like?",
+        "description": "Determines whether the user needs a simple side-by-side table of numbers, a written recommendation, a break-even analysis, or a full decision with next steps.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

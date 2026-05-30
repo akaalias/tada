@@ -1,11 +1,12 @@
 {
-  "summary": "Givens-aware in-schema: extract facts, then 7 questions",
-  "hypothesis": "Extracting provided facts first (an easy reading task) and forbidding the 7 questions from re-asking any given should free wasted slots for real unknowns, because the model's coverage loss was assumed to come from re-stating already-known facts.",
-  "technique": "A single on-device model call using an in-schema prompt that adds a `providedFacts` field first \u2014 pulling concrete facts from the task text \u2014 followed by the 7 questions constrained to never re-ask a given, all in one coherent draw (no separate refill pass), building on the exp011 base prompt.",
+  "summary": "Givens-aware in-schema: extract facts, forbid re-asking",
+  "hypothesis": "Extracting provided facts first (an easy reading task) and forbidding the 7 questions from re-asking any given should free wasted slots and let the model cover more real unknowns. The bet is that the model's main coverage waste is literally re-stating task-given facts, and that a 3B can reliably do the extraction step even if it can't judge criticality.",
+  "technique": "A single on-device generate call using a structured in-schema prompt (based on exp011) that includes a `providedFacts` field first \u2014 an easy reading-comprehension extraction of facts already stated in the task \u2014 followed by the 7 questions, with an absolute rule that none may re-ask any extracted given. No separate refill pass; the whole draw is one coherent generation.",
+  "result": "Scored 0.287 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), below exp011's best of 0.323, exp003's 0.320, and the baseline 0.307. Coverage stayed at 3 with the same recurring gaps verbatim \u2014 the hypothesis was falsified: the 3B's waste is not on slot-for-slot givens restatement but on niche/generic unknowns, so the easy extraction freed little room, and whatever room it freed was refilled with the same generic content, confirming the binding constraint is criticality judgment, not givens-awareness. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User task scenario one-liner"
     },
     {
       "kind": "generate",
@@ -17,7 +18,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions out"
+      "text": "Final 7 questions, no givens re-asked"
     }
   ],
   "label": "exp025"

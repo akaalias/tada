@@ -1,11 +1,12 @@
 {
-  "summary": "RAG adapt: rewrite nearest exemplar's 7 gold Qs one-to-one",
-  "hypothesis": "Forcing the model to adapt each of the nearest exemplar's 7 concrete gold questions one-to-one to the new task should transfer the exemplar's full dimension span, because the hard constraints remove the model's freedom to drop important unknowns.",
-  "technique": "A RAG pipeline retrieves the single nearest gold exemplar, then a single on-device FM call is prompted with those 7 concrete questions as hard one-to-one rewrite constraints \u2014 the model must surface-adapt each question to the new task while preserving its underlying unknown.",
+  "summary": "RAG adapt: rewrite exemplar's 7 gold Qs one-to-one",
+  "hypothesis": "Forcing the model to adapt each of the nearest exemplar's 7 concrete gold questions one-to-one to the new task should transfer the exemplar's full dimension span directly into the output, because the coverage gap is about which unknowns to probe \u2014 and hard-constraining the slots removes that judgment from the 3B entirely.",
+  "technique": "RAG lookup of the nearest gold exemplar, then a single on-device generate call whose prompt treats that exemplar's 7 concrete gold questions as hard one-to-one rewrite constraints \u2014 the model must adapt each question to the new task while preserving the unknown it probes.",
+  "result": "Scored 0.247 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), falling \u22120.073 below the prior best exp003 (0.320) and \u22120.060 below baseline; discarded. Coverage stayed at 3 and non-redundancy dropped to 3 \u2014 the 3B anchored on surface wording and drifted, producing more duplicates than exp003 and still missing key dimensions, falsifying the hypothesis and closing the book on the entire RAG/prompt-injection family.",
   "stages": [
     {
       "kind": "input",
-      "text": "Accept new task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
@@ -13,14 +14,14 @@
     },
     {
       "kind": "generate",
-      "text": "Rewrite each gold Q one-to-one for task",
+      "text": "Rewrite each gold Q one-to-one for new task",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "Emit 7 adapted questions"
+      "text": "7 adapted questions out"
     }
   ],
   "label": "exp008"

@@ -1,0 +1,82 @@
+{
+  "id": "get_a_mole_checked_at_the_dermatologist",
+  "input": "Get a mole checked at the dermatologist",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user already has a dermatologist or needs to find one entirely changes the first steps of the plan."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Insurance coverage or out-of-pocket cost tolerance affects which providers are viable options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "How soon the user wants the appointment determines urgency and whether walk-in/urgent options need to be considered."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether this is a routine skin check or a specific concerning mole shapes how urgently and how broadly the appointment should be framed."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether a GP referral is required (e.g. in certain health systems) affects the sequence of steps before booking the dermatologist."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Preferences for appointment format (in-person vs. teledermatology) and location affect which providers to target."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what outcome the user wants (peace of mind, a biopsy if needed, a written report) defines what a successful appointment looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a mole checked at the dermatologist",
+    "taskDescription": "Book and attend a dermatologist appointment to have a mole professionally examined.",
+    "questions": [
+      {
+        "title": "Do you already have a dermatologist you see?",
+        "description": "Determines whether the user needs to find and vet a new provider or simply schedule with an existing one.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this mole new, changing, or just a routine check?",
+        "description": "Clarifies the medical urgency and how the appointment should be framed when booking.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How soon do you want to be seen?",
+        "description": "Establishes the time horizon so the plan can prioritise speed (urgent care, cancellation lists) or standard scheduling.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does your health system require a GP referral first?",
+        "description": "In some countries or insurance plans a referral is mandatory; this determines whether a GP visit is step one.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you be using insurance, and do you have a preferred network?",
+        "description": "Insurance status and network constraints narrow down which dermatologists are affordable and eligible.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer an in-person visit or would teledermatology work?",
+        "description": "Appointment format preference filters the type of providers and platforms to consider.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What outcome would make this appointment feel complete to you?",
+        "description": "Understanding whether the user wants verbal reassurance, a biopsy if warranted, or a written report defines what a successful visit looks like.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

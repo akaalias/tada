@@ -1,0 +1,82 @@
+{
+  "id": "find_a_reputable_pet_groomer_near_my_home",
+  "input": "Find a reputable pet groomer near my home",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Different pets (dog, cat, rabbit, etc.) have vastly different grooming needs and require specialists \u2014 this changes which groomers are even relevant."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The pet's breed, size, age, and temperament (e.g., anxious, elderly) directly affect what type of groomer or grooming style is appropriate."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The user's location or neighborhood is essential to define what 'near home' means and to surface accurate local results."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Budget per grooming session determines which services or salons are realistic options and filters out mismatches."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may have strong preferences about mobile vs. in-salon grooming, or specific services needed (bath only, full groom, nail trim), which shapes the search entirely."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "What 'reputable' means varies \u2014 some prioritize online reviews, certifications, fear-free practices, or word-of-mouth recommendations. This defines how to evaluate options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing whether the user needs a one-time appointment or a recurring groomer, and how soon, affects urgency and whether availability is a deciding factor."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Find a reputable pet groomer near home",
+    "taskDescription": "The user wants to locate and choose a trustworthy, nearby grooming service for their pet.",
+    "questions": [
+      {
+        "title": "What type of pet needs grooming?",
+        "description": "Identify the species of the pet (e.g., dog, cat, rabbit) to narrow the search to groomers who specialize in that animal.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your pet's breed, size, and age?",
+        "description": "Capture breed, size, and age details to match groomers experienced with the pet's specific coat type, physical needs, or temperament.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city, neighborhood, or zip code are you in?",
+        "description": "Establish the user's location to define a meaningful search radius for 'near home.'",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget per grooming session?",
+        "description": "Understand the acceptable price range per visit to filter out options that are too expensive or to flag unusually cheap ones.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer mobile grooming or a salon visit?",
+        "description": "Determine whether the user wants a groomer who comes to their home or a traditional brick-and-mortar salon, as this changes the entire search approach.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does 'reputable' most mean to you here?",
+        "description": "Clarify the user's trust signals \u2014 e.g., high star ratings, certified groomers, fear-free handling, personal referrals \u2014 to prioritize correctly when comparing options.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need a one-time or recurring grooming appointment?",
+        "description": "Find out whether this is a single visit or an ongoing relationship, which affects how much weight to give availability, scheduling flexibility, and loyalty pricing.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

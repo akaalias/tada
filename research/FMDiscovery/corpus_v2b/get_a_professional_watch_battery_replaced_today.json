@@ -1,0 +1,82 @@
+{
+  "id": "get_a_professional_watch_battery_replaced_today",
+  "input": "Get a professional watch battery replaced today",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the watch brand and model determines whether a general jeweler can handle it or if it requires an authorized service center, especially for luxury or water-resistant watches."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The user's city or neighborhood determines which specific shops are nearby and reachable today."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A hard time deadline within today (e.g., must be done by noon vs. by 8 pm) affects which shops are still open and whether same-day walk-in service is feasible."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether the user will visit in person or needs a courier/mail-in option changes the entire logistics of the task."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user already has a shop in mind or needs help finding one changes whether the next step is navigation or research."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Water resistance re-sealing and pressure testing after battery replacement is a meaningful upsell some shops offer \u2014 knowing if this matters affects which service provider to choose."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "A budget ceiling determines whether a mall kiosk ($10\u201315) or an authorized brand service center ($50+) is the acceptable option."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a watch battery professionally replaced today",
+    "taskDescription": "The user wants to have the battery in a watch replaced by a professional service, with the job completed within today.",
+    "questions": [
+      {
+        "title": "What is the brand and model of the watch?",
+        "description": "Identifies whether the watch requires a specialist (e.g., luxury brand, diver's watch) or if any local jeweler or kiosk can handle it.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city or neighborhood are you currently in?",
+        "description": "Determines which nearby shops and service centers are actually accessible today.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is the latest time you need this done by today?",
+        "description": "Sets the hard deadline that filters out shops that close too early or cannot commit to same-day turnaround.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you drop the watch off yourself or need it collected?",
+        "description": "Determines whether walk-in service is the path or whether a courier or mail-in option needs to be arranged.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a shop in mind, or need one found?",
+        "description": "Decides the immediate next action \u2014 either navigating to a known shop or researching and vetting a new one.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Does the watch need to stay water-resistant after the replacement?",
+        "description": "Determines whether a basic battery swap suffices or if the service must include re-sealing and pressure testing, which not all shops provide.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget limit for this service?",
+        "description": "Sets the price ceiling that distinguishes between low-cost kiosk options and premium authorized service centers.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

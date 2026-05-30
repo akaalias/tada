@@ -1,40 +1,41 @@
 {
-  "summary": "Composite-ruler best-of-N over contrastive-RAG base",
-  "hypothesis": "Running best-of-N over the strongest base (exp011 contrastive-RAG) with a richer composite ruler \u2014 penalising filler, near-duplicates, and compound asks on top of coverage span \u2014 should fix exp004's coverage-only blindness and recover the non-redundancy gap, because the shape proxy would be selecting over higher-quality draws.",
-  "technique": "Four draws at a low-temperature floor [0.4, 0.6, 0.8, 1.0] from the exp011 contrastive-RAG generator (retrieve + generate), then fully deterministic Swift selection by a composite ruler scoring coverage-span minus filler (FillerDetector) minus near-duplicate pairs (Jaccard \u2265 0.5) minus compound asks \u2014 no model call in the select stage.",
+  "summary": "Composite-ruler best-of-N on contrastive-RAG base",
+  "hypothesis": "Combining the best RAG generator (exp011) with a richer composite deterministic selector \u2014 penalising filler, near-duplicates, and compound questions while rewarding coverage span \u2014 should beat exp011 and fix exp004's atomicity-blind coverage-only scoring, because the multi-dimensional shape ruler better approximates true set quality.",
+  "technique": "Four candidate sets are drawn from the exp011 contrastive-RAG generator at a low-temperature floor [0.4, 0.6, 0.8, 1.0]; a fully deterministic Swift composite ruler (CoverageScorer span \u2212 FillerDetector \u2212 Jaccard near-dup penalty \u2212 compound-question penalty) selects the best-shaped set with no model-based judgment.",
+  "result": "Scored 0.297 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), \u22120.026 below the exp011 best of 0.323 and \u22120.010 below the 0.307 baseline; rubric atom=4, spec=3, cover=3, nat=3, nonRed=4. The composite ruler did improve non-redundancy (nonRed 4) but coverage stayed pinned at 3, and crucially the shape-based selector actively preferred a catastrophic context-leakage draw (garage questions for a dinner-party task) because it scored high on coverage span with no task-fit signal \u2014 discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive-RAG exemplar fetch (exp011)"
+      "text": "Contrastive-RAG: fetch exemplar + contrastive demo"
     },
     {
       "kind": "ensemble",
-      "text": "4 draws at low-temp floor [0.4\u20131.0]",
+      "text": "Draw N=4 sets at low-temp floor",
       "knobs": {
         "n": "4",
         "temp": "0.4\u20131.0"
       },
       "call_labels": [
-        "draw at temp 0.4",
-        "draw at temp 0.6",
-        "draw at temp 0.8",
-        "draw at temp 1.0"
+        "draft at temp 0.4",
+        "draft at temp 0.6",
+        "draft at temp 0.8",
+        "draft at temp 1.0"
       ]
     },
     {
       "kind": "select",
-      "text": "Composite ruler: span\u2212filler\u2212near-dup\u2212compound",
+      "text": "Composite ruler: span \u2212 filler \u2212 near-dup \u2212 compound",
       "knobs": {
-        "k": "1"
+        "sampling": "deterministic"
       }
     },
     {
       "kind": "output",
-      "text": "Top-ranked question set returned verbatim"
+      "text": "Best-shaped 7-question set returned"
     }
   ],
   "label": "exp026"

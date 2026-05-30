@@ -1,7 +1,8 @@
 {
-  "summary": "RAG anti-modal self-contrast: greedy anchor then surpass",
-  "hypothesis": "Showing the model its own greedy (most-generic) output as a negative anchor and asking it to generate a fresher, sharper set should push coverage past the modal cluster \u2014 because a maximally self-relevant contrast should be a stronger signal than a fixed neutral anchor (exp011) or raw temperature (exp024).",
-  "technique": "A two-stage RAG pipeline: stage 1 retrieves exemplars and generates a greedy draft (most-confident = most-generic modal output); stage 2 receives that draft back as a dynamic negative anchor and makes a fresh generation call instructed to surpass it \u2014 avoiding any select/critique judgment step that failed in earlier experiments.",
+  "summary": "RAG anti-modal self-contrast: greedy anchor then regenerate",
+  "hypothesis": "Showing the model its own greedy (most-generic) draft as a negative anchor and asking it to generate a fresh, superior set should push coverage out of the modal cluster \u2014 because the model's own output is the most relevant possible signal for what \"generic\" looks like on this exact task.",
+  "technique": "A two-stage RAG pipeline: stage 1 generates a greedy modal draft (the model's most-confident, most-generic output); that draft is fed back as a dynamic negative anchor in stage 2, which generates a fresh 7 questions explicitly instructed to surpass it in specificity and coverage. Both stages use the same on-device model with RAG exemplars injected.",
+  "result": "Scored 0.287 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), down \u22120.036 from the exp011 best (0.323) and \u22120.020 from the baseline (0.307); discarded. Coverage stayed pinned at 3 \u2014 the model regenerated the same modal cluster verbatim, confirming that a dynamic self-anchor cannot substitute for the criticality judgment the 3B lacks, falsifying the hypothesis.",
   "stages": [
     {
       "kind": "input",
@@ -9,18 +10,18 @@
     },
     {
       "kind": "retrieve",
-      "text": "Fetch RAG exemplars for task"
+      "text": "Fetch RAG exemplars for context"
     },
     {
       "kind": "generate",
-      "text": "Greedy modal draft \u2014 negative anchor",
+      "text": "Greedy modal draft as negative anchor",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "generate",
-      "text": "Fresh 7 Qs instructed to surpass anchor",
+      "text": "Fresh 7 questions surpassing anchor draft",
       "knobs": {
         "temp": "0.7"
       }

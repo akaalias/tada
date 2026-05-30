@@ -1,11 +1,12 @@
 {
-  "summary": "RAG draft + embedding coverage-gap repair call",
-  "hypothesis": "Keeping exp003's strong 6/7 draft questions untouched and making only one surgical FM call to patch the single least-covered slot should improve coverage without risking the rest of the draft \u2014 because moving the coverage judgment into deterministic Swift embeddings removes fallible 3B judgment from the loop.",
-  "technique": "A RAG pipeline generates the base draft from the 2 nearest exemplars; Swift NLEmbedding then identifies the gold unknown least covered by the draft and the most-redundant draft slot; a single focused FM call adapts that gold question into the redundant slot, leaving 6/7 questions untouched.",
+  "summary": "RAG + embedding coverage-repair swap + focused FM patch",
+  "hypothesis": "Moving coverage judgment out of the 3B entirely \u2014 using deterministic NLEmbedding in Swift to detect the least-covered gold unknown and swap the most-redundant draft slot \u2014 should be a surgical, low-risk patch that can't mangle the rest of the draft.",
+  "technique": "Build exp003's RAG draft (6/7 questions untouched), then in Swift use NLEmbedding to find the gold question (from the 2 nearest exemplars) whose unknown is least covered, identify the most-redundant draft slot, and make one focused FM call to adapt that gold question into the redundant slot \u2014 all coverage judgment is deterministic, only the single patch call uses the model.",
+  "result": "Scored 0.213 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), down \u22120.107 from the exp003 best of 0.320 and \u22120.094 vs baseline \u2014 the worst RAG variant yet, discarded. The repair call produced near/exact duplicates of already-present draft questions in ~8/10 cases, tanking nonRed from 4 to 2, while coverage stayed at 3 \u2014 the embedding gap-detector mis-targeted niche dimensions, and the one-shot FM patch call regenerated content it already had, confirming that deterministic embedding similarity is too blunt to identify decision-critical unknowns.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner in"
+      "text": "User one-liner task input"
     },
     {
       "kind": "retrieve",
@@ -16,25 +17,25 @@
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions from exemplars",
+      "text": "Draft 7 questions from RAG exemplars",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "post",
-      "text": "Swift NLEmbedding: find gap + redundant slot"
+      "text": "NLEmbedding: find least-covered gold unknown & most-redundant slot"
     },
     {
       "kind": "critique",
-      "text": "One FM call: adapt gold Q into redundant slot",
+      "text": "One FM call adapts gold Q into redundant slot",
       "knobs": {
-        "n": "1"
+        "temp": "0.7"
       }
     },
     {
       "kind": "output",
-      "text": "Final 7 questions (6 untouched + 1 repair)"
+      "text": "Final 7 questions (6 original + 1 patch)"
     }
   ],
   "label": "exp009"

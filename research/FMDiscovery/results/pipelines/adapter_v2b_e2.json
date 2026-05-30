@@ -1,0 +1,25 @@
+{
+  "summary": "Coverage-forced gold LoRA adapter, epoch 2, greedy",
+  "hypothesis": "Distilling Sonnet's coverage-forced reasoning targets (one atomic question per decision axis) into the adapter weights should push the 3B model to spread questions across all 7 axes on held-out tasks, lifting the coverage dimension that has stayed pinned at 3 across every prior in-context lever.",
+  "technique": "A LoRA adapter (v2b) fine-tuned on regenerated gold where Sonnet first reasons about distinct decision-relevant unknowns across 7 axes (scope/people/context/constraints/preferences/success/logistics) then writes exactly one atomic question per axis; same recipe as v2a (lr 5e-4, 8 epochs) with greedy decoding. Epoch 2 export used here (epoch-best by validation loss was epoch 1 at 1.02, which itself was worse than v2a's 0.79, indicating the coverage-forced targets are harder for the 3B to fit).",
+  "result": "Scored 0.394 on the full-30 gate (4 wins / 0 ties / 25 losses vs Sonnet), below v2a_e1's 0.409 champion score; coverage stayed pinned at 3 \u2014 the exact dimension the coverage-forced gold was built to move \u2014 confirming the hypothesis is falsified. The more polarised win/loss distribution (4 wins, 0 ties) vs v2a's smoother profile reflects higher variance, not a higher mean; discarded, v2a_e1 remains best.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Greedy decode via v2b epoch-2 adapter",
+      "knobs": {
+        "model": "adapter_v2b_e2",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions returned"
+    }
+  ],
+  "label": "adapter_v2b_e2"
+}

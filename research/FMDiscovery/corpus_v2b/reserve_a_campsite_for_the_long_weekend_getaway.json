@@ -1,0 +1,82 @@
+{
+  "id": "reserve_a_campsite_for_the_long_weekend_getaway",
+  "input": "Reserve a campsite for the long weekend getaway",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The specific long weekend (dates) determines availability windows and booking urgency \u2014 some campsites fill up months in advance."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The destination or region narrows which campground platforms, parks, or sites to search, and affects travel logistics entirely."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Group size and composition (adults, kids, pets) determines the site type needed and how many spots to reserve."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Camping style (tent, RV, glamping cabin) dictates what kind of campsite to look for and the amenities required."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Budget per night shapes which campgrounds and site types are realistic options."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user already has a campground in mind vs. needs recommendations changes the first action \u2014 searching vs. booking directly."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing the must-have features (hookups, lake access, hiking trails, privacy) defines what a good reservation actually looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Reserve a campsite for the long weekend",
+    "taskDescription": "The user wants to book a campsite for an upcoming long weekend trip, but key details about location, group, dates, and preferences are needed to make the right reservation.",
+    "questions": [
+      {
+        "title": "Which long weekend are you targeting for this trip?",
+        "description": "Identify the specific dates or holiday weekend (e.g., Memorial Day, Labor Day, July 4th) to determine booking urgency and availability.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What general region or destination do you have in mind?",
+        "description": "Pinpoint the geographic area \u2014 state, national park, or specific campground \u2014 to know where to search or book.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many people are coming, and are any kids or pets joining?",
+        "description": "Determine group size and composition to select the right site size and filter for pet-friendly or family-friendly options.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you be tent camping, using an RV, or staying in a cabin?",
+        "description": "Identify the camping style to filter for appropriate site types and required hookups or structures.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget per night for the campsite?",
+        "description": "Establish a nightly price range to focus the search on realistic and affordable options.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you already have a specific campground in mind to book?",
+        "description": "Determine whether the user needs help researching campgrounds or is ready to go straight to booking a known site.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What site features matter most to you for this trip?",
+        "description": "Identify must-have amenities or attributes \u2014 such as waterfront access, electrical hookups, shower facilities, or trail proximity \u2014 that define a successful reservation.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

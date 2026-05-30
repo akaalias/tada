@@ -1,0 +1,82 @@
+{
+  "id": "set_a_screen_time_limit_on_my_phone",
+  "input": "Set a screen time limit on my phone",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The steps to set screen time limits differ entirely between iOS and Android, so the phone's operating system determines the exact instructions."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The limit could apply to the whole phone overall, specific apps (e.g. social media), or certain app categories \u2014 this changes what gets restricted."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The target daily limit (e.g. 1 hour, 2 hours) is the core parameter that needs to be configured in the settings."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If this is for a child, parental controls or Family Link may be involved; if for themselves, the approach and enforcement method differ."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some people want a hard block when the limit is hit; others prefer just a warning notification \u2014 this determines which setting to choose."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the limit should apply all day or only during specific time windows (e.g. after 9 PM, during work hours) changes how the schedule is configured."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what the user is trying to achieve (better sleep, more focus, less social media) helps prioritise which features or apps to target first."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Set a screen time limit on my phone",
+    "taskDescription": "The user wants to configure screen time restrictions on their phone to limit how long they spend on it.",
+    "questions": [
+      {
+        "title": "What phone do you have \u2014 iPhone or Android?",
+        "description": "Identifies the operating system so the correct step-by-step instructions (Screen Time on iOS vs. Digital Wellbeing on Android) can be provided.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Limit the whole phone or specific apps only?",
+        "description": "Determines whether a total daily usage cap is needed or whether limits should be set on individual apps or app categories like social media or games.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many hours per day is your target limit?",
+        "description": "Establishes the actual time value to enter into the screen time settings.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this limit for yourself or for a child?",
+        "description": "Determines whether standard personal screen time settings are used or whether parental control tools like Family Sharing or Google Family Link need to be set up.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should the phone hard-block you or just send a warning?",
+        "description": "Clarifies whether the user wants usage fully blocked when the limit is reached or simply a nudge notification to be aware they have hit their goal.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should the limit apply all day or specific hours only?",
+        "description": "Determines whether a simple daily cap suffices or whether a scheduled downtime window (e.g. evenings, work hours) also needs to be configured.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What habit or problem is this screen time limit solving?",
+        "description": "Understanding the underlying goal \u2014 better sleep, focus, reducing social media \u2014 helps prioritise which apps or features to restrict first for maximum impact.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

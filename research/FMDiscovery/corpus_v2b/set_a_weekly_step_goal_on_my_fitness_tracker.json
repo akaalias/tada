@@ -1,0 +1,82 @@
+{
+  "id": "set_a_weekly_step_goal_on_my_fitness_tracker",
+  "input": "Set a weekly step goal on my fitness tracker",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "Different devices and apps (Fitbit, Garmin, Apple Watch, Google Fit, etc.) have completely different interfaces and settings menus \u2014 the steps to set a goal vary entirely by platform."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Some trackers only support daily step goals natively, not weekly ones \u2014 knowing whether the user wants a true weekly target or a daily average that sums to a weekly total changes the approach."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The user's current fitness level and any physical limitations directly determine what a realistic and safe step goal number should be."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the goal is for weight loss, general health, training, or a personal challenge shapes what step count to aim for and how aggressive to set the target."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user wants to set the goal via a smartphone app, a desktop app, or directly on the device itself affects which specific instructions to provide."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the goal is being set for someone else (e.g., a child, elderly parent, or coaching client), access permissions and appropriate targets will differ."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may want a fixed static goal, or prefer a dynamic/adaptive goal that adjusts week-to-week based on past performance \u2014 this changes which feature or workaround to use."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Set a weekly step goal on fitness tracker",
+    "taskDescription": "The user wants to configure a weekly step goal on their fitness tracker device or app.",
+    "questions": [
+      {
+        "title": "Which fitness tracker or app are you using?",
+        "description": "Identify the specific device or platform (e.g., Fitbit, Garmin, Apple Watch, Samsung Health, Google Fit) to provide accurate step-by-step instructions.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a weekly total or a daily step target?",
+        "description": "Clarify whether the user wants one combined weekly step number or a per-day average, since many trackers only support daily goals natively.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What specific step count are you aiming for?",
+        "description": "Determine the actual number the user has in mind, or whether they need help calculating an appropriate goal based on their baseline activity.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is the main purpose behind setting this goal?",
+        "description": "Understand the motivation \u2014 weight loss, general wellness, athletic training, or a personal challenge \u2014 to recommend the right target and goal type.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you set this through the app or on the device itself?",
+        "description": "Determine the preferred interface \u2014 mobile app, web dashboard, or directly on the wearable \u2014 to give the most relevant navigation instructions.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you setting this goal for yourself or someone else?",
+        "description": "Establish who the goal is for, as setting it for another user (e.g., a child or client) may require different account access or parental controls.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should the goal stay fixed or adjust based on your progress?",
+        "description": "Find out if the user wants a static weekly target or an adaptive goal that automatically increases or recalibrates based on recent performance.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

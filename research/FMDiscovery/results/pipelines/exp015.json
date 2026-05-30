@@ -1,7 +1,8 @@
 {
-  "summary": "RAG + dimensional guided-schema structural coverage",
-  "hypothesis": "Replacing the flat 7-question array with seven typed per-dimension schema slots (goal/scope/who-for/budget/timeline/current-state/constraints) will enforce coverage breadth structurally, because the 3B model lacks the judgment to rank which unknowns are critical and freely drops key slots when the output shape is unconstrained.",
-  "technique": "Built on the exp011 RAG+contrastive base, the flat `questions: [FMQuestion].count(7)` output array was replaced with seven distinctly `@Guide`-annotated typed slots \u2014 one per universal high-value planning dimension \u2014 so the schema structurally prevents any single dimension from being omitted at generation time.",
+  "summary": "RAG + dimensional guided schema, 7 typed slots",
+  "hypothesis": "Forcing seven named per-dimension schema slots (goal/scope/who-for/budget/timeline/current-state/constraints) should structurally guarantee coverage breadth, because the 3B model lacks the judgment to rank which unknown is critical and freely drops important dimensions when given a flat array.",
+  "technique": "Built on the exp011 RAG+contrastive base, replaced the flat `questions: [FMQuestion].count(7)` array with seven distinctly `@Guide`-typed slots \u2014 one per universal high-value planning dimension \u2014 so the schema structurally enforces each dimension's presence at compile time, not via prompting or runtime instruction.",
+  "result": "Scored 0.243 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), the worst non-pipeline variant and \u22120.077 below the exp003/exp011 plateau of ~0.32. Coverage stayed at 3 while specificity and naturalness also lagged; the fixed universal slots injected irrelevant questions (budget into bakery-naming, who-for into weddings) and crowded out task-critical unknowns. Hypothesis falsified \u2014 discarded.",
   "stages": [
     {
       "kind": "input",
@@ -9,18 +10,18 @@
     },
     {
       "kind": "retrieve",
-      "text": "RAG fetch of contrastive exemplars"
+      "text": "Fetch nearest RAG exemplars (contrastive base)"
     },
     {
       "kind": "generate",
-      "text": "Generate via 7-slot dimensional guided schema",
+      "text": "Draft via 7-slot dimensional guided schema",
       "knobs": {
-        "schema": "dimensional-7-slots"
+        "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "7 dimensionally-slotted questions out"
+      "text": "7 typed-slot questions out"
     }
   ],
   "label": "exp015"

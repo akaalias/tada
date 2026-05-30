@@ -1,0 +1,82 @@
+{
+  "id": "sync_all_contacts_from_old_phone_to_new",
+  "input": "Sync all contacts from old phone to new",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may want all contacts, or only certain ones (e.g. personal but not work); duplicates may need to be handled; contact details like notes or photos may or may not be included."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is for themselves or helping someone else (e.g. a parent) changes the level of technical guidance needed."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "The operating systems of both phones (iOS, Android, or mixed) fundamentally determine which transfer methods are available."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "The old phone's condition (working, broken screen, no SIM, dead battery) may limit which methods are feasible."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user has access to a computer, cables, or specific apps changes the practical transfer path."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users prefer a cloud-based method (Google, iCloud) while others want a direct, offline transfer \u2014 this shapes the recommended approach."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "The user may consider the task done once contacts appear on the new phone, or may also need them verified, deduplicated, and backed up."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Sync all contacts from old phone to new",
+    "taskDescription": "Transfer the full contacts list from an old phone to a new phone, ensuring nothing is lost in the process.",
+    "questions": [
+      {
+        "title": "What operating systems are on both phones?",
+        "description": "Identify the OS of the old phone (iOS/Android/other) and the new phone (iOS/Android/other), as this is the single biggest factor in which transfer method is viable.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is the old phone still fully functional?",
+        "description": "Determine whether the old phone powers on, has a working screen, and can connect to Wi-Fi or a cable \u2014 a damaged phone severely limits transfer options.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should every contact transfer, or only a selected group?",
+        "description": "Clarify whether the goal is a complete transfer of all contacts or a filtered subset (e.g. personal only, excluding duplicates, or specific groups).",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you doing this for yourself or helping someone else?",
+        "description": "Establish who the end user is, as helping a less tech-savvy person requires simpler, more guided steps versus a self-directed transfer.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a computer and USB cable available?",
+        "description": "Find out what physical tools and equipment are on hand, since some transfer methods require a computer or cable while others are entirely wireless.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a cloud sync or a direct device-to-device transfer?",
+        "description": "Understand whether the user is comfortable using a cloud account (Google, iCloud, Samsung) or prefers a local, offline method with no data going through a server.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should contacts also be deduplicated and backed up after transfer?",
+        "description": "Determine what 'done well' looks like \u2014 whether the task ends when contacts appear on the new phone, or includes verifying, cleaning duplicates, and creating a backup.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

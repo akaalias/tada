@@ -1,0 +1,82 @@
+{
+  "id": "get_a_second_opinion_on_the_knee_surgery_recomme",
+  "input": "Get a second opinion on the knee surgery recommendation",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing the specific type of knee surgery recommended (e.g., ACL repair, knee replacement, meniscus surgery) determines what kind of specialist to seek and what to bring to the second opinion appointment."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Understanding who the second opinion is for (the user themselves, a family member, a child) affects how the search for a specialist is conducted and who needs to be involved in the process."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Knowing where the user is located determines which hospitals, clinics, or specialists are geographically accessible for an in-person second opinion, or whether telehealth is needed."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "Insurance coverage, budget, and time pressure (e.g., urgency of the surgery decision) significantly shape which options are realistic and how quickly the second opinion must be obtained."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may prefer a specific type of specialist (e.g., sports medicine orthopedist vs. general orthopedic surgeon) or a particular institution (e.g., a top-ranked hospital), which would steer the search differently."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what the user hopes to get from the second opinion \u2014 confirmation, an alternative treatment plan, or a non-surgical option \u2014 defines what a successful outcome looks like and how to prepare."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Knowing what medical records, imaging, or documents the user already has on hand determines the immediate next steps for preparing for the second opinion appointment."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Get a second opinion on knee surgery",
+    "taskDescription": "The user wants to seek a second medical opinion regarding a knee surgery recommendation they have received.",
+    "questions": [
+      {
+        "title": "What type of knee surgery has been recommended to you?",
+        "description": "Identify the specific procedure recommended (e.g., ACL reconstruction, total knee replacement, meniscus repair) to target the right specialist and prepare the right questions.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who is the surgery recommendation for?",
+        "description": "Clarify whether this is for the user personally or for someone else (e.g., a spouse, parent, or child), as this affects how to coordinate the appointment and who should attend.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What city or region are you looking for a specialist in?",
+        "description": "Determine the geographic location to find accessible orthopedic specialists, or establish whether a telehealth or out-of-state option is needed.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How urgent is this \u2014 when does a decision need to be made?",
+        "description": "Understand the time pressure on the surgery decision to prioritize the speed of booking and the type of appointment (routine vs. urgent consultation).",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a preference for a specific type of specialist or institution?",
+        "description": "Determine if the user wants a sports medicine orthopedist, a top academic medical center, a highly rated local clinic, or has no preference, to guide the search accordingly.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What outcome are you hoping the second opinion will provide?",
+        "description": "Clarify whether the user wants confirmation of the original recommendation, an alternative diagnosis, a non-surgical treatment plan, or simply more confidence in the decision.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What medical records or imaging do you currently have in hand?",
+        "description": "Establish what documents (MRI scans, X-rays, referral notes, surgical recommendation letters) are already available, as this determines the immediate next step in preparing for the appointment.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

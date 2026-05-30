@@ -1,24 +1,25 @@
 {
-  "summary": "Corpus RAG (k=3, 117-set) + contrastive prompt",
-  "hypothesis": "Swapping the exemplar bank from 12 generic hardcoded exemplars to the full 117-item domain-matched corpus should break the RAG plateau, because prior retrieval failures (exp007/008) were diagnosed as a tiny, off-domain pool problem rather than a retrieval-is-useless verdict.",
-  "technique": "Semantic NLEmbedding retrieval of the k=3 nearest exemplars from a 117-item corpus of Sonnet-generated sets, injected as few-shot demonstrations into the exp011 contrastive base prompt \u2014 swapping only the exemplar bank, not the retrieval mechanism.",
+  "summary": "Corpus RAG few-shot (k=3, 117-set bank) + contrastive",
+  "hypothesis": "Swapping the demonstration bank from 12 generic hardcoded exemplars to 117 domain-specific corpus sets should fix the \"semantically-nearest\u2260instructive\" failure seen in exp007 \u2014 closer-domain examples should supply the missing coverage judgment that kept prior RAG variants plateaued.",
+  "technique": "Semantic NLEmbedding retrieval of the k=3 nearest sets from a 117-entry corpus bank (instead of the 12-exemplar generic pool), injected as few-shot demonstrations into the exp011 contrastive prompt base, then a single greedy on-device generate call.",
+  "result": "Scored 0.280 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet, specPass 100%), the worst result in the positive-RAG family and \u22120.040 below the exp003/exp011 best (~0.32); rubric atom=4, spec=3, cover=3, nat=3, nonRed=3. Coverage stayed pinned at 3 and close-domain demos slightly increased compound questions and reintroduced first-person phrasing, definitively falsifying the \"impoverished pool\" escape hatch \u2014 discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User one-liner topic input"
     },
     {
       "kind": "retrieve",
-      "text": "Semantic k=3 from 117-item corpus",
+      "text": "Semantic k=3 from 117-set corpus bank",
       "knobs": {
-        "k": "3",
         "method": "NLEmbedding",
-        "corpus": "117-set"
+        "k": "3",
+        "bank": "117-corpus"
       }
     },
     {
       "kind": "generate",
-      "text": "Draft 7 Qs with contrastive prompt + RAG",
+      "text": "Draft 7 questions, contrastive prompt base",
       "knobs": {
         "sampling": "greedy"
       }

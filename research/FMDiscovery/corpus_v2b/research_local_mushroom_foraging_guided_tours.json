@@ -1,0 +1,82 @@
+{
+  "id": "research_local_mushroom_foraging_guided_tours",
+  "input": "Research local mushroom foraging guided tours",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The user's location entirely determines which tours are available \u2014 without knowing the region or city, no relevant results can be found."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "A specific target date or season affects which tours are actively running, since mushroom foraging is highly seasonal."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Whether this is for a solo trip, a couple, a family with children, or a group changes the type of tour to prioritise and the logistics involved."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Tour prices vary widely; knowing a budget ceiling narrows down the options and avoids wasted research on unaffordable tours."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "The user may want a short introductory walk, a half-day tour, or a full-day immersive experience \u2014 this determines depth and format of what to look for."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users prioritise safety and education for beginners, while others want hands-on foraging with an expert chef or mycologist \u2014 this shapes which providers to highlight."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing what the user wants to walk away with \u2014 a list of vetted options, a booking, a comparison table \u2014 defines what 'done' looks like for this research task."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Research local mushroom foraging guided tours",
+    "taskDescription": "Find and evaluate guided mushroom foraging tours available in the user's local area.",
+    "questions": [
+      {
+        "title": "What city or region should the tours be near?",
+        "description": "Identify the geographic location to search within, since available tours depend entirely on where the user is based or willing to travel.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What date or season are you targeting for the tour?",
+        "description": "Determine the intended timeframe so that only currently bookable, seasonally active tours are included in the research.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "How many people will be attending the tour?",
+        "description": "Clarify the group size and whether it includes children or mixed abilities, as this affects tour type and availability.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your budget per person for the tour?",
+        "description": "Establish a price ceiling to filter out tours that are outside the user's spending range.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a short walk, half-day, or full-day experience?",
+        "description": "Understand the desired duration and intensity of the tour so the right format is prioritised in the research.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this more about learning identification or the cooking side?",
+        "description": "Identify whether the user leans toward mycology and species education vs. a culinary foraging experience, to match the right type of guide or operator.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What should this research produce \u2014 a shortlist, comparison, or ready-to-book pick?",
+        "description": "Define what a successful output looks like so the research is scoped to the right level of detail and decision-readiness.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

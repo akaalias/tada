@@ -1,0 +1,82 @@
+{
+  "id": "set_up_automatic_bill_payments_online",
+  "input": "Set up automatic bill payments online",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "The number and types of bills (utilities, subscriptions, loans, credit cards, etc.) determine how many accounts need to be set up and whether a single platform can handle all of them."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is for a household, a business, or a single individual affects account ownership, shared access, and how payments should be organized."
+    },
+    {
+      "axis": "context",
+      "whyItMatters": "Whether the user is starting from scratch or already has some bills set up partially determines where in the process to begin."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The payment source \u2014 bank account (ACH), credit card, or a bill-pay service \u2014 shapes which setup steps are needed and what fees or rewards may apply."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A hard deadline (e.g., a bill due soon) or a tight window for setup changes the priority order of which bills to automate first."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "Some users want full autopay (full balance paid automatically), others prefer a fixed minimum or a custom amount \u2014 this directly affects how each autopay rule is configured."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the user wants confirmation alerts, a spending overview, or simply zero missed payments defines what a fully successful setup looks like."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Set up automatic bill payments online",
+    "taskDescription": "The user wants to configure automatic online payments for their bills so that payments are made without manual intervention each cycle.",
+    "questions": [
+      {
+        "title": "Which specific bills do you want to automate?",
+        "description": "Identify the exact bill types \u2014 such as utilities, credit cards, rent, streaming services, or loans \u2014 that should be included in the autopay setup.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is this for personal use or a shared household or business?",
+        "description": "Clarify who owns and accesses the accounts to determine if shared logins, joint accounts, or business banking considerations apply.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Have you set up any automatic payments before?",
+        "description": "Determine whether the user is starting from scratch or building on an existing partial setup, so the plan starts at the right step.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want payments drawn from a bank account or a credit card?",
+        "description": "Establish the preferred funding source \u2014 ACH bank transfer, credit card, or a third-party bill-pay service \u2014 since each has different enrollment steps.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is any bill due soon and needs to be set up urgently?",
+        "description": "Identify any hard deadlines so the most time-sensitive bills are prioritized at the start of the plan.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Should autopay cover the full balance or a fixed amount?",
+        "description": "Determine the payment rule preference \u2014 full statement balance, minimum due, or a custom fixed amount \u2014 especially relevant for credit cards and variable bills.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want alerts or a tracker after payments go out?",
+        "description": "Clarify whether the user wants email or SMS payment confirmations, a spending dashboard, or simply a set-and-forget arrangement with no extra notifications.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

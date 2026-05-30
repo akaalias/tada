@@ -1,0 +1,82 @@
+{
+  "id": "register_for_a_half_marathon_in_the_spring",
+  "input": "Register for a half marathon in the spring",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The user's location determines which races are geographically accessible or preferred, completely changing which events are relevant."
+    },
+    {
+      "axis": "constraints / time",
+      "whyItMatters": "Spring spans March through May; the specific month or date range narrows which races are still open for registration and fit the user's schedule."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Registration fees vary widely ($50\u2013$200+); knowing the budget rules out certain premium or charity races."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "Whether the user wants a local, destination, or a specific well-known race (e.g., a major city race) changes the search entirely."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "If the user is registering with friends or a running group, logistics like wave starts, group registration, or matching pace groups become relevant."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Knowing whether the goal is to finish, hit a time target, or qualify for a longer race (e.g., a full marathon) affects which race format and course profile to prioritise."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "Whether the user needs help finding races, or already has one in mind and just needs to complete the registration process, determines the very first action to take."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Register for a spring half marathon race",
+    "taskDescription": "The user wants to find and register for a half marathon race taking place in spring.",
+    "questions": [
+      {
+        "title": "What city or region do you want to race in?",
+        "description": "Identifies the geographic area to focus the race search on.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which part of spring works best for you?",
+        "description": "Narrows the target date range within spring (March, April, or May) to match availability and training readiness.",
+        "coversAxis": "constraints / time",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your maximum budget for the entry fee?",
+        "description": "Sets a price ceiling to filter out races that are too costly.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you have a specific race already in mind?",
+        "description": "Determines whether the task starts with finding a race or jumping straight to registration.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Are you registering solo or with other people?",
+        "description": "Affects whether group registration, matching corrals, or coordinating schedules needs to be part of the plan.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a local community race or a large city event?",
+        "description": "Shapes the type and scale of race to search for \u2014 intimate local runs vs. major organised events with crowds and expo.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What does a successful race look like for you?",
+        "description": "Clarifies whether the priority is finishing, achieving a time goal, or using this as a stepping stone to a longer race \u2014 which influences course and race selection.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "find_a_squash_court_and_book_a_beginner_session",
+  "input": "Find a squash court and book a beginner session",
+  "keyUnknowns": [
+    {
+      "axis": "context",
+      "whyItMatters": "The user's city or neighbourhood determines which courts are even searchable \u2014 without a location, no venue can be found."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "Knowing whether this is a solo booking, a session with a friend, or a coached group lesson changes the type of slot to look for and how many spaces are needed."
+    },
+    {
+      "axis": "scope",
+      "whyItMatters": "A 'beginner session' could mean a coached/instructed lesson, a casual hire with no coaching, or a beginner-friendly club programme \u2014 each requires a different search path."
+    },
+    {
+      "axis": "constraints",
+      "whyItMatters": "A hard budget cap affects whether to target pay-and-play public leisure centres, mid-range clubs, or private clubs with membership fees."
+    },
+    {
+      "axis": "logistics",
+      "whyItMatters": "The preferred date and time window (e.g. weekday evenings, weekend mornings) directly narrows which courts have available slots worth booking."
+    },
+    {
+      "axis": "preferences",
+      "whyItMatters": "The user may have a strong preference for a specific type of venue \u2014 e.g. a public leisure centre vs. a private club \u2014 which affects the shortlist of options."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what the user wants to get out of the session (pure fun, learning proper technique, fitness) shapes whether a coached lesson or a free-play hire is the better outcome."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Find and book a beginner squash court session",
+    "taskDescription": "The user wants to locate a squash court near them and reserve a beginner-level session to play.",
+    "questions": [
+      {
+        "title": "What city or neighbourhood should we search in?",
+        "description": "Establish the user's location so that only reachable courts are considered.",
+        "coversAxis": "context",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Will you be playing alone or with someone?",
+        "description": "Determine whether a solo coached slot, a paired court hire, or a group lesson is needed.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you want a coached lesson or just court hire?",
+        "description": "Clarify whether 'beginner session' means instruction from a coach or simply booking a court to self-play.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your maximum budget for this booking?",
+        "description": "A price limit determines whether to target free/low-cost public centres or private clubs.",
+        "coversAxis": "constraints",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Which days and times work best for you?",
+        "description": "Knowing the preferred time window allows filtering courts by actual availability.",
+        "coversAxis": "logistics",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you prefer a public leisure centre or a private club?",
+        "description": "Venue type preference shapes the shortlist before any availability is checked.",
+        "coversAxis": "preferences",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Is the main goal fitness, fun, or learning technique?",
+        "description": "The primary goal determines whether a coached lesson or a casual knock-about is the better recommendation.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

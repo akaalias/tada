@@ -1,0 +1,82 @@
+{
+  "id": "order_new_prescription_sunglasses_online",
+  "input": "Order new prescription sunglasses online",
+  "keyUnknowns": [
+    {
+      "axis": "scope",
+      "whyItMatters": "Knowing whether the user already has an up-to-date prescription determines whether obtaining one is a prerequisite step before ordering."
+    },
+    {
+      "axis": "people",
+      "whyItMatters": "The sunglasses may be for the user themselves or for someone else (e.g., a child or partner), which affects prescription details, frame sizing, and who reviews fit."
+    },
+    {
+      "axis": "constraints / budget",
+      "whyItMatters": "Prescription sunglasses range from under $50 to over $500; budget directly narrows which retailers and lens/frame options are viable."
+    },
+    {
+      "axis": "preferences / style",
+      "whyItMatters": "Frame style, colour, and material (e.g., sporty wraparound vs. classic wayfarers) heavily influence which sites and filters to use when browsing."
+    },
+    {
+      "axis": "logistics / lens type",
+      "whyItMatters": "Lens choices \u2014 tint, polarised, photochromic, UV coating \u2014 vary by retailer and add-on cost, so knowing the priority shapes which options to select at checkout."
+    },
+    {
+      "axis": "context / use case",
+      "whyItMatters": "Primary use (daily driving, outdoor sports, beach/travel) determines how much lens performance matters vs. aesthetics, and narrows the right product category."
+    },
+    {
+      "axis": "success criteria",
+      "whyItMatters": "Understanding what a successful purchase looks like \u2014 fastest delivery, lowest price, best return/try-on policy, or trusted brand \u2014 determines which retailer to prioritise."
+    }
+  ],
+  "gold": {
+    "taskTitle": "Order prescription sunglasses online",
+    "taskDescription": "The user wants to purchase a new pair of prescription sunglasses through an online retailer.",
+    "questions": [
+      {
+        "title": "Do you have a current, valid prescription ready?",
+        "description": "Determine whether the user already has an up-to-date prescription from an optometrist, or whether getting one is a required first step.",
+        "coversAxis": "scope",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Who are the sunglasses being ordered for?",
+        "description": "Establish whether the sunglasses are for the user or for someone else, which affects prescription details and sizing.",
+        "coversAxis": "people",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What is your approximate budget for this purchase?",
+        "description": "Identify a budget range to narrow down viable retailers and frame/lens combinations.",
+        "coversAxis": "constraints / budget",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What frame style or aesthetic are you going for?",
+        "description": "Understand style preferences \u2014 shape, colour, material \u2014 to guide browsing and filtering on retailer sites.",
+        "coversAxis": "preferences / style",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "Do you need polarised, tinted, or any specific lens feature?",
+        "description": "Clarify lens priorities such as polarisation, photochromic capability, or UV coatings to ensure the right add-ons are selected at checkout.",
+        "coversAxis": "logistics / lens type",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What will you mainly use these sunglasses for?",
+        "description": "Identify the primary use case \u2014 driving, sport, casual wear, beach \u2014 to match the right product category and lens performance level.",
+        "coversAxis": "context / use case",
+        "requiresExternalAction": false
+      },
+      {
+        "title": "What matters most: price, speed of delivery, or return policy?",
+        "description": "Determine the user's top priority to decide which online retailer to recommend or use first.",
+        "coversAxis": "success criteria",
+        "requiresExternalAction": false
+      }
+    ]
+  }
+}

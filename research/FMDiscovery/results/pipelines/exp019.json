@@ -1,22 +1,21 @@
 {
   "summary": "Greedy decoding isolated on contrastive-RAG best base",
-  "hypothesis": "Switching the single generation call from stochastic sampling to greedy (deterministic) decoding on the best contrastive-RAG base (exp011) should reduce noise and surface sharper, more specific unknowns \u2014 because every prior ~0.32 result was a noisy single draw, and a deterministic mode might consistently hit a better mode than sampling luck.",
-  "technique": "The exp011 contrastive-RAG topology was held completely fixed; only the decoding of the single generation call was swapped to greedy (temperature 0, deterministic mode) to isolate the decoding lever on the best-performing base pipeline.",
+  "hypothesis": "Swapping the single generation call from stochastic sampling to greedy (deterministic) decoding on the best contrastive-RAG base (exp011) should reduce noise and improve consistency, because every prior ~0.32 result was a single noisy draw and the deterministic mode might surface more task-specific unknowns.",
+  "technique": "The exp011 contrastive-RAG topology was held completely fixed; only the decoding mode was changed to greedy (temperature 0, deterministic) on the single on-device generation call, isolating the decoding lever as a directly falsifiable test.",
+  "result": "Scored 0.273 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), a regression of \u22120.050 vs exp011's best of 0.323 and \u22120.034 vs the 0.307 baseline; coverage pinned at 3 with the same recurring generic catch-alls verbatim, and nonRedundancy stayed at 3 with fresh overlaps \u2014 confirming that the model's modal output IS the generic one and that the decoding lever cannot move coverage. Discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User one-liner task input"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
-      "text": "Contrastive-RAG: fetch positive/negative exemplars",
-      "knobs": {
-        "sampling": "contrastive"
-      }
+      "text": "Contrastive RAG: fetch good+bad exemplars",
+      "knobs": {}
     },
     {
       "kind": "generate",
-      "text": "Draft 7 questions, greedy decoding",
+      "text": "Single greedy generation call",
       "knobs": {
         "temp": "0",
         "sampling": "greedy"
@@ -24,7 +23,7 @@
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp019"

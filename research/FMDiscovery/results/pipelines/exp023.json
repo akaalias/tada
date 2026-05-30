@@ -1,11 +1,12 @@
 {
   "summary": "Scoped starting-point critique on RAG draft",
-  "hypothesis": "Scoping a 2nd-pass critique to one named failure mode \u2014 whether the user's starting point is established \u2014 should reduce rewrite risk and fix the single dominant recurring miss without the noise of a general audit.",
-  "technique": "The exp011 contrastive RAG draft feeds into a single focused FM critique call that judges only starting-point coverage; if covered it returns the draft verbatim, otherwise it names the weakest slot and writes one replacement question. Swift then swaps at most that one slot, leaving the other six untouched.",
+  "hypothesis": "Scoping the second-pass critique to a single, well-defined failure mode \u2014 whether the draft establishes the user's starting point \u2014 should avoid the over-broad audit failures of exp005/exp017 and recover lost coverage without corrupting the other six slots.",
+  "technique": "A two-stage pipeline: Stage 1 reuses the exp011 contrastive RAG draft (best baseline). Stage 2 is a single FM call scoped exclusively to detecting whether any of the 7 slots establishes the user's starting point; if yes the draft is returned verbatim, if no the call names the single weakest slot and writes one replacement question, then Swift swaps exactly that one slot deterministically (all others unchanged).",
+  "result": "Scored 0.273 on dev-10 (0 wins / 0 ties / 10 losses vs Sonnet), a regression of \u22120.050 vs the exp011 best (0.323) and \u22120.034 vs the baseline (0.307); rubric atom=4, spec=3, cover=3, nat=3, nonRed=3. The scoped critique mostly mis-fired \u2014 the 3B judged startingPointCovered=TRUE when it was FALSE, so the protective gate rarely triggered, and in the cases where it did swap the replacement question was generic/off-target rather than the sharp gold question. Hypothesis falsified: the failure is not audit breadth but the 3B's inability to detect or fill the missing dimension, confirming the multi-FM wall holds; discarded.",
   "stages": [
     {
       "kind": "input",
-      "text": "User task one-liner"
+      "text": "User task one-liner in"
     },
     {
       "kind": "retrieve",
@@ -20,18 +21,21 @@
     },
     {
       "kind": "critique",
-      "text": "Judge starting-point coverage; name weakest slot",
+      "text": "1 call: judge starting-point coverage only",
       "knobs": {
         "calls": "1"
-      }
+      },
+      "call_labels": [
+        "detect starting-point coverage, name weakest slot"
+      ]
     },
     {
       "kind": "post",
-      "text": "Swift swaps \u22641 weakest slot; rest verbatim"
+      "text": "Swift swaps \u22641 weakest slot, rest verbatim"
     },
     {
       "kind": "output",
-      "text": "Final 7 questions"
+      "text": "Final 7 questions out"
     }
   ],
   "label": "exp023"
