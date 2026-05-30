@@ -85,7 +85,8 @@ public struct ConfiguredAgent: Sendable {
         case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         case .adapterDeterministicRepair: return try await adapterDeterministicRepair(input)
         case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
-        case .adapterOverCountDedup: return try await adapterOverCountDedup(input)
+        case .adapterOverCountDedup: return try await adapterOverCountDedup(input, repair: false)
+        case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
         }
     }
 
@@ -919,7 +920,7 @@ public struct ConfiguredAgent: Sendable {
     /// holding spec 4. Risk: count=8 may perturb the native first-7 (off-distribution); if it
     /// degrades the draft below 0.409, the bet fails and is logged honestly. Distinct from
     /// every prior dedup (those kept count=7 and backfilled from a foreign source).
-    private func adapterOverCountDedup(_ input: String) async throws -> DiscoveryResult {
+    private func adapterOverCountDedup(_ input: String, repair: Bool) async throws -> DiscoveryResult {
         let model = try resolveModel()
         let prompt = "Task the user entered: \"\(input)\""
         let session = LanguageModelSession(model: model) { Self.adapterSystem }
@@ -927,11 +928,23 @@ public struct ConfiguredAgent: Sendable {
             to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
             options: config.options(temp: 0, sampling: .greedy)).content
 
+        // EXP-047: optional zero-risk deterministic phrasing repair (exp042) stacked on the
+        // exp046 dedup base — count=8 perturbs the native first-7 and re-introduces a few
+        // compound/3rd-person defects the dedup pass (redundancy-only) can't fix; deCompound
+        // + normalizePerson restore atomicity/naturalness without touching content. No-op on
+        // defect-free questions, so exp046's nonRed-4 gain is preserved.
+        func finalTitle(_ q: String) -> String {
+            repair ? Self.deCompound(Self.normalizePerson(q)) : q
+        }
+        func finalDetail(_ d: String) -> String {
+            repair ? Self.normalizePerson(d) : d
+        }
+
         var qs = plan.questions
         // Defensive: if the adapter under/over-fills, fall back to the first 7 (or pad-safe).
         guard qs.count >= 7 else {
             return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
-                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
                                                       requiresExternalAction: $0.requiresExternalAction) })
         }
         let titles = qs.map { $0.question }
@@ -975,7 +988,7 @@ public struct ConfiguredAgent: Sendable {
         if qs.count > 7 { qs = Array(qs.prefix(7)) }
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
-            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+            questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 

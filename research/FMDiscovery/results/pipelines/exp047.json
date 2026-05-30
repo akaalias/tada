@@ -1,0 +1,35 @@
+{
+  "summary": "Over-count(8) dedup + deterministic phrasing repair",
+  "hypothesis": "Stacking exp042's zero-risk deterministic phrasing transforms (3rd\u21922nd person, high-precision compound de-splitting) onto the exp046 over-count(8)-dedup base should recover the atomicity penalty introduced by count=8 for free, since both transforms are no-ops on defect-free questions.",
+  "technique": "The exp046 pipeline (expand to 8 candidates, deduplicate in Swift, select top-7) is extended with a deterministic Swift post-processing stage that applies exp042's proven transforms \u2014 third-to-second-person pronoun repair and high-precision compound-clause de-splitting \u2014 to the final 7 questions.",
+  "result": "Scored 0.423 on the full-30 greedy eval (3 wins / 4 ties / 22 losses vs Sonnet), down \u22120.007 from exp046's 0.430 champion \u2014 within judge noise. Atomicity held at 4 (no gain), spec slipped 4\u21923 (draw-to-draw wobble), confirming the hypothesis was falsified: the surviving count=8 compound violations are un-truncatable noun-pair forms the de-splitter's precision gate correctly declines to touch, so deterministic phrasing repair is a confirmed dead end; discarded, exp046 remains champion.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User topic one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate 8 candidate question sets",
+      "knobs": {
+        "n": "8"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Deduplicate and pick top-7 in Swift",
+      "knobs": {
+        "k": "7"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic phrasing repair on final 7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 repaired questions out"
+    }
+  ],
+  "label": "exp047"
+}

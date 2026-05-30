@@ -651,6 +651,22 @@ public enum Configs {
         "exp046": DiscoveryConfig(topology: .adapterOverCountDedup,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-047: stack the proven exp042 deterministic phrasing repair onto the exp046
+        // over-count(8)-then-dedup base (current best, 0.430). exp046's own caveat: the
+        // count=8 bet slightly perturbs the champion's native first-7 and re-introduces a
+        // handful of compound/3rd-person defects (judge-flagged "current age AND retirement
+        // age", "breed or age"), dropping atomicity from the champion's 5 to 4. The exp042
+        // transforms — (a) third→second person normalization and (b) HIGH-PRECISION compound
+        // de-splitting ("X and <second-ask>?" → primary atom, gated to never fire on noun
+        // pairs) — are zero-risk and content-preserving: a NO-OP on every defect-free
+        // question, so exp046's champion-native nonRed-4 / spec-4 gains are fully preserved,
+        // and the only cases that change move strictly toward judge-rewarded atomicity/
+        // naturalness. Same single greedy count=8 call + Swift dedup; repair applied to the
+        // final 7. Tests whether recovering the count=8 atomicity tax lifts 0.430 further.
+        "exp047": DiscoveryConfig(topology: .adapterOverCountDedupRepair,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
