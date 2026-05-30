@@ -108,8 +108,9 @@ export function renderPipeD3(spec, el) {
   const box = fo.append('xhtml:div').attr('class', 'nodebox');
   box.append('xhtml:div').attr('class', 'nb-kind').style('color', d => KINDC[d.kind] || '#64748b').text(d => (d.title || '').toUpperCase());
   box.append('xhtml:div').attr('class', 'nb-sub').text(d => d.sub || '');
-  // FM badge only for model calls WITHOUT an adapter (adapter-backed calls show the adapter node instead).
-  const badge = g.filter(d => d.model && !d.adapterName).append('g').attr('transform', 'translate(' + (NODEW - 24) + ',6)');
+  // FM badge on EVERY on-device model call — including adapter-backed ones (an
+  // adapter call is still an FM call; the gold adapter node feeding in is additional).
+  const badge = g.filter(d => d.model).append('g').attr('transform', 'translate(' + (NODEW - 24) + ',6)');
   badge.append('rect').attr('width', 18).attr('height', 12).attr('rx', 3).attr('fill', '#db2777');
   badge.append('text').attr('x', 9).attr('y', 9.5).attr('text-anchor', 'middle').attr('font-size', 8)
     .attr('font-weight', 800).attr('fill', '#fff').text('FM');

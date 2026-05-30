@@ -40,7 +40,7 @@ export async function renderDetail(label, cell) {
 
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
   cell.innerHTML = `<div class="detail-inner">${pipeSummary(spec)}<div class="pipe-d3"></div>`
-    + `<div class="legend-kinds"><b>FM</b>/<b style="color:#ca8a04">LoRA</b> = on-device model call · vertical fan = parallel · horizontal chain = sequential · hover a node for details</div>`
+    + `<div class="legend-kinds"><b>FM</b> = on-device model call · gold <b style="color:#ca8a04">LoRA</b> node = fine-tuned adapter feeding a call · vertical fan = parallel · horizontal chain = sequential · hover a node for details</div>`
     + `${triedHtml}${blocks}</div>`;
   if (spec) renderPipeD3(spec, cell.querySelector('.pipe-d3'));
 }
