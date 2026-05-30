@@ -512,6 +512,29 @@ public enum Configs {
         "exp037": DiscoveryConfig(topology: .adapterLeastRedundantBestOfN,
             selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.5, 0.7],
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-038: answer-simulation VALUE best-of-N on the champion adapter (Lever E).
+        // The four research-backed levers the rules flag: C (solution-space EIG, exp030),
+        // D (covering-set, exp031/034), F (decomposed binary verification, exp035/037) all
+        // tried — E (the answer-simulation verifier, Zhang ICLR'25) is the ONLY one NEVER
+        // attempted. Every prior best-of-N SELECTOR scored sets on the REDUNDANCY axis —
+        // embedding dispersion (exp031, 0.398), Jaccard dispersion (exp034, 0.234), binary
+        // same-info count (exp037, 0.388) — minimising internal overlap. But the champion's
+        // dominant judge-flagged loss is NOT only redundancy: it wastes slots on LOW-VALUE /
+        // PREMATURE / ALREADY-GIVEN questions that are perfectly DISTINCT yet don't change the
+        // plan (salary for interview prep & resume, "new or used?" for a USED car, origin/
+        // destination cities for an across-the-city move, "current level of clutter", expected
+        // annual return rate, insurance/ID before a GP booking). A redundancy ruler is BLIND
+        // to these. Lever E scores the COVERAGE/VALUE axis directly: a question is decision-
+        // critical iff two plausible but DIVERGENT simulated answers would yield a materially
+        // different plan; low-value questions' answers leave the plan unchanged. Score each
+        // WHOLE candidate set (greedy floor + 2 low-temp draws) by # value-passing questions,
+        // return the highest-value set VERBATIM. Greedy is the FLOOR (idx 0, wins ties) →
+        // 0.409 protected by construction; verbatim → no phrasing degradation (the defect that
+        // sank exp028/029/030). selectTemp/greedy govern the floor draft; sampleTemps the draws.
+        "exp038": DiscoveryConfig(topology: .adapterAnswerSimValueBestOfN,
+            selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.5, 0.7],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

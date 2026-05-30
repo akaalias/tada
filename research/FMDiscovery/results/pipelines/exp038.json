@@ -1,0 +1,36 @@
+{
+  "summary": "Best-of-N answer-simulation value selector, champion adapter",
+  "hypothesis": "Generating multiple candidate question sets and selecting the one with the most plan-altering, decision-critical questions should surface higher-value outputs than a single greedy pass, because answer simulation lets us score each set by its practical impact before committing.",
+  "technique": "A best-of-N ensemble using the champion LoRA adapter produces N candidate question sets (greedy floor included); a deterministic Swift selector then picks the set whose questions best simulate plan-altering, decision-critical answers \u2014 testing whether value-oriented selection improves over the adapter alone.",
+  "result": "Scored 0.383 on the full-30 gate (2 wins / 3 ties / 24 losses vs Sonnet); rubric showed atom=4, spec=3, cover=3, nat=4, nonRed=3 \u2014 coverage and spec remained the limiting dimensions, meaning the value-selection signal did not translate into meaningfully better sets over the champion adapter baseline. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Best-of-N candidate sets, champion adapter",
+      "knobs": {
+        "model": "champion-adapter",
+        "sampling": "greedy+varied",
+        "n": "N"
+      },
+      "call_labels": [
+        "greedy floor draft",
+        "varied-sample draft 2",
+        "varied-sample draft 3",
+        "varied-sample draft 4"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Pick set with most decision-critical questions"
+    },
+    {
+      "kind": "output",
+      "text": "Top-ranked 7 questions out"
+    }
+  ],
+  "label": "exp038"
+}

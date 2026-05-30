@@ -77,6 +77,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterBinaryDedupTransplant: return try await adapterBinaryDedupTransplant(input)
         case .adapterDualCoverageMerge: return try await adapterDualCoverageMerge(input)
         case .adapterLeastRedundantBestOfN: return try await adapterLeastRedundantBestOfN(input)
+        case .adapterAnswerSimValueBestOfN: return try await adapterAnswerSimValueBestOfN(input)
         }
     }
 
@@ -363,6 +364,85 @@ public struct ConfiguredAgent: Sendable {
                 || (redundant == bestRedundant && cosSum < bestCosSum - 1e-9) {
                 bestIdx = idx; bestRedundant = redundant; bestCosSum = cosSum
             }
+        }
+        return plans[bestIdx].toContract()
+    }
+
+    /// EXP-038: answer-simulation VALUE best-of-N on the champion adapter (Lever E —
+    /// the answer-simulation verifier, Zhang ICLR'25; the ONLY one of the four research-
+    /// backed levers C/D/E/F never attempted: C=exp030 EIG, D=exp031/034, F=exp035/037).
+    /// The motivating distinction from every prior best-of-N selector: exp031 (embedding
+    /// dispersion), exp034 (Jaccard dispersion) and exp037 (binary same-info redundancy)
+    /// all scored sets on the REDUNDANCY axis — minimise internal overlap. But the champion's
+    /// dominant LOSS mode in the judge notes is NOT only redundancy; it is wasting slots on
+    /// LOW-VALUE / PREMATURE / ALREADY-GIVEN questions that are perfectly DISTINCT yet do not
+    /// change the plan: salary for interview prep & resume, "new or used?" for a used-car
+    /// task, origin/destination cities for an across-the-city move, "current level of clutter"
+    /// (vague), "expected annual return rate" (presupposes knowledge), insurance/ID before a
+    /// GP booking. A redundancy ruler is BLIND to these (they are non-redundant), so exp037's
+    /// least-redundant selection couldn't move them. Lever E scores the COVERAGE/VALUE axis
+    /// directly: a question is decision-critical iff, simulating two plausible but DIVERGENT
+    /// answers, those answers would lead to a materially DIFFERENT plan; a low-value/filler
+    /// question's divergent answers leave the plan essentially unchanged. So score each WHOLE
+    /// candidate set by how many of its 7 questions pass this answer-simulation check, and
+    /// return the highest-VALUE set VERBATIM. Real positive mechanism: the champion's rare
+    /// WINS/ties (quit_smoking +motivation; history_podcast +audience/theme) come from draws
+    /// that happen to surface high-discrimination unknowns; selecting the draw with the most
+    /// plan-altering questions should prefer exactly those. Greedy champion is the FLOOR
+    /// (index 0) and wins ties → a low-temp draw only displaces it with STRICTLY MORE value-
+    /// passing questions, so the 0.409 floor is protected by construction; verbatim return →
+    /// no phrasing degradation (the defect that sank exp028/029/030). Falsifiable: if the
+    /// adapter's answer-simulation check is, like its redundancy binary (exp035), too biased
+    /// toward "yes" to discriminate, all sets tie and greedy wins → lands at 0.409, cleanly
+    /// closing Lever E; if it discriminates, the value-maximal draw lifts coverage off 3.
+    private func adapterAnswerSimValueBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let prompt = "Task the user entered: \"\(input)\""
+        let model = try resolveModel()
+
+        // Candidate WHOLE sets: greedy champion floor (index 0) + low-temp draws.
+        var plans: [FMDiscoveryPlan] = []
+        let greedySession = LanguageModelSession(model: model) { Self.adapterSystem }
+        plans.append(try await greedySession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content)
+        for t in (config.sampleTemps ?? [0.5, 0.7]) {
+            let session = LanguageModelSession(model: model) { Self.adapterSystem }
+            plans.append(try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+                options: config.options(temp: t, sampling: .modelDefault)).content)
+        }
+
+        // Answer-simulation value check (Lever E). For ONE question, the adapter imagines two
+        // plausible but DIVERGENT answers and judges whether they'd produce a materially
+        // different plan. Fresh session per call → no context bleed. The check is scoped to
+        // THIS task so "already-given" / "premature" questions surface as non-discriminating.
+        let valueSystem = """
+        You are evaluating whether a single clarifying question is worth asking before \
+        planning a task. A question is WORTH asking only if the user's answer would CHANGE \
+        the plan you'd produce. To decide: imagine two plausible but clearly DIFFERENT \
+        answers the user might give to this question. If those two answers would lead you to \
+        recommend a materially DIFFERENT plan, the question is decision-critical (answer true). \
+        If both answers would lead to essentially the SAME plan — because the answer is \
+        already implied by the task, nearly everyone answers it the same way, it is premature, \
+        or it is a minor detail — the question is low-value (answer false).
+        """
+        func decisionCritical(_ q: String) async -> Bool {
+            let session = LanguageModelSession(model: model) { valueSystem }
+            let p = "Task: \"\(input)\"\nClarifying question: \"\(q)\"\n\nWould two different plausible answers to this question lead to a materially different plan?"
+            guard let r = try? await session.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return true }
+            return r.content.yes
+        }
+
+        // Score each candidate set by # decision-critical questions (higher = better coverage
+        // of plan-altering unknowns). Strictly more wins; ties → earlier set (greedy floor).
+        var bestIdx = 0
+        var bestValue = -1
+        for (idx, plan) in plans.enumerated() {
+            var value = 0
+            for q in plan.questions where await decisionCritical(q.question) { value += 1 }
+            if value > bestValue { bestIdx = idx; bestValue = value }
         }
         return plans[bestIdx].toContract()
     }
