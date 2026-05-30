@@ -80,6 +80,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterAnswerSimValueBestOfN: return try await adapterAnswerSimValueBestOfN(input)
         case .adapterEnsembleTournament: return try await adapterEnsembleTournament(input)
         case .adapterCorpusRagFewShot: return try await adapterCorpusRagFewShot(input)
+        case .adapterMMRRagFewShot: return try await adapterMMRRagFewShot(input)
         case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         case .adapterDeterministicRepair: return try await adapterDeterministicRepair(input)
         }
@@ -897,6 +898,44 @@ public struct ConfiguredAgent: Sendable {
             For reference, here are strong question sets other coaches wrote for SIMILAR \
             tasks. Study which decision-critical unknowns they cover (budget, scope, \
             who-for, timeline, current-state, location), then write FRESH questions \
+            specific to the user's actual task. Do not copy or paraphrase these.
+
+            \(block)
+            """
+
+        let session = LanguageModelSession(model: try resolveModel()) { system }
+        let prompt = "Task the user entered: \"\(input)\""
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-043: MMR-DIVERSE corpus RAG few-shot on the champion adapter. Identical to
+    /// exp040 EXCEPT the demonstrations are chosen by Maximal Marginal Relevance and
+    /// k=3 instead of the top-2 semantic-nearest. exp040 (0.405) tied the champion: its
+    /// two nearest neighbours are near-paraphrases of each other, so the adapter only
+    /// sees ONE cluster of decision-critical axes. MMR picks demos that are each
+    /// relevant to the task but MUTUALLY DIVERSE, spanning a broader set of axes — the
+    /// direct lever against the coverage gap. Single greedy call, native format, adapter
+    /// generates FRESH questions (gold-leak ban respected via near-dup ceiling + LOO).
+    private func adapterMMRRagFewShot(_ input: String) async throws -> DiscoveryResult {
+        let examples = CorpusBank.nearestSemanticMMR(to: input, k: 3, lambda: 0.6,
+                                                     jaccardCeiling: 0.5)
+        let block = examples.map { ex -> String in
+            let qs = ex.questions.enumerated()
+                .map { "\($0.offset + 1). \($0.element)" }
+                .joined(separator: "\n")
+            return "Task: \"\(ex.input)\"\n\(qs)"
+        }.joined(separator: "\n\n")
+
+        let system = Self.adapterSystem + """
+
+
+            For reference, here are strong question sets other coaches wrote for a RANGE \
+            of DIFFERENT tasks. Study which decision-critical unknowns they cover (budget, \
+            scope, who-for, timeline, current-state, location), then write FRESH questions \
             specific to the user's actual task. Do not copy or paraphrase these.
 
             \(block)

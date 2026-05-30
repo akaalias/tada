@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// EXP-014: corpus-backed demonstration bank. Every prior retrieval variant
 /// (exp003/007/008) drew from only the 12 generic hardcoded `GoldExemplars`, so
@@ -70,6 +71,59 @@ enum CorpusBank {
         }
         return SemanticRetrieval.nearest(query: query, candidates: pool, k: k,
                                          fallback: { q, kk in jaccardNearest(q, in: pool, k: kk) })
+    }
+
+    /// EXP-043: MMR-DIVERSE retrieval. exp040 appended the 2 SEMANTIC-NEAREST corpus
+    /// demonstrations, but the two nearest neighbours tend to be near-paraphrases of
+    /// EACH OTHER (same task TYPE), so the adapter only ever sees ONE cluster of
+    /// decision-critical axes — and the persistent failure is COVERAGE (the single
+    /// missing axis). Maximal Marginal Relevance (Carbonell & Goldstein 1998) selects
+    /// demonstrations that are each relevant to the task but MUTUALLY DIVERSE, so the
+    /// k demos span a BROADER union of decision-critical axes for the adapter to model.
+    /// Greedy MMR over the same near-dup-ceiling-filtered pool; falls back to plain
+    /// nearest (exp040 behaviour) when the on-device embedder is unavailable.
+    static func nearestSemanticMMR(to query: String, k: Int, lambda: Double,
+                                   jaccardCeiling: Double) -> [GoldExemplar] {
+        func wordSet(_ s: String) -> Set<String> {
+            Set(s.lowercased().split { !$0.isLetter }.map(String.init).filter { !$0.isEmpty })
+        }
+        let qn = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let qWords = wordSet(query)
+        let pool = load().filter { ex in
+            let exn = ex.input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            if exn == qn { return false }
+            let w = wordSet(ex.input)
+            let uni = qWords.union(w).count
+            let j = uni == 0 ? 0 : Double(qWords.intersection(w).count) / Double(uni)
+            return j < jaccardCeiling
+        }
+        guard let embedder = NLEmbedding.sentenceEmbedding(for: .english),
+              let qVec = embedder.vector(for: query) else {
+            return nearestSemantic(to: query, k: k, jaccardCeiling: jaccardCeiling)
+        }
+        var items: [(ex: GoldExemplar, vec: [Double], rel: Double)] = []
+        for ex in pool {
+            guard let v = embedder.vector(for: ex.input) else {
+                return nearestSemantic(to: query, k: k, jaccardCeiling: jaccardCeiling)
+            }
+            items.append((ex, v, SemanticRetrieval.cos(qVec, v)))
+        }
+        guard !items.isEmpty else { return [] }
+        var selected: [Int] = []
+        var remaining = Set(0..<items.count)
+        while selected.count < k, !remaining.isEmpty {
+            var bestIdx = -1
+            var bestScore = -Double.infinity
+            for i in remaining {
+                let maxSimToSelected = selected.map { SemanticRetrieval.cos(items[i].vec, items[$0].vec) }.max() ?? 0
+                let mmr = lambda * items[i].rel - (1 - lambda) * maxSimToSelected
+                if mmr > bestScore { bestScore = mmr; bestIdx = i }
+            }
+            if bestIdx < 0 { break }
+            selected.append(bestIdx)
+            remaining.remove(bestIdx)
+        }
+        return selected.map { items[$0].ex }
     }
 
     private static func jaccardNearest(_ query: String, in pool: [GoldExemplar], k: Int) -> [GoldExemplar] {

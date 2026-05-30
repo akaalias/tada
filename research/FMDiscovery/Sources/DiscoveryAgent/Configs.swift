@@ -600,6 +600,20 @@ public enum Configs {
         "exp042": DiscoveryConfig(topology: .adapterDeterministicRepair,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-043: MMR-DIVERSE corpus RAG few-shot on the champion adapter. exp040 (0.405,
+        // a TIE with the 0.409 champion) appended the 2 SEMANTIC-NEAREST corpus demos — but
+        // the two nearest neighbours are near-paraphrases of EACH OTHER (same task TYPE), so
+        // the adapter only ever sees ONE cluster of decision-critical axes, and the wall is
+        // COVERAGE (the single missing axis). This swaps top-2-nearest for Maximal Marginal
+        // Relevance (Carbonell & Goldstein 1998): pick k=3 demos that are each relevant to
+        // the task BUT mutually diverse, so the demonstrations span a BROADER union of
+        // decision-critical axes for the adapter to model. Same near-dup ceiling (Jaccard
+        // ≥0.5 dropped) + exact-match LOO guard; single greedy call, native format, no 2nd
+        // pass (champion phrasing preserved); adapter generates FRESH questions (leak ban OK).
+        "exp043": DiscoveryConfig(topology: .adapterMMRRagFewShot,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

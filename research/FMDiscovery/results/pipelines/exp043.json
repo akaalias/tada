@@ -1,0 +1,34 @@
+{
+  "summary": "MMR-diverse RAG few-shot (k=3) on champion adapter",
+  "hypothesis": "Swapping top-2 semantic-nearest demos for MMR-diverse exemplars (k=3) should expose the adapter to a broader union of decision-critical axes and break the coverage ceiling, because the nearest-pair demos likely cluster around the same axis and leave others unseen.",
+  "technique": "RAG retrieval using Maximal Marginal Relevance (\u03bb=0.6, k=3) to select mutually-diverse corpus exemplars, injected as few-shot context into a single greedy on-device call on the champion LoRA adapter (adapter_v2a_e1).",
+  "result": "Scored 0.382 on the full-30 greedy eval (3 wins / 1 tie / 25 losses vs Sonnet), down 0.027 from the champion (0.409) and below exp040's plain top-2 nearest RAG (0.405). Coverage stayed pinned at 3 and non-redundancy actually dropped to 3 (vs 4 for exp040), confirming that diversifying demonstrations does not diversify the output \u2014 the hypothesis was falsified and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "MMR-diverse corpus exemplars, k=3, \u03bb=0.6",
+      "knobs": {
+        "method": "MMR",
+        "k": "3",
+        "lambda": "0.6"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 questions, champion adapter greedy",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp043"
+}
