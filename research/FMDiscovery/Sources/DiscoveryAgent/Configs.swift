@@ -552,6 +552,20 @@ public enum Configs {
         "exp039": DiscoveryConfig(topology: .adapterEnsembleTournament,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-040: RAG few-shot ON THE CHAMPION adapter from the FULL 619-pair CORPUS bank
+        // (not the tiny 12-case GoldExemplars exp032/033 used). exp032 proved the champion
+        // USES in-context axis demos brilliantly (0.498) but was a LEAK (all 12 GoldExemplars
+        // inputs == eval gold). exp033's honest fix (leave-one-out over the SAME 12-case bank)
+        // left only generic, off-domain demos that DISTRACTED the adapter (0.372). The corpus
+        // is ~50× larger, so the 2 semantic-nearest demos are genuinely CLOSE task TYPES that
+        // model the right decision-critical axes — the honest analogue of the 0.498 leak.
+        // Near-dup ceiling (Jaccard ≥ 0.5 dropped) + exact-match LOO guard against leaking a
+        // near-identical gold set. Single greedy call, native format, no 2nd pass (champion
+        // phrasing preserved); adapter generates FRESH questions (gold-leak ban respected).
+        "exp040": DiscoveryConfig(topology: .adapterCorpusRagFewShot,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

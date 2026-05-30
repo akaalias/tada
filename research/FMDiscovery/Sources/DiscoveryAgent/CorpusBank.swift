@@ -45,10 +45,29 @@ enum CorpusBank {
     /// k nearest corpus exemplars by on-device semantic similarity (NLEmbedding
     /// cosine), with a word-overlap Jaccard fallback when embeddings are absent.
     static func nearestSemantic(to query: String, k: Int) -> [GoldExemplar] {
-        // Enforced leave-one-out: drop any corpus exemplar whose input matches the
-        // query (corpus is meant to be disjoint from eval, but guard regardless).
+        nearestSemantic(to: query, k: k, jaccardCeiling: 1.0)
+    }
+
+    /// k nearest corpus exemplars with a NEAR-DUPLICATE CEILING (exp040): in addition
+    /// to exact-match leave-one-out, drop any exemplar whose input word-overlap Jaccard
+    /// with the query is ≥ `jaccardCeiling`. This guards against a lexically near-identical
+    /// corpus task feeding the model an almost-the-same gold question-set (the closest
+    /// corpus case to an eval input here is 0.56 Jaccard), keeping demonstrations to
+    /// genuinely OTHER tasks per the leak/leave-one-out ban.
+    static func nearestSemantic(to query: String, k: Int, jaccardCeiling: Double) -> [GoldExemplar] {
+        func wordSet(_ s: String) -> Set<String> {
+            Set(s.lowercased().split { !$0.isLetter }.map(String.init).filter { !$0.isEmpty })
+        }
         let qn = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let pool = load().filter { $0.input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) != qn }
+        let qWords = wordSet(query)
+        let pool = load().filter { ex in
+            let exn = ex.input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            if exn == qn { return false }
+            let w = wordSet(ex.input)
+            let uni = qWords.union(w).count
+            let j = uni == 0 ? 0 : Double(qWords.intersection(w).count) / Double(uni)
+            return j < jaccardCeiling
+        }
         return SemanticRetrieval.nearest(query: query, candidates: pool, k: k,
                                          fallback: { q, kk in jaccardNearest(q, in: pool, k: kk) })
     }

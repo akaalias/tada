@@ -1,0 +1,33 @@
+{
+  "summary": "Champion adapter + honest 619-pair RAG few-shot",
+  "hypothesis": "Injecting few-shot exemplars retrieved from the full 619-pair corpus into the champion adapter's prompt should push quality above the adapter-only plateau, because richer in-context examples give the model concrete surface-form guidance it can't get from weights alone.",
+  "technique": "RAG retrieval from the full 619-pair bank is used to select nearest exemplars, which are injected as few-shot context into a single greedy on-device call on the champion LoRA adapter \u2014 replicating exp032's idea but fixing the leakage so eval cases are genuinely held out.",
+  "result": "Scored 0.405 on the full-30 gate (3 wins / 2 ties / 24 losses vs Sonnet); rubric shows atom=4, spec=4, cover=3, nat=4, nonRed=3 \u2014 coverage remains the stubborn weak spot. The honest non-leaking version of exp032 confirmed that the RAG boost in exp032 was artefactual; this run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner topic"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch nearest exemplars from 619-pair bank",
+      "knobs": {
+        "k": "few-shot",
+        "corpus": "619 pairs"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Draft 7 questions with adapter + RAG context",
+      "knobs": {
+        "model": "champion-adapter",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp040"
+}

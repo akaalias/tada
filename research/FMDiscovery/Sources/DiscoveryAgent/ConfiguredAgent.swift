@@ -79,6 +79,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterLeastRedundantBestOfN: return try await adapterLeastRedundantBestOfN(input)
         case .adapterAnswerSimValueBestOfN: return try await adapterAnswerSimValueBestOfN(input)
         case .adapterEnsembleTournament: return try await adapterEnsembleTournament(input)
+        case .adapterCorpusRagFewShot: return try await adapterCorpusRagFewShot(input)
         }
     }
 
@@ -660,6 +661,53 @@ public struct ConfiguredAgent: Sendable {
     /// the adapter generates FRESH task-specific questions (gold-leak ban respected).
     private func adapterRagFewShot(_ input: String, leaveOneOut: Bool = false) async throws -> DiscoveryResult {
         let examples = GoldExemplars.nearest(to: input, k: 2, excludingInput: leaveOneOut ? input : nil)
+        let block = examples.map { ex -> String in
+            let qs = ex.questions.enumerated()
+                .map { "\($0.offset + 1). \($0.element)" }
+                .joined(separator: "\n")
+            return "Task: \"\(ex.input)\"\n\(qs)"
+        }.joined(separator: "\n\n")
+
+        let system = Self.adapterSystem + """
+
+
+            For reference, here are strong question sets other coaches wrote for SIMILAR \
+            tasks. Study which decision-critical unknowns they cover (budget, scope, \
+            who-for, timeline, current-state, location), then write FRESH questions \
+            specific to the user's actual task. Do not copy or paraphrase these.
+
+            \(block)
+            """
+
+        let session = LanguageModelSession(model: try resolveModel()) { system }
+        let prompt = "Task the user entered: \"\(input)\""
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
+    }
+
+    /// EXP-040: RAG few-shot on the CHAMPION adapter, but demonstrations are drawn from
+    /// the FULL 619-pair CORPUS bank (semantic retrieval + near-dup ceiling), NOT the
+    /// tiny 12-case GoldExemplars that exp032/exp033 used.
+    ///
+    /// Why this is the right next move: exp032 showed the champion adapter USES in-context
+    /// axis demonstrations to dramatic effect (0.498) — but it was INVALID because all 12
+    /// GoldExemplars inputs are exact eval-gold inputs, so it was shown each case's OWN
+    /// gold set (a leak). exp033 fixed the leak by leave-one-out over the SAME 12-case bank,
+    /// but that left only 11 generic, often OFF-DOMAIN exemplars, so the 2 "nearest" demos
+    /// were poor matches and DISTRACTED the adapter (0.372, a regression). The lesson from
+    /// exp033 was NOT "RAG fails on the adapter" but "demos from DISSIMILAR tasks distract."
+    /// The corpus bank (619 Sonnet task→7-question sets across diverse specific tasks) is
+    /// ~50× larger, so the 2 semantic-nearest demos are genuinely CLOSE task TYPES that model
+    /// the right decision-critical axes — the honest, non-leaking analogue of the 0.498 leak.
+    /// Single greedy call, native training format, no 2nd pass → champion phrasing preserved.
+    /// Near-dup ceiling (Jaccard ≥ 0.5 dropped) guards against any lexically near-identical
+    /// corpus task feeding an almost-the-same gold set; exemplars are demonstrations only —
+    /// the adapter generates FRESH task-specific questions (gold-leak ban respected).
+    private func adapterCorpusRagFewShot(_ input: String) async throws -> DiscoveryResult {
+        let examples = CorpusBank.nearestSemantic(to: input, k: 2, jaccardCeiling: 0.5)
         let block = examples.map { ex -> String in
             let qs = ex.questions.enumerated()
                 .map { "\($0.offset + 1). \($0.element)" }
