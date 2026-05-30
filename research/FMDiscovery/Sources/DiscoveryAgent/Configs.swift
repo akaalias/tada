@@ -441,6 +441,27 @@ public enum Configs {
         "exp033": DiscoveryConfig(topology: .adapterRagFewShotLOO,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-034: covering-set facility-location selection over INDIVIDUAL questions on
+        // the CHAMPION adapter (v2a_e1, 0.409) — the literal Lever D, genuinely untried.
+        // exp031 ran best-of-N on the adapter but selected whole SETS verbatim, so it
+        // could only return a set the adapter had already drawn intact; if the missing
+        // critical unknown appeared in NO single draw, selection couldn't recover it.
+        // Lever D as the rules specify it is different: over-generate a POOL of ~28
+        // individual questions (greedy champion + 3 low-temp draws), embed (NLEmbedding),
+        // dedup near-dupes (token Jaccard ≥0.6, champion-first wins), then GREEDILY pick 7
+        // maximising a submodular facility-location / max-sum-dispersion objective
+        // (relevance + λ·min-distance-to-chosen, − filler/compound). This MIXES questions
+        // across draws, so a decision-critical unknown that surfaced in only ONE low-temp
+        // draw — and is embedding-DISTANT from the modal cluster — gets PROMOTED into the
+        // final 7, even when no single draw covered everything. Pure selection, VERBATIM
+        // phrasing (no regeneration → champion atomicity/naturalness preserved, the defect
+        // that sank exp028/029/030). Distinct from exp010 (stock-3B, MERGE-by-frequency →
+        // surfaced filler). Title/summary from the greedy champion draft. selectTemp/greedy
+        // govern the floor draft; sampleTemps are the diversity draws.
+        "exp034": DiscoveryConfig(topology: .adapterCoverageFacilitySelect,
+            selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.4, 0.6, 0.8],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

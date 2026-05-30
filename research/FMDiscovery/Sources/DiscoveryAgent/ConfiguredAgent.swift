@@ -73,6 +73,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterDispersionBestOfN: return try await adapterDispersionBestOfN(input)
         case .adapterRagFewShot: return try await adapterRagFewShot(input)
         case .adapterRagFewShotLOO: return try await adapterRagFewShot(input, leaveOneOut: true)
+        case .adapterCoverageFacilitySelect: return try await adapterCoverageFacilitySelect(input)
         }
     }
 
@@ -322,6 +323,118 @@ public struct ConfiguredAgent: Sendable {
             if l.contains(" and ") || l.contains(" or ") { score -= 0.10 }
         }
         return score
+    }
+
+    /// EXP-034: covering-set facility-location selection over INDIVIDUAL questions
+    /// (the literal Lever D). exp031 ran best-of-N on the adapter but selected a whole
+    /// SET verbatim — so it could only ever return a set the adapter had ALREADY drawn
+    /// intact, and if no single draw contained the missing critical unknown, selection
+    /// couldn't recover it (the wall). The rules' Lever D is different and untried:
+    /// over-generate ~15-20 INDIVIDUAL questions, embed, then GREEDILY pick 7 that
+    /// maximise coverage volume (a submodular facility-location / max-sum-dispersion
+    /// objective with the (1−1/e) guarantee). This MIXES questions across draws, so a
+    /// decision-critical unknown that surfaced in only ONE low-temp draw — and is
+    /// embedding-DISTANT from the modal cluster (it probes a different dimension) — is
+    /// promoted into the final 7 by the dispersion term, even though no single draw
+    /// covered everything. Pure selection, VERBATIM phrasing (no regeneration → the
+    /// champion's hard-won atomicity/naturalness is never mangled, the failure that
+    /// sank exp028/029/030). Distinct from exp010 (stock-3B, tried to MERGE paraphrases
+    /// by frequency → embeddings too coarse to merge, surfaced filler) — this never
+    /// merges and never uses frequency; it selects 7 spread-out, on-task, defect-free
+    /// questions. Title/summary come from the greedy champion draft (its strongest
+    /// asset). Falsifiable: if the critical unknown is simply never generated in ANY
+    /// draw, dispersion selection can't conjure it and this lands at/below 0.409.
+    private func adapterCoverageFacilitySelect(_ input: String) async throws -> DiscoveryResult {
+        let temps = config.sampleTemps ?? [0.4, 0.6, 0.8]
+        let prompt = "Task the user entered: \"\(input)\""
+
+        // Floor draft: the champion greedy draw (provides title/summary + preferred
+        // phrasings; its 7 questions enter the pool first so ties favour the champion).
+        let greedySession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        let greedyPlan = try await greedySession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        // Pool: every question from every draw, tagged by origin (champion greedy first).
+        var pool: [(q: FMQuestion, isChampion: Bool)] = greedyPlan.questions.map { ($0, true) }
+        for t in temps {
+            let session = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+            let plan = try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self,
+                includeSchemaInPrompt: false,
+                options: config.options(temp: t, sampling: .modelDefault)).content
+            for q in plan.questions { pool.append((q, false)) }
+        }
+
+        // Dedup the pool (champion-first ordering wins, preserving champion phrasing):
+        // drop a candidate that is a lexical near-duplicate of one already kept. Jaccard
+        // catches the verbatim/near-verbatim repeats embeddings are too coarse to merge.
+        var kept: [(q: FMQuestion, isChampion: Bool)] = []
+        for cand in pool {
+            let dup = kept.contains { Self.tokenJaccard($0.q.question, cand.q.question) >= 0.6 }
+            if !dup { kept.append(cand) }
+        }
+
+        let titles = kept.map { $0.q.question }
+        guard let vecs = SemanticRetrieval.vectors(for: titles),
+              let taskVec = SemanticRetrieval.vectors(for: [input])?.first,
+              kept.count >= 7 else {
+            // Embeddings unavailable or too few candidates → champion draft unchanged.
+            return greedyPlan.toContract()
+        }
+
+        // Per-candidate static terms: on-task relevance, champion bonus, defect penalty.
+        func staticScore(_ i: Int) -> Double {
+            var s = SemanticRetrieval.cos(vecs[i], taskVec)
+            if kept[i].isChampion { s += 0.05 }                 // ties → champion phrasing
+            if FillerDetector.isFiller(kept[i].q.question) { s -= 0.25 }
+            let l = " " + kept[i].q.question.lowercased() + " "
+            if l.contains(" and ") || l.contains(" or ") { s -= 0.20 }
+            return s
+        }
+
+        // Greedy facility-location / max-sum dispersion: at each step add the candidate
+        // maximising staticScore + λ·(min embedding distance to the already-chosen set).
+        let lambda = 0.6
+        var chosen: [Int] = []
+        var remaining = Array(0..<kept.count)
+        while chosen.count < 7 && !remaining.isEmpty {
+            var bestIdx = remaining[0]
+            var bestVal = -Double.infinity
+            for i in remaining {
+                let disp: Double
+                if chosen.isEmpty {
+                    disp = 0
+                } else {
+                    disp = chosen.map { 1.0 - SemanticRetrieval.cos(vecs[i], vecs[$0]) }.min() ?? 0
+                }
+                let val = staticScore(i) + lambda * disp
+                if val > bestVal { bestVal = val; bestIdx = i }
+            }
+            chosen.append(bestIdx)
+            remaining.removeAll { $0 == bestIdx }
+        }
+
+        let selected = chosen.map { kept[$0].q }
+        let questions = selected.map {
+            DiscoveryQuestion(title: $0.question, description: $0.detail, requiresExternalAction: $0.requiresExternalAction)
+        }
+        return DiscoveryResult(taskTitle: greedyPlan.title, taskDescription: greedyPlan.summary, questions: questions)
+    }
+
+    /// Token-set Jaccard overlap of two questions (lower-cased, simple word split) —
+    /// a lexical near-duplicate guard for pool dedup, catching the verbatim/near-
+    /// verbatim repeats NLEmbedding cosine is too coarse to merge (exp010 finding).
+    static func tokenJaccard(_ a: String, _ b: String) -> Double {
+        let split: (String) -> Set<String> = { s in
+            Set(s.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init).filter { $0.count > 2 })
+        }
+        let sa = split(a), sb = split(b)
+        if sa.isEmpty || sb.isEmpty { return a.lowercased() == b.lowercased() ? 1 : 0 }
+        let inter = sa.intersection(sb).count
+        let union = sa.union(sb).count
+        return union == 0 ? 0 : Double(inter) / Double(union)
     }
 
     /// EXP-028: scoped starting-point critique ON THE ADAPTER. exp023 ran this exact

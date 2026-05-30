@@ -38,6 +38,7 @@ public struct DiscoveryConfig: Sendable {
         case adapterDispersionBestOfN // greedy champion draft + N low-temp adapter samples → SELECT the whole set (verbatim) maximising embedding coverage-VOLUME (pairwise dispersion = least internal redundancy) + on-task relevance, deterministic in Swift; no FM judging pass
         case adapterRagFewShot   // champion adapter, native training format, with 2 retrieved gold exemplar question-sets APPENDED as reference demonstrations (which decision-critical unknowns similar tasks cover) — single greedy call, no extra judgment pass
         case adapterRagFewShotLOO // adapterRagFewShot but LEAVE-ONE-OUT: exclude any exemplar whose input matches the eval task, so demonstrations are genuinely OTHER tasks (the non-leaking, valid version of exp032)
+        case adapterCoverageFacilitySelect // over-generate a POOL of INDIVIDUAL questions across adapter draws (greedy champion + low-temp), dedup, then greedily pick 7 maximising a facility-location / max-sum dispersion objective (relevance + min-distance to chosen) VERBATIM — the literal Lever D over individual questions (exp031 selected whole sets only)
     }
 
     public enum Sampling: Sendable {

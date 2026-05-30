@@ -1,0 +1,41 @@
+{
+  "summary": "Facility-location covering-set selection over pooled individual questions",
+  "hypothesis": "Pooling individual questions across multiple adapter draws and selecting 7 via a submodular facility-location / max-dispersion objective should surface rare critical unknowns that appear in only one low-temperature draw, because the embedding-distance term would promote questions far from the modal cluster into the final set.",
+  "technique": "Over-generate a pool of ~28 individual questions from the champion adapter (1 greedy draw + 3 low-temp draws), embed with NLEmbedding, deduplicate near-duplicates via token-Jaccard \u2265 0.6, then greedily pick 7 maximising a submodular facility-location / max-sum-dispersion objective (on-task relevance + \u03bb \u00b7 min-embedding-distance-to-chosen \u2212 filler/compound penalty) \u2014 all deterministic Swift post-processing except the four upstream FM draws.",
+  "result": "Scored 0.234 on the full-30 greedy eval (0 wins / 0 ties / 29 losses vs Sonnet), a catastrophic regression of \u22120.175 vs the champion adapter_v2a_e1 (0.409) and below the stock-3B baseline (0.282); coverage collapsed to 2 and nonRedundancy was crushed, with the judge unanimously flagging severe duplicate slots in nearly all 30 cases \u2014 the max-dispersion objective actively promoted paraphrase pairs that token-Jaccard dedup missed, confirming on-device embeddings are too coarse to measure clarifying-question dispersion. Discarded as the worst adapter-side configuration yet.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate pool: greedy + 3 low-temp draws",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy+low-temp",
+        "n": "4",
+        "questions_per_draw": "7"
+      },
+      "call_labels": [
+        "greedy champion draw",
+        "low-temp draw 1",
+        "low-temp draw 2",
+        "low-temp draw 3"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Dedup pool via token-Jaccard \u2265 0.6"
+    },
+    {
+      "kind": "select",
+      "text": "Greedy facility-location pick top-7 by dispersion"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 clarifying questions out"
+    }
+  ],
+  "label": "exp034"
+}
