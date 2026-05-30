@@ -106,21 +106,22 @@ export function renderPipeD3(spec, el) {
   // main nodes
   const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
     .attr('transform', d => { const p = pos(d.id); return 'translate(' + p.x + ',' + p.y + ')'; });
+  // CONSISTENT colour by EXECUTION TYPE (same across every experiment): the node's
+  // border/label/badge colour says WHO runs it; the specific stage kind is the text.
+  //   FM = on-device model call (pink) · Swift = deterministic code (orange) · User = input (slate)
+  const execType = d => d.model ? ['FM', '#db2777']
+    : d.kind === 'input' ? ['User', '#64748b']
+    : ['Swift', '#ea580c'];
   g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff')
-    .attr('stroke', d => KINDC[d.kind] || '#64748b').attr('stroke-width', 2);   // full-colour border = stage kind
+    .attr('stroke', d => execType(d)[1]).attr('stroke-width', 2);
   const fo = g.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', NODEW).attr('height', NODEH - 6);
   const box = fo.append('xhtml:div').attr('class', 'nodebox');
-  box.append('xhtml:div').attr('class', 'nb-kind').style('color', d => KINDC[d.kind] || '#64748b').text(d => (d.title || '').toUpperCase());
+  box.append('xhtml:div').attr('class', 'nb-kind').style('color', d => execType(d)[1]).text(d => (d.title || '').toUpperCase());
   box.append('xhtml:div').attr('class', 'nb-sub').text(d => d.sub || '');
-  // Per-node execution badge: who runs it — FM (model call) · Swift (deterministic
-  // code) · User (the input) · Out (the final output).
-  const badgeFor = d => d.model ? ['FM', '#db2777']
-    : d.kind === 'input' ? ['User', '#64748b']
-    : ['Swift', '#ea580c'];   // retrieve/select/post/output are all deterministic Swift
   const bwid = t => t.length * 5.7 + 9;
-  const bg = g.append('g').attr('transform', d => 'translate(' + (NODEW - bwid(badgeFor(d)[0]) - 6) + ',6)');
-  bg.append('rect').attr('width', d => bwid(badgeFor(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => badgeFor(d)[1]);
-  bg.append('text').attr('x', d => bwid(badgeFor(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
-    .attr('font-weight', 800).attr('fill', '#fff').text(d => badgeFor(d)[0]);
+  const bg = g.append('g').attr('transform', d => 'translate(' + (NODEW - bwid(execType(d)[0]) - 6) + ',6)');
+  bg.append('rect').attr('width', d => bwid(execType(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => execType(d)[1]);
+  bg.append('text').attr('x', d => bwid(execType(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
+    .attr('font-weight', 800).attr('fill', '#fff').text(d => execType(d)[0]);
   g.on('mousemove', (e, d) => showTip(e, esc(d.full))).on('mouseleave', hideTip);
 }
