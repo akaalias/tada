@@ -25,6 +25,21 @@ export const callCount = s => {
 
 export const isAdapter = s => /adapter|lora|fine-?tun/i.test(JSON.stringify((s && s.knobs) || {}));
 
+// Resolve an adapter name (e.g. "adapter-v2a-e2", "adapter_e1") to its training
+// version family, so we can look up its provenance chain. Dash/underscore agnostic.
+export const adapterFamily = name => {
+  const n = String(name || '').toLowerCase().replace(/-/g, '_');
+  if (n.includes('v2b')) return 'v2b';
+  if (n.includes('v2a')) return 'v2a';
+  if (n.includes('adapter')) return 'v1';
+  return null;
+};
+// The provenance steps that produced a given adapter, from adapter_provenance.json.
+export const provenanceSteps = (prov, name) => {
+  const fam = adapterFamily(name);
+  return (fam && prov && prov.families && prov.families[fam] && prov.families[fam].steps) || null;
+};
+
 // Human-readable label per individual call. Prefer generator-provided call_labels;
 // else a comma-list knob matching the count (e.g. temps); else a worded fallback.
 export const callLabels = s => {

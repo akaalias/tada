@@ -1,10 +1,10 @@
 // The expanded per-experiment detail: pipeline diagram + write-up + per-case
 // gold-vs-on-device comparison with the judge's verdict and notes.
 
-import { fetchResults, fetchPipe, fetchGold, programLine } from './api.js';
+import { fetchResults, fetchPipe, fetchGold, programLine, fetchProvenance } from './api.js';
 import { pipeSummary, renderPipeD3 } from './pipeline.js';
 import { downloadPipePNG } from './export.js';
-import { esc, pw, rmean, rubricChips, relabelSets } from './util.js';
+import { esc, pw, rmean, rubricChips, relabelSets, provenanceSteps } from './util.js';
 
 export async function renderDetail(label, cell) {
   cell.innerHTML = '<div class="detail-inner">loading…</div>';
@@ -20,6 +20,13 @@ export async function renderDetail(label, cell) {
   const GOLD_MODEL = 'claude-sonnet-4-6', JUDGE_MODEL = 'claude-sonnet-4-6';
   const adapterStage = (spec && spec.stages || []).find(s => s.knobs && s.knobs.model);
   const candModel = adapterStage ? 'Apple FM 3B + LoRA: ' + adapterStage.knobs.model : 'Apple FM (on-device 3B)';
+
+  // Attach the adapter's training provenance (Sonnet corpus -> format -> fine-tune)
+  // so the diagram can show what produced the LoRA node.
+  if (spec && adapterStage) {
+    const prov = await fetchProvenance();
+    spec.adapterTraining = provenanceSteps(prov, adapterStage.knobs.model);
+  }
 
   const blocks = scores.map((s, i) => {
     const gold = golds[i];
@@ -55,7 +62,7 @@ export async function renderDetail(label, cell) {
     + `</div>` : '';
   cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div>`
     + `<div class="pipe-grid"><div class="pipe-diagram"><div class="pipe-d3"></div></div>${explain}</div>`
-    + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#db2777">FM</b> on-device model call · <b style="color:#ea580c">Swift</b> deterministic code · <b style="color:#64748b">User</b> input/output · gold <b style="color:#ca8a04">LoRA</b> node = adapter feeding a call. Vertical = parallel, horizontal = sequential · hover for details</div>`
+    + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#db2777">FM</b> on-device model call · <b style="color:#ea580c">Swift</b> deterministic code · <b style="color:#64748b">User</b> input/output · gold <b style="color:#ca8a04">LoRA</b> node = adapter feeding a call · gold dashed chain left of it = how the adapter was <b style="color:#a16207">trained</b> (dev-time: Sonnet corpus → format → fine-tune). Vertical = parallel, horizontal = sequential · hover for details</div>`
     + `${triedHtml}${blocks}</div>`;
   if (spec) {
     renderPipeD3(spec, cell.querySelector('.pipe-d3'));

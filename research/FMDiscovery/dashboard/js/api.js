@@ -20,6 +20,13 @@ export async function fetchOperators() {
   catch (e) { return {}; }
 }
 
+let provCache = null;
+export async function fetchProvenance() {
+  if (provCache) return provCache;
+  try { provCache = await (await fetch('../results/adapter_provenance.json' + bust())).json(); return provCache; }
+  catch (e) { return {}; }
+}
+
 const pipeCache = {};
 export async function fetchPipe(label) {
   if (pipeCache[label] !== undefined) return pipeCache[label];

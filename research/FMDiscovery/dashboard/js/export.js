@@ -27,8 +27,11 @@ function buildExportSVG(spec) {
   const { nodes, edges } = layoutPipe(spec);
   const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
   const ADW = 132, ADH = 46, ADGAP = 44;
+  const PW = 134, PH = 50, PGAP = 30;
   const hasAdapter = nodes.some(n => n.adapterName);
-  const LEFTPAD = hasAdapter ? ADW + ADGAP : 0;
+  const prov = (hasAdapter && Array.isArray(spec.adapterTraining)) ? spec.adapterTraining : [];
+  const PROVPAD = prov.length ? prov.length * (PW + PGAP) : 0;
+  const LEFTPAD = (hasAdapter ? ADW + ADGAP : 0) + PROVPAD;
   const byId = {}; nodes.forEach(n => byId[n.id] = n);
   const totalLanes = Math.max(1, ...nodes.map(n => n.rows));
   const maxCol = Math.max(0, ...nodes.map(n => n.col));
@@ -60,13 +63,36 @@ function buildExportSVG(spec) {
     const a = pos(e.from), b = pos(e.to), ty = b.topy - 5, my = (a.boty + ty) / 2;
     s += `<path d="M${a.botx},${a.boty} C${a.botx},${my} ${b.topx},${my} ${b.topx},${ty}" fill="none" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#exa)"/>`;
   }
-  for (const n of nodes.filter(n => n.adapterName)) {
+  const adapterNodes = nodes.filter(n => n.adapterName);
+  for (const n of adapterNodes) {
     const p = pos(n.id), ax = p.x - ADGAP - ADW, ay = p.y + (NODEH - ADH) / 2;
     const fx = ax + ADW, fy = ay + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (fx + tx) / 2;
     s += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
     s += `<rect x="${ax}" y="${ay}" width="${ADW}" height="${ADH}" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="2"/>`;
     s += `<text x="${ax + 9}" y="${ay + 16}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="#ca8a04">LORA ADAPTER</text>`;
     s += `<text x="${ax + 9}" y="${ay + 31}" font-family="${FONT}" font-size="11" fill="#334155">${xml(n.adapterName)}</text>`;
+  }
+  // training-provenance chain feeding the (topmost) adapter node
+  if (prov.length && adapterNodes.length) {
+    const anchor = adapterNodes.reduce((a, b) => (pos(a.id).y <= pos(b.id).y ? a : b));
+    const ap = pos(anchor.id), aLeft = ap.x - ADGAP - ADW, provY = ap.y + (NODEH - PH) / 2;
+    const stepX = i => aLeft - PGAP - PW - (prov.length - 1 - i) * (PW + PGAP);
+    const conns = [];
+    for (let i = 0; i < prov.length - 1; i++) conns.push([stepX(i) + PW, stepX(i + 1)]);
+    conns.push([stepX(prov.length - 1) + PW, aLeft]);
+    for (const [x0, x1] of conns) {
+      const y = provY + PH / 2;
+      s += `<path d="M${x0},${y} L${x1 - 5},${y}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+    }
+    prov.forEach((st, i) => {
+      const x = stepX(i);
+      s += `<rect x="${x}" y="${provY}" width="${PW}" height="${PH}" rx="8" fill="#fffef5" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+      s += `<text x="${x + 9}" y="${provY + 16}" font-family="${FONT}" font-size="9" font-weight="800" fill="#a16207">${xml((st.title || '').toUpperCase())}</text>`;
+      s += `<text x="${x + 9}" y="${provY + 32}" font-family="${FONT}" font-size="10" fill="#334155">${xml(st.sub || '')}</text>`;
+      const bw = (st.by || '').length * 5.0 + 8;
+      s += `<rect x="${x + PW - bw - 6}" y="${provY + 6}" width="${bw}" height="12" rx="3" fill="#a16207"/>`;
+      s += `<text x="${x + PW - bw / 2 - 6}" y="${provY + 15}" font-family="${FONT}" font-size="7.5" font-weight="800" fill="#fff" text-anchor="middle">${xml(st.by || '')}</text>`;
+    });
   }
   for (const n of nodes) {
     const p = pos(n.id), [blab, bcol] = execType(n);
@@ -85,7 +111,7 @@ function buildExportSVG(spec) {
     `<tspan fill="#db2777" font-weight="700">FM</tspan> model call · ` +
     `<tspan fill="#ea580c" font-weight="700">Swift</tspan> deterministic code · ` +
     `<tspan fill="#64748b" font-weight="700">User</tspan> input/output · ` +
-    `<tspan fill="#ca8a04" font-weight="700">LoRA</tspan> adapter.   Vertical = parallel, horizontal = sequential.</text>`;
+    `<tspan fill="#ca8a04" font-weight="700">LoRA</tspan> adapter · gold dashed chain = how it was <tspan fill="#a16207" font-weight="700">trained</tspan> (dev-time).   Vertical = parallel, horizontal = sequential.</text>`;
 
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`, W, H };
 }

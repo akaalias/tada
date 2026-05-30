@@ -57,8 +57,12 @@ export function renderPipeD3(spec, el) {
   const { nodes, edges } = layoutPipe(spec);
   const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
   const ADW = 132, ADH = 46, ADGAP = 44;                       // adapter side-node
+  const PW = 134, PH = 50, PGAP = 30;                          // training-provenance chain nodes
   const hasAdapter = nodes.some(n => n.adapterName);
-  const LEFTPAD = hasAdapter ? ADW + ADGAP : 0;                // room on the left for adapter nodes
+  // Provenance chain (Sonnet corpus -> format -> fine-tune) that produced the adapter.
+  const prov = (hasAdapter && Array.isArray(spec.adapterTraining)) ? spec.adapterTraining : [];
+  const PROVPAD = prov.length ? prov.length * (PW + PGAP) : 0;
+  const LEFTPAD = (hasAdapter ? ADW + ADGAP : 0) + PROVPAD;    // room on the left for adapter + its provenance
   const byId = {}; nodes.forEach(n => byId[n.id] = n);
   const totalLanes = Math.max(1, ...nodes.map(n => n.rows));
   const maxCol = Math.max(0, ...nodes.map(n => n.col));
@@ -105,6 +109,41 @@ export function renderPipeD3(spec, el) {
   abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
   abox.append('xhtml:div').attr('class', 'nb-sub').text(n => n.adapterName);
   ag.on('mousemove', (e, n) => showTip(e, 'LoRA adapter “' + esc(n.adapterName) + '” — fine-tuned weights feeding this on-device call')).on('mouseleave', hideTip);
+
+  // training-provenance chain: how the adapter was MADE (dev-time). Drawn as a
+  // gold dashed chain to the LEFT of the (topmost) adapter node, flowing into it:
+  //   [gold corpus] ⇢ [format] ⇢ [fine-tune] ⇢ ADAPTER ⇢ FM call
+  if (prov.length && adapterNodes.length) {
+    const anchor = adapterNodes.reduce((a, b) => (pos(a.id).y <= pos(b.id).y ? a : b));
+    const aPos = pos(anchor.id), aLeft = adX(anchor);          // adapter node's left edge
+    const provY = adY(anchor) + (ADH - PH) / 2;                // vertically centre on the adapter
+    const stepX = i => aLeft - PGAP - PW - (prov.length - 1 - i) * (PW + PGAP);
+
+    // gold dashed connectors: step→step, and last step→adapter
+    const connectors = [];
+    for (let i = 0; i < prov.length - 1; i++) connectors.push([stepX(i) + PW, stepX(i + 1)]);
+    connectors.push([stepX(prov.length - 1) + PW, aLeft]);     // into the adapter node
+    svg.append('g').selectAll('path.prov').data(connectors).join('path').attr('class', 'prov')
+      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3')
+      .attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('d', d => { const y = provY + PH / 2, x0 = d[0], x1 = d[1] - 5; return 'M' + x0 + ',' + y + ' L' + x1 + ',' + y; });
+
+    const pg = svg.append('g').selectAll('g.prov-node').data(prov.map((s, i) => ({ s, i }))).join('g')
+      .attr('transform', d => 'translate(' + stepX(d.i) + ',' + provY + ')');
+    pg.append('rect').attr('width', PW).attr('height', PH).attr('rx', 8)
+      .attr('fill', '#fffef5').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '3 2');
+    const pfo = pg.append('foreignObject').attr('x', 0).attr('y', 3).attr('width', PW).attr('height', PH - 4);
+    const pbox = pfo.append('xhtml:div').attr('class', 'nodebox');
+    pbox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#a16207').text(d => (d.s.title || '').toUpperCase());
+    pbox.append('xhtml:div').attr('class', 'nb-sub').text(d => d.s.sub || '');
+    // small actor badge (Sonnet / Python / Toolkit) — who produces this artifact
+    const pbw = d => (d.s.by || '').length * 5.2 + 8;
+    const pbg = pg.append('g').attr('transform', d => 'translate(' + (PW - pbw(d) - 6) + ',6)');
+    pbg.append('rect').attr('width', d => pbw(d)).attr('height', 12).attr('rx', 3).attr('fill', '#a16207');
+    pbg.append('text').attr('x', d => pbw(d) / 2).attr('y', 9.5).attr('text-anchor', 'middle').attr('font-size', 7.5)
+      .attr('font-weight', 800).attr('fill', '#fff').text(d => d.s.by || '');
+    pg.on('mousemove', (e, d) => showTip(e, '<b>' + esc(d.s.title) + '</b> · ' + esc(d.s.by) + ' (dev-time)<span class="t-note">' + esc(d.s.sub) + '</span>')).on('mouseleave', hideTip);
+  }
 
   // main nodes
   const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
