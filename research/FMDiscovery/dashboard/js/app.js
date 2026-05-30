@@ -11,15 +11,16 @@ async function load() {
   const runs = await fetchRuns();
   document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
 
-  // The chart tracks the dev-proxy series so all points share a denominator.
-  const subset = runs.some(r => (r.subset || 'full') === 'dev') ? 'dev' : 'full';
-  const chartRuns = runs.filter(r => (r.subset || 'full') === subset);
-  const kept = chartRuns.filter(r => r.kept).length;
-  const n = chartRuns[0] ? chartRuns[0].n : '';
+  // The chart shows ALL runs; dev-10 (proxy) and full-30 (gate) get separate
+  // best-lines inside drawChart so we never compare across denominators.
+  const kept = runs.filter(r => r.kept).length;
+  const hasDev = runs.some(r => (r.subset || 'full') === 'dev');
+  const hasFull = runs.some(r => (r.subset || 'full') === 'full');
+  const denom = hasDev && hasFull ? 'dev-10 proxy + full-30 gate' : hasDev ? 'dev-10 proxy' : 'full-30 gate';
   document.getElementById('title').textContent =
-    `Autoresearch Progress: ${chartRuns.length} Experiment${chartRuns.length === 1 ? '' : 's'}, ${kept} Kept (${subset}-${n} proxy)`;
+    `Autoresearch Progress: ${runs.length} Experiment${runs.length === 1 ? '' : 's'}, ${kept} Kept (${denom})`;
 
-  drawChart(chartRuns);
+  drawChart(runs);
 
   state.costs = await fetchCosts();
   state.operators = await fetchOperators();
