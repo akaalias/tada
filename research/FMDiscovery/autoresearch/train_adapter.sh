@@ -16,6 +16,9 @@ ADP="$PKG/adapter"
 TOOLKIT="${TOOLKIT:-$PKG/adapter_training_toolkit_v26_0_0}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT (set TOOLKIT=/path)"; exit 1; }
 EPOCHS="${EPOCHS:-6}"; LR="${LR:-1e-3}"; BATCH="${BATCH:-4}"; NAME="${NAME:-discovery_v1}"
+# Memory-frugal knobs (this toolkit is memory-hungry on Mac; activation checkpointing on
+# by default to avoid swap-thrashing). ACCUM keeps effective batch = BATCH*ACCUM.
+ACCUM="${ACCUM:-1}"; MAXSEQ="${MAXSEQ:-}"; ACTCKPT="${ACTCKPT:-1}"
 
 echo "[adapter] 1/4 formatting training data from corpus/"
 python3 "$AR/format_training_data.py"
@@ -34,11 +37,15 @@ else
   pip install --retries 10 --timeout 120 -r "$TOOLKIT/requirements.txt"
 fi
 
-echo "[adapter] 3/4 training (epochs=$EPOCHS lr=$LR batch=$BATCH) — this takes a while"
+echo "[adapter] 3/4 training (epochs=$EPOCHS lr=$LR batch=$BATCH accum=$ACCUM maxseq=${MAXSEQ:-none} actckpt=$ACTCKPT) — this takes a while"
+extra=( --gradient-accumulation-steps "$ACCUM" )
+[ "$ACTCKPT" = "1" ] && extra+=( --activation-checkpointing )
+[ -n "$MAXSEQ" ] && extra+=( --max-sequence-length "$MAXSEQ" )
 ( cd "$TOOLKIT" && python -m examples.train_adapter \
     --train-data "$ADP/data/train.jsonl" \
     --eval-data  "$ADP/data/valid.jsonl" \
     --epochs "$EPOCHS" --learning-rate "$LR" --batch-size "$BATCH" \
+    "${extra[@]}" \
     --checkpoint-dir "$ADP/checkpoints" )
 
 echo "[adapter] 4/4 exporting .fmadapter"
