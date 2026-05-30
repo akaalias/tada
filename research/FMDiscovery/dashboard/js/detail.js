@@ -3,6 +3,7 @@
 
 import { fetchResults, fetchPipe, fetchGold, programLine } from './api.js';
 import { pipeSummary, renderPipeD3 } from './pipeline.js';
+import { downloadPipePNG } from './export.js';
 import { esc, pw, rmean, rubricChips, relabelSets } from './util.js';
 
 export async function renderDetail(label, cell) {
@@ -41,8 +42,11 @@ export async function renderDetail(label, cell) {
   }).join('');
 
   const triedHtml = tried ? `<details class="trywrap"><summary>Full write-up</summary><div class="tried">${esc(tried)}</div></details>` : '';
-  cell.innerHTML = `<div class="detail-inner">${pipeSummary(spec)}<div class="pipe-d3"></div>`
+  cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div><div class="pipe-d3"></div>`
     + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#db2777">FM</b> on-device model call · <b style="color:#ea580c">Swift</b> deterministic code · <b style="color:#64748b">User</b> input/output · gold <b style="color:#ca8a04">LoRA</b> node = adapter feeding a call. Vertical = parallel, horizontal = sequential · hover for details</div>`
     + `${triedHtml}${blocks}</div>`;
-  if (spec) renderPipeD3(spec, cell.querySelector('.pipe-d3'));
+  if (spec) {
+    renderPipeD3(spec, cell.querySelector('.pipe-d3'));
+    cell.querySelector('.png-btn')?.addEventListener('click', () => downloadPipePNG(spec, label));
+  }
 }
