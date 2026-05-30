@@ -28,7 +28,8 @@ export function fillTable(runs, expanded, costs, operators = {}) {
       + `<td>${Math.round(r.specPass * 100)}%</td>`
       + `<td>${r.wins}/${r.ties}/${r.losses}</td>`
       + `<td class="q">${costs[r.label] != null ? '$' + costs[r.label].toFixed(2) : '<span class="disc">—</span>'}</td>`
-      + `<td>${r.kept ? '<span class="rowdot" title="kept improvement"></span>' : ''}${esc(r.note || '')} <span class="${r.kept ? 'kept' : 'disc'}">${r.kept ? 'kept' : 'discarded'}</span></td>`;
+      + `<td><div class="move-cell"><span class="move-note">${esc(r.note || '')}</span>`
+      + `<span class="status-badge ${r.kept ? 'sb-kept' : 'sb-disc'}">${r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
     const det = document.createElement('tr'); det.className = 'detail';
     const cell = document.createElement('td'); cell.colSpan = 9;
     det.appendChild(cell);
