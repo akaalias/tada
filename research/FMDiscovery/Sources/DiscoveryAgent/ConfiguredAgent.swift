@@ -70,6 +70,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterScopedCritique: return try await adapterScopedCritique(input)
         case .adapterDivergeConverge: return try await adapterDivergeConverge(input)
         case .adapterSolutionSpaceEIG: return try await adapterSolutionSpaceEIG(input)
+        case .adapterEIGSystemPrompt: return try await adapterEIGSystemPrompt(input)
         case .adapterDispersionBestOfN: return try await adapterDispersionBestOfN(input)
         case .adapterRagFewShot: return try await adapterRagFewShot(input)
         case .adapterRagFewShotLOO: return try await adapterRagFewShot(input, leaveOneOut: true)
@@ -220,6 +221,68 @@ public struct ConfiguredAgent: Sendable {
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
         ).content
         return plan.toContract()
+    }
+
+    /// EXP-045: lever C (solution-space information gain) delivered through exp040's
+    /// PROVEN in-distribution channel. exp030 already tried solution-space EIG and
+    /// REGRESSED hard (0.305) — but it conflated two things: (a) the lever-C grounding
+    /// (generate divergent scenarios, ask which questions discriminate them), and (b) a
+    /// heavily REFRAMED user prompt ("Write the 7 questions that would best tell us WHICH
+    /// of these situations is real…") that pulled the adapter OFF its native training
+    /// format and degraded EVERYTHING. exp040 independently proved the opposite delivery
+    /// works: ENRICH ONLY THE SYSTEM PROMPT with reference material while keeping the
+    /// final USER prompt the EXACT native anchor ("Task the user entered: …") → preserves
+    /// the adapter's discipline and at least TIES the champion (0.405). This experiment
+    /// gives lever C its FAIR test by separating the two: same scenario generation as
+    /// exp030, but the scenarios go in the SYSTEM prompt as competing situations to cover,
+    /// and the user prompt is byte-identical to the champion's native call. If lever-C
+    /// grounding genuinely lifts coverage, it surfaces here WITHOUT the OOD penalty; if
+    /// coverage is truly weight-locked, it ties/regresses — cleanly closing the
+    /// lever-C-delivery question. Single greedy native generation (no schema reframing).
+    private func adapterEIGSystemPrompt(_ input: String) async throws -> DiscoveryResult {
+        // Stage 1: N divergent competing scenarios for the task (same as exp030).
+        let scenarioSystem = """
+        You are a sharp planning analyst. Before any clarifying questions are written, \
+        you imagine the DIFFERENT realistic situations a user who entered this task could \
+        actually be in — because the right plan depends entirely on which one is true.
+
+        Produce 4 DIVERGENT, concrete, plausible interpretations of who THIS user is and \
+        what they specifically want. Make them genuinely DISAGREE on the decisions that \
+        matter: different goal, scale, budget, audience, starting point, constraints, or \
+        stakes — whatever is decision-critical for this kind of task. Each is one vivid \
+        sentence committing to SPECIFIC choices (not vague hedging), and the four together \
+        should span the realistic range of how this task could really go.
+        """
+        let scenarioSession = LanguageModelSession(model: try resolveModel()) { scenarioSystem }
+        let scenarios = try await scenarioSession.respond(
+            to: "The user's task: \"\(input)\"\n\nList 4 divergent concrete scenarios for who this user is and what they want.",
+            generating: FMScenarios.self,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling)
+        ).content.scenarios
+        let scenarioList = scenarios.enumerated()
+            .map { "  \($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+
+        // Stage 2: champion's NATIVE call. Scenarios enrich the SYSTEM prompt only; the
+        // user prompt stays the exact training anchor so the adapter stays in distribution.
+        let system = Self.adapterSystem + """
+
+
+            This task could genuinely mean very different things. Four plausible situations \
+            the user could be in:
+            \(scenarioList)
+
+            Make sure your 7 questions together pin down WHICH of these situations is the \
+            real one — prioritise the decision-critical unknowns these situations most \
+            DISAGREE on, so each answer would change which plan you'd build. Write fresh \
+            questions specific to the user's actual task; do not mention these situations.
+            """
+        let session = LanguageModelSession(model: try resolveModel()) { system }
+        let prompt = "Task the user entered: \"\(input)\""
+        let r = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
+        return r.content.toContract()
     }
 
     // MARK: - Adapter (lever 7)

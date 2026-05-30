@@ -632,6 +632,14 @@ public enum Configs {
         "exp044": DiscoveryConfig(topology: .adapterRedundancyGapFill,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-045: lever C (solution-space EIG) via exp040's PROVEN in-distribution
+        // delivery channel — scenarios enrich the SYSTEM prompt, the final USER prompt
+        // stays the exact native anchor. Isolates lever-C grounding from exp030's OOD
+        // prompt reframe that caused its 0.305 regression. Champion = v2a_e1, greedy.
+        "exp045": DiscoveryConfig(topology: .adapterEIGSystemPrompt,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

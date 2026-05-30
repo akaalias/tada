@@ -1,0 +1,25 @@
+{
+  "summary": "Lever-C EIG via in-distribution system-prompt channel",
+  "hypothesis": "Delivering solution-space EIG (competing scenarios) through the system prompt while keeping the byte-exact native user anchor \u2014 the proven in-distribution format from exp040 \u2014 would give lever C a fair test, since exp030's regression to 0.305 may have been caused by the reframed user prompt pulling the adapter off its native training format rather than by the lever itself.",
+  "technique": "The exp040 adapter is called with divergent solution-space scenarios injected into the system prompt only, while the final user prompt is kept as the exact native anchor used during adapter training \u2014 isolating the lever-C grounding from any user-prompt reframing confound.",
+  "result": "Scored 0.393 on the full-30 greedy eval (2 wins / 1 tie / 17 losses vs Sonnet); rubric: atom=4, spec=3, cover=3, nat=3, nonRed=4. Coverage stayed pinned at 3 with the same modal misses verbatim as prior lever-C attempts, confirming coverage judgment is weight-locked and not promptable. A new pathology emerged: the analytical scenario block triggered FM content-moderation on 10/30 cases and overflowed the 4096-token context on 2 cases \u2014 actively worse than the champion (0.409). Hypothesis falsified; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User query enters pipeline"
+    },
+    {
+      "kind": "generate",
+      "text": "Adapter call: EIG scenarios in system prompt",
+      "knobs": {
+        "model": "adapterEIGSystemPrompt",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions returned"
+    }
+  ],
+  "label": "exp045"
+}
