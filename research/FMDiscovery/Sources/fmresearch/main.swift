@@ -99,8 +99,10 @@ case "evaluate":
         .split(separator: "\n")
         .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? []
     let subset = stringFlag("--subset") == "dev" ? "dev" : "full"
-    // Running best is per-subset: dev runs only compare to dev runs.
-    let bestBefore = prior.filter { ($0["subset"] as? String) == subset }
+    // Running best is per-subset: dev runs only compare to dev runs. Invalid runs
+    // (e.g. gold-leak artifacts flagged by the operator) are excluded so they can't
+    // poison the kept-threshold for legitimate future runs.
+    let bestBefore = prior.filter { ($0["subset"] as? String) == subset && ($0["invalid"] as? Bool != true) }
         .compactMap { $0["quality"] as? Double }.max() ?? -1
     let rm = metric.rubricMeans
     let record: [String: Any] = [
