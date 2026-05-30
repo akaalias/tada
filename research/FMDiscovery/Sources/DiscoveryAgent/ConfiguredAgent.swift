@@ -70,6 +70,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterScopedCritique: return try await adapterScopedCritique(input)
         case .adapterDivergeConverge: return try await adapterDivergeConverge(input)
         case .adapterSolutionSpaceEIG: return try await adapterSolutionSpaceEIG(input)
+        case .adapterDispersionBestOfN: return try await adapterDispersionBestOfN(input)
         }
     }
 
@@ -172,6 +173,100 @@ public struct ConfiguredAgent: Sendable {
             includeSchemaInPrompt: false,
             options: config.options(temp: config.selectTemp, sampling: config.selectSampling))
         return r.content.toContract()
+    }
+
+    /// EXP-031: dispersion best-of-N ON THE CHAMPION ADAPTER. The champion
+    /// (adapter_v2a_e1, 0.409) is pinned at coverage 3, and its OWN judge notes name
+    /// the SAME mechanism in ~half the held-out losses: it wastes 2-3 of its 7 slots
+    /// on INTERNALLY REDUNDANT / overlapping questions, which crowds out the missing
+    /// decision-critical unknown. Verbatim from the notes: apartment_move asks move-
+    /// date AND how-many-days; dinner_party asks date AND time AND venue-location AND
+    /// venue-availability; gp_appointment circles "which clinic?" across Q1/Q3/Q6/Q7;
+    /// household_budget asks total AND fixed AND variable expenses (the same thing
+    /// three ways); learn_guitar Q4≈Q6 (how to learn); resume_refresh has Q1/Q3 and
+    /// Q2/Q7 mirror pairs; find_therapist Q1≈Q2≈Q7; side_business splits where-to-sell
+    /// across two slots. Redundancy is a SET-LEVEL property: the champion's single
+    /// greedy draw happens to be redundant, but OTHER low-temperature draws from the
+    /// same adapter spread their 7 slots across more distinct unknowns. So rather than
+    /// a 2nd FM pass (every adapter-side critique/converge pass — exp028/029/030 —
+    /// REGRESSED by degrading the champion's hard-won phrasing), this is best-of-N with
+    /// a DETERMINISTIC, embedding-based set selector that directly optimises the flaw:
+    /// pick the candidate set whose 7 questions have the highest pairwise embedding
+    /// DISPERSION (coverage VOLUME — the submodular/facility-location covering-set
+    /// objective, Lever D) while staying on-task (relevance term guards against high-
+    /// temp drift into "dispersed-because-irrelevant"). The greedy champion draft is
+    /// always in the pool as a FLOOR (ties favour it), and winners are returned
+    /// BYTE-FOR-BYTE — no question is ever regenerated, so atomicity/naturalness are
+    /// never mangled. Distinct from the failed selection family: exp004/exp026 ran
+    /// best-of-N on the weak STOCK 3B/RAG generators (low per-call quality), never the
+    /// adapter; exp010 tried to MERGE paraphrases across samples (NLEmbedding too
+    /// coarse to merge) — this never merges, it selects a whole coherent set; exp012's
+    /// tournament asked the 3B to JUDGE (it can't) — this uses zero model judgment.
+    private func adapterDispersionBestOfN(_ input: String) async throws -> DiscoveryResult {
+        let temps = config.sampleTemps ?? [0.4, 0.6, 0.8]
+        let prompt = "Task the user entered: \"\(input)\""
+
+        // Floor candidate: the champion greedy draft (always first → wins ties).
+        var candidates: [DiscoveryResult] = []
+        let greedySession = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+        candidates.append(try await greedySession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self,
+            includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content.toContract())
+
+        // Diverse low-temp draws from the SAME adapter (modest temps preserve the
+        // adapter's phrasing discipline; exp004 showed high temp degrades atomicity).
+        for t in temps {
+            let session = LanguageModelSession(model: try resolveModel()) { Self.adapterSystem }
+            candidates.append(try await session.respond(
+                to: prompt, generating: FMDiscoveryPlan.self,
+                includeSchemaInPrompt: false,
+                options: config.options(temp: t, sampling: .modelDefault)).content.toContract())
+        }
+
+        // Deterministic set selection: maximise coverage volume + on-task relevance.
+        var best = candidates[0]
+        var bestScore = Self.dispersionScore(best.questions.map { $0.title }, input: input)
+        for cand in candidates.dropFirst() {
+            let s = Self.dispersionScore(cand.questions.map { $0.title }, input: input)
+            if s > bestScore { bestScore = s; best = cand }   // strict > keeps greedy on ties
+        }
+        return best
+    }
+
+    /// EXP-031 ruler — purely deterministic, on-device (NLEmbedding). Rewards a set
+    /// whose 7 questions span the MOST distinct conceptual space (coverage volume =
+    /// mean pairwise cosine DISTANCE — high when slots aren't redundant) while keeping
+    /// every question ON-TASK (mean cosine to the task text — guards against a high-
+    /// temp set that is "dispersed" only because it drifted off-topic). Small
+    /// deterministic penalties for the lexical defects embeddings miss (filler catch-
+    /// alls, compound and/or asks). Falls back to the exp026 composite ruler when the
+    /// sentence embedder is unavailable, so selection is always defined.
+    static func dispersionScore(_ questions: [String], input: String) -> Double {
+        guard let qVecs = SemanticRetrieval.vectors(for: questions),
+              let taskVec = SemanticRetrieval.vectors(for: [input])?.first,
+              qVecs.count >= 2 else {
+            return compositeScore(questions, input: input)
+        }
+        // Coverage volume: mean pairwise distance (1 - cosine) among the 7 questions.
+        var pairSum = 0.0, pairN = 0.0
+        for i in 0..<qVecs.count {
+            for j in (i + 1)..<qVecs.count {
+                pairSum += (1.0 - SemanticRetrieval.cos(qVecs[i], qVecs[j]))
+                pairN += 1
+            }
+        }
+        let coverageVolume = pairN == 0 ? 0 : pairSum / pairN
+        // On-task relevance: mean cosine of each question to the task statement.
+        let relevance = qVecs.map { SemanticRetrieval.cos($0, taskVec) }.reduce(0, +) / Double(qVecs.count)
+        var score = coverageVolume + 0.5 * relevance
+        // Lexical defect guards (small, embedding-scale).
+        for q in questions where FillerDetector.isFiller(q) { score -= 0.15 }
+        for q in questions {
+            let l = " " + q.lowercased() + " "
+            if l.contains(" and ") || l.contains(" or ") { score -= 0.10 }
+        }
+        return score
     }
 
     /// EXP-028: scoped starting-point critique ON THE ADAPTER. exp023 ran this exact

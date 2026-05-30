@@ -1,0 +1,38 @@
+{
+  "summary": "Dispersion best-of-N on champion adapter",
+  "hypothesis": "Running a small ensemble of decoding variants (one greedy + three low-temperature draws) from the champion adapter and selecting the most coverage-diverse set should push past the adapter's single-draw ceiling, because the adapter already has strong per-question quality and the bottleneck is topical spread across the 7 questions.",
+  "technique": "Four parallel on-device calls through the champion adapter \u2014 one greedy draw and three low-temperature stochastic draws \u2014 followed by deterministic Swift selection of the candidate set that maximises embedding coverage-volume plus relevance, with no additional model involvement in the selection step.",
+  "result": "Scored 0.398 on the full-30 gate (2 wins / 4 ties / 22 losses vs Sonnet), with specPass 100% and rubric scores atom=4, spec=3, cover=3, nat=3, nonRed=4. Coverage stayed at 3 despite the dispersion strategy, meaning the ensemble selection did not break through the coverage plateau; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "ensemble",
+      "text": "4 adapter draws: greedy + 3 low-temp",
+      "knobs": {
+        "model": "champion-adapter",
+        "n": "4"
+      },
+      "call_labels": [
+        "greedy draw (temp 0)",
+        "low-temp stochastic draw 1",
+        "low-temp stochastic draw 2",
+        "low-temp stochastic draw 3"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Max embedding coverage-volume + relevance pick",
+      "knobs": {
+        "sampling": "deterministic"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp031"
+}

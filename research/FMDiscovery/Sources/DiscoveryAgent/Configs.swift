@@ -385,6 +385,26 @@ public enum Configs {
         // both greedy; scenario block kept compact to avoid exp029's verbose-drift.
         "exp030": DiscoveryConfig(topology: .adapterSolutionSpaceEIG, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-031: dispersion best-of-N on the CHAMPION adapter (v2a_e1, 0.409). The
+        // champion's OWN judge notes name ONE mechanism in ~half its held-out losses —
+        // it wastes 2-3 of its 7 slots on INTERNALLY REDUNDANT / overlapping questions
+        // (apartment_move move-date AND how-many-days; dinner_party date AND time AND
+        // venue-location AND availability; household_budget total AND fixed AND variable
+        // expenses; gp circling "which clinic?" ×4; resume Q1/Q3 + Q2/Q7 mirror pairs),
+        // crowding out the missing critical unknown. Redundancy is a SET-LEVEL property:
+        // the single greedy draw is redundant, but other low-temp draws spread the 7
+        // slots wider. So best-of-N over the adapter (greedy champion as floor + 3 low-
+        // temp draws), selecting the whole set VERBATIM by a DETERMINISTIC embedding
+        // ruler = max pairwise coverage VOLUME (least internal redundancy, Lever D's
+        // covering-set objective) + on-task relevance. Zero model judgment (unlike the
+        // failed tournament exp012) and zero regeneration (unlike exp028/029/030's
+        // phrasing-degrading 2nd passes); aggregation supplies the stability the greedy
+        // gate requires. Untried: best-of-N on the adapter selected by set-level
+        // dispersion. selectTemp/greedy here govern the floor draft.
+        "exp031": DiscoveryConfig(topology: .adapterDispersionBestOfN,
+            selectTemp: 0, selectSampling: .greedy, sampleTemps: [0.4, 0.6, 0.8],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
