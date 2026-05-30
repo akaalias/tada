@@ -59,7 +59,15 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
    Use the real lever space:
    - decoding: per-stage `temperature` / sampling (`DiscoveryConfig`)
    - topology: multi-call pipelines, self-critique/reflexion, best-of-N (`ConfiguredAgent`)
-   - guided-schema design: over-generate-then-score, constraints, select-in-Swift
+   - guided-schema design: over-generate-then-score, constraints, select-in-Swift.
+     Richer `@Guide` than we use today is available: regex/pattern guides, enumerations
+     (`.anyOf`), numeric ranges, nested `@Generable` types — not just `.count(n)` + a
+     description. A tighter schema is a real lever.
+   - **tool-calling (COMPLETELY UNUSED so far — your call whether it helps):** Apple FM
+     supports the `Tool` protocol + `LanguageModelSession(tools:)`, letting the model
+     invoke Swift functions mid-generation. Plausible uses: a coverage-check tool the
+     model calls before finalising, an on-device retrieval tool it queries for exemplars,
+     a "is this question atomic?" validator. May or may not pay off — decide for yourself.
    - deterministic post-processing in Swift: embedding-based dedup, coverage
      enforcement against a dimension scaffold, atomicity/filler detect-and-repair
    - retrieval-augmented few-shot: embed the input, retrieve nearest exemplar
@@ -97,6 +105,23 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
        (b) best-of-N selected via PAIRWISE adapter comparisons / a tournament (relative
        judgment beats absolute scoring), not an absolute scorer; (c) self-consistency
        voting across diverse adapter generations.
+
+   DRAW ON YOUR OWN KNOWLEDGE — you are NOT limited to the levers listed above. You have
+   no web access, so you cannot look things up; instead apply what you already know about
+   making small LMs strong on a narrow task. Established strategies worth adapting here
+   (INFERENCE-TIME, which you CAN build): mixture-of-experts-style routing across
+   prompt/adapter "experts" then merge; cascades / speculative routing (cheap draft →
+   selective refine); self-consistency & majority/median voting; debate or
+   generate-then-verify; constrained / grammar-guided decoding; LLM-as-judge selection
+   with PAIRWISE (relative) comparison; retrieval-augmented prompting; ensembling diverse
+   decompositions. If you know a technique that fits the coverage gap, name it in your
+   write-up and adapt it — novelty grounded in a real method is encouraged.
+
+   TRAINING-TRACK ideas are OUT OF YOUR SCOPE (you only edit inference-side Swift and
+   cannot train): new or multiple specialised LoRA adapters, true MoE training,
+   changing the distillation data/objective. If your best idea needs one of these,
+   DO NOT attempt it — instead log a one-line note in `program.md` proposing it for the
+   human operator, and run a different inference-time experiment this iteration.
 3. **Code it** as a NEW named config in `Configs.swift`. CHOOSE A UNIQUE LABEL:
    scan BOTH `results/runs.jsonl` and `Configs.swift` for the highest existing
    `expNNN` and use the next integer. NEVER reuse a label that already appears in
