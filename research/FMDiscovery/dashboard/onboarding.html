@@ -57,6 +57,17 @@
   .node.fm{border-color:var(--fm);color:var(--fm);} .node.judge{border-color:var(--indigo);color:var(--indigo);}
   .node.lora{border-color:var(--lora);color:var(--lora);} .node.swift{border-color:var(--swift);color:var(--swift);}
   .callout{border-left:3px solid var(--lora);background:#fffbeb;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;font-size:15px;}
+  /* ruler vs. agent — two accented cards with a separator */
+  .versus{display:flex;align-items:stretch;gap:14px;margin:16px 0;}
+  @media(max-width:680px){.versus{flex-direction:column;}}
+  .vs-card{flex:1 1 0;border:1px solid var(--line);border-top:3px solid var(--muted);border-radius:12px;padding:15px 18px;background:#fff;}
+  .vs-ruler{border-top-color:var(--indigo);}
+  .vs-agent{border-top-color:var(--fm);}
+  .vs-head{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px;}
+  .vs-ruler .vs-head{color:var(--indigo);}
+  .vs-agent .vs-head{color:var(--fm);}
+  .vs-card p{margin:0;font-size:14.5px;line-height:1.55;color:#334155;}
+  .vs-sep{align-self:center;flex:0 0 auto;font-weight:700;color:var(--muted);font-size:14px;}
   .callout.key{border-left-color:var(--green);background:#f0fdf4;}
   /* worked four-column example */
   .ex-tag{display:inline-block;background:#fce7f3;color:var(--fm);font-weight:700;font-size:11px;
@@ -85,6 +96,9 @@
   .snap-legend{font-size:12.5px;color:var(--muted);margin:10px 0 0;display:flex;flex-wrap:wrap;gap:14px;}
   .snap-legend .k{display:inline-flex;align-items:center;gap:5px;}
   .snap-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  /* break a wide element out of the centered column to full viewport width */
+  .fullbleed{width:100vw;margin-left:calc(50% - 50vw);padding:0 32px;box-sizing:border-box;margin-top:14px;}
+  @media(max-width:760px){.fullbleed{padding:0 16px;}}
   .snap-full{width:100vw;margin-left:calc(50% - 50vw);padding:0 32px;box-sizing:border-box;margin-top:16px;}
   @media(max-width:760px){.snap-full{padding:0 16px;}}
   .snap-tablewrap{max-height:580px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;}
@@ -185,18 +199,16 @@
   <h2><span class="num">2</span>Autoresearch: a self-improving research loop</h2>
   <p class="sub">A frozen "ruler" to measure against, and a mutable "agent" we keep improving.</p>
   <p>Rather than hand-tune the on-device model by trial and error, we built an <strong>autoresearch loop</strong> (inspired by Andrej Karpathy's framing). It has two halves that must never blur together:</p>
-  <div class="flow">
-    <span class="node judge">Frozen RULER</span>
-    <span class="muted">vs.</span>
-    <span class="node fm">Mutable AGENT</span>
-  </div>
-  <div class="card">
-    <h3>The ruler (frozen)</h3>
-    <p style="margin:0">A fixed set of <strong>30 held-out tasks</strong>, each with a <strong>gold</strong> answer written by Sonnet, plus a Sonnet <strong>judge</strong> that compares the on-device answer to the gold head-to-head and scores it on a five-point rubric. This never changes — it is the honest measuring stick. Making the ruler easier is forbidden.</p>
-  </div>
-  <div class="card">
-    <h3>The agent (mutable)</h3>
-    <p style="margin:0">The on-device question-generator itself — its prompts, its multi-step pipelines, and (the big lever) a fine-tuned adapter. This is what every experiment changes, trying to score higher against the unchanging ruler.</p>
+  <div class="versus">
+    <div class="vs-card vs-ruler">
+      <div class="vs-head">Frozen RULER</div>
+      <p>A fixed set of <strong>30 held-out tasks</strong>, each with a <strong>gold</strong> answer written by Sonnet, plus a Sonnet <strong>judge</strong> that compares the on-device answer to the gold head-to-head and scores it on a five-point rubric. This never changes — it is the honest measuring stick. Making the ruler easier is forbidden.</p>
+    </div>
+    <div class="vs-sep">vs.</div>
+    <div class="vs-card vs-agent">
+      <div class="vs-head">Mutable AGENT</div>
+      <p>The on-device question-generator itself — its prompts, its multi-step pipelines, and (the big lever) a fine-tuned adapter. This is what every experiment changes, trying to score higher against the unchanging ruler.</p>
+    </div>
   </div>
   <p>Each experiment produces one number — a <strong>quality score from 0 to 1</strong> — plus the judge's written reasoning for every case. Because the ruler is fixed, scores are comparable across months of experiments. The <a href="index.html">live dashboard</a> plots every experiment as a point and tracks the running best.</p>
 </section>
@@ -231,6 +243,7 @@
     </ul>
   </div>
   <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from our test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
+  <div class="fullbleed">
   <div class="ex-grid">
     <div class="ex-col">
       <div class="ex-head ex-h-user">User input</div>
@@ -277,6 +290,7 @@
       <p class="rscale">each scored 1&ndash;5</p>
       <p class="ex-note">The on-device set asks a nonsensical question ("Which city in Paris are you staying in?" &mdash; Paris is a city) and omits two critical unknowns &mdash; the <strong>departure city</strong> and the <strong>party size</strong> &mdash; making it less useful for planning than the gold set.</p>
     </div>
+  </div>
   </div>
   <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
 
