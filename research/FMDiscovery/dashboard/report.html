@@ -19,6 +19,20 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
+/* small-multiples tapestry of miniature pipeline diagrams */
+.tw-wide{margin-top:16px;}
+@media(min-width:1120px){ .tw-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+.tapestry{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;}
+.tw-cell{margin:0;border:1px solid var(--rule);border-top:3px solid var(--rule);border-radius:6px;padding:6px 7px 5px;background:#fffef9;}
+.tw-cell.ty-infer{border-top-color:#9b998c;} .tw-cell.ty-sft{border-top-color:var(--ochre);} .tw-cell.ty-orpo{border-top-color:var(--accent);}
+.tw-dia{height:84px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.tw-dia svg{width:100%;height:100%;}
+.tw-none{color:var(--faint);}
+.tw-cell figcaption{display:flex;justify-content:space-between;gap:6px;margin-top:5px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.tw-lab{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tw-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted);margin:10px 0 0;}
+.tw-legend span{display:inline-flex;align-items:center;gap:6px;}
+.tw-legend i{width:18px;height:3px;display:inline-block;border-radius:2px;}
 </style>
 </head>
 <body>
@@ -75,6 +89,14 @@
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
   </div>
+
+  <p style="margin-top:22px"><strong>Every experiment, at a glance.</strong> Each tile is one run's on-device pipeline, in the order it was run; the top edge is tinted by lever type. Read as small-multiples — the <em>shape</em> of the search, from single-shot baselines through elaborate multi-call pipelines to the adapter-backed runs that fill the second half.</p>
+  <p class="tw-legend">
+    <span><i style="background:#9b998c"></i>Inference</span>
+    <span><i style="background:var(--ochre)"></i>SFT adapter</span>
+    <span><i style="background:var(--accent)"></i>ORPO preference</span>
+  </p>
+  <div class="tw-wide"><div id="tapestry" class="tapestry"></div></div>
 </section>
 
 <section id="confirmation">
@@ -143,5 +165,6 @@
 </footer>
 
 </div>
+<script type="module" src="report-tapestry.js"></script>
 </body>
 </html>
