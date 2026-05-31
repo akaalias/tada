@@ -1,0 +1,48 @@
+{
+  "summary": "Conditional over-count: gate count=8 on redundancy detection",
+  "hypothesis": "Gating exp046's count=8 over-produce on detected redundancy should preserve the pure champion's atom-5 drafts on clean cases while still fixing redundant ones, weakly dominating exp046's blanket over-count.",
+  "technique": "A deterministic Swift gate runs exp046's high-recall redundancy union over the pure greedy count=7 draft; if no redundant pair is detected the draft is returned verbatim, otherwise the pipeline falls back to exp046's full count=8-then-dedup fix.",
+  "result": "Scored 0.409 on the full-30 greedy eval (3 wins / 3 ties / 23 losses vs Sonnet, 1 refusal), \u22120.021 below champion exp046 (0.430) and identical to the bare count=7 champion. Rubric showed atom 4 / spec 3 / nonRed 3 / cov 3 / nat 4 \u2014 both spec and nonRed fell back from exp046's held 4s \u2014 confirming the hypothesis was falsified: the redundancy gate almost never fired because the detector under-fires on the low-overlap paraphrase pairs that are the native champion's actual redundancies, so exp052 degenerated to the bare champion. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Pure greedy count=7 champion draft",
+      "knobs": {
+        "sampling": "greedy",
+        "count": "7",
+        "model": "adapter-exp046"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "High-recall redundancy union check on 7",
+      "knobs": {
+        "detector": "jaccard+cos+binary-union"
+      }
+    },
+    {
+      "kind": "expand",
+      "text": "Conditional count=8 fallback if redundant",
+      "knobs": {
+        "count": "8",
+        "model": "adapter-exp046"
+      },
+      "call_labels": [
+        "count=8 draft when redundancy detected"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Dedup count=8 draft back to 7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions (pure or deduped)"
+    }
+  ],
+  "label": "exp052"
+}

@@ -731,6 +731,23 @@ public enum Configs {
         "exp051": DiscoveryConfig(topology: .adapterOverCountDistinctDrop,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-052: make the champion exp046 (0.430) over-count CONDITIONAL on detected
+        // redundancy. exp046 ALWAYS generates with schema .count(8); that off-distribution
+        // count perturbs the native first-7 on EVERY case — including the clean majority with
+        // no redundant pair — which is exactly why exp046 dropped atomicity from the pure
+        // champion's 5 to 4 (count=8-introduced noun-pair compounds "breed or age", "current
+        // age AND retirement age" that exp047's repair couldn't truncate). This avoids the
+        // perturbation where it isn't needed: take the PURE greedy count=7 champion draft
+        // (atom-5 native voice), run the same high-recall redundancy detector (Jaccard ≥0.5 OR
+        // cos ≥0.75 OR binary same-info) over the 7; if NO redundant pair → return the pure
+        // draft VERBATIM (atom-5 floor on clean cases); ONLY if a redundant pair is present →
+        // fall back to the exact exp046 count=8-then-dedup champion-native spare (nonRed 3→4).
+        // Weakly dominates exp046: clean cases recover the atomicity its blanket count=8 cost,
+        // redundant cases get exactly exp046's fix. Deterministic, greedy, floor-protected.
+        "exp052": DiscoveryConfig(topology: .adapterConditionalSpare,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

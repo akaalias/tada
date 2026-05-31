@@ -87,6 +87,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
         case .adapterOverCountDedup: return try await adapterOverCountDedup(input, repair: false)
         case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
+        case .adapterConditionalSpare: return try await adapterConditionalSpare(input)
         case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
         case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
         case .adapterOverCountGivensDedup: return try await adapterOverCountGivensDedup(input)
@@ -994,6 +995,74 @@ public struct ConfiguredAgent: Sendable {
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
                                                   requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-052: CONDITIONAL over-count. The champion exp046 (0.430) ALWAYS generates with
+    /// schema .count(8), but that off-distribution count perturbs the native first-7 on EVERY
+    /// case — including the majority that have no redundant pair and never needed a spare. That
+    /// perturbation is exactly why exp046 dropped atomicity from the pure champion's 5 to 4
+    /// (the judge keeps flagging count=8-introduced noun-pair compounds like "breed or age",
+    /// "current age AND retirement age"). exp047 tried to repair them post-hoc and failed (they
+    /// are un-truncatable). This experiment instead AVOIDS the perturbation where it isn't
+    /// needed: (1) take the PURE greedy count=7 champion draft (atom-5 native voice); (2) run
+    /// the same high-recall redundancy detector (Jaccard ≥0.5 OR cos ≥0.75 OR binary same-info)
+    /// over those 7; (3) if NO redundant pair exists, return the pure champion VERBATIM — the
+    /// atom-5 floor on every clean case; (4) ONLY if a redundant pair is present, fall back to
+    /// the exact exp046 count=8-then-dedup path to recover the wasted slot with a champion-native
+    /// spare (nonRed 3→4). Weakly dominates exp046: clean cases keep the cleaner pure draft
+    /// (recovering the atomicity exp046's blanket count=8 cost), redundant cases get exactly
+    /// exp046's fix. Deterministic, greedy, floor-protected; the only change vs exp046 is making
+    /// the over-count CONDITIONAL on detected redundancy rather than unconditional.
+    private func adapterConditionalSpare(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        let qs = plan.questions
+        guard qs.count >= 7 else { return plan.toContract() }
+        let titles = Array(qs.prefix(7)).map { $0.question }
+
+        // High-recall redundancy union, identical detector to exp046.
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosHigh(_ i: Int, _ j: Int) -> Bool {
+            guard let v = vecs else { return false }
+            return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosHigh(i, j) { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        var hasRedundancy = false
+        outer: for j in 1..<titles.count {
+            for i in 0..<j where await redundant(i, j) { hasRedundancy = true; break outer }
+        }
+
+        // Clean case → pure champion floor (preserves atom-5 native phrasing). Redundant case
+        // → recover the wasted slot via the exact exp046 count=8-then-dedup champion-native spare.
+        if !hasRedundancy { return plan.toContract() }
+        return try await adapterOverCountDedup(input, repair: false)
     }
 
     /// EXP-051: same over-count(8) + high-recall redundancy DETECTOR as the champion exp046,
