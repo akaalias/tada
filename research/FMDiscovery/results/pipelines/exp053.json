@@ -1,0 +1,91 @@
+{
+  "summary": "2-shot both-orders redundancy judge on exp046 base",
+  "hypothesis": "Adding a recall-tilted redundancy judge with 2-shot exemplars in both orders on top of the exp046 count=8 pipeline should reduce redundancy and lift overall quality, because surfacing both orderings of pairwise comparisons guards against position bias and the recall tilt should preserve coverage.",
+  "technique": "The exp046 pipeline (count=8 base) is extended with a model-based redundancy judge that runs each candidate pair in both orders (both-orders voting) with 2-shot in-context exemplars, tilted toward recall \u2014 implemented as a deterministic-select stage driven by those pairwise model calls.",
+  "result": "Scored 0.347 on the full-30 gate (1 win / 1 tie / 27 losses vs Sonnet), with specPass=100% but rubric scores of atom=4, spec=3, cover=3, nat=3, nonRed=3. Despite the redundancy judge, quality did not improve over prior experiments \u2014 coverage and redundancy remained at 3 \u2014 and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "Base generate, count=8 (exp046)",
+      "knobs": {
+        "n": "8"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Both-orders redundancy judge, 2-shot",
+      "knobs": {
+        "sampling": "both-orders",
+        "shots": "2",
+        "calls": "56"
+      },
+      "call_labels": [
+        "pair 1 fwd",
+        "pair 1 rev",
+        "pair 2 fwd",
+        "pair 2 rev",
+        "pair 3 fwd",
+        "pair 3 rev",
+        "pair 4 fwd",
+        "pair 4 rev",
+        "pair 5 fwd",
+        "pair 5 rev",
+        "pair 6 fwd",
+        "pair 6 rev",
+        "pair 7 fwd",
+        "pair 7 rev",
+        "pair 8 fwd",
+        "pair 8 rev",
+        "pair 9 fwd",
+        "pair 9 rev",
+        "pair 10 fwd",
+        "pair 10 rev",
+        "pair 11 fwd",
+        "pair 11 rev",
+        "pair 12 fwd",
+        "pair 12 rev",
+        "pair 13 fwd",
+        "pair 13 rev",
+        "pair 14 fwd",
+        "pair 14 rev",
+        "pair 15 fwd",
+        "pair 15 rev",
+        "pair 16 fwd",
+        "pair 16 rev",
+        "pair 17 fwd",
+        "pair 17 rev",
+        "pair 18 fwd",
+        "pair 18 rev",
+        "pair 19 fwd",
+        "pair 19 rev",
+        "pair 20 fwd",
+        "pair 20 rev",
+        "pair 21 fwd",
+        "pair 21 rev",
+        "pair 22 fwd",
+        "pair 22 rev",
+        "pair 23 fwd",
+        "pair 23 rev",
+        "pair 24 fwd",
+        "pair 24 rev",
+        "pair 25 fwd",
+        "pair 25 rev",
+        "pair 26 fwd",
+        "pair 26 rev",
+        "pair 27 fwd",
+        "pair 27 rev",
+        "pair 28 fwd",
+        "pair 28 rev"
+      ]
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp053"
+}

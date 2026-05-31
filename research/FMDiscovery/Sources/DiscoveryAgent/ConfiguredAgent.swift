@@ -92,6 +92,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
         case .adapterOverCountGivensDedup: return try await adapterOverCountGivensDedup(input)
         case .adapterOverCountDistinctDrop: return try await adapterOverCountDistinctDrop(input)
+        case .adapterOverCountHiRecall: return try await adapterOverCountHiRecall(input)
         }
     }
 
@@ -994,6 +995,86 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-053: EXACT exp046 over-count(8)-then-dedup, changing ONLY the binary semantic
+    /// redundancy judgment — the explicitly-documented binding constraint (exp048/051/052
+    /// all conclude the detector UNDER-FIRES on the deep low-overlap paraphrase pairs that
+    /// survive in the multi-redundant cases). The Jaccard (0.5) / cos (0.75) thresholds, the
+    /// count=8 draw, the first-redundant-pair drop-later-member scan, and the no-redundancy
+    /// 8th-drop floor are all byte-for-byte identical to exp046 — a clean single-variable A/B.
+    /// The new check is RECALL-TILTED: a 2-shot prompt (genuine paraphrase = true, distinct
+    /// fact = false) that explicitly leans true when unsure, run in BOTH orders and OR'd
+    /// (catches asymmetric verdicts). Bet: catching one deep redundancy the zero-shot check
+    /// missed lets the count=8 spare clean the multi-redundant cases exp046 leaves standing.
+    private func adapterOverCountHiRecall(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+
+        // Recall-tilted, 2-shot binary redundancy judge (the ONLY change vs exp046).
+        let dedupSystem = """
+        You are checking whether TWO clarifying questions a coach asks a user before \
+        planning a task are REDUNDANT — i.e. they probe the same underlying unknown, so \
+        asking BOTH would waste one of the user's limited slots. Answer true if a single \
+        answer would substantially address both, OR if they target overlapping aspects of \
+        the same dimension even when worded very differently. Answer false ONLY if each \
+        asks for a clearly distinct, separately-actionable fact. When genuinely unsure, \
+        lean toward true.
+
+        Examples:
+        - "What date is the event?" / "When is it taking place?" → true (both pin timing)
+        - "Where will it be held?" / "Which venue have you chosen?" → true (same location)
+        - "How will you split fixed versus variable costs?" / "Which expense categories \
+        matter most?" → true (both probe the expense breakdown)
+        - "What is your budget?" / "What date is the event?" → false (distinct facts)
+        - "How many guests are coming?" / "What theme do you want?" → false (distinct facts)
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosHigh(_ i: Int, _ j: Int) -> Bool {
+            guard let v = vecs else { return false }
+            return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+        }
+        func askSame(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nAre A and B redundant (probing the same underlying unknown)?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        // Both-orders OR: a redundancy the model concedes in EITHER direction counts.
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            if await askSame(a, b) { return true }
+            return await askSame(b, a)
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosHigh(i, j) { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        var dropIdx = qs.count - 1   // default: drop the 8th → ≈champion first-7 floor.
+        outer: for j in 1..<qs.count {
+            for i in 0..<j where await redundant(i, j) { dropIdx = j; break outer }
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 

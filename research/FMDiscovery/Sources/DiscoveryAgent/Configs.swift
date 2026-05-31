@@ -748,6 +748,25 @@ public enum Configs {
         "exp052": DiscoveryConfig(topology: .adapterConditionalSpare,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-053: attack the ONE binding constraint the over-count family keeps hitting.
+        // exp048/051/052 all conclude exp046's win is capped by the redundancy DETECTOR's
+        // RECALL: on the multi-redundant cases (team_offsite venue×2, gp location overlap,
+        // household_budget fixed/variable, find_therapist Q1≈Q2≈Q5) the deep paraphrase pairs
+        // have Jaccard<0.5, cos<0.75, AND the zero-shot single-order binary check says "false"
+        // (it's conservative), so the count=8 dedup drops the SHALLOW 8th-dup and leaves the
+        // real waste standing → nonRed capped. This is the EXACT exp046 pipeline with ONE
+        // variable changed: the binary semantic-redundancy judgment is now RECALL-TILTED —
+        // a 2-shot prompt (genuine-paraphrase=true / distinct-fact=false) that leans true when
+        // unsure, run in BOTH orders and OR'd. Jaccard/cos thresholds, the count=8 draw, the
+        // first-pair drop-later-member scan, and the 8th-drop floor are byte-identical to
+        // exp046 — a clean A/B isolating detector recall. Bet: catching one deep redundancy the
+        // zero-shot check missed lets the native spare clean a case exp046 leaves redundant,
+        // lifting nonRed further. Risk (logged honestly): a recall-tilt can false-positive and
+        // drop a DISTINCT question (coverage/spec hit) since only one slot is dropped.
+        "exp053": DiscoveryConfig(topology: .adapterOverCountHiRecall,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
