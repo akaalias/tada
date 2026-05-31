@@ -35,7 +35,7 @@ function chartSVG(runs) {
     });
     return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${dash ? 1.5 : 2.5}"${dash ? ' stroke-dasharray="5 4"' : ''}/>`;
   };
-  s += bestLine('dev', '#86efac', true);
+  s += bestLine('dev', GREEN, false);
   s += bestLine('full', GREEN, false);
   // points
   runs.forEach((r, i) => {
