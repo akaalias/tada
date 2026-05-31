@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Coverage Wall — Final Report</title>
+<link rel="stylesheet" href="onboarding.css">
+<style>
+/* report-only table styling — kept here so onboarding.css stays untouched */
+.rpt-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px;
+         border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
+.rpt-tbl th{text-align:left;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+            text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+            padding:9px 14px 9px 0;border-bottom:1px solid var(--rule);}
+.rpt-tbl td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top;}
+.rpt-tbl tr:last-child td{border-bottom:none;}
+.rpt-tbl .num{font-variant-numeric:lining-nums tabular-nums;}
+.rpt-tbl .hi{font-weight:700;}
+.rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
+.verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
+.verdict h3{margin:0 0 6px;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="eyebrow">Alexis Rondeau · final report</div>
+  <h1>The coverage wall</h1>
+  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever I could find — an on-device 3B model matched a frontier cloud model on four of five quality dimensions, but never on the fifth. This is the record of how far it got, and the controlled test that shows why the last dimension is a wall.</p>
+  <div class="nav">
+    <a href="onboarding.html">Project overview</a>
+    <a href="index.html">Live dashboard</a>
+    <a href="#verdict">The verdict</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section id="question">
+  <h2><span class="num">1</span>The question</h2>
+  <p class="sub">Move one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
+  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
+  <p>To answer it honestly I built an <strong>autoresearch loop</strong>: a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
+</section>
+
+<section id="climb">
+  <h2><span class="num">2</span>The climb</h2>
+  <p class="sub">Real progress — quality roughly doubled. Then it stalled.</p>
+  <div class="prog">
+    <div class="step"><div class="tag">Stock baseline</div><div class="q">0.28</div><div class="lbl">3B, single shot</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">In-context ceiling</div><div class="q">0.32</div><div class="lbl">best of 29 prompting / RAG tries</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">Fine-tuned adapter</div><div class="q">0.41</div><div class="lbl">LoRA on the model's weights</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step best"><div class="tag">Best so far</div><div class="q">0.44</div><div class="lbl">adapter + over-generate &amp; prune</div></div>
+  </div>
+  <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
+</section>
+
+<section id="levers">
+  <h2><span class="num">3</span>Everything I tried</h2>
+  <p class="sub">Five lever classes, 71 experiments, 9 that set a new best. One dimension stuck throughout.</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
+    <tbody>
+      <tr><td>Stock baseline</td><td class="num">1</td><td class="num">0.28</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-infer">Inference</span> &nbsp;prompt · schema · decoding · RAG · multi-call pipelines · self-critique · over-generate-prune · solution-space info-gain · answer-simulation · decomposed verification</td><td class="num">29</td><td class="num">0.32</td><td class="num">3</td><td>dev-10</td></tr>
+      <tr><td><span class="pill p-sft">SFT</span> &nbsp;LoRA adapters (imitation), incl. more data &amp; coverage-forced data</td><td class="num">34</td><td class="num hi">0.44</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, style-vs-style pairs</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, on-policy pairs (gold vs the model's own drafts)</td><td class="num">2</td><td class="num">0.40</td><td class="num">3</td><td>full-30</td></tr>
+    </tbody>
+  </table>
+  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 71 runs</em> (the only values ever observed, on either gate, were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, or for preference learning.</p>
+  <div class="callout">
+    <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
+  </div>
+</section>
+
+<section id="confirmation">
+  <h2><span class="num">4</span>The confirmation experiment</h2>
+  <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
+  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge, rubric and greedy decoding — should clear it. So I ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Candidate model</th><th>Where</th><th>Quality</th><th>Coverage</th><th>vs gold (W/T/L)</th></tr></thead>
+    <tbody>
+      <tr><td>Apple Foundation Model (~3B)</td><td>on-device</td><td class="num">0.44</td><td class="num">3</td><td class="num">best 2/5/22</td></tr>
+      <tr class="anchor"><td>Claude Haiku 4.5</td><td>cloud</td><td class="num">0.55</td><td class="num hi">4</td><td class="num">4/11/15</td></tr>
+      <tr class="anchor"><td>Claude Sonnet 4.6 <span class="muted">(= the gold model)</span></td><td>cloud</td><td class="num">0.65</td><td class="num hi">4</td><td class="num">4/18/8</td></tr>
+    </tbody>
+  </table>
+  <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
+  <ul>
+    <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — and matches it on four of five dimensions. The whole gap is one coverage point.</li>
+  </ul>
+</section>
+
+<section id="verdict">
+  <h2><span class="num">5</span>The verdict</h2>
+  <div class="verdict">
+    <h3>Coverage is a capability ceiling of the 3B base, not a method we failed to find.</h3>
+    <p style="margin:0">Imitation, preference learning, and every inference-time technique in the 2024–2025 literature converge at coverage 3. A more capable model clears it on the identical harness. The remaining gap between the on-device model and the cloud — a single rubric point on a single dimension — is bound to model capacity, and no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
+  </div>
+  <p><strong>What this means for the product.</strong> The on-device model is already at near-parity on phrasing, specificity, naturalness and non-redundancy, and reaches ~two-thirds of the frontier's practical quality. The one weakness — occasionally missing the single pivotal unknown — is real but bounded. Three honest paths:</p>
+  <div class="cols">
+    <div class="col yes">
+      <h3>Ship &amp; document</h3>
+      <ul>
+        <li>Ship the 0.44 adapter; record coverage as a known, bounded limitation.</li>
+        <li>Best fit if local + free + private outweighs one occasionally-missed question.</li>
+      </ul>
+    </div>
+    <div class="col wow">
+      <h3>Redesign around it</h3>
+      <ul>
+        <li>Turn coverage from a <em>judgment</em> the model must nail into a <em>recall</em> task it can do: surface a few candidate axes (from the corpus of nearest task types) and let the user pick.</li>
+        <li>The only path that actually delivers full coverage to a user, on-device, today.</li>
+      </ul>
+    </div>
+    <div class="col no">
+      <h3>Wait for a bigger base</h3>
+      <ul>
+        <li>Re-run this exact harness when Apple ships a larger on-device model; it is now a turnkey regression test.</li>
+        <li>No work until then; outcome outside my control.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted" style="font-size:15px">My recommendation: <strong>redesign the feature around the ceiling</strong> — it's the only option that gives the user good coverage on-device now, and it sidesteps a wall that more training won't break.</p>
+</section>
+
+<section id="repro">
+  <h2><span class="num">6</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training and ORPO scripts, the on-policy draft generator, and the cloud ceiling-confirmation harness are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 are reference measurements only and are deliberately kept out of the on-device run log.</p>
+</section>
+
+<footer>
+  <span class="kpi">Experiments<b>71</b></span>
+  <span class="kpi">On-device best<b>0.44</b></span>
+  <span class="kpi">Coverage, on-device<b>3</b></span>
+  <span class="kpi">Coverage, cloud<b>4</b></span>
+  <p style="margin-top:16px">Built and researched by <strong>Alexis Rondeau</strong>. On-device model: Apple Foundation Model (~3B). Reference models: Claude Haiku 4.5, Claude Sonnet 4.6.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -24,6 +24,18 @@ func stringFlag(_ name: String) -> String? {
 
 func selectedAgent() -> (name: String, fn: DiscoveryAgentFn) {
     let name = stringFlag("--agent") ?? "baseline"
+    // Ceiling-confirmation: a CLOUD model as the candidate, generating via the EXACT
+    // production discovery prompt (GoldGenerator), judged by the same harness. Holds
+    // prompt/schema/gold/judge/rubric constant and swaps only the MODEL, to attribute
+    // the coverage gap to on-device capability. Not an on-device agent.
+    if name.hasPrefix("cloud_") {
+        let model = name == "cloud_haiku" ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6"
+        guard let client = try? AnthropicClient(model: model) else {
+            FileHandle.standardError.write(Data("cloud agent needs ANTHROPIC_API_KEY\n".utf8)); exit(2)
+        }
+        let gen = GoldGenerator(client: client)
+        return (name, { try await gen.generate($0) })
+    }
     guard let config = Configs.named(name) else {
         FileHandle.standardError.write(Data("unknown agent '\(name)'. known: \(Configs.registry.keys.sorted().joined(separator: ", "))\n".utf8))
         exit(2)
