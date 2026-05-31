@@ -698,6 +698,22 @@ public enum Configs {
         "exp049": DiscoveryConfig(topology: .adapterCorpusOverCountDedup,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-050: extend champion exp046 (0.430) over-count(8)-then-dedup to a SECOND
+        // judge-confirmed waste mode. exp046 drops only the first REDUNDANT pair, but the
+        // judge also flags slots that merely RE-ASK a fact the task already states
+        // (apartment_move "which city" vs input "across the city"; buy_used_car "new or
+        // used?" vs input "buy a used car"; dinner_party location). Same single greedy native
+        // count=8 call (intact native set + ONE native spare); then a lever-F LOCAL BINARY
+        // reading check on the adapter — "does the task text ALREADY state this fact?", the
+        // reliable small-model signal (exp037), NOT the blocked which-unknown-is-critical
+        // judgment — flags given-restatement slots. Drop the FIRST such (keep 7 native), ELSE
+        // fall back to exp046's first-redundant-pair drop, ELSE drop the 8th (champion floor).
+        // Floor = exp046 on every case with no given-restatement, so it can only swap a
+        // confirmed-wasted slot for a genuine native unknown. Deterministic, greedy.
+        "exp050": DiscoveryConfig(topology: .adapterOverCountGivensDedup,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

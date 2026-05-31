@@ -1,0 +1,33 @@
+{
+  "summary": "Over-count(8) + given-restatement drop + redundancy fallback",
+  "hypothesis": "Combining over-generation of 8 candidates with a targeted lever-F given-restatement drop on the champion adapter \u2014 falling back to exp046's redundancy-drop logic \u2014 should push quality above the current best by reducing repeated or restated questions while keeping coverage high.",
+  "technique": "On the champion adapter, expand to 8 candidate questions, apply a deterministic lever-F given-restatement filter in Swift, then fall back to the exp046 redundancy-drop post-processing pass to trim the final 7. No additional model calls beyond the initial expand.",
+  "result": "Scored 0.396 on the full-30 gate (2 wins / 3 ties / 24 losses vs Sonnet); specPass hit 100% but rubric shows coverage and spec both stuck at 3, nonRedundancy at 3, confirming the restatement-drop and redundancy fallback did not meaningfully lift quality over the champion. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate 8 candidates on champion adapter",
+      "knobs": {
+        "n": "8",
+        "model": "champion-adapter"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Lever-F given-restatement drop in Swift"
+    },
+    {
+      "kind": "post",
+      "text": "exp046 fallback redundancy drop in Swift"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp050"
+}

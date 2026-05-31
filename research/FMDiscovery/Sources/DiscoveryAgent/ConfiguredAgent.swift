@@ -89,6 +89,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
         case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
         case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
+        case .adapterOverCountGivensDedup: return try await adapterOverCountGivensDedup(input)
         }
     }
 
@@ -991,6 +992,106 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-050: extend the champion exp046 over-count(8)-then-dedup to attack a SECOND
+    /// judge-confirmed waste mode it ignores — questions that merely RE-ASK a fact the task
+    /// statement already provides (apartment_move "which city?" with input "across the city";
+    /// buy_used_car "new or used?" with input "buy a used car"; dinner_party location). exp046
+    /// only drops the first REDUNDANT pair, leaving these given-restatement slots in place.
+    /// Same single greedy native count=8 call (intact native set + ONE native spare), then a
+    /// lever-F LOCAL BINARY reading check on the adapter ("does the task text ALREADY state
+    /// this fact?" — reading comprehension, the reliable small-model signal exp037 validated,
+    /// NOT the holistic judgment the wall blocks) flags any slot that restates a given. Drop
+    /// the FIRST flagged given-restatement (keep 7 native); ELSE fall back to exp046's
+    /// first-redundant-pair drop; ELSE drop the 8th (≈champion first-7 floor). Floor preserved
+    /// on every case with no given-restatement, so this can only swap a confirmed-wasted slot
+    /// for a genuine native unknown. Deterministic, greedy, champion-priority, intact set.
+    private func adapterOverCountGivensDedup(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+
+        // Lever-F local binary GIVEN-RESTATEMENT check: a high-precision reading task the
+        // small model CAN do (is the answer literally already in the task text?), distinct
+        // from the which-unknown-is-critical judgment the wall blocks. Strict wording so it
+        // only fires when the task text genuinely already supplies the fact.
+        let givenSystem = """
+        You are a strict checker. You are given the exact TASK a user typed and ONE \
+        clarifying question someone wants to ask them. Decide whether the TASK TEXT ITSELF \
+        ALREADY states the answer to the question, so asking it would just restate a fact \
+        the user already gave. Answer true ONLY if the task text literally already provides \
+        that fact (for example task "buy a used car" already says the car is USED, so \
+        "Are you looking for a new or used car?" is already-answered = true; task "move \
+        across the city" already says the location is this city, so "Which city?" = true). \
+        Answer false if the question asks for any genuinely new information the task text \
+        does not already state.
+        """
+        func givenRestated(_ q: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { givenSystem }
+            let p = "Task the user typed: \"\(input)\"\nClarifying question: \"\(q)\"\n\nDoes the task text already state the answer to this question?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+
+        // Pass 1: drop the FIRST slot that merely restates a fact the task already gives.
+        var dropIdx: Int? = nil
+        for i in 0..<qs.count where await givenRestated(titles[i]) { dropIdx = i; break }
+
+        // Pass 2 (exp046 fallback): first redundant LATER slot (high-recall union).
+        if dropIdx == nil {
+            let dedupSystem = """
+            You are a strict checker comparing TWO clarifying questions a coach might ask a \
+            user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+            information — i.e. a single answer would substantially answer both, or they probe \
+            the same underlying unknown even if worded differently (for example "What date is \
+            the event?" and "When will it take place?" are the same; "What is your budget?" and \
+            "What date is the event?" are different). Answer true ONLY if the two are \
+            essentially redundant; answer false if each asks for a genuinely different fact.
+            """
+            let vecs = SemanticRetrieval.vectors(for: titles)
+            func cosHigh(_ i: Int, _ j: Int) -> Bool {
+                guard let v = vecs else { return false }
+                return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+            }
+            func sameInfo(_ a: String, _ b: String) async -> Bool {
+                let s = LanguageModelSession(model: model) { dedupSystem }
+                let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+                guard let r = try? await s.respond(
+                    to: p, generating: FMYesNo.self,
+                    options: config.options(temp: 0, sampling: .greedy)) else { return false }
+                return r.content.yes
+            }
+            func redundant(_ i: Int, _ j: Int) async -> Bool {
+                if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+                if cosHigh(i, j) { return true }
+                return await sameInfo(titles[i], titles[j])
+            }
+            outer: for j in 1..<qs.count {
+                for i in 0..<j where await redundant(i, j) { dropIdx = j; break outer }
+            }
+        }
+
+        // Pass 3 (floor): no given-restatement and no redundant pair → drop the 8th.
+        qs.remove(at: dropIdx ?? (qs.count - 1))
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 
