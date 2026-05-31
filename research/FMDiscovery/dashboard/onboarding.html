@@ -36,6 +36,8 @@
   .prog{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:8px 0 4px;}
   .step{flex:1 1 120px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;}
   .step.best{border-color:var(--green);background:#f0fdf4;}
+  .step .tag{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:5px;}
+  .step.best .tag{color:var(--green);}
   .step .q{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;}
   .step .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
   .arrow{align-self:center;color:var(--muted);font-weight:700;}
@@ -56,6 +58,26 @@
   .node.lora{border-color:var(--lora);color:var(--lora);} .node.swift{border-color:var(--swift);color:var(--swift);}
   .callout{border-left:3px solid var(--lora);background:#fffbeb;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;font-size:15px;}
   .callout.key{border-left-color:var(--green);background:#f0fdf4;}
+  /* worked four-column example */
+  .ex-tag{display:inline-block;background:#fce7f3;color:var(--fm);font-weight:700;font-size:11px;
+          letter-spacing:.04em;text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:8px;}
+  .ex-grid{display:grid;grid-template-columns:.7fr 1fr 1fr 1fr;border:1px solid var(--line);
+           border-radius:12px;overflow:hidden;background:#fff;margin:12px 0;}
+  @media(max-width:760px){.ex-grid{grid-template-columns:1fr;}}
+  .ex-col{padding:14px 15px;border-right:1px solid var(--line);}
+  .ex-col:last-child{border-right:none;}
+  @media(max-width:760px){.ex-col{border-right:none;border-bottom:1px solid var(--line);}}
+  .ex-head{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+  .ex-h-user{color:var(--muted);} .ex-h-gold{color:var(--green);}
+  .ex-h-fm{color:var(--fm);} .ex-h-judge{color:var(--indigo);}
+  .ex-model{font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin:2px 0 9px;}
+  .ex-input{font-size:15px;font-weight:600;margin:0;}
+  .ex-list{margin:0;padding-left:17px;font-size:12.5px;line-height:1.45;color:#334155;}
+  .ex-list li{margin:0 0 5px;} .ex-list li.bad{color:var(--red);}
+  .verdict-badge{display:inline-block;background:#fee2e2;color:var(--red);font-weight:700;
+                 font-size:11px;padding:3px 10px;border-radius:999px;}
+  .ex-note{font-size:12.5px;line-height:1.5;color:#334155;margin:9px 0 0;}
+  .ex-caption{font-size:13px;color:var(--muted);margin:12px 0 0;line-height:1.6;}
   footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;}
   .kpi{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:4px 8px 4px 0;background:#fff;}
   .kpi b{font-size:18px;font-variant-numeric:tabular-nums;}
@@ -88,6 +110,48 @@
     <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. We use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we are trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
   </div>
   <p>The on-device model is ~20&times; smaller than the cloud model. The whole project is the question: <strong>can a small specialized model match a large general one on a narrow, well-defined task?</strong></p>
+
+  <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from our test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
+  <div class="ex-grid">
+    <div class="ex-col">
+      <div class="ex-head ex-h-user">User input</div>
+      <div class="ex-model">what the user types</div>
+      <p class="ex-input">"Plan a trip to Paris"</p>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-gold">Gold standard</div>
+      <div class="ex-model">claude-sonnet-4-6 &middot; cloud</div>
+      <ol class="ex-list">
+        <li>What city are you departing from?</li>
+        <li>When are you planning to travel?</li>
+        <li>How many people are going on this trip?</li>
+        <li>How long do you plan to stay in Paris?</li>
+        <li>What is your total budget for this trip?</li>
+        <li>What type of accommodation do you prefer?</li>
+        <li>What is the main purpose of your visit?</li>
+      </ol>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-fm">On-device candidate</div>
+      <div class="ex-model">Apple FM ~3B &middot; on device</div>
+      <ol class="ex-list">
+        <li>What is your travel date or timeframe?</li>
+        <li>How many nights will you stay in Paris?</li>
+        <li>What is your total budget for the trip?</li>
+        <li class="bad">Which city in Paris are you staying in?</li>
+        <li>Do you prefer a guided tour or self-guided exploration?</li>
+        <li>Is this trip for a specific occasion or purpose?</li>
+        <li>Do you have any travel restrictions or mobility needs?</li>
+      </ol>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-judge">Judgement</div>
+      <div class="ex-model">claude-sonnet-4-6</div>
+      <p><span class="verdict-badge">Gold better</span></p>
+      <p class="ex-note">The on-device set asks a nonsensical question ("Which city in Paris are you staying in?" &mdash; Paris is a city) and omits two critical unknowns &mdash; the <strong>departure city</strong> and the <strong>party size</strong> &mdash; making it less useful for planning than the gold set.</p>
+    </div>
+  </div>
+  <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
 </section>
 
 <section id="autoresearch">
@@ -154,13 +218,13 @@
 
   <p><strong>The climb so far</strong> (quality on the full 30-case gate):</p>
   <div class="prog">
-    <div class="step"><div class="q">0.28</div><div class="lbl">Stock model, single shot</div></div>
+    <div class="step"><div class="tag">Baseline</div><div class="q">0.28</div><div class="lbl">Stock model, single shot</div></div>
     <span class="arrow">&rarr;</span>
-    <div class="step"><div class="q">~0.32</div><div class="lbl">Best prompting / retrieval</div></div>
+    <div class="step"><div class="tag">In-context experiments</div><div class="q">~0.32</div><div class="lbl">Best of ~27 prompting / retrieval tries</div></div>
     <span class="arrow">&rarr;</span>
-    <div class="step"><div class="q">0.41</div><div class="lbl">Fine-tuned adapter</div></div>
+    <div class="step"><div class="tag">Adapter experiment</div><div class="q">0.41</div><div class="lbl">Fine-tuned on the model's weights</div></div>
     <span class="arrow">&rarr;</span>
-    <div class="step best"><div class="q">0.44</div><div class="lbl">Adapter + over-generate &amp; prune (current best)</div></div>
+    <div class="step best"><div class="tag">Best experiment so far</div><div class="q">0.44</div><div class="lbl">Adapter + over-generate &amp; prune</div></div>
   </div>
   <p class="muted" style="font-size:14px">For reference, a perfect tie with Sonnet on every case would be ~0.5; consistently beating it would be higher. We are not there — the current best still loses about 21 of 30 head-to-heads — but the trajectory is real and every step is reproducible.</p>
 
