@@ -1,10 +1,16 @@
 // Static, non-interactive snapshot of the experiment record for the onboarding page:
 // a simplified SVG progress chart + a compact table. Reuses the dashboard's data
 // fetch so it always reflects the latest runs. No hover/expand — read-only.
-import { fetchRuns, fetchOperators } from './api.js';
+import { fetchRuns, fetchCosts, fetchTypes } from './api.js';
 
-const GREEN = '#16a34a', GREY = '#94a3b8', RED = '#dc2626', MUTED = '#64748b', LINE = '#e2e8f0';
-const OP = { human: 'Interactive', agent: 'Autonomous' };
+// Tufte palette: near-black data ink, receding gray for discarded, rust for invalid.
+const GREEN = '#111111', GREY = '#b9b6a6', RED = '#8c2f1f', MUTED = '#6b6a60', LINE = '#ece9da';
+// method type -> [short label, css class]; matches the live dashboard's Type column
+const TYPE = {
+  'Inference-Time': ['Inference', 't-inf'],
+  'Supervised Fine-Tuning': ['SFT', 't-sft'],
+  'Preference (ORPO)': ['ORPO', 't-orpo'],
+};
 
 function chartSVG(runs) {
   const W = 900, H = 300, pad = { l: 48, r: 16, t: 16, b: 38 };
@@ -52,35 +58,43 @@ function chartSVG(runs) {
 
 const esc = s => (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
-function tableHTML(runs, ops) {
-  const rows = runs.map(r => {
-    const op = OP[ops[r.label]] || '—';
+function tableHTML(runs, costs, types) {
+  const ordered = [...runs].reverse();                 // most recent at the top
+  const rows = ordered.map((r, i) => {
+    const t = TYPE[types[r.label]];
+    const ty = t ? `<span class="snap-ty ${t[1]}">${t[0]}</span>` : '<span class="snap-dash">—</span>';
+    const c = costs[r.label];
+    const cost = c != null ? `$${c.toFixed(2)}` : '<span class="snap-dash">—</span>';
     const status = r.invalid ? '<span class="snap-st st-inv">Invalid</span>'
       : r.kept ? '<span class="snap-st st-kept">Kept</span>'
       : '<span class="snap-st st-disc">Discarded</span>';
-    return `<tr${r.kept && !r.invalid ? ' class="snap-keptrow"' : ''}>`
-      + `<td>${r.index}</td><td>${r.label}</td><td>${op}</td>`
-      + `<td>${(r.subset || 'full')}-${r.n || ''}</td>`
-      + `<td class="snap-q">${r.quality.toFixed(3)}</td><td>${status}</td>`
-      + `<td class="snap-move"><span>${esc(r.note)}</span></td></tr>`;
+    const cls = [i === 0 ? 'snap-latest' : '', r.kept && !r.invalid ? 'snap-keptrow' : ''].filter(Boolean).join(' ');
+    return `<tr${cls ? ` class="${cls}"` : ''}>`
+      + `<td>${r.index}</td><td>${r.label}</td><td>${ty}</td>`
+      + `<td class="snap-q">${Math.round(r.quality * 100)}%</td><td>${status}</td>`
+      + `<td class="snap-move"><span>${esc(r.note)}</span></td>`
+      + `<td class="snap-cost">${cost}</td></tr>`;
   }).join('');
-  return `<table class="snap-tbl"><thead><tr><th>#</th><th>Label</th><th>Operator</th><th>Set</th><th>Quality</th><th>Status</th><th>Move (what was tried)</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const total = runs.reduce((a, r) => a + (costs[r.label] || 0), 0);
+  const foot = `<tr class="snap-total"><td colspan="6">Total agent cost</td><td class="snap-cost">$${total.toFixed(2)}</td></tr>`;
+  return `<table class="snap-tbl"><thead><tr><th>#</th><th>Label</th><th>Type</th><th>Quality</th><th>Status</th><th>Move (what was tried)</th><th>Cost</th></tr></thead><tbody>${rows}</tbody><tfoot>${foot}</tfoot></table>`;
 }
 
 async function render() {
   const chartEl = document.getElementById('snap-chart');
   const tableEl = document.getElementById('snap-table');
   if (!chartEl || !tableEl) return;
-  const [runs, ops] = await Promise.all([fetchRuns(), fetchOperators()]);
+  const [runs, costs, types] = await Promise.all([fetchRuns(), fetchCosts(), fetchTypes()]);
   if (!runs.length) {
     chartEl.innerHTML = '<p class="muted" style="font-size:14px">Run the dashboard server to load the live record, or see the <a href="index.html">interactive dashboard</a>.</p>';
     return;
   }
   const kept = runs.filter(r => r.kept && !r.invalid).length;
+  const best = Math.max(...runs.filter(r => !r.invalid).map(r => r.quality));
   chartEl.innerHTML = chartSVG(runs);
   document.getElementById('snap-count').textContent =
-    `${runs.length} experiments logged · ${kept} set a new best · current best ${Math.max(...runs.filter(r => !r.invalid).map(r => r.quality)).toFixed(3)}`;
-  tableEl.innerHTML = tableHTML(runs, ops);
+    `${runs.length} experiments logged · ${kept} set a new best · current best ${Math.round(best * 100)}%`;
+  tableEl.innerHTML = tableHTML(runs, costs, types);
 }
 
 render();

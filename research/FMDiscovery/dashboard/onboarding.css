@@ -1,145 +1,240 @@
-/* Onboarding page styles. Loaded by onboarding.html. */
-:root{--green:#16a34a;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--red:#dc2626;--amber:#d97706;
-      --fm:#db2777;--swift:#ea580c;--lora:#ca8a04;--indigo:#6d28d9;--teal:#0e7490;}
+/* ============================================================================
+   On-Device Discovery Planner — onboarding page.
+   Visual design after Edward Tufte: cream paper, near-black ink, one rust accent,
+   serif type with old-style figures, thin rules instead of boxes, color used only
+   where it carries data. Loaded by onboarding.html.
+   ========================================================================== */
+:root{
+  --paper:#fffff8;        /* Tufte cream */
+  --ink:#111111;          /* near-black body text */
+  --muted:#6b6a60;        /* warm gray — secondary text */
+  --faint:#9b998c;        /* fainter still — captions, axes */
+  --rule:#d9d5c3;         /* warm hairline */
+  --rule-soft:#ece9da;    /* fainter hairline (gridlines) */
+  --accent:#8c2f1f;       /* ET rust-red — used sparingly */
+  /* data-bearing marks (chart + table); muted, functional, not decorative */
+  --kept:#111111;         /* set a new best */
+  --disc:#b9b6a6;         /* discarded */
+  --invalid:#8c2f1f;      /* invalid (gold leak) */
+  --ochre:#8a6a1e;        /* the "weights / SFT" family */
+}
 *{box-sizing:border-box;}
-body{margin:0;font:17px/1.65 -apple-system,system-ui,sans-serif;color:var(--ink);background:#f8fafc;overflow-x:hidden;}
-.wrap{max-width:880px;margin:0 auto;padding:0 24px 80px;}
-header.hero{padding:56px 24px 28px;max-width:880px;margin:0 auto;}
-.eyebrow{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fm);}
-h1{font-size:34px;line-height:1.2;margin:10px 0 8px;}
-.lede{font-size:19px;color:#334155;margin:0;}
-.nav{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;}
-.nav a{font-size:14px;font-weight:600;text-decoration:none;color:var(--teal);border:1px solid var(--line);
-      background:#fff;border-radius:999px;padding:6px 14px;}
-.nav a:hover{border-color:var(--teal);}
-section{margin-top:44px;}
-h2{font-size:24px;margin:0 0 6px;scroll-margin-top:20px;}
-h2 .num{color:var(--muted);font-weight:600;margin-right:10px;}
-.sub{color:var(--muted);font-size:15px;margin:0 0 16px;}
-p{margin:0 0 14px;}
-.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;}
-.card h3{margin:0 0 8px;font-size:17px;}
-.muted{color:var(--muted);}
+html{background:var(--paper);}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:20px/1.62 "Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif;
+  font-feature-settings:"onum" 1,"liga" 1;   /* old-style figures, ligatures */
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:780px;margin:0 auto;padding:0 28px 96px;}
+
+/* ---- headings & flow ----------------------------------------------------- */
+header.hero{max-width:780px;margin:0 auto;padding:64px 28px 8px;}
+.eyebrow{font:italic 17px/1 "Palatino","Palatino Linotype",Georgia,serif;color:var(--accent);
+         letter-spacing:.01em;margin-bottom:14px;}
+h1{font-weight:400;font-size:42px;line-height:1.12;letter-spacing:-.01em;margin:0 0 14px;}
+.lede{font-size:22px;line-height:1.5;color:#33312b;margin:0;font-style:italic;}
+.nav{margin-top:26px;font-size:15px;color:var(--muted);}
+.nav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;}
+.nav a:not(:last-child)::after{content:" · ";color:var(--faint);border:0;}
+.nav a:hover{border-bottom-color:var(--accent);}
+
+section{margin-top:60px;}
+h2{font-weight:400;font-size:28px;line-height:1.2;margin:0 0 4px;scroll-margin-top:20px;}
+h2 .num{color:var(--faint);font-style:italic;margin-right:.5em;font-size:24px;}
+h3{font-weight:600;font-size:18px;margin:0 0 8px;}
+.sub{color:var(--muted);font-style:italic;font-size:18px;margin:0 0 20px;}
+p{margin:0 0 16px;}
 strong{font-weight:700;}
-code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:14px;font-family:ui-monospace,Menlo,monospace;}
-.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;}
-.p-fm{background:#fce7f3;color:var(--fm);} .p-lora{background:#fef9c3;color:var(--lora);}
-.p-swift{background:#ffedd5;color:var(--swift);} .p-judge{background:#ede9fe;color:var(--indigo);}
-/* The three experiment TYPES — colours match the dashboard table's Type badges. */
-.p-infer{background:#f1f5f9;color:#475569;} .p-sft{background:#fef3c7;color:#92400e;} .p-orpo{background:#ffe4e6;color:#9f1239;}
-/* milestone progression */
-.prog{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:10px 0 16px;}
-.step{flex:1 1 120px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;}
-.step.best{border-color:var(--green);background:#f0fdf4;}
-.step .tag{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:5px;}
-.step.best .tag{color:var(--green);}
-.step .q{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;}
-.step .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
-.arrow{align-self:center;color:var(--muted);font-weight:700;}
-/* three-column findings */
-.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:8px;}
-@media(max-width:760px){.cols{grid-template-columns:1fr;}}
-.col{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;}
-.col.no{border-top:3px solid var(--red);}
-.col.yes{border-top:3px solid var(--green);}
-.col.wow{border-top:3px solid var(--amber);}
-.col h3{font-size:15px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 10px;}
-.col.no h3{color:var(--red);} .col.yes h3{color:var(--green);} .col.wow h3{color:var(--amber);}
-.col ul{margin:0;padding-left:18px;} .col li{margin:0 0 10px;font-size:14.5px;line-height:1.5;}
-.col li b{font-weight:700;}
-.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0;font-size:14px;}
-.node{border:2px solid var(--muted);border-radius:10px;padding:8px 12px;background:#fff;font-weight:600;}
-.node.fm{border-color:var(--fm);color:var(--fm);} .node.judge{border-color:var(--indigo);color:var(--indigo);}
-.node.lora{border-color:var(--lora);color:var(--lora);} .node.swift{border-color:var(--swift);color:var(--swift);}
-.callout{border-left:3px solid var(--lora);background:#fffbeb;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;font-size:15px;}
-/* ruler vs. agent — two accented cards with a separator */
-.versus{display:flex;align-items:stretch;gap:14px;margin:16px 0;}
+em{font-style:italic;}
+a{color:var(--accent);}
+code{font:15px/1 ui-monospace,"SF Mono",Menlo,monospace;background:transparent;
+     border-bottom:1px solid var(--rule);padding:0 1px;}
+.muted{color:var(--muted);}
+
+/* ---- the only "box": a plain block set off by a top hairline -------------- */
+.card{border:0;background:transparent;border-top:1px solid var(--rule);
+      padding:16px 0 2px;margin:20px 0;}
+.card h3{margin:0 0 8px;}
+ul,ol{padding-left:1.3em;}
+li{margin:0 0 8px;}
+
+/* ---- small-caps tags replace coloured pills ------------------------------ */
+.pill{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+      text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+      border-bottom:1px solid var(--rule);padding:0 1px 1px;}
+/* the three experiment TYPES: distinguished only by a restrained ink tint */
+.p-infer{color:var(--muted);}
+.p-sft,.p-lora{color:var(--ochre);border-bottom-color:#d8cba0;}
+.p-orpo{color:var(--accent);border-bottom-color:#dcae9f;}
+.p-fm,.p-judge{color:var(--muted);}
+
+/* ---- ruler vs. agent: two columns split by a rule ------------------------ */
+.versus{display:flex;align-items:stretch;gap:0;margin:22px 0;border-top:1px solid var(--rule);}
 @media(max-width:680px){.versus{flex-direction:column;}}
-.vs-card{flex:1 1 0;min-width:0;border:1px solid var(--line);border-top:3px solid var(--muted);border-radius:12px;padding:15px 18px;background:#fff;}
-.vs-ruler{border-top-color:var(--indigo);}
-.vs-agent{border-top-color:var(--fm);}
-.vs-head{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px;}
-.vs-ruler .vs-head{color:var(--indigo);}
-.vs-agent .vs-head{color:var(--fm);}
-.vs-card p{margin:0;font-size:14.5px;line-height:1.55;color:#334155;}
-.vs-sep{align-self:center;flex:0 0 auto;font-weight:700;color:var(--muted);font-size:14px;}
-.callout.key{border-left-color:var(--green);background:#f0fdf4;}
-/* worked four-column example */
-.ex-tag{display:inline-block;background:#fce7f3;color:var(--fm);font-weight:700;font-size:11px;
-        letter-spacing:.04em;text-transform:uppercase;padding:2px 9px;border-radius:999px;margin-right:8px;}
-.ex-grid{display:grid;grid-template-columns:.7fr 1fr 1fr 1fr;border:1px solid var(--line);
-         border-radius:12px;overflow:hidden;background:#fff;margin:12px 0;}
+.vs-card{flex:1 1 0;min-width:0;padding:16px 26px 4px;}
+.vs-card:first-child{padding-left:0;}
+.vs-card:last-child{padding-right:0;}
+.vs-head{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.07em;color:var(--ink);margin-bottom:8px;}
+.vs-card p{margin:0;font-size:17px;line-height:1.5;color:#33312b;}
+.vs-sep{align-self:center;flex:0 0 auto;padding:0 18px;font-style:italic;color:var(--faint);}
+@media(min-width:681px){.vs-card:last-child{border-left:1px solid var(--rule);padding-left:26px;}.vs-sep{display:none;}}
+
+/* ---- callouts: an aside set off by a left rule --------------------------- */
+.callout{border-left:2px solid var(--rule);background:transparent;border-radius:0;
+         padding:2px 0 2px 20px;margin:20px 0;font-size:18px;color:#33312b;}
+.callout.key{border-left-color:var(--accent);}
+
+/* ---- input -> planner demo (Goal) ---------------------------------------- */
+.flowdemo{display:flex;align-items:stretch;gap:22px;margin:24px 0 8px;flex-wrap:wrap;}
+.fd-node{border:0;border-top:1px solid var(--rule);padding:12px 0 0;background:transparent;}
+.fd-tag{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.fd-input{flex:0 0 auto;align-self:flex-start;max-width:230px;}
+.fd-big{font-size:19px;font-style:italic;margin-top:8px;}
+.fd-arrow{flex:0 0 auto;align-self:center;color:var(--faint);font-size:26px;}
+.fd-planner{flex:1 1 320px;}
+.fd-planner ol{margin:10px 0 0;padding-left:22px;font-size:17px;line-height:1.5;color:#33312b;}
+@media(max-width:600px){.flowdemo{flex-direction:column;}.fd-arrow{transform:rotate(90deg);}.fd-input{max-width:none;}}
+.ex-caption{font-size:15px;color:var(--muted);font-style:italic;margin:12px 0 20px;line-height:1.55;}
+
+/* ---- worked four-column example: a clean table, rules not borders -------- */
+.ex-tag{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-right:10px;}
+.ex-intro{font-size:18px;}
+.ex-grid{display:grid;grid-template-columns:.7fr 1fr 1fr 1fr;border:0;border-top:1.5px solid var(--ink);
+         border-bottom:1.5px solid var(--ink);background:transparent;margin:14px 0;}
 @media(max-width:760px){.ex-grid{grid-template-columns:1fr;}}
-.ex-col{padding:14px 15px;border-right:1px solid var(--line);}
-.ex-col:last-child{border-right:none;}
-@media(max-width:760px){.ex-col{border-right:none;border-bottom:1px solid var(--line);}}
-.ex-head{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
-.ex-h-user{color:var(--muted);} .ex-h-gold{color:var(--green);}
-.ex-h-fm{color:var(--fm);} .ex-h-judge{color:var(--indigo);}
-.ex-model{font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin:2px 0 9px;}
-.ex-input{font-size:15px;font-weight:600;margin:0;}
-.ex-list{margin:0;padding-left:17px;font-size:12.5px;line-height:1.45;color:#334155;}
-.ex-list li{margin:0 0 5px;} .ex-list li.bad{color:var(--red);}
-.verdict-badge{display:inline-block;background:#fee2e2;color:var(--red);font-weight:700;
-               font-size:11px;padding:3px 10px;border-radius:999px;}
-.ex-note{font-size:12.5px;line-height:1.5;color:#334155;margin:9px 0 0;}
-.ex-rubric{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 2px;}
-.rchip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#15803d;}
-.rchip.lo{background:#fef3c7;color:#b45309;}
-.rscale{font-size:11px;color:var(--muted);margin:0;}
-/* record-at-a-glance snapshot */
-.snap-legend{font-size:12.5px;color:var(--muted);margin:10px 0 0;display:flex;flex-wrap:wrap;gap:14px;}
-.snap-legend .k{display:inline-flex;align-items:center;gap:5px;}
-.snap-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
-/* break a wide element out of the centered column to full viewport width */
-.fullbleed{width:100vw;margin-left:calc(50% - 50vw);padding:0 32px;box-sizing:border-box;margin-top:14px;}
-@media(max-width:760px){.fullbleed{padding:0 16px;}}
-.snap-full{width:100vw;margin-left:calc(50% - 50vw);padding:0 32px;box-sizing:border-box;margin-top:16px;}
-@media(max-width:760px){.snap-full{padding:0 16px;}}
-.snap-tablewrap{max-height:580px;overflow-y:auto;overflow-x:hidden;border:1px solid var(--line);border-radius:12px;background:#fff;}
-.snap-tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:auto;}
-.snap-tbl th{position:sticky;top:0;background:#f1f5f9;text-align:left;color:var(--muted);font-weight:600;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}
-.snap-tbl td{padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
-.snap-tbl tr:last-child td{border-bottom:none;}
-.snap-keptrow{background:#f0fdf4;}
-.snap-q{font-variant-numeric:tabular-nums;font-weight:700;}
-.snap-move{white-space:normal;color:#475569;width:50%;}
-.snap-move span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;}
-.snap-st{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;}
-.st-kept{background:#dcfce7;color:var(--green);} .st-disc{background:#f1f5f9;color:var(--muted);} .st-inv{background:#fee2e2;color:var(--red);}
-.ex-caption{font-size:13px;color:var(--muted);margin:10px 0 18px;line-height:1.6;}
-/* bento grid for the levers */
-.bento-group{margin:18px 0 6px;}
-.bento-label{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 9px;}
-.bento-label .l-sub{font-weight:400;color:var(--muted);}
-.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+.ex-col{padding:14px 18px;border-right:1px solid var(--rule);}
+.ex-col:first-child{padding-left:0;}
+.ex-col:last-child{border-right:none;padding-right:0;}
+@media(max-width:760px){.ex-col{border-right:none;border-bottom:1px solid var(--rule);}}
+.ex-head{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.07em;color:var(--ink);}
+.ex-model{font:12px/1 ui-monospace,Menlo,monospace;color:var(--faint);margin:4px 0 10px;}
+.ex-input{font-size:17px;font-style:italic;margin:0;}
+.ex-list{margin:0;padding-left:18px;font-size:14px;line-height:1.45;color:#33312b;}
+.ex-list li{margin:0 0 6px;}
+.ex-list li.bad{color:var(--accent);}
+.verdict-badge{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+               text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
+.ex-note{font-size:14px;line-height:1.5;color:#33312b;margin:10px 0 0;}
+.ex-rubric{display:flex;flex-wrap:wrap;gap:4px 14px;margin:12px 0 2px;}
+.rchip{font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink);}
+.rchip.lo{color:var(--accent);}              /* the dimensions stuck low */
+.rscale{font-size:13px;color:var(--faint);font-style:italic;margin:4px 0 0;}
+
+/* ---- the levers: rules + small-caps, no coloured tiles ------------------- */
+.bento-group{margin:24px 0 6px;}
+.bento-label{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+             text-transform:uppercase;letter-spacing:.06em;color:var(--ink);margin:0 0 12px;
+             padding-bottom:8px;border-bottom:1px solid var(--ink);}
+.bento-label .l-sub{font-weight:400;font-feature-settings:normal;text-transform:none;letter-spacing:0;
+                    font-size:16px;font-style:italic;color:var(--muted);}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px 26px;}
 @media(max-width:760px){.bento{grid-template-columns:1fr;}}
-.tile{border:1px solid var(--line);border-top:3px solid var(--muted);border-radius:12px;
-      padding:13px 15px;background:#fff;}
+.tile{border:0;border-top:1px solid var(--rule);background:transparent;padding:11px 0 0;}
 @media(max-width:760px){.tile{grid-column:auto !important;}}
-.tile h4{margin:0 0 4px;font-size:14px;color:var(--ink);}
-.tile p{margin:0;font-size:13px;line-height:1.5;color:#334155;}
-.t-infer{border-top-color:var(--teal);}
-.t-weight{border-top-color:var(--lora);background:#fffef9;}
+.tile h4{margin:0 0 4px;font-size:16px;font-weight:600;color:var(--ink);}
+.tile p{margin:0;font-size:15px;line-height:1.5;color:#33312b;}
+.t-weight{background:transparent;}
 .s2{grid-column:span 2;} .s3{grid-column:span 3;} .s4{grid-column:span 4;} .s6{grid-column:span 6;}
-/* two training recipes nested inside the LoRA card */
-.subtiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+/* the two recipes nested in the LoRA card */
+.subtiles{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:14px;border-top:1px solid var(--rule);}
 @media(max-width:760px){.subtiles{grid-template-columns:1fr;}}
-.subtile{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 13px;}
-.subtile h4{margin:0 0 3px;font-size:13.5px;color:var(--ink);}
-.subtile p{margin:0;font-size:12.5px;line-height:1.5;color:#334155;}
-/* simple input -> planner flow diagram (Goal section) */
-.flowdemo{display:flex;align-items:stretch;gap:14px;margin:18px 0 6px;flex-wrap:wrap;}
-.fd-node{border:2px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff;}
-.fd-tag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
-.fd-input{flex:0 0 auto;align-self:center;border-color:var(--muted);max-width:200px;}
-.fd-input .fd-tag{color:var(--muted);}
-.fd-big{font-size:16px;font-weight:600;margin-top:5px;}
-.fd-arrow{flex:0 0 auto;align-self:center;color:var(--muted);font-size:26px;font-weight:700;}
-.fd-planner{flex:1 1 340px;border-color:var(--ink);}
-.fd-planner .fd-tag{color:var(--ink);}
-.fd-planner ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.55;color:#334155;}
-@media(max-width:600px){.flowdemo{flex-direction:column;}.fd-arrow{transform:rotate(90deg);align-self:center;}.fd-input{max-width:none;}}
-footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;}
-.kpi{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:4px 8px 4px 0;background:#fff;}
-.kpi b{font-size:18px;font-variant-numeric:tabular-nums;}
+.subtile{border:0;background:transparent;padding:12px 22px 2px;}
+.subtile:first-child{padding-left:0;}
+.subtile:last-child{padding-right:0;}
+@media(min-width:761px){.subtile:last-child{border-left:1px solid var(--rule);}}
+.subtile h4{margin:0 0 4px;font-size:15px;font-weight:600;color:var(--ink);}
+.subtile p{margin:0;font-size:14px;line-height:1.5;color:#33312b;}
+
+/* ---- the climb: a numeric progression, no boxes ------------------------- */
+.prog{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin:14px 0 18px;border-top:1px solid var(--rule);}
+.step{flex:1 1 120px;padding:14px 20px 6px;}
+.step:first-child{padding-left:0;}
+.step .tag{font:600 11px/1.2 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+.step .q{font-variant-numeric:lining-nums tabular-nums;font-weight:400;font-size:30px;line-height:1;}
+.step .lbl{font-size:14px;color:var(--muted);margin-top:4px;}
+.step.best .tag{color:var(--accent);}
+.step.best .q{color:var(--accent);}
+.arrow{align-self:center;color:var(--faint);padding:0 4px;}
+
+/* ---- three-column findings ---------------------------------------------- */
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-top:10px;border-top:1.5px solid var(--ink);}
+@media(max-width:760px){.cols{grid-template-columns:1fr;}}
+.col{border:0;background:transparent;padding:16px 22px 4px;}
+.col:first-child{padding-left:0;}
+.col:last-child{padding-right:0;}
+@media(min-width:761px){.col + .col{border-left:1px solid var(--rule);}}
+.col h3{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px;color:var(--ink);}
+.col.no h3::before{content:"− ";color:var(--accent);}
+.col.yes h3::before{content:"+ ";color:var(--ink);}
+.col.wow h3::before{content:"★ ";color:var(--ochre);}
+.col ul{margin:0;padding-left:1.1em;}
+.col li{margin:0 0 11px;font-size:15px;line-height:1.5;}
+
+/* ---- record snapshot: chart + a Tufte table ----------------------------- */
+.snap-legend{font-size:14px;color:var(--muted);margin:12px 0 0;display:flex;flex-wrap:wrap;gap:18px;}
+.snap-legend .k{display:inline-flex;align-items:center;gap:6px;}
+.snap-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.snap-tablewrap{overflow:visible;border:0;border-top:1.5px solid var(--ink);background:transparent;}
+.snap-tbl{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed;}
+/* Fixed columns so the MOVE cell is bounded and wraps (its 2-line clamp then works)
+   instead of sizing the whole table to the longest single-line note. Short columns
+   ellipsize any over-long token rather than spilling into their neighbour. */
+.snap-tbl th,.snap-tbl td{overflow:hidden;text-overflow:ellipsis;}
+.snap-tbl th:nth-child(1),.snap-tbl td:nth-child(1){width:54px;padding-left:14px;padding-right:8px;}  /* #       */
+.snap-tbl th:nth-child(2){width:12%;}                              /* Label   */
+.snap-tbl th:nth-child(3){width:8%;}                               /* Type    */
+.snap-tbl th:nth-child(4){width:6%;}                               /* Quality */
+.snap-tbl th:nth-child(5){width:11%;}                              /* Status  */
+/* col 6 (Move) takes the remainder and wraps to its 2-line clamp */
+.snap-tbl th:nth-child(7){width:9%;}                               /* Cost    */
+.snap-tbl th{position:sticky;top:0;background:var(--paper);text-align:left;
+             font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+             text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;
+             padding:9px 16px 9px 0;border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+.snap-tbl td{padding:8px 16px 8px 0;border:0;border-bottom:1px solid var(--rule-soft);
+             vertical-align:top;white-space:nowrap;}
+.snap-tbl tr:last-child td{border-bottom:none;}
+.snap-keptrow{background:transparent;box-shadow:inset 2px 0 0 var(--ink);}
+/* the most-recent experiment, pinned at the top, framed so it stands out */
+.snap-latest{box-shadow:inset 0 0 0 1.5px var(--accent);}
+/* bottom-line totals row */
+.snap-total td{border-top:1.5px solid var(--ink);border-bottom:none;padding-top:11px;font-weight:700;color:var(--ink);}
+.snap-total td:first-child{text-align:right;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.06em;font-size:13px;color:var(--muted);}
+.snap-q{font-variant-numeric:lining-nums tabular-nums;font-weight:700;}
+.snap-move{white-space:normal;color:#4a473e;}
+.snap-move span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;}
+.snap-st{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.st-kept{color:var(--ink);} .st-disc{color:var(--faint);} .st-inv{color:var(--accent);}
+.snap-ty{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.05em;}
+.snap-ty.t-inf{color:var(--muted);} .snap-ty.t-sft{color:var(--ochre);} .snap-ty.t-orpo{color:var(--accent);}
+.snap-cost{font-variant-numeric:lining-nums tabular-nums;color:#4a473e;}
+.snap-dash{color:var(--faint);}
+
+/* ---- full-bleed helpers (kept) ------------------------------------------ */
+.fullbleed{margin-top:14px;}
+.snap-full{margin-top:16px;}
+/* Wide blocks — the worked example, the record table, and the findings columns —
+   break out to 2/3 of the viewport, centred. Applied only on screens where 2/3 is
+   actually wider than the ~724px reading column, so it never narrows the content. */
+@media(min-width:1120px){
+  .fullbleed,.snap-full,.cols{width:66.666vw;margin-left:calc(50% - 33.333vw);}
+}
+
+/* ---- footer -------------------------------------------------------------- */
+footer{margin-top:72px;padding-top:24px;border-top:1.5px solid var(--ink);color:var(--muted);font-size:16px;}
+.kpi{display:inline-block;margin:4px 28px 4px 0;color:var(--muted);
+     font:600 12px/1.4 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+     text-transform:uppercase;letter-spacing:.06em;}
+.kpi b{display:block;font-size:26px;font-weight:400;font-feature-settings:"lnum" 1;
+       font-variant-numeric:lining-nums tabular-nums;letter-spacing:0;color:var(--ink);margin-top:3px;}
