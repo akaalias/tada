@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>On-Device Discovery Planner — Project Onboarding</title>
+<title>On-Device Discovery Planner — An Open Research Project</title>
 <link rel="stylesheet" href="onboarding.css">
 </head>
 <body>
 
 <header class="hero">
-  <div class="eyebrow">Project Onboarding</div>
-  <h1>Teaching a phone-sized model to ask the right questions</h1>
-  <p class="lede">How we are replacing a frontier cloud model with Apple's on-device foundation model for one specific job — and using an autonomous research loop to close the gap.</p>
+  <div class="eyebrow">Open research project</div>
+  <h1>Can a phone-sized model learn to ask the right questions?</h1>
+  <p class="lede">We don't yet know if Apple's on-device foundation model can match a frontier cloud model on one specific job. This is our attempt — and the autonomous research loop we're using to find out.</p>
   <div class="nav">
     <a href="#goal">The goal</a>
     <a href="#autoresearch">Autoresearch</a>
@@ -26,7 +26,7 @@
 
 <section id="goal">
   <h2><span class="num">1</span>The goal</h2>
-  <p class="sub">One feature, moved from the cloud to the device — with no quality loss.</p>
+  <p class="sub">The aim: move one feature from the cloud to the device — ideally with no quality loss. Whether that's achievable is exactly what we're testing.</p>
   <p>Our app has a <strong>discovery planner</strong>: when someone types a one-line task — <em>"plan a trip to Paris"</em>, <em>"write my resume"</em> — it responds with a restated title and <strong>exactly seven clarifying questions</strong> that surface what it needs to know before planning. Today that runs on Anthropic's Claude Sonnet in the cloud.</p>
 
   <div class="flowdemo">
@@ -49,7 +49,7 @@
     </div>
   </div>
   <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
-  <p>We want it to run <strong>entirely on-device</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — a roughly 3-billion-parameter model that ships with the OS. That means privacy (nothing leaves the phone), zero inference cost, and offline capability.</p>
+  <p>We want it to run <strong>entirely on-device</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — a roughly 3-billion-parameter model that ships with the OS. If it works, that would mean privacy (nothing leaves the phone), zero inference cost, and offline capability.</p>
   <div class="callout">
     <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. We use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we are trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
   </div>
