@@ -23,7 +23,7 @@ function wrap(s, maxChars) {
   return lines;
 }
 
-export function buildExportSVG(spec) {
+function buildExportSVG(spec) {
   const { nodes, edges } = layoutPipe(spec);
   const LANEW = 220, STEPH = 116, NODEW = 160, NODEH = 72, PADX = 16, PADY = 16;
   const ADW = 132, ADH = 46;
