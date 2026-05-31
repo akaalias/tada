@@ -767,6 +767,28 @@ public enum Configs {
         "exp053": DiscoveryConfig(topology: .adapterOverCountHiRecall,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-054: attack the documented binding constraint of the over-count family — the
+        // MULTI-redundant cases — by changing ONLY the DROP RULE of champion exp046 (0.430).
+        // exp046 drops the later member of the FIRST redundant pair; exp048/051/053 all
+        // concluded that on cases where ONE question duplicates SEVERAL others (find_therapist
+        // Q1≈Q2≈Q5, team_offsite date×2 + venue×2, gp location overlap, household_budget
+        // fixed/variable) a single first-pair drop only HALF-fixes the set → a second
+        // redundancy survives in the final 7 → nonRed capped at 4. exp048 tried a SECOND spare
+        // (count=9, 0.423, off-distribution) and exp053 tried tilting the binary judge's recall
+        // (0.347, false-positives) — both lost. exp054 keeps EXACTLY exp046's count=8 draw and
+        // EXACTLY exp046's high-recall union detector (Jaccard≥0.5 OR cos≥0.75 OR binary
+        // same-info — no threshold/recall change, so no new false-positive risk), but builds
+        // the FULL redundancy graph over all 8 and drops the single highest-DEGREE question —
+        // the one drop that clears the MOST redundancy at once (dropping Q1 in Q1≈Q2≈Q5 resolves
+        // two links, where exp046 dropping Q2 leaves Q1≈Q5 standing). Degree ties → drop the
+        // less-distinctive member (higher aggregate cos, exp051's rule); further ties → later
+        // index. No redundancy → drop the 8th (exp046 floor, identical). Single greedy native
+        // call, native voice, deterministic. Strictly ≥ exp046 in redundancy cleared per drop;
+        // a clean single-variable A/B isolating first-pair vs global-degree drop selection.
+        "exp054": DiscoveryConfig(topology: .adapterOverCountGlobalDedup,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

@@ -1,0 +1,32 @@
+{
+  "summary": "Global redundancy-degree drop on champion over-count(8)",
+  "hypothesis": "Applying a global redundancy-degree drop across the full over-generated candidate set (n=8) should clear multi-redundant cases that a first-pair-only drop leaves only half-fixed, improving final question diversity.",
+  "technique": "The champion pipeline's over-expand stage is run with count=8 candidates, and the deterministic Swift post-processing applies a global redundancy-degree drop (rather than a single first-pair drop) to eliminate all multi-redundant clusters before selecting the final 7.",
+  "result": "Scored 0.422 on the full-30 gate (4 wins / 1 tie / 24 losses vs Sonnet), with specPass=100% and rubric scores atom=4, spec=4, cover=3, nat=4, nonRed=4. Non-redundancy reached 4, confirming the global drop fixed the multi-redundant cases, but coverage remained at 3 and overall quality was insufficient \u2014 discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate 8 candidates on-device",
+      "knobs": {
+        "n": "8"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Global redundancy-degree drop, dedup"
+    },
+    {
+      "kind": "select",
+      "text": "Deterministic Swift top-7 pick"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp054"
+}

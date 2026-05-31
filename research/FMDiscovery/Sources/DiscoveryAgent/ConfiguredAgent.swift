@@ -91,6 +91,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
         case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
         case .adapterOverCountGivensDedup: return try await adapterOverCountGivensDedup(input)
+        case .adapterOverCountGlobalDedup: return try await adapterOverCountGlobalDedup(input)
         case .adapterOverCountDistinctDrop: return try await adapterOverCountDistinctDrop(input)
         case .adapterOverCountHiRecall: return try await adapterOverCountHiRecall(input)
         }
@@ -995,6 +996,100 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-054: EXACT exp046 over-count(8) draw + EXACT high-recall union redundancy
+    /// detector (Jaccard≥0.5 OR cos≥0.75 OR binary same-info). The ONLY change is the DROP
+    /// RULE. exp046 drops the LATER member of the FIRST redundant pair; exp048/051 documented
+    /// that the binding constraint is the MULTI-redundant cases (find_therapist Q1≈Q2≈Q5,
+    /// team_offsite date×2 + venue×2, gp location overlap) where ONE question duplicates
+    /// SEVERAL others — a single first-pair drop only HALF-fixes them, leaving redundancy
+    /// standing → nonRed capped. exp054 builds the FULL redundancy graph over all 8, counts
+    /// each question's redundancy DEGREE, and drops the single highest-degree node — the drop
+    /// that clears the MOST redundancy at once (dropping Q1 in Q1≈Q2≈Q5 resolves two links).
+    /// Tie on degree → drop the less-distinctive member (higher aggregate cos to the rest,
+    /// exp051's rule); further tie → later index. No redundancy → drop the 8th (exp046 floor).
+    /// Same detector thresholds (no recall change → avoids exp053's false-positive trap).
+    private func adapterOverCountGlobalDedup(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+        let n = qs.count
+
+        // EXACT exp046 high-recall union detector (byte-identical prompt + thresholds).
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosVal(_ i: Int, _ j: Int) -> Double {
+            guard let v = vecs else { return 0 }
+            return SemanticRetrieval.cos(v[i], v[j])
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosVal(i, j) >= 0.75 { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        // Build the FULL redundancy graph (all C(8,2) pairs) — the only structural change.
+        var degree = [Int](repeating: 0, count: n)
+        var anyRedundant = false
+        for i in 0..<n {
+            for j in (i + 1)..<n where await redundant(i, j) {
+                degree[i] += 1; degree[j] += 1; anyRedundant = true
+            }
+        }
+
+        var dropIdx = n - 1   // floor: no redundancy → drop the 8th (≈champion first-7).
+        if anyRedundant {
+            // Aggregate cos to the other questions = distinctiveness inverse (exp051 tie rule).
+            func aggCos(_ i: Int) -> Double {
+                (0..<n).filter { $0 != i }.map { cosVal(i, $0) }.reduce(0, +)
+            }
+            // Highest degree first; tie → less distinctive (higher aggCos); tie → later index.
+            var best = 0
+            for i in 1..<n {
+                let d = degree[i], db = degree[best]
+                if d > db { best = i }
+                else if d == db {
+                    let a = aggCos(i), ab = aggCos(best)
+                    if a > ab + 1e-9 { best = i }
+                    else if abs(a - ab) <= 1e-9 && i > best { best = i }
+                }
+            }
+            dropIdx = best
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 
