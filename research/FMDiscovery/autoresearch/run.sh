@@ -52,6 +52,26 @@ done
 python3 "$AR/gen_costs.py" 2>/dev/null || true   # backfill per-experiment coder costs
 
 while [ "$(count)" -lt "$TARGET" ]; do
+  # --- Resource-request gate -------------------------------------------------
+  # The agent can request the out-of-scope TRAINING track (a new/retrained LoRA
+  # adapter, ORPO, a distillation-objective change) by writing autoresearch/REQUEST.md.
+  # We honor it by PAUSING the loop: surface the request and exit. You do the manual
+  # work, wire the new adapter into a Configs.swift entry, update the agent's notes
+  # (program.md / the "current best" line in AGENT.md), delete REQUEST.md, then
+  # re-run run.sh. The request-filing iteration still ran a normal experiment below,
+  # so no iteration is wasted; this gate fires on the NEXT pass.
+  if [ -f "$AR/REQUEST.md" ]; then
+    echo "=================================================================="
+    echo "[autoresearch] PAUSED — agent is requesting resources (training track):"
+    echo "------------------------------------------------------------------"
+    cat "$AR/REQUEST.md"
+    echo "------------------------------------------------------------------"
+    echo "[autoresearch] To resume: do the work, add a Configs.swift entry for the new"
+    echo "               adapter, update program.md + AGENT.md current-best, then"
+    echo "               'rm $AR/REQUEST.md' and re-run ./autoresearch/run.sh"
+    exit 0
+  fi
+
   N=$(count)
   echo "=================================================================="
   echo "[autoresearch] iteration $((N+1)) | experiments=$N/$TARGET | $(date)"

@@ -26,9 +26,12 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
 
 ## HARD RULES (never violate — violations are auto-reverted)
 - Edit ONLY files under `research/FMDiscovery/Sources/DiscoveryAgent/`. You may
-  also append to `research/FMDiscovery/program.md`.
+  also append to `research/FMDiscovery/program.md`, and you may create
+  `research/FMDiscovery/autoresearch/REQUEST.md` (the resource-request flag — see
+  the TRAINING-TRACK section; this is the ONLY permitted write under `autoresearch/`).
 - NEVER modify `Sources/EvalBench`, `Sources/Contract`, `Sources/fmresearch`,
-  `gold/`, `dashboard/`, `results/`, or `autoresearch/`. These are the ruler.
+  `gold/`, `dashboard/`, `results/`, or `autoresearch/` (sole exception:
+  creating `autoresearch/REQUEST.md`). These are the ruler.
 - NEVER hand-edit `results/runs.jsonl` or `results/*.json`. The eval writes them.
 - NEVER change the gold answers, the judge, the metric, or the spec gate. Do not
   try to make the metric easier. Improve the agent, not the ruler.
@@ -166,11 +169,26 @@ fully autonomously, then stop. Speed of the on-device model does not matter.
    decompositions. If you know a technique that fits the coverage gap, name it in your
    write-up and adapt it — novelty grounded in a real method is encouraged.
 
-   TRAINING-TRACK ideas are OUT OF YOUR SCOPE (you only edit inference-side Swift and
-   cannot train): new or multiple specialised LoRA adapters, true MoE training,
-   changing the distillation data/objective. If your best idea needs one of these,
-   DO NOT attempt it — instead log a one-line note in `program.md` proposing it for the
-   human operator, and run a different inference-time experiment this iteration.
+   TRAINING-TRACK ideas are OUT OF YOUR SCOPE to EXECUTE (you only edit inference-side
+   Swift and cannot train): new or multiple specialised LoRA adapters, true MoE training,
+   changing the distillation data/objective. But you CAN now REQUEST them. If your best,
+   most-grounded idea genuinely needs the training track:
+   1. Write a resource request to `research/FMDiscovery/autoresearch/REQUEST.md` (the ONLY
+      file you may write under `autoresearch/`). Use this template:
+      ```
+      # Resource request — <short title>
+      - type: <new-adapter | retrain | orpo | data-reshape | objective-change>
+      - failure mode it attacks: <cite the judge notes / the coverage-3 plateau>
+      - what to train: <data source (e.g. which corpus subset), objective, key hyperparams if known>
+      - how we'll know it worked: <metric + target delta vs adapter_v2a_e1 = 0.409 full-30 greedy>
+      - command (if known): <e.g. the train_adapter.sh invocation + the Configs.swift entry to add>
+      ```
+      If a `REQUEST.md` already exists, DO NOT overwrite it — skip straight to step 2.
+   2. THEN still run a normal inference-time experiment this iteration — do not waste it.
+   The loop PAUSES on `REQUEST.md` after this iteration so the human operator can do the
+   manual training, wire the new adapter into a config, update this file / `program.md`
+   with the new current-best, and clear the flag — after which you build on the result
+   like any other adapter.
 3. **Code it** as a NEW named config in `Configs.swift`. CHOOSE A UNIQUE LABEL:
    scan BOTH `results/runs.jsonl` and `Configs.swift` for the highest existing
    `expNNN` and use the next integer. NEVER reuse a label that already appears in
