@@ -158,6 +158,23 @@ def main():
         fail(f"no tool_use in response for {label}")
     spec["label"] = label
 
+    # DETERMINISTIC adapter knob: the ground truth of which adapter a config uses is
+    # its `adapter:` path in Configs.swift, NOT whatever the model inferred from the
+    # note. Stamp it onto the first on-device model stage so the LoRA node + provenance
+    # always render correctly (Sonnet routinely omitted or mis-guessed it).
+    cfg = (PKG / "Sources" / "DiscoveryAgent" / "Configs.swift")
+    if cfg.exists():
+        m = re.search(r'"' + re.escape(label) + r'":\s*DiscoveryConfig\((.*?)\)',
+                      cfg.read_text(), re.DOTALL)
+        ad = re.search(r'adapter:\s*"([^"]+)"', m.group(1)) if m else None
+        if ad:
+            name = pathlib.Path(ad.group(1)).stem.replace("discovery", "adapter", 1)
+            fmk = {"generate", "expand", "critique", "ensemble"}
+            for st in spec.get("stages", []):
+                if st.get("kind") in fmk:
+                    st.setdefault("knobs", {})["model"] = name
+                    break
+
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"{label}.json").write_text(json.dumps(spec, indent=2), encoding="utf-8")
     print(f"[gen_pipeline] wrote results/pipelines/{label}.json")
