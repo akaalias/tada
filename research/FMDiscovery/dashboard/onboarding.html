@@ -131,11 +131,6 @@
   <h2><span class="num">1</span>The goal</h2>
   <p class="sub">One feature, moved from the cloud to the device — with no quality loss.</p>
   <p>Our app has a <strong>discovery planner</strong>: when someone types a one-line task — <em>"plan a trip to Paris"</em>, <em>"write my resume"</em> — it responds with a restated title and <strong>exactly seven clarifying questions</strong> that surface what it needs to know before planning. Today that runs on Anthropic's Claude Sonnet in the cloud.</p>
-  <p>We want it to run <strong>entirely on-device</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — a roughly 3-billion-parameter model that ships with the OS. That means privacy (nothing leaves the phone), zero inference cost, and offline capability.</p>
-  <div class="callout">
-    <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. We use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we are trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
-  </div>
-  <p>The on-device model is ~20&times; smaller than the cloud model. The whole project is the question: <strong>can a small specialized model match a large general one on a narrow, well-defined task?</strong></p>
 
   <div class="flowdemo">
     <div class="fd-node fd-input">
@@ -157,6 +152,11 @@
     </div>
   </div>
   <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
+  <p>We want it to run <strong>entirely on-device</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — a roughly 3-billion-parameter model that ships with the OS. That means privacy (nothing leaves the phone), zero inference cost, and offline capability.</p>
+  <div class="callout">
+    <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. We use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we are trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
+  </div>
+  <p>The on-device model is ~20&times; smaller than the cloud model. The whole project is the question: <strong>can a small specialized model match a large general one on a narrow, well-defined task?</strong></p>
 </section>
 
 <section id="autoresearch">
