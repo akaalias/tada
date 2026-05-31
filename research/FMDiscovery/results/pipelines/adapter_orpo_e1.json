@@ -1,0 +1,25 @@
+{
+  "summary": "ORPO epoch-1 adapter vs SFT baseline",
+  "hypothesis": "Preference training via ORPO should improve coverage over the SFT baseline, because directly penalising dispreferred outputs teaches the model to avoid shallow or redundant questions and favour broader topic spread.",
+  "technique": "A single greedy on-device call using an ORPO-trained adapter (epoch 1) on the same adapterDirect+greedy topology as the SFT baseline \u2014 swapping only the training objective from supervised fine-tuning to preference optimisation.",
+  "result": "Scored 0.330 on the full-30 gate (0 wins / 2 ties / 27 losses vs Sonnet), with rubric scores atom=4, spec=3, cover=3, nat=3, nonRed=3 and specPass=100%. Coverage did not improve over the SFT baseline \u2014 the hypothesis was falsified \u2014 and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "ORPO e1 adapter, greedy decode",
+      "knobs": {
+        "model": "adapter_orpo_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "adapter_orpo_e1"
+}

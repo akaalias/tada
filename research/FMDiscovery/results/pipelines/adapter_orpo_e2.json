@@ -1,0 +1,25 @@
+{
+  "summary": "Standalone ORPO e2 adapter, greedy single-shot",
+  "hypothesis": "An ORPO-trained adapter (epoch 2) should match or beat the SFT baseline on question quality, since ORPO's preference-alignment signal directly penalises rejected outputs and may sharpen judgment without a separate reward model.",
+  "technique": "Single greedy on-device call using an ORPO epoch-2 fine-tuned adapter (adapterDirect topology), identical to the SFT baseline pipeline \u2014 only the adapter weights differ.",
+  "result": "Scored 0.361 on the full-30 gate (1 win / 2 ties / 26 losses vs Sonnet), with specPass 100% and rubric scores atom=4, spec=4, cover=3, nat=4, nonRed=3. Coverage remained the weak dimension, and the result fell below the SFT baseline; the hypothesis was falsified and the adapter was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "generate",
+      "text": "ORPO e2 adapter, greedy draft",
+      "knobs": {
+        "model": "adapter_orpo_e2",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "adapter_orpo_e2"
+}

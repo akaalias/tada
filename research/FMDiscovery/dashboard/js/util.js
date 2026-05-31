@@ -29,6 +29,7 @@ export const isAdapter = s => /adapter|lora|fine-?tun/i.test(JSON.stringify((s &
 // version family, so we can look up its provenance chain. Dash/underscore agnostic.
 export const adapterFamily = name => {
   const n = String(name || '').toLowerCase().replace(/-/g, '_');
+  if (n.includes('orpo')) return 'orpo';
   if (n.includes('v2b')) return 'v2b';
   if (n.includes('v2a')) return 'v2a';
   if (n.includes('adapter')) return 'v1';
