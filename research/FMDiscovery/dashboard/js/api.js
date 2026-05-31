@@ -20,6 +20,11 @@ export async function fetchOperators() {
   catch (e) { return {}; }
 }
 
+export async function fetchTypes() {
+  try { return await (await fetch('../results/types.json' + bust())).json(); }
+  catch (e) { return {}; }
+}
+
 let provCache = null;
 export async function fetchProvenance() {
   if (provCache) return provCache;

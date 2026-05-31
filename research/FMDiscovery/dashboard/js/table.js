@@ -15,7 +15,21 @@ const opBadge = op => {
            : '<span class="disc">—</span>';
 };
 
-export function fillTable(runs, expanded, costs, operators = {}) {
+// Which lever the experiment uses. Inference-Time = no weight change (prompt /
+// decoding / RAG / topology); the others run on a LoRA adapter, distinguished by
+// how that adapter was trained (imitation vs preference). See gen_types.py.
+const TYPES = {
+  'Inference-Time':         { short: 'Inference', cls: 'ty-infer', title: 'Inference-time only — prompt / decoding / RAG / topology. No weight change.' },
+  'Supervised Fine-Tuning': { short: 'SFT',       cls: 'ty-sft',   title: 'Runs on a LoRA adapter trained by imitation (supervised fine-tuning) on Sonnet gold.' },
+  'Preference (ORPO)':      { short: 'ORPO',      cls: 'ty-orpo',  title: 'Runs on a LoRA adapter trained on chosen/rejected preference pairs (ORPO).' },
+};
+const typeBadge = t => {
+  const o = TYPES[t];
+  return o ? `<span class="ty-badge ${o.cls}" title="${o.title}">${o.short}</span>`
+           : '<span class="disc">—</span>';
+};
+
+export function fillTable(runs, expanded, costs, operators = {}, types = {}) {
   const tb = document.querySelector('#tbl tbody');
   tb.innerHTML = '';
   [...runs].reverse().forEach(r => {
@@ -23,6 +37,7 @@ export function fillTable(runs, expanded, costs, operators = {}) {
     tr.className = 'row-main' + (expanded.has(r.label) ? ' open' : '') + (r.kept ? ' kept-row' : '');
     tr.innerHTML = `<td>${r.index}</td><td><span class="caret">▸</span> ${r.label}</td>`
       + `<td>${opBadge(operators[r.label])}</td>`
+      + `<td>${typeBadge(types[r.label])}</td>`
       + `<td>${(r.subset || 'full')}-${r.n || ''}</td>`
       + `<td class="q">${r.quality.toFixed(3)}</td>`
       + `<td>${Math.round(r.specPass * 100)}%</td>`
@@ -31,7 +46,7 @@ export function fillTable(runs, expanded, costs, operators = {}) {
       + `<td><div class="move-cell"><span class="move-note">${esc(r.note || '')}${r.invalid && r.invalidReason ? ` <span class="invalid-why" title="${esc(r.invalidReason)}">⚠ ${esc(r.invalidReason)}</span>` : ''}</span>`
       + `<span class="status-badge ${r.invalid ? 'sb-invalid' : r.kept ? 'sb-kept' : 'sb-disc'}">${r.invalid ? 'Invalid' : r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
     const det = document.createElement('tr'); det.className = 'detail';
-    const cell = document.createElement('td'); cell.colSpan = 9;
+    const cell = document.createElement('td'); cell.colSpan = 10;
     det.appendChild(cell);
     det.style.display = expanded.has(r.label) ? '' : 'none';
     if (expanded.has(r.label)) renderDetail(r.label, cell);

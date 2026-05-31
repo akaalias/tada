@@ -155,10 +155,10 @@
   </div>
   <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
 
-  <p><strong>The levers.</strong> An experiment is some combination of the knobs below. They fall into two groups — the things you change <em>at the moment of answering</em> (no retraining; this is what the autonomous agent explores), and the model's <em>weights</em> themselves (a separate training step we run by hand).</p>
+  <p><strong>The levers.</strong> An experiment is some combination of the knobs below, and every experiment is tagged on the dashboard by the most powerful lever it pulls — its <strong>type</strong>. There are three: <span class="pill p-infer">Inference</span> changes how the model answers with no retraining (this is what the autonomous agent explores), while <span class="pill p-sft">SFT</span> and <span class="pill p-orpo">ORPO</span> retrain the model's <em>weights</em> by hand. SFT and ORPO produce the same artifact — a trained adapter — and differ only in the training <em>recipe</em>.</p>
 
   <div class="bento-group">
-    <p class="bento-label">Inference-time knobs <span class="l-sub">— change how the model answers, no retraining (what the autonomous agent explores)</span></p>
+    <p class="bento-label"><span class="pill p-infer">Inference</span> &nbsp;Inference-time knobs <span class="l-sub">— change how the model answers, no retraining (what the autonomous agent explores)</span></p>
     <div class="bento">
       <div class="tile t-infer s3"><h4>Decoding</h4><p>How the model picks each next word — always the single most likely one (predictable) or sampling for variety. We learned predictable ("greedy") is both better and less noisy here.</p></div>
       <div class="tile t-infer s3"><h4>Prompt &amp; instructions</h4><p>The exact wording of the request and any guidance baked into it.</p></div>
@@ -170,13 +170,17 @@
     </div>
   </div>
   <div class="bento-group">
-    <p class="bento-label">The weights <span class="l-sub">— retrain the model itself (the most powerful lever)</span></p>
+    <p class="bento-label">The weights <span class="l-sub">— retrain the model itself, by hand (the most powerful lever)</span></p>
     <div class="bento">
-      <div class="tile t-weight s3"><h4><span class="pill p-lora">Fine-tuned adapter</span> (LoRA)</h4><p>A small trained add-on that bakes the skill into the model's own weights. This is the single biggest lever — and the only one that broke past the prompting ceiling. <em>Every result above ~0.32, including the current 0.44 best, runs on it.</em></p></div>
-      <div class="tile t-weight s3"><h4>Training-data variants</h4><p>Levers on the adapter itself — more examples, coverage-emphasized examples, and (next) a "preference" method that teaches the model to <em>prefer</em> better answers rather than merely imitate them.</p></div>
+      <div class="tile t-weight s6"><h4><span class="pill p-lora">LoRA adapter</span></h4><p>The artifact both recipes produce: a small trained add-on baked into the model's own weights. The only lever that broke past the prompting ceiling — <em>every result above ~0.32, including the 0.44 best, runs on one.</em> What differs between adapters is the training <em>recipe</em>:</p>
+        <div class="subtiles">
+          <div class="subtile"><h4><span class="pill p-sft">SFT</span> imitation</h4><p>Supervised fine-tuning on (task &rarr; one good answer) pairs — "make answers look like this." Every adapter so far. Nails phrasing and format, but adding or reshaping examples never moved <strong>coverage</strong>.</p></div>
+          <div class="subtile"><h4><span class="pill p-orpo">ORPO</span> preference</h4><p>Train on <em>pairs</em> — a better answer beside a worse one — so the model learns to <em>prefer</em> high-coverage sets, not merely imitate them. The first lever aimed straight at the coverage gap. <em>In training now.</em></p></div>
+        </div>
+      </div>
     </div>
   </div>
-  <p class="muted" style="font-size:14px">The autonomous agent only turns the inference-time knobs (it can't retrain the model). The weights are trained separately, by hand — that's the track aimed squarely at the coverage gap.</p>
+  <p class="muted" style="font-size:14px">The autonomous agent turns the <span class="pill p-infer">Inference</span> knobs on its own; it can't retrain the model, so when it judges the weights are the answer it flags a request for the manual track. The weights — <span class="pill p-sft">SFT</span> today, <span class="pill p-orpo">ORPO</span> in training now — are trained by hand, the track aimed squarely at the coverage gap.</p>
   <div class="callout key">
     <strong>The measurement lesson, learned the hard way.</strong> We first screened ideas on a small 10-case proxy with random sampling. Twice, that produced a "win" that <em>evaporated</em> on the full set. The fix is now law: gate every decision on all <strong>30 cases with deterministic (greedy) decoding</strong>. Noise had been masquerading as progress.
   </div>

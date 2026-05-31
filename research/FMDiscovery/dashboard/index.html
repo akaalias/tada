@@ -26,6 +26,7 @@
       <thead><tr>
         <th>#</th><th>Label</th>
         <th title="Who ran the experiment. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one experiment per iteration.">Operator</th>
+        <th title="Which lever the experiment uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>
         <th>Set</th><th>Quality</th>
         <th title="Share of cases that pass the hard technical-spec gate: exactly 7 atomic questions, valid title, no emojis. Quality is forced to 0 for any case that fails.">Spec</th>
         <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
@@ -37,6 +38,7 @@
     <details class="help">
       <summary>What do the columns &amp; rubric mean?</summary>
       <dl class="help-grid">
+        <dt>Type</dt><dd>The lever group. <b>Inference</b> = inference-time only (prompt / decoding / RAG / topology, no weight change). <b>SFT</b> = runs on a LoRA adapter trained by imitation on Sonnet gold. <b>ORPO</b> = runs on an adapter trained on chosen/rejected preference pairs.</dd>
         <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × rubric + 0.5 × pairwise</code>, averaged over cases.</dd>
         <dt>Spec</dt><dd>% of cases passing the hard technical gate: exactly 7 atomic questions, valid title, no emojis. A failed case scores 0.</dd>
         <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device questions were judged <i>better</i> than Sonnet's.</dd>
