@@ -60,7 +60,7 @@ const esc = s => (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', 
 
 function tableHTML(runs, costs, types) {
   const ordered = [...runs].reverse();                 // most recent at the top
-  const rows = ordered.map((r, i) => {
+  const rows = ordered.map(r => {
     const t = TYPE[types[r.label]];
     const ty = t ? `<span class="snap-ty ${t[1]}">${t[0]}</span>` : '<span class="snap-dash">—</span>';
     const c = costs[r.label];
@@ -68,8 +68,8 @@ function tableHTML(runs, costs, types) {
     const status = r.invalid ? '<span class="snap-st st-inv">Invalid</span>'
       : r.kept ? '<span class="snap-st st-kept">Kept</span>'
       : '<span class="snap-st st-disc">Discarded</span>';
-    const cls = [i === 0 ? 'snap-latest' : '', r.kept && !r.invalid ? 'snap-keptrow' : ''].filter(Boolean).join(' ');
-    return `<tr${cls ? ` class="${cls}"` : ''}>`
+    const cls = r.kept && !r.invalid ? ' class="snap-keptrow"' : '';
+    return `<tr${cls}>`
       + `<td>${r.index}</td><td>${r.label}</td><td>${ty}</td>`
       + `<td class="snap-q">${Math.round(r.quality * 100)}%</td><td>${status}</td>`
       + `<td class="snap-move"><span>${esc(r.note)}</span></td>`

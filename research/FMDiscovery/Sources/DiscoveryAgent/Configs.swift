@@ -342,6 +342,12 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2b_e1.fmadapter"),
         "adapter_v2b_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2b_e2.fmadapter"),
+        // ORPO preference adapters — identical topology/decoding to adapter_v2a_e1 (the SFT
+        // baseline) so the only variable is the training recipe: imitation (SFT) vs preference.
+        "adapter_orpo_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_e1.fmadapter"),
+        "adapter_orpo_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_e2.fmadapter"),
 
         // EXP-028: scoped starting-point critique ON THE CHAMPION ADAPTER (v2a_e1, 0.409).
         // The champion is pinned at coverage 3; its OWN judge notes name ONE recurring
