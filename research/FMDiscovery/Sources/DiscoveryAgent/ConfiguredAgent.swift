@@ -90,6 +90,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
         case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
         case .adapterOverCountGivensDedup: return try await adapterOverCountGivensDedup(input)
+        case .adapterOverCountDistinctDrop: return try await adapterOverCountDistinctDrop(input)
         }
     }
 
@@ -992,6 +993,96 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-051: same over-count(8) + high-recall redundancy DETECTOR as the champion exp046,
+    /// but a different DROP RULE. exp046 always removes the LATER member of the first redundant
+    /// pair. The hidden cost: the champion's EARLY slots are its highest-confidence "obvious"
+    /// unknowns (date, budget) — exactly the ones the judge says it already nails — while a
+    /// LATER slot is sometimes where a less-obvious, more distinctive unknown surfaces. Dropping
+    /// the later member by position can therefore discard the more distinctive question and keep
+    /// a generic early duplicate, hurting coverage. exp051 instead drops the LESS-DISTINCTIVE
+    /// member of the redundant pair — the one with higher AGGREGATE similarity (max cos/Jaccard)
+    /// to the OTHER six questions — keeping whichever member adds more unique coverage to the
+    /// final 7. Pure deterministic distinctiveness ranking on the existing native candidates; no
+    /// foreign source (no specificity tax) and no extra FM calls beyond exp046's detector. Floor
+    /// is identical to exp046: when no redundant pair exists, drop the 8th. So this can only
+    /// CHANGE which of two redundant members survives — an isolated test of the drop rule.
+    private func adapterOverCountDistinctDrop(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+
+        // exp046's high-recall redundancy union (binary same-info OR cos≥0.75 OR Jaccard≥0.5).
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosHigh(_ i: Int, _ j: Int) -> Bool {
+            guard let v = vecs else { return false }
+            return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosHigh(i, j) { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        // Continuous similarity for distinctiveness ranking (deterministic, no extra FM calls).
+        func sim(_ i: Int, _ j: Int) -> Double {
+            var s = FillerDetector.jaccard(titles[i], titles[j])
+            if let v = vecs { s = max(s, SemanticRetrieval.cos(v[i], v[j])) }
+            return s
+        }
+
+        // Find the FIRST redundant pair (identical scan order to exp046).
+        var pair: (Int, Int)? = nil
+        outer: for j in 1..<qs.count {
+            for i in 0..<j where await redundant(i, j) { pair = (i, j); break outer }
+        }
+
+        let dropIdx: Int
+        if let (i, j) = pair {
+            // Drop the LESS-DISTINCTIVE member: higher aggregate similarity to the other six.
+            // Tie → drop the later member (j), matching exp046's behaviour.
+            let others = (0..<qs.count).filter { $0 != i && $0 != j }
+            let aggI = others.map { sim(i, $0) }.reduce(0, +)
+            let aggJ = others.map { sim(j, $0) }.reduce(0, +)
+            dropIdx = aggI > aggJ ? i : j
+        } else {
+            dropIdx = qs.count - 1   // floor: identical to exp046 (drop the 8th).
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 

@@ -714,6 +714,23 @@ public enum Configs {
         "exp050": DiscoveryConfig(topology: .adapterOverCountGivensDedup,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-051: same over-count(8) + high-recall redundancy DETECTOR as champion exp046
+        // (0.430), but a different DROP RULE for the redundant pair. exp046 always removes the
+        // LATER member; but the champion's EARLY slots are its highest-confidence "obvious"
+        // unknowns (date, budget) while a LATER slot is sometimes where a more distinctive,
+        // less-obvious unknown surfaces — so dropping by position can discard the distinctive
+        // question and keep a generic early duplicate, hurting coverage. exp051 drops the
+        // LESS-DISTINCTIVE member instead — the one with higher AGGREGATE similarity (max
+        // cos/Jaccard) to the OTHER six — keeping whichever adds more unique coverage to the
+        // final 7. Pure deterministic distinctiveness ranking over the existing native
+        // candidates: no foreign source (no specificity tax), no extra FM calls beyond exp046's
+        // detector. Floor IDENTICAL to exp046 (drop the 8th when no redundancy), so this can
+        // only change which of two redundant members survives — an isolated test of the drop
+        // rule's effect on the coverage axis.
+        "exp051": DiscoveryConfig(topology: .adapterOverCountDistinctDrop,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
