@@ -203,7 +203,28 @@
       <li><strong>Non-redundancy</strong> — the questions don't overlap.</li>
     </ul>
   </div>
-  <p><strong>The levers.</strong> Experiments explore a wide space: decoding settings, multi-step pipelines (draft &rarr; critique &rarr; revise), guided output schemas, deterministic post-processing in code, retrieval of similar examples as few-shot demonstrations, and — most powerfully — a <span class="pill p-lora">fine-tuned adapter</span> that bakes the skill into the model's weights.</p>
+  <p><strong>The levers.</strong> An experiment is some combination of the knobs below. They fall into two groups — the things you change <em>at the moment of answering</em> (no retraining; this is what the autonomous agent explores), and the model's <em>weights</em> themselves (a separate training step we run by hand).</p>
+
+  <div class="card">
+    <h3>Inference-time knobs <span class="muted" style="font-weight:400">— change how the model answers, no retraining</span></h3>
+    <ul style="margin:0;padding-left:18px">
+      <li><strong>Decoding.</strong> How the model picks each next word — always the single most likely one (predictable) or sampling for variety. We learned predictable ("greedy") is both better and less noisy here.</li>
+      <li><strong>Prompt &amp; instructions.</strong> The exact wording of the request and any guidance baked into it.</li>
+      <li><strong>Output schema.</strong> Forcing the shape of the answer — exactly seven questions, one-topic-per-slot, or deliberately <em>eight</em>-then-trim (the trick behind the current best).</li>
+      <li><strong>Multi-step pipelines.</strong> Chaining calls — draft, then self-critique and revise; or generate several candidates and pick, vote, or run a tournament between them.</li>
+      <li><strong>Retrieval (few-shot examples).</strong> Pulling the most similar past tasks and showing their answers as inspiration before the model writes its own.</li>
+      <li><strong>Post-processing in code.</strong> Deterministic clean-up after generation — removing near-duplicates, scoring coverage against known-important topics, the over-generate-and-prune step.</li>
+      <li><strong>Tool use.</strong> Letting the model call a helper function mid-answer (e.g. a coverage check). Available in the framework; not yet exploited.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>The weights <span class="muted" style="font-weight:400">— retrain the model itself (the most powerful lever)</span></h3>
+    <ul style="margin:0;padding-left:18px">
+      <li><strong><span class="pill p-lora">Fine-tuned adapter</span> (LoRA).</strong> A small trained add-on that bakes the skill into the model's own weights. This is the single biggest lever — and the only one that broke past the prompting ceiling. <em>Every result above ~0.32, including the current 0.44 best, runs on it.</em></li>
+      <li><strong>Training-data variants.</strong> Levers on the adapter itself — more examples, coverage-emphasized examples, and (next) a "preference" method that teaches the model to <em>prefer</em> better answers rather than merely imitate them.</li>
+    </ul>
+  </div>
+  <p class="muted" style="font-size:14px">The autonomous agent only turns the inference-time knobs (it can't retrain the model). The weights are trained separately, by hand — that's the track aimed squarely at the coverage gap.</p>
   <div class="callout key">
     <strong>The measurement lesson, learned the hard way.</strong> We first screened ideas on a small 10-case proxy with random sampling. Twice, that produced a "win" that <em>evaporated</em> on the full set. The fix is now law: gate every decision on all <strong>30 cases with deterministic (greedy) decoding</strong>. Noise had been masquerading as progress.
   </div>
@@ -241,7 +262,7 @@
     <div class="col yes">
       <h3>What worked</h3>
       <ul>
-        <li><b>Fine-tuning an adapter.</b> Baking the skill into the weights was the <em>only</em> thing that broke past the prompting ceiling — a jump from ~0.32 to 0.41.</li>
+        <li><b>Fine-tuning an adapter.</b> Baking the skill into the weights was the <em>only</em> thing that broke past the prompting ceiling — a jump from ~0.32 to 0.41. Everything above that line, including the current 0.44 best, is built <em>on top of</em> this adapter — the later wins stack inference tricks onto it, they don't replace it.</li>
         <li><b>Deterministic decoding.</b> Removing sampling randomness both raised quality and made results trustworthy.</li>
         <li><b>Over-generate in the model's own voice, then prune.</b> Ask the adapter for 8 questions and drop the weakest — recovering a wasted slot <em>without</em> the specificity tax, because the spare comes from the model's own distribution.</li>
         <li><b>Grounding the prune in known-important topics</b> edged it a little higher still (current best, 0.44).</li>
