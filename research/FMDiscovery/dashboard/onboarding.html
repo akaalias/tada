@@ -77,6 +77,10 @@
   .verdict-badge{display:inline-block;background:#fee2e2;color:var(--red);font-weight:700;
                  font-size:11px;padding:3px 10px;border-radius:999px;}
   .ex-note{font-size:12.5px;line-height:1.5;color:#334155;margin:9px 0 0;}
+  .ex-rubric{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 2px;}
+  .rchip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#15803d;}
+  .rchip.lo{background:#fef3c7;color:#b45309;}
+  .rscale{font-size:11px;color:var(--muted);margin:0;}
   .ex-caption{font-size:13px;color:var(--muted);margin:10px 0 18px;line-height:1.6;}
   /* bento grid for the levers */
   .bento-group{margin:18px 0 6px;}
@@ -245,6 +249,14 @@
       <div class="ex-head ex-h-judge">Judgement</div>
       <div class="ex-model">claude-sonnet-4-6</div>
       <p><span class="verdict-badge">Gold better</span></p>
+      <div class="ex-rubric">
+        <span class="rchip">Atomicity 4</span>
+        <span class="rchip lo">Specificity 3</span>
+        <span class="rchip lo">Coverage 3</span>
+        <span class="rchip lo">Naturalness 3</span>
+        <span class="rchip">Non-redundancy 4</span>
+      </div>
+      <p class="rscale">each scored 1&ndash;5</p>
       <p class="ex-note">The on-device set asks a nonsensical question ("Which city in Paris are you staying in?" &mdash; Paris is a city) and omits two critical unknowns &mdash; the <strong>departure city</strong> and the <strong>party size</strong> &mdash; making it less useful for planning than the gold set.</p>
     </div>
   </div>
