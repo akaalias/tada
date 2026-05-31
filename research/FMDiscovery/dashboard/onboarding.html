@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>On-Device Discovery Planner — Project Onboarding</title>
+<style>
+  :root{--green:#16a34a;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--red:#dc2626;--amber:#d97706;
+        --fm:#db2777;--swift:#ea580c;--lora:#ca8a04;--indigo:#6d28d9;--teal:#0e7490;}
+  *{box-sizing:border-box;}
+  body{margin:0;font:17px/1.65 -apple-system,system-ui,sans-serif;color:var(--ink);background:#f8fafc;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px 80px;}
+  header.hero{padding:56px 24px 28px;max-width:880px;margin:0 auto;}
+  .eyebrow{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fm);}
+  h1{font-size:34px;line-height:1.2;margin:10px 0 8px;}
+  .lede{font-size:19px;color:#334155;margin:0;}
+  .nav{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;}
+  .nav a{font-size:14px;font-weight:600;text-decoration:none;color:var(--teal);border:1px solid var(--line);
+        background:#fff;border-radius:999px;padding:6px 14px;}
+  .nav a:hover{border-color:var(--teal);}
+  .nav a.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  section{margin-top:44px;}
+  h2{font-size:24px;margin:0 0 6px;scroll-margin-top:20px;}
+  h2 .num{color:var(--muted);font-weight:600;margin-right:10px;}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 16px;}
+  p{margin:0 0 14px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;}
+  .card h3{margin:0 0 8px;font-size:17px;}
+  .muted{color:var(--muted);}
+  strong{font-weight:700;}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:14px;font-family:ui-monospace,Menlo,monospace;}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;}
+  .p-fm{background:#fce7f3;color:var(--fm);} .p-lora{background:#fef9c3;color:var(--lora);}
+  .p-swift{background:#ffedd5;color:var(--swift);} .p-judge{background:#ede9fe;color:var(--indigo);}
+  /* milestone progression */
+  .prog{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:8px 0 4px;}
+  .step{flex:1 1 120px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;}
+  .step.best{border-color:var(--green);background:#f0fdf4;}
+  .step .q{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;}
+  .step .lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+  .arrow{align-self:center;color:var(--muted);font-weight:700;}
+  /* three-column findings */
+  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:8px;}
+  @media(max-width:760px){.cols{grid-template-columns:1fr;}}
+  .col{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;}
+  .col.no{border-top:3px solid var(--red);}
+  .col.yes{border-top:3px solid var(--green);}
+  .col.wow{border-top:3px solid var(--amber);}
+  .col h3{font-size:15px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 10px;}
+  .col.no h3{color:var(--red);} .col.yes h3{color:var(--green);} .col.wow h3{color:var(--amber);}
+  .col ul{margin:0;padding-left:18px;} .col li{margin:0 0 10px;font-size:14.5px;line-height:1.5;}
+  .col li b{font-weight:700;}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0;font-size:14px;}
+  .node{border:2px solid var(--muted);border-radius:10px;padding:8px 12px;background:#fff;font-weight:600;}
+  .node.fm{border-color:var(--fm);color:var(--fm);} .node.judge{border-color:var(--indigo);color:var(--indigo);}
+  .node.lora{border-color:var(--lora);color:var(--lora);} .node.swift{border-color:var(--swift);color:var(--swift);}
+  .callout{border-left:3px solid var(--lora);background:#fffbeb;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0;font-size:15px;}
+  .callout.key{border-left-color:var(--green);background:#f0fdf4;}
+  footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;}
+  .kpi{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:4px 8px 4px 0;background:#fff;}
+  .kpi b{font-size:18px;font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="eyebrow">Project Onboarding</div>
+  <h1>Teaching a phone-sized model to ask the right questions</h1>
+  <p class="lede">How we are replacing a frontier cloud model with Apple's on-device foundation model for one specific job — and using an autonomous research loop to close the gap.</p>
+  <div class="nav">
+    <a class="primary" href="index.html">View the live dashboard &rarr;</a>
+    <a href="#goal">The goal</a>
+    <a href="#autoresearch">Autoresearch</a>
+    <a href="#agent">The agent</a>
+    <a href="#approach">Approach</a>
+    <a href="#learned">What we've learned</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section id="goal">
+  <h2><span class="num">1</span>The goal</h2>
+  <p class="sub">One feature, moved from the cloud to the device — with no quality loss.</p>
+  <p>Our app has a <strong>discovery planner</strong>: when someone types a one-line task — <em>"plan a trip to Paris"</em>, <em>"write my resume"</em> — it responds with a restated title and <strong>exactly seven clarifying questions</strong> that surface what it needs to know before planning. Today that runs on Anthropic's Claude Sonnet in the cloud.</p>
+  <p>We want it to run <strong>entirely on-device</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — a roughly 3-billion-parameter model that ships with the OS. That means privacy (nothing leaves the phone), zero inference cost, and offline capability.</p>
+  <div class="callout">
+    <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. We use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we are trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
+  </div>
+  <p>The on-device model is ~20&times; smaller than the cloud model. The whole project is the question: <strong>can a small specialized model match a large general one on a narrow, well-defined task?</strong></p>
+</section>
+
+<section id="autoresearch">
+  <h2><span class="num">2</span>Autoresearch: a self-improving research loop</h2>
+  <p class="sub">A frozen "ruler" to measure against, and a mutable "agent" we keep improving.</p>
+  <p>Rather than hand-tune the on-device model by trial and error, we built an <strong>autoresearch loop</strong> (inspired by Andrej Karpathy's framing). It has two halves that must never blur together:</p>
+  <div class="flow">
+    <span class="node judge">Frozen RULER</span>
+    <span class="muted">vs.</span>
+    <span class="node fm">Mutable AGENT</span>
+  </div>
+  <div class="card">
+    <h3>The ruler (frozen)</h3>
+    <p style="margin:0">A fixed set of <strong>30 held-out tasks</strong>, each with a <strong>gold</strong> answer written by Sonnet, plus a Sonnet <strong>judge</strong> that compares the on-device answer to the gold head-to-head and scores it on a five-point rubric. This never changes — it is the honest measuring stick. Making the ruler easier is forbidden.</p>
+  </div>
+  <div class="card">
+    <h3>The agent (mutable)</h3>
+    <p style="margin:0">The on-device question-generator itself — its prompts, its multi-step pipelines, and (the big lever) a fine-tuned adapter. This is what every experiment changes, trying to score higher against the unchanging ruler.</p>
+  </div>
+  <p>Each experiment produces one number — a <strong>quality score from 0 to 1</strong> — plus the judge's written reasoning for every case. Because the ruler is fixed, scores are comparable across months of experiments. The <a href="index.html">live dashboard</a> plots every experiment as a point and tracks the running best.</p>
+</section>
+
+<section id="agent">
+  <h2><span class="num">3</span>The autonomous coding agent</h2>
+  <p class="sub">A second AI that writes the experiments — one per iteration, on a tight leash.</p>
+  <p>The loop is driven by a <strong>headless Claude agent</strong> that runs unattended. Each iteration it does the full scientific cycle by itself: read the experiment log and the judge's latest failure notes, form <strong>one</strong> hypothesis, write the code, build it, run the evaluation (which auto-scores via the Sonnet judge), and honestly log whether it helped — then stop.</p>
+  <div class="card">
+    <h3>What keeps it safe and honest</h3>
+    <ul style="margin:0;padding-left:18px">
+      <li>It may only edit the <strong>agent</strong>'s code — the ruler (gold tasks, judge, metric) is off-limits and any tampering is auto-reverted.</li>
+      <li>It has <strong>no web access</strong> and a scoped toolset; it cannot reach outside the project.</li>
+      <li>Every experiment must end in a working build and exactly one logged result. Each is committed automatically, so progress is fully traceable.</li>
+      <li>Strict <strong>anti-cheating rules</strong>: it can use example answers as inspiration but never copy them into its output (more on why below).</li>
+    </ul>
+  </div>
+  <p class="muted">Two kinds of operator appear on the dashboard: <span class="pill p-judge">Interactive</span> work done in a guided session (mostly the adapter training) and <span class="pill" style="background:#cffafe;color:#0e7490">Autonomous</span> experiments written by this agent.</p>
+</section>
+
+<section id="approach">
+  <h2><span class="num">4</span>How an experiment works</h2>
+  <p class="sub">The levers we can pull, the rubric we're scored on, and the rule that keeps us honest.</p>
+  <p><strong>The rubric.</strong> The judge scores each set of seven questions on five dimensions, 1&ndash;5:</p>
+  <div class="card" style="padding:14px 22px">
+    <ul style="margin:0;padding-left:18px">
+      <li><strong>Atomicity</strong> — each question asks exactly one thing.</li>
+      <li><strong>Specificity</strong> — concrete to <em>this</em> task, not generic filler.</li>
+      <li><strong>Coverage</strong> — the seven cover the most decision-critical unknowns. <span class="muted">(This has been the stubborn one.)</span></li>
+      <li><strong>Naturalness</strong> — reads like a thoughtful human coach.</li>
+      <li><strong>Non-redundancy</strong> — the questions don't overlap.</li>
+    </ul>
+  </div>
+  <p><strong>The levers.</strong> Experiments explore a wide space: decoding settings, multi-step pipelines (draft &rarr; critique &rarr; revise), guided output schemas, deterministic post-processing in code, retrieval of similar examples as few-shot demonstrations, and — most powerfully — a <span class="pill p-lora">fine-tuned adapter</span> that bakes the skill into the model's weights.</p>
+  <div class="callout key">
+    <strong>The measurement lesson, learned the hard way.</strong> We first screened ideas on a small 10-case proxy with random sampling. Twice, that produced a "win" that <em>evaporated</em> on the full set. The fix is now law: gate every decision on all <strong>30 cases with deterministic (greedy) decoding</strong>. Noise had been masquerading as progress.
+  </div>
+  <div class="callout">
+    <strong>Why we never copy examples.</strong> The agent retrieves similar past examples to learn from. One experiment scored a suspicious 0.498 — far above everything else. It turned out the retrieval had handed several test cases <em>their own gold answer</em> as a "demonstration," which the model copied and was then graded against. The agent caught this itself, flagged the result invalid, and we hard-wired a "leave-one-out" guard so it can never happen again. A real safeguard against fooling ourselves.
+  </div>
+</section>
+
+<section id="learned">
+  <h2><span class="num">5</span>What we've learned</h2>
+  <p class="sub">Around 60 experiments across two tracks. Here's the honest scorecard.</p>
+
+  <p><strong>The climb so far</strong> (quality on the full 30-case gate):</p>
+  <div class="prog">
+    <div class="step"><div class="q">0.28</div><div class="lbl">Stock model, single shot</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="q">~0.32</div><div class="lbl">Best prompting / retrieval</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="q">0.41</div><div class="lbl">Fine-tuned adapter</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step best"><div class="q">0.44</div><div class="lbl">Adapter + over-generate &amp; prune (current best)</div></div>
+  </div>
+  <p class="muted" style="font-size:14px">For reference, a perfect tie with Sonnet on every case would be ~0.5; consistently beating it would be higher. We are not there — the current best still loses about 21 of 30 head-to-heads — but the trajectory is real and every step is reproducible.</p>
+
+  <div class="cols">
+    <div class="col no">
+      <h3>What didn't work</h3>
+      <ul>
+        <li><b>Throwing more model calls at it.</b> Brainstorm-then-pick, best-of-N, self-critique, voting — every "make the small model check its own work" scheme failed. A weak judge of its own output just compounds the weakness.</li>
+        <li><b>Prompt and schema engineering for coverage.</b> Forcing a fixed checklist of dimensions, chain-of-thought "name the unknowns first," redundancy repair — all plateaued at the same coverage score.</li>
+        <li><b>More training data alone.</b> Doubling the examples helped a little; re-shaping them to emphasize coverage did <em>not</em> move coverage at all.</li>
+        <li><b>Borrowing phrasing from generic examples.</b> Backfilling a weak slot from a foreign source always cost specificity.</li>
+      </ul>
+    </div>
+    <div class="col yes">
+      <h3>What worked</h3>
+      <ul>
+        <li><b>Fine-tuning an adapter.</b> Baking the skill into the weights was the <em>only</em> thing that broke past the prompting ceiling — a jump from ~0.32 to 0.41.</li>
+        <li><b>Deterministic decoding.</b> Removing sampling randomness both raised quality and made results trustworthy.</li>
+        <li><b>Over-generate in the model's own voice, then prune.</b> Ask the adapter for 8 questions and drop the weakest — recovering a wasted slot <em>without</em> the specificity tax, because the spare comes from the model's own distribution.</li>
+        <li><b>Grounding the prune in known-important topics</b> edged it a little higher still (current best, 0.44).</li>
+      </ul>
+    </div>
+    <div class="col wow">
+      <h3>Biggest surprises</h3>
+      <ul>
+        <li><b>It's a capability gap, not a prompting gap.</b> 27 clever in-context experiments couldn't beat what a single fine-tuned adapter did — strong evidence the limit is what the model <em>knows</em>, not how we ask.</li>
+        <li><b>Cheap beat expensive.</b> A single well-trained call consistently outperformed elaborate multi-call pipelines.</li>
+        <li><b>"Coverage" is locked in the weights.</b> Every inference-time trick improves phrasing and reduces overlap, but none teaches the model <em>which</em> unknown actually matters most. That judgment seems to live in the weights, not the prompt.</li>
+        <li><b>The system caught itself cheating</b> (the 0.498 leak) — and we corrected it openly rather than banking the win.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:22px">
+    <strong>Where this points next.</strong> Both tracks — the autonomous agent and the manual training work — keep arriving at the same conclusion from opposite directions: the remaining gap is <em>coverage</em>, and it is weight-locked. The next bet is a training method that distills not just Sonnet's answers but its <em>judgment</em> of which questions matter — teaching the model to prefer high-coverage question sets, not just imitate them.
+  </div>
+</section>
+
+<footer>
+  <span class="kpi">Current best: <b>0.44</b></span>
+  <span class="kpi">Experiments run: <b>60+</b></span>
+  <span class="kpi">On-device model: <b>Apple FM ~3B</b></span>
+  <p style="margin-top:16px">This page is a narrative overview. For the full, live record — every experiment, its hypothesis, method, result, and process diagram — see the <a href="index.html">interactive dashboard</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>
