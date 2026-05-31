@@ -94,6 +94,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterOverCountGlobalDedup: return try await adapterOverCountGlobalDedup(input)
         case .adapterOverCountDistinctDrop: return try await adapterOverCountDistinctDrop(input)
         case .adapterOverCountHiRecall: return try await adapterOverCountHiRecall(input)
+        case .adapterParallelDrawSpare: return try await adapterParallelDrawSpare(input)
         }
     }
 
@@ -1091,6 +1092,148 @@ public struct ConfiguredAgent: Sendable {
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-055: recover the atom-5 the champion exp046 (0.430) sacrificed. exp046 fixes
+    /// non-redundancy by sourcing one extra question from a .count(8) schema, but count=8
+    /// perturbs the native draw into un-truncatable noun-pair compounds capping atomicity at
+    /// 4. exp055 sources the spare WITHOUT the count=8 perturbation: PRIMARY draw is the pure
+    /// greedy count=7 champion (atom-5 native voice); on the SAME exp054 high-recall redundancy
+    /// graph, drop the highest-degree node → 6; then draw a SECOND seeded count=7 from the SAME
+    /// champion adapter and splice its single most-distinct, non-redundant question as the 7th —
+    /// a champion-native, atom-5, specific spare. No redundancy → pure champion verbatim (floor).
+    private func adapterParallelDrawSpare(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+
+        // PRIMARY: pure greedy count=7 champion (atom-5 native voice).
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        func result(_ list: [FMQuestion]) -> DiscoveryResult {
+            DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: list.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                        requiresExternalAction: $0.requiresExternalAction) })
+        }
+
+        var qs = plan.questions
+        guard qs.count >= 7 else { return result(qs) }
+        qs = Array(qs.prefix(7))
+        let titles = qs.map { $0.question }
+        let n = qs.count
+
+        // EXACT exp046/054 high-recall union detector (byte-identical prompt + thresholds).
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosVal(_ i: Int, _ j: Int) -> Double {
+            guard let v = vecs else { return 0 }
+            return SemanticRetrieval.cos(v[i], v[j])
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosVal(i, j) >= 0.75 { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        // exp054 global redundancy graph: drop the highest-degree node.
+        var degree = [Int](repeating: 0, count: n)
+        var anyRedundant = false
+        for i in 0..<n {
+            for j in (i + 1)..<n where await redundant(i, j) {
+                degree[i] += 1; degree[j] += 1; anyRedundant = true
+            }
+        }
+        // No redundancy → pure champion verbatim (atom-5 / 0.409 floor).
+        guard anyRedundant else { return result(qs) }
+
+        func aggCos(_ i: Int) -> Double {
+            (0..<n).filter { $0 != i }.map { cosVal(i, $0) }.reduce(0, +)
+        }
+        var dropIdx = 0
+        for i in 1..<n {
+            let d = degree[i], db = degree[dropIdx]
+            if d > db { dropIdx = i }
+            else if d == db {
+                let a = aggCos(i), ab = aggCos(dropIdx)
+                if a > ab + 1e-9 { dropIdx = i }
+                else if abs(a - ab) <= 1e-9 && i > dropIdx { dropIdx = i }
+            }
+        }
+        var kept = qs
+        kept.remove(at: dropIdx)   // 6 native questions remain.
+        let keptTitles = kept.map { $0.question }
+
+        // SECOND draw: seeded sampled count=7 from the SAME champion adapter (atom-5 voice).
+        // Seeded → reproducible under the greedy gate; the deterministic max-distinctiveness
+        // selection over its 7 questions supplies the stability.
+        let donorSession = LanguageModelSession(model: model) { Self.adapterSystem }
+        let donorOptions = GenerationOptions(
+            sampling: .random(probabilityThreshold: 0.92, seed: 7),
+            temperature: 0.7, maximumResponseTokens: config.maxTokens)
+        guard let donorPlan = try? await donorSession.respond(
+            to: prompt, generating: FMDiscoveryPlan.self, includeSchemaInPrompt: false,
+            options: donorOptions).content else {
+            return result(kept)   // donor failed → 6 questions (rare; still valid set).
+        }
+
+        // Pick the donor question NOT redundant with any kept question and MOST distinct
+        // (max min-cosine-distance to the kept 6) → a fresh, native, atom-5 spare.
+        let candidates = donorPlan.questions
+        let candTitles = candidates.map { $0.question }
+        let allTitles = keptTitles + candTitles
+        let allVecs = SemanticRetrieval.vectors(for: allTitles)
+        func cosA(_ i: Int, _ j: Int) -> Double {
+            guard let v = allVecs else { return 0 }
+            return SemanticRetrieval.cos(v[i], v[j])
+        }
+        func donorRedundant(_ c: Int) async -> Bool {
+            let ci = keptTitles.count + c
+            for k in 0..<keptTitles.count {
+                if FillerDetector.jaccard(candTitles[c], keptTitles[k]) >= 0.5 { return true }
+                if cosA(ci, k) >= 0.75 { return true }
+            }
+            // Binary same-info only against the nearest kept question (cost control).
+            var nearest = 0; var best = -1.0
+            for k in 0..<keptTitles.count { let s = cosA(ci, k); if s > best { best = s; nearest = k } }
+            return await sameInfo(candTitles[c], keptTitles[nearest])
+        }
+
+        var bestCand = -1
+        var bestScore = -1.0   // maximise min-distance (= 1 - max cos) to the kept 6.
+        for c in 0..<candidates.count {
+            if await donorRedundant(c) { continue }
+            let ci = keptTitles.count + c
+            var maxCos = -1.0
+            for k in 0..<keptTitles.count { maxCos = max(maxCos, cosA(ci, k)) }
+            let distinctiveness = 1.0 - maxCos
+            if distinctiveness > bestScore { bestScore = distinctiveness; bestCand = c }
+        }
+
+        guard bestCand >= 0 else {
+            // No non-redundant donor question → safest is the pure champion (atom-5 floor).
+            return result(qs)
+        }
+        // Splice the native spare into the dropped slot's position to preserve ordering.
+        kept.insert(candidates[bestCand], at: min(dropIdx, kept.count))
+        return result(Array(kept.prefix(7)))
     }
 
     /// EXP-053: EXACT exp046 over-count(8)-then-dedup, changing ONLY the binary semantic

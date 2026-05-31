@@ -1,0 +1,33 @@
+{
+  "summary": "Parallel native count=7, atom-5 redundancy fix",
+  "hypothesis": "Replacing exp046's count=8 perturbation with a same-adapter atom-5 question at count=7 will reduce redundancy and improve overall quality, because targeting a specific atomic gap directly addresses the coverage shortfall without over-generating.",
+  "technique": "A parallel ensemble of on-device adapter calls producing exactly 7 questions natively, with the redundancy fix applied by substituting the prior count=8 perturbation with a same-adapter atom-5 targeted question draft.",
+  "result": "Scored 0.366 on the full-30 gate (2 wins / 1 tie / 26 losses vs Sonnet); specPass=100% but rubric showed atom=5, spec=3, cover=3, nat=4, nonRed=3 \u2014 redundancy did not meaningfully improve over the exp046 baseline, and the hypothesis was falsified. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Parallel adapter calls, native count=7",
+      "knobs": {
+        "n": "2",
+        "model": "adapter-v1"
+      },
+      "call_labels": [
+        "draft standard 7 questions",
+        "draft atom-5 targeted question"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Fix redundancy, select final 7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp055"
+}

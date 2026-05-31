@@ -789,6 +789,23 @@ public enum Configs {
         "exp054": DiscoveryConfig(topology: .adapterOverCountGlobalDedup,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-055: recover the atomicity-5 the champion exp046 (0.430) sacrificed. exp046 lifts
+        // nonRed 3→4 by drawing ONE extra question from a .count(8) schema — but count=8 perturbs
+        // the native draw into un-truncatable noun-pair compounds ("breed or age", "current age
+        // and retirement age") that capped atom at 4, whereas the PURE count=7 champion held
+        // atom 5 (the source of its 0.409). The unbroken assumption across exp046-054 was that
+        // the redundancy-fixing spare must come from an OVER-COUNT draw. It need not: draw the
+        // PURE greedy count=7 (atom-5 native voice) as PRIMARY, build the exact exp054 high-recall
+        // redundancy graph (Jaccard≥0.5 OR cos≥0.75 OR binary same-info), drop the highest-degree
+        // node → 6 native questions; then draw a SECOND seeded count=7 from the SAME champion
+        // adapter and splice its single most-distinct, non-redundant question (max min-cosine to
+        // the kept 6) as the 7th. The spare is same-adapter native voice (no count=8 atom tax, no
+        // foreign v2b-donor spec tax of exp035), so the set should reach atom-5 + nonRed-4 — above
+        // exp046's atom-4 + nonRed-4. No redundancy → pure champion verbatim (atom-5 / 0.409 floor).
+        "exp055": DiscoveryConfig(topology: .adapterParallelDrawSpare,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
