@@ -1,0 +1,34 @@
+{
+  "summary": "RAG demos + over-count(8) dedup on adapter v2a_e1",
+  "hypothesis": "Stacking exp040's corpus-RAG few-shot demos (which targeted coverage/specificity) with exp046's over-count(8)+dedup (which targeted non-redundancy) should be additive and push quality above the 0.430 champion, because the two add-ons were believed to act on independent rubric axes.",
+  "technique": "A single greedy call on the champion v2a_e1 adapter with both perturbations layered: exp040-style corpus RAG exemplars injected into the system prompt, plus exp046-style over-generation of 8 candidates followed by deterministic Swift dedup down to 7.",
+  "result": "Scored 0.395 on the full-30 greedy eval (3 wins / 1 tie / 25 losses vs Sonnet, 1 refusal) \u2014 a real regression of \u22120.035 below the champion exp046 (0.430) and also below corpus-RAG-only exp040 (0.405). Rubric: atom 4 / spec 4 / coverage 3 / nonRed 3 (fell from exp046's 4) / nat 4. The hypothesis was falsified: the corpus demo block perturbed the count-8 generation enough that the dedup pass could no longer suppress the single clean redundant pair it reliably fixed in exp046, while simultaneously introducing new redundancies it couldn't reach \u2014 the two add-ons compounded and cancelled rather than adding. Discarded; champion remains exp046.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch corpus RAG few-shot demo exemplars"
+    },
+    {
+      "kind": "expand",
+      "text": "Greedy adapter call, over-produce 8 questions",
+      "knobs": {
+        "sampling": "greedy",
+        "n": "8",
+        "model": "v2a_e1"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Swift dedup, trim to 7 questions"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp049"
+}

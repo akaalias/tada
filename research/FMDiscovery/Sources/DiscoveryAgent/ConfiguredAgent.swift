@@ -88,6 +88,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterOverCountDedup: return try await adapterOverCountDedup(input, repair: false)
         case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
         case .adapterOverCountDedup9: return try await adapterOverCountDedup9(input)
+        case .adapterCorpusOverCountDedup: return try await adapterCorpusOverCountDedup(input)
         }
     }
 
@@ -990,6 +991,89 @@ public struct ConfiguredAgent: Sendable {
 
         return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
             questions: qs.map { DiscoveryQuestion(title: finalTitle($0.question), description: finalDetail($0.detail),
+                                                  requiresExternalAction: $0.requiresExternalAction) })
+    }
+
+    /// EXP-049: stacks the two strongest orthogonal add-ons — exp040 corpus-RAG few-shot
+    /// demos (coverage/specificity prior, tied 0.405) AND exp046 over-count(8)-then-dedup
+    /// (non-redundancy fix, 0.430). The corpus demos are appended to the native system prompt
+    /// exactly as exp040 (which proved this delivery preserves adapter discipline); the call
+    /// uses schema .count(8) so the champion writes ONE extra native question; then the same
+    /// high-recall dedup (binary same-info OR cos≥0.75 OR Jaccard≥0.5) drops the first
+    /// redundant later slot. Hypothesis: the demos lift coverage/spec while the native spare +
+    /// dedup lift non-redundancy — gains on DIFFERENT rubric axes should stack above 0.430.
+    private func adapterCorpusOverCountDedup(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        // exp040 corpus-RAG demonstration block (semantic-nearest, near-dup ceiling + LOO).
+        let examples = CorpusBank.nearestSemantic(to: input, k: 2, jaccardCeiling: 0.5)
+        let block = examples.map { ex -> String in
+            let qs = ex.questions.enumerated()
+                .map { "\($0.offset + 1). \($0.element)" }
+                .joined(separator: "\n")
+            return "Task: \"\(ex.input)\"\n\(qs)"
+        }.joined(separator: "\n\n")
+        let system = Self.adapterSystem + """
+
+
+            For reference, here are strong question sets other coaches wrote for SIMILAR \
+            tasks. Study which decision-critical unknowns they cover (budget, scope, \
+            who-for, timeline, current-state, location), then write FRESH questions \
+            specific to the user's actual task. Do not copy or paraphrase these.
+
+            \(block)
+            """
+
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { system }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        guard qs.count >= 7 else {
+            return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                      requiresExternalAction: $0.requiresExternalAction) })
+        }
+        let titles = qs.map { $0.question }
+
+        let dedupSystem = """
+        You are a strict checker comparing TWO clarifying questions a coach might ask a \
+        user before planning a task. Decide whether they request ESSENTIALLY THE SAME \
+        information — i.e. a single answer would substantially answer both, or they probe \
+        the same underlying unknown even if worded differently (for example "What date is \
+        the event?" and "When will it take place?" are the same; "What is your budget?" and \
+        "What date is the event?" are different). Answer true ONLY if the two are \
+        essentially redundant; answer false if each asks for a genuinely different fact.
+        """
+        let vecs = SemanticRetrieval.vectors(for: titles)
+        func cosHigh(_ i: Int, _ j: Int) -> Bool {
+            guard let v = vecs else { return false }
+            return SemanticRetrieval.cos(v[i], v[j]) >= 0.75
+        }
+        func sameInfo(_ a: String, _ b: String) async -> Bool {
+            let s = LanguageModelSession(model: model) { dedupSystem }
+            let p = "Question A: \"\(a)\"\nQuestion B: \"\(b)\"\n\nDo A and B ask the user for essentially the same information?"
+            guard let r = try? await s.respond(
+                to: p, generating: FMYesNo.self,
+                options: config.options(temp: 0, sampling: .greedy)) else { return false }
+            return r.content.yes
+        }
+        func redundant(_ i: Int, _ j: Int) async -> Bool {
+            if FillerDetector.jaccard(titles[i], titles[j]) >= 0.5 { return true }
+            if cosHigh(i, j) { return true }
+            return await sameInfo(titles[i], titles[j])
+        }
+
+        var dropIdx = qs.count - 1   // default: drop the 8th → ≈ first-7 floor.
+        outer: for j in 1..<qs.count {
+            for i in 0..<j where await redundant(i, j) { dropIdx = j; break outer }
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+
+        return DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+            questions: qs.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
                                                   requiresExternalAction: $0.requiresExternalAction) })
     }
 

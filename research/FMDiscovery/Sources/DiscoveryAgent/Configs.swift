@@ -684,6 +684,20 @@ public enum Configs {
         "exp048": DiscoveryConfig(topology: .adapterOverCountDedup9,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-049: STACK the two strongest orthogonal add-ons on the champion adapter
+        // (v2a_e1). exp040 corpus-RAG few-shot demos TIED the champion at 0.405, lifting a
+        // coverage/specificity prior via the system prompt; exp046 over-count(8)-then-dedup
+        // is the current best 0.430, lifting non-redundancy via a champion-native spare. They
+        // act on DIFFERENT rubric axes and have never been combined. This runs ONE greedy
+        // native call with BOTH: the corpus-augmented system prompt (exact exp040 delivery,
+        // near-dup ceiling + LOO → no gold leak) AND schema .count(8), then the same
+        // high-recall dedup drops the first redundant later slot. Bet: additive — corpus demos
+        // → coverage/spec, native spare + dedup → non-redundancy, net above 0.430. Risk: the
+        // two perturbations compound and dilute exp046's clean native-voice gain.
+        "exp049": DiscoveryConfig(topology: .adapterCorpusOverCountDedup,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
