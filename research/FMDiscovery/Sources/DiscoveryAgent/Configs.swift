@@ -348,6 +348,12 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_e1.fmadapter"),
         "adapter_orpo_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_e2.fmadapter"),
+        // On-policy ORPO: chosen=corpus gold, rejected=the model's OWN draft (not v2b-vs-v1
+        // style). Same topology/decoding as the SFT baseline to isolate the recipe.
+        "adapter_orpo_op_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_op_e1.fmadapter"),
+        "adapter_orpo_op_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_op_e2.fmadapter"),
 
         // EXP-028: scoped starting-point critique ON THE CHAMPION ADAPTER (v2a_e1, 0.409).
         // The champion is pinned at coverage 3; its OWN judge notes name ONE recurring

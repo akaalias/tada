@@ -1,5 +1,5 @@
 {
-  "_meta": "Training provenance for the LoRA adapters, keyed by adapter version FAMILY. Each entry is the dev-time chain that PRODUCED the adapter weights (Sonnet gold corpus -> format to chat JSONL -> LoRA fine-tune), shown as a top-down column feeding the gold adapter node in the diagram. These are DETERMINISTIC recorded facts (not LLM-generated). The renderer resolves an adapter name like 'adapter-v2a-e2' to a family by normalising dashes->underscores and matching 'orpo'/'v2b'/'v2a' substrings, else v1.",
+  "_meta": "Training provenance for the LoRA adapters, keyed by adapter version FAMILY. Each entry is the dev-time chain that PRODUCED the adapter weights (Sonnet gold corpus -> format to chat JSONL -> LoRA fine-tune), shown as a top-down column feeding the gold adapter node in the diagram. These are DETERMINISTIC recorded facts (not LLM-generated). The renderer resolves an adapter name like 'adapter-v2a-e2' to a family by normalising dashes->underscores and matching 'orpo_op'/'orpo'/'v2b'/'v2a' substrings, else v1.",
   "families": {
     "v1": {
       "steps": [
@@ -26,6 +26,13 @@
       "steps": [
         { "by": "Sonnet", "title": "Preference pairs", "sub": "556 chosen v2b vs rejected v1" },
         { "by": "Python", "title": "Format", "sub": "ORPO chat JSONL · 556 / 61" },
+        { "by": "Toolkit", "title": "ORPO fine-tune", "sub": "lr 5e-4 · 6 epochs · λ=0.2" }
+      ]
+    },
+    "orpo_op": {
+      "steps": [
+        { "by": "Sonnet", "title": "On-policy pairs", "sub": "249 gold vs model's own drafts" },
+        { "by": "Python", "title": "Format", "sub": "ORPO chat JSONL · 249 / 27" },
         { "by": "Toolkit", "title": "ORPO fine-tune", "sub": "lr 5e-4 · 6 epochs · λ=0.2" }
       ]
     }

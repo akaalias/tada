@@ -151,6 +151,46 @@ case "gold":
     try GoldStore.save(cases, to: goldDir)
     print("wrote \(cases.count) gold cases to \(goldDir.path)")
 
+case "generate":
+    // Batch-generate the chosen agent's OWN question sets over the corpus/ tasks and
+    // dump them to JSONL — the raw material for on-policy ORPO negatives (the model's
+    // own drafts paired against the corpus gold). Reads corpus/ directly; loads the
+    // on-device model once. Progress to stderr; drafts to results/<--out>.
+    let agent = selectedAgent()
+    let limit = intFlag("--limit")
+    let corpusDir = packageDir.appendingPathComponent("corpus")
+    var tasks: [(id: String, input: String)] = []
+    if let files = try? FileManager.default.contentsOfDirectory(at: corpusDir, includingPropertiesForKeys: nil) {
+        for f in files where f.pathExtension == "json" {
+            guard let data = try? Data(contentsOf: f),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let id = obj["id"] as? String, let input = obj["input"] as? String else { continue }
+            tasks.append((id, input))
+        }
+    }
+    tasks.sort { $0.id < $1.id }                       // deterministic order
+    if let limit { tasks = Array(tasks.prefix(limit)) }
+    FileHandle.standardError.write(Data("[generate] agent=\(agent.name) over \(tasks.count) corpus tasks\n".utf8))
+    let outURL = packageDir.appendingPathComponent("results")
+        .appendingPathComponent(stringFlag("--out") ?? "drafts.jsonl")
+    var out = ""
+    for (i, t) in tasks.enumerated() {
+        do {
+            let r = try await agent.fn(t.input)
+            let rec: [String: Any] = ["id": t.id, "input": t.input, "title": r.taskTitle,
+                                      "description": r.taskDescription,
+                                      "questions": r.questions.map { ["title": $0.title, "description": $0.description,
+                                                                      "requiresExternalAction": $0.requiresExternalAction] }]
+            if let line = try? JSONSerialization.data(withJSONObject: rec),
+               let s = String(data: line, encoding: .utf8) { out += s + "\n" }
+            FileHandle.standardError.write(Data("[generate] \(i + 1)/\(tasks.count) \(t.id)\n".utf8))
+        } catch {
+            FileHandle.standardError.write(Data("[generate] FAIL \(t.id): \(error)\n".utf8))
+        }
+    }
+    try? out.write(to: outURL, atomically: true, encoding: .utf8)
+    print("wrote \(out.split(separator: "\n").count) drafts to results/\(stringFlag("--out") ?? "drafts.jsonl")")
+
 default:
-    print("usage: fmresearch [availability|evaluate [--limit N]|gold]")
+    print("usage: fmresearch [availability|evaluate [--limit N]|gold|generate --agent <c> [--limit N] [--out f]]")
 }

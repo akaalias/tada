@@ -1,0 +1,25 @@
+{
+  "summary": "On-policy ORPO adapter, epoch 2",
+  "hypothesis": "Training with on-policy ORPO (using the model's own drafts as rejected samples against gold chosen) should better align the adapter to avoid its own failure modes than SFT alone, producing higher-quality questions.",
+  "technique": "A LoRA adapter fine-tuned with on-policy ORPO (epoch 2), where chosen responses are gold references and rejected responses are the model's own drafted outputs, replacing the SFT baseline adapter.",
+  "result": "Scored 0.376 on the full-30 gate (1 win / 2 ties / 26 losses vs Sonnet), below the SFT baseline; rubric showed atomicity=5 and spec=4 but coverage and naturalness both stalled at 3, confirming the hypothesis was falsified \u2014 discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "generate",
+      "text": "ORPO adapter generates questions",
+      "knobs": {
+        "model": "adapter_orpo_op_e2",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "adapter_orpo_op_e2"
+}
