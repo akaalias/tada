@@ -1,0 +1,31 @@
+{
+  "summary": "Over-generate 8, corpus-coverage-grounded drop to 7",
+  "hypothesis": "Replacing internal redundancy-based dropping with an external corpus-coverage-grounded selection (keeping the 7 questions best matching gold coverage axes) should improve coverage without sacrificing other quality dimensions, because the drop decision is anchored to known important topics rather than just pairwise similarity.",
+  "technique": "A native on-device expand call over-produces 8 candidate questions; a deterministic Swift post-processing stage then drops 1 using an external corpus-coverage scorer \u2014 selecting the 7 questions that best match the gold coverage axes \u2014 replacing the prior internal redundancy-based drop used in exp046.",
+  "result": "Scored 0.440 on the full-30 gate (4 wins / 4 ties / 21 losses vs Sonnet), with specPass=100% and rubric scores atom=4, spec=4, cover=3, nat=4, nonRed=4. This is a new best, confirming that corpus-coverage-grounded dropping edges out internal redundancy dropping, though coverage remains at 3 and parity with Sonnet is still out of reach.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-produce 8 candidate questions natively",
+      "knobs": {
+        "n": "8"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Drop 1 via external corpus-coverage axis match",
+      "knobs": {
+        "k": "7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp056"
+}

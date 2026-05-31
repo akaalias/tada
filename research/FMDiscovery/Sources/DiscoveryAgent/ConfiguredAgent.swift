@@ -85,6 +85,7 @@ public struct ConfiguredAgent: Sendable {
         case .adapterCleanDraftBestOfN: return try await adapterCleanDraftBestOfN(input)
         case .adapterDeterministicRepair: return try await adapterDeterministicRepair(input)
         case .adapterRedundancyGapFill: return try await adapterRedundancyGapFill(input)
+        case .adapterCorpusCoverageSelect: return try await adapterCorpusCoverageSelect(input)
         case .adapterOverCountDedup: return try await adapterOverCountDedup(input, repair: false)
         case .adapterOverCountDedupRepair: return try await adapterOverCountDedup(input, repair: true)
         case .adapterConditionalSpare: return try await adapterConditionalSpare(input)
@@ -928,6 +929,82 @@ public struct ConfiguredAgent: Sendable {
     /// holding spec 4. Risk: count=8 may perturb the native first-7 (off-distribution); if it
     /// degrades the draft below 0.409, the bet fails and is logged honestly. Distinct from
     /// every prior dedup (those kept count=7 and backfilled from a foreign source).
+    /// EXP-056: EXACT exp046 over-count(8) greedy native draw, but the DROP rule is grounded in
+    /// the EXTERNAL corpus coverage prior (exp040 — the only inference signal that ever helped)
+    /// instead of exp046's INTERNAL redundancy. Retrieve the k nearest CORPUS task-sets (LOO,
+    /// anti-leak jaccardCeiling), embed their questions as gold-like coverage AXES, then drop the
+    /// ONE of 8 native candidates whose removal LEAST reduces total corpus-axis coverage
+    /// (Σ_axis max cosine to a kept question); ties → drop the more internally-redundant member.
+    /// Keeps the 7 native questions best matching the gold coverage distribution. Single greedy
+    /// call, deterministic, native voice (no specificity tax). Champion floor (drop the 8th) when
+    /// embeddings or corpus axes are unavailable.
+    private func adapterCorpusCoverageSelect(_ input: String) async throws -> DiscoveryResult {
+        let model = try resolveModel()
+        let prompt = "Task the user entered: \"\(input)\""
+        let session = LanguageModelSession(model: model) { Self.adapterSystem }
+        let plan = try await session.respond(
+            to: prompt, generating: FMDiscoveryPlan8.self, includeSchemaInPrompt: false,
+            options: config.options(temp: 0, sampling: .greedy)).content
+
+        var qs = plan.questions
+        func result(_ items: [FMQuestion]) -> DiscoveryResult {
+            DiscoveryResult(taskTitle: plan.title, taskDescription: plan.summary,
+                questions: items.map { DiscoveryQuestion(title: $0.question, description: $0.detail,
+                                                         requiresExternalAction: $0.requiresExternalAction) })
+        }
+        guard qs.count > 7 else { return result(qs) }
+
+        let titles = qs.map { $0.question }
+        // External coverage axes = the questions Sonnet asks for the nearest CORPUS task types
+        // (LOO + anti-leak jaccardCeiling so an eval case can never see its own gold set).
+        let axisStrings = CorpusBank.nearestSemantic(to: input, k: 3, jaccardCeiling: 0.5)
+            .flatMap { $0.questions }
+        let titleVecs = SemanticRetrieval.vectors(for: titles)
+        let axisVecs = axisStrings.isEmpty ? nil : SemanticRetrieval.vectors(for: axisStrings)
+
+        // Floor: embeddings or corpus axes unavailable → drop the 8th (≈champion first-7).
+        guard let tv = titleVecs, let av = axisVecs, !av.isEmpty else {
+            qs = Array(qs.prefix(7))
+            return result(qs)
+        }
+
+        // coverage(kept) = Σ over corpus axes of the max cosine to any kept candidate.
+        func coverage(excluding d: Int) -> Double {
+            var total = 0.0
+            for a in av {
+                var best = -1.0
+                for i in 0..<tv.count where i != d {
+                    let c = SemanticRetrieval.cos(tv[i], a)
+                    if c > best { best = c }
+                }
+                total += best
+            }
+            return total
+        }
+        // Internal redundancy of candidate d = aggregate cosine to the others (tie-break: drop
+        // the more redundant one when coverage is ~equal).
+        func internalRedundancy(_ d: Int) -> Double {
+            var s = 0.0
+            for i in 0..<tv.count where i != d { s += SemanticRetrieval.cos(tv[d], tv[i]) }
+            return s
+        }
+
+        // Pick the drop that PRESERVES the most corpus-axis coverage; ties → most redundant.
+        var dropIdx = qs.count - 1
+        var bestCov = -Double.infinity
+        var bestRed = -Double.infinity
+        for d in 0..<qs.count {
+            let cov = coverage(excluding: d)
+            let red = internalRedundancy(d)
+            if cov > bestCov + 1e-9 || (abs(cov - bestCov) <= 1e-9 && red > bestRed) {
+                bestCov = cov; bestRed = red; dropIdx = d
+            }
+        }
+        qs.remove(at: dropIdx)
+        if qs.count > 7 { qs = Array(qs.prefix(7)) }
+        return result(qs)
+    }
+
     private func adapterOverCountDedup(_ input: String, repair: Bool) async throws -> DiscoveryResult {
         let model = try resolveModel()
         let prompt = "Task the user entered: \"\(input)\""

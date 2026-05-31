@@ -806,6 +806,22 @@ public enum Configs {
         "exp055": DiscoveryConfig(topology: .adapterParallelDrawSpare,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-056: EXACT exp046 over-count(8) greedy native draw, but the DROP rule is grounded
+        // in the EXTERNAL corpus coverage prior (exp040, the only inference signal that ever
+        // helped) instead of exp046's INTERNAL redundancy. exp046/051/054 saturated at 0.42-0.43
+        // changing which-of-8-to-drop by internal signals; exp034's internal facility-location
+        // collapsed coverage (diversity ≠ criticality). The corpus prior used in the GENERATION
+        // prompt (exp040/049) perturbs the count=8 sweet spot and cancels the gain — so put it in
+        // SELECTION: retrieve k=3 nearest CORPUS task-sets (LOO, anti-leak jaccardCeiling 0.5),
+        // embed their questions as gold-like coverage AXES, and drop the ONE of 8 whose removal
+        // least reduces total corpus-axis coverage (Σ_axis max cos to a kept question), tie-break
+        // to the more internally-redundant. Keeps the 7 native questions that best match the gold
+        // coverage distribution. Native voice (no spec tax), single greedy call (no best-of-N
+        // noise), champion floor when embeddings unavailable. Base = v2a_e1 champion.
+        "exp056": DiscoveryConfig(topology: .adapterCorpusCoverageSelect,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
