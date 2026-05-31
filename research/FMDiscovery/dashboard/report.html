@@ -26,7 +26,7 @@
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau · final report</div>
   <h1>The coverage wall</h1>
-  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever I could find — an on-device 3B model matched a frontier cloud model on four of five quality dimensions, but never on the fifth. This is the record of how far it got, and the controlled test that shows why the last dimension is a wall.</p>
+  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever I could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -92,30 +92,54 @@
   <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
   <ul>
     <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
-    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — and matches it on four of five dimensions. The whole gap is one coverage point.</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §5).</li>
   </ul>
 </section>
 
+<section id="coverage-blind">
+  <h2><span class="num">5</span>Is it really coverage?</h2>
+  <p class="sub">The obvious follow-up: if I stopped caring about coverage, would the model reach parity? No.</p>
+  <p>Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, I re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
+    <tbody>
+      <tr><td>SFT baseline</td><td class="num">0.398</td><td class="num">0.399</td><td class="num">+0.00</td><td class="num">23 → 23</td></tr>
+      <tr><td>Best adapter (exp056)</td><td class="num">0.415</td><td class="num">0.412</td><td class="num">−0.00</td><td class="num">22 → 22</td></tr>
+      <tr><td>On-policy ORPO</td><td class="num">0.369</td><td class="num">0.370</td><td class="num">+0.00</td><td class="num">25 → 24</td></tr>
+    </tbody>
+  </table>
+  <p>Removing coverage changes quality by essentially zero — and, the telling part, the head-to-head barely moves: told to ignore coverage entirely, the judge <em>still</em> prefers the gold set ~22–24 times out of 30. The losses were never mostly about coverage.</p>
+  <p>The reason is visible in the rubric the same judge assigns each model <em>as a candidate</em>:</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Scored as candidate</th><th>atomicity</th><th>specificity</th><th>coverage</th><th>naturalness</th><th>non-redundancy</th></tr></thead>
+    <tbody>
+      <tr><td>On-device best (exp056)</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr>
+      <tr class="anchor"><td>Sonnet (cloud anchor)</td><td class="num">5</td><td class="num">4</td><td class="num">4</td><td class="num">5</td><td class="num">5</td></tr>
+    </tbody>
+  </table>
+  <p>The on-device model matches the frontier on <strong>specificity alone</strong> and trails by about a point on everything else. Coverage is the joint-lowest, but it is not special — the gap is <strong>broad</strong>. That is why re-weighting it away does nothing: the model is a uniform notch below the frontier, and coverage is simply the symptom the judge can name in a sentence.</p>
+</section>
+
 <section id="verdict">
-  <h2><span class="num">5</span>The verdict</h2>
+  <h2><span class="num">6</span>The verdict</h2>
   <div class="verdict">
-    <h3>Coverage is a capability ceiling of the 3B base, not a method we failed to find.</h3>
-    <p style="margin:0">Imitation, preference learning, and every inference-time technique in the 2024–2025 literature converge at coverage 3. A more capable model clears it on the identical harness. The remaining gap between the on-device model and the cloud — a single rubric point on a single dimension — is bound to model capacity, and no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
+    <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method I failed to find.</h3>
+    <p style="margin:0">Imitation, preference learning, and every inference-time technique in the 2024–2025 literature leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
   </div>
-  <p><strong>What this means for the product.</strong> The on-device model is already at near-parity on phrasing, specificity, naturalness and non-redundancy, and reaches ~two-thirds of the frontier's practical quality. The one weakness — occasionally missing the single pivotal unknown — is real but bounded. Three honest paths:</p>
+  <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality, about a point below on nearly every dimension, and strong in absolute terms (4 of 5 on most). The shortfall is broad and capacity-bound, so there is no single dimension to fix. Three honest paths:</p>
   <div class="cols">
     <div class="col yes">
       <h3>Ship &amp; document</h3>
       <ul>
-        <li>Ship the 0.44 adapter; record coverage as a known, bounded limitation.</li>
-        <li>Best fit if local + free + private outweighs one occasionally-missed question.</li>
+        <li>Ship the 0.44 adapter; document it honestly as uniformly near-parity — a notch below the frontier, not broken on any one axis.</li>
+        <li>Best fit if local + free + private outweighs a consistently-slightly-weaker question set.</li>
       </ul>
     </div>
     <div class="col wow">
-      <h3>Redesign around it</h3>
+      <h3>Reframe the bar</h3>
       <ul>
-        <li>Turn coverage from a <em>judgment</em> the model must nail into a <em>recall</em> task it can do: surface a few candidate axes (from the corpus of nearest task types) and let the user pick.</li>
-        <li>The only path that actually delivers full coverage to a user, on-device, today.</li>
+        <li>Stop measuring against Sonnet-parity and measure <em>absolute</em> usefulness — does the set enable a good plan? The model may be plenty good for the product even a notch below the frontier.</li>
+        <li>Changes the question from "match the cloud" to "is this good enough," which the raw scores can't answer alone.</li>
       </ul>
     </div>
     <div class="col no">
@@ -126,12 +150,12 @@
       </ul>
     </div>
   </div>
-  <p class="muted" style="font-size:15px">My recommendation: <strong>redesign the feature around the ceiling</strong> — it's the only option that gives the user good coverage on-device now, and it sidesteps a wall that more training won't break.</p>
+  <p class="muted" style="font-size:15px">My recommendation: <strong>ship and document, and reframe the bar to absolute usefulness.</strong> The model is a uniform notch below the frontier, not broken anywhere; at ~two-thirds of the practical ceiling and strong in absolute terms it is plausibly good enough — and the broad, capacity-bound gap won't yield to more work on this base. Re-test when a larger on-device model ships.</p>
 </section>
 
 <section id="repro">
-  <h2><span class="num">6</span>Reproducibility</h2>
-  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training and ORPO scripts, the on-policy draft generator, and the cloud ceiling-confirmation harness are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 are reference measurements only and are deliberately kept out of the on-device run log.</p>
+  <h2><span class="num">7</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training and ORPO scripts, the on-policy draft generator, the cloud ceiling-confirmation harness, and the coverage-blind re-judge (§5) are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the coverage-blind re-judge in §5 are reference analyses only, deliberately kept out of the on-device run log.</p>
 </section>
 
 <footer>
