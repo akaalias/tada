@@ -75,10 +75,10 @@ const SVG = `
   ${nodes()}
 
   <!-- dashed link: EVALUATE is scored against the frozen ruler at the centre -->
-  <path d="M${f(evalP.x)} ${f(evalP.y)} L345 298" fill="none" stroke="var(--faint)"
+  <path d="M285 376 L351 301" fill="none" stroke="var(--faint)"
         stroke-width="1.2" stroke-dasharray="3 4" marker-end="url(#arwF)"/>
-  <text x="332" y="352" text-anchor="start" font-size="11.5" font-style="italic" fill="var(--faint)">
-    <tspan x="332">scored</tspan><tspan x="332" dy="14">against</tspan></text>
+  <text x="336" y="350" text-anchor="start" font-size="11.5" font-style="italic" fill="var(--faint)">
+    <tspan x="336">scored</tspan><tspan x="336" dy="14">against</tspan></text>
 
   <!-- the frozen ruler at the centre: everything orbits the unchanging measuring stick -->
   <line x1="302" y1="226" x2="438" y2="226" stroke="var(--ink)" stroke-width="1.4"/>
@@ -88,13 +88,13 @@ const SVG = `
   <text x="370" y="284" text-anchor="middle" font-size="12.5" font-style="italic" fill="var(--accent)">never changes</text>
 
   <!-- human supervisor feeds direction into HYPOTHESIZE (rust = human input) -->
-  <text x="648" y="116" text-anchor="middle" font-size="13" letter-spacing="0.6" font-weight="600" fill="var(--accent)">HUMAN SUPERVISOR</text>
-  <text x="648" y="135" text-anchor="middle" font-size="12" fill="var(--muted)">
-    <tspan x="648">steers levers · gives feedback</tspan>
-    <tspan x="648" dy="15">runs the manual fine-tuning track</tspan>
+  <text x="624" y="116" text-anchor="middle" font-size="13" letter-spacing="0.6" font-weight="600" fill="var(--accent)">HUMAN SUPERVISOR</text>
+  <text x="624" y="135" text-anchor="middle" font-size="12" fill="var(--muted)">
+    <tspan x="624">steers levers · gives feedback</tspan>
+    <tspan x="624" dy="15">runs the manual fine-tuning track</tspan>
   </text>
-  <path d="M636 172 Q582 180 548 190" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
-  <circle cx="648" cy="166" r="4.5" fill="var(--accent)"/>
+  <path d="M616 174 Q588 180 550 187" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
+  <circle cx="624" cy="168" r="4.5" fill="var(--accent)"/>
 
   <!-- caption inside the frame: who drives the cycle -->
   <text x="370" y="475" text-anchor="middle" font-size="13" font-style="italic" fill="var(--muted)">
