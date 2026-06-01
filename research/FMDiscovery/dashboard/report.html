@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Coverage Wall — Final Report</title>
+<title>The wall that wasn't coverage — Final Report</title>
 <link rel="stylesheet" href="onboarding.css">
 <style>
 /* report-only table styling — kept here so onboarding.css stays untouched */
@@ -35,7 +35,7 @@
 
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau · final report</div>
-  <h1>The coverage wall</h1>
+  <h1>The wall that wasn't coverage</h1>
   <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever I could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
@@ -100,7 +100,7 @@
 <section id="confirmation">
   <h2><span class="num">4</span>The confirmation experiment</h2>
   <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
-  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge, rubric and greedy decoding — should clear it. So I ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
+  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So I ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate model</th><th>Where</th><th>Quality</th><th>Coverage</th><th>vs gold (W/T/L)</th></tr></thead>
     <tbody>
@@ -112,14 +112,14 @@
   <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
   <ul>
     <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
-    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §5).</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §5).</li>
   </ul>
 </section>
 
 <section id="coverage-blind">
   <h2><span class="num">5</span>Is it really coverage?</h2>
   <p class="sub">The obvious follow-up: if I stopped caring about coverage, would the model reach parity? No.</p>
-  <p>Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, I re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <p>Here the story turns. Everything to this point — the climb, the 71 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where I stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, I re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
     <tbody>
