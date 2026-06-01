@@ -186,4 +186,5 @@ export function renderPipeD3(spec, el) {
   bg.append('text').attr('x', d => bwid(execType(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
     .attr('font-weight', 800).attr('fill', '#fffff8').text(d => execType(d)[0]);
   g.on('mousemove', (e, d) => showTip(e, esc(d.full))).on('mouseleave', hideTip);
+  return W;
 }

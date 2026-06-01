@@ -66,7 +66,11 @@ export async function renderDetail(label, cell) {
     + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#111111">FM</b> on-device model call · <b style="color:#6b6a60">Swift</b> deterministic code · <b style="color:#9b998c">User</b> input/output · ochre <b style="color:#8a6a1e">LoRA</b> node = adapter feeding a call · ochre dashed column above it = how the adapter was <b style="color:#6f5618">trained</b> (dev-time, top-down: Sonnet corpus → format → fine-tune). Vertical = parallel, horizontal = sequential · hover for details</div>`
     + `${triedHtml}${blocks}</div>`;
   if (spec) {
-    renderPipeD3(spec, cell.querySelector('.pipe-d3'));
+    const d3el = cell.querySelector('.pipe-d3');
+    const W = renderPipeD3(spec, d3el);
+    // A wide diagram (big parallel fan) squeezed into the 2-column grid gets clipped
+    // behind the explanation column — give it the full row and drop the explanation below.
+    if (W > d3el.clientWidth) cell.querySelector('.pipe-grid')?.classList.add('pipe-grid--wide');
     cell.querySelector('.png-btn')?.addEventListener('click', () => downloadPipePNG(spec, label));
   }
 }
