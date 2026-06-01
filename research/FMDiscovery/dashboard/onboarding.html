@@ -9,15 +9,15 @@
 <body>
 
 <header class="hero">
-  <div class="eyebrow">Alexis Rondeau · an open research log</div>
+  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · an open research log</div>
   <h1>Can a phone-sized model learn to ask the right questions?</h1>
-  <p class="lede">I'm building a native macOS app, and I want its AI to run entirely local and native, using Apple's Foundation Models. The open question: can that small, built-in model match a frontier cloud model on one specific task? This page is my attempt to find out.</p>
+  <p class="lede">I'm building a native macOS app, and I want its AI to run entirely local and native, using Apple's Foundation Models. The open question: can that small, built-in model match a frontier cloud model on one specific task? This page is our attempt to find out.</p>
   <div class="nav">
     <a href="#goal">The goal</a>
     <a href="#autoresearch">Autoresearch</a>
     <a href="#agent">The agent</a>
     <a href="#approach">Approach</a>
-    <a href="#learned">What I've learned</a>
+    <a href="#learned">What we've learned</a>
     <a href="#record">The record</a>
   </div>
 </header>
@@ -26,7 +26,7 @@
 
 <section id="goal">
   <h2><span class="num">1</span>The goal</h2>
-  <p class="sub">The aim: move one feature from the cloud onto the device — ideally with no quality loss. Whether that's achievable is exactly what I'm testing.</p>
+  <p class="sub">The aim: move one feature from the cloud onto the device — ideally with no quality loss. Whether that's achievable is exactly what we're testing.</p>
   <p>My app has a <strong>discovery planner</strong>: when someone types a one-line task — <em>"plan a trip to Paris"</em>, <em>"write my resume"</em> — it responds with a restated title and <strong>exactly seven clarifying questions</strong> that surface what it needs to know before planning. Today that runs on Anthropic's Claude Sonnet in the cloud.</p>
 
   <div class="flowdemo">
@@ -48,17 +48,17 @@
       </ol>
     </div>
   </div>
-  <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar I'm trying to match on-device.)</p>
+  <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
   <p>I want it to run <strong>entirely local and Apple-native</strong>, on Apple's built-in <span class="pill p-fm">Foundation Model</span> — the roughly 3-billion-parameter model that ships with macOS. Going native through the OS model means privacy (nothing leaves the Mac), zero inference cost, and it keeps working offline.</p>
   <div class="callout">
-    <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. I use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> I'm trying to match, and as the <strong>judge</strong> that scores how close I am. The on-device model has to stand on its own.
+    <strong>The hard constraint:</strong> the shipping product must contain <em>no</em> Anthropic access. I use Sonnet only at development time, in two roles — as the <strong>gold standard</strong> we're trying to match, and as the <strong>judge</strong> that scores how close we are. The on-device model has to stand on its own.
   </div>
   <p>The on-device model is ~20&times; smaller than the cloud model. The whole project is the question: <strong>can a small specialized model match a large general one on a narrow, well-defined task?</strong></p>
 </section>
 
 <section id="autoresearch">
   <h2><span class="num">2</span>Autoresearch: a self-improving research loop</h2>
-  <p class="sub">A frozen "ruler" to measure against, and a mutable "agent" I keep improving.</p>
+  <p class="sub">A frozen "ruler" to measure against, and a mutable "agent" we keep improving.</p>
   <p>Rather than hand-tune the on-device model by trial and error, I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>). It has two halves that must never blur together:</p>
   <div class="versus">
     <div class="vs-card vs-ruler">
@@ -77,7 +77,8 @@
 <section id="agent">
   <h2><span class="num">3</span>The autonomous coding agent</h2>
   <p class="sub">A second AI that writes the experiments — one per iteration, on a tight leash.</p>
-  <p>The loop is driven by a <strong>headless Claude agent</strong> that runs unattended. Each iteration it does the full scientific cycle by itself: read the experiment log and the judge's latest failure notes, form <strong>one</strong> hypothesis, write the code, build it, run the evaluation (which auto-scores via the Sonnet judge), and honestly log whether it helped — then stop.</p>
+  <p>The loop is driven by <strong>Claude Code</strong>, Anthropic's coding agent, running headless and unattended. Each iteration it does the full scientific cycle by itself: read the experiment log and the judge's latest failure notes, form <strong>one</strong> hypothesis, write the code, build it, run the evaluation (which auto-scores via the Sonnet judge), and honestly log whether it helped — then stop.</p>
+  <p>I work alongside it as <strong>supervisor</strong> — steering which levers it pursues next, giving continuous feedback on its hypotheses, and running the manual fine-tuning track it can't do itself. So when this page says <em>"we,"</em> it means that pairing: an AI agent generating and running the experiments, with a human directing the research.</p>
   <div class="card">
     <h3>What keeps it safe and honest</h3>
     <ul style="margin:0;padding-left:18px">
@@ -92,7 +93,7 @@
 
 <section id="approach">
   <h2><span class="num">4</span>How an experiment works</h2>
-  <p class="sub">The levers I can pull, the rubric the model is scored on, and the rule that keeps me honest.</p>
+  <p class="sub">The levers we can pull, the rubric the model is scored on, and the rule that keeps us honest.</p>
   <p><strong>The rubric.</strong> The judge scores each set of seven questions on five dimensions, 1&ndash;5:</p>
   <div class="card" style="padding:14px 22px">
     <ul style="margin:0;padding-left:18px">
@@ -103,7 +104,7 @@
       <li><strong>Non-redundancy</strong> — the questions don't overlap.</li>
     </ul>
   </div>
-  <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from my test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
+  <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from our test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
   <div class="fullbleed">
   <div class="ex-grid">
     <div class="ex-col">
@@ -153,14 +154,14 @@
     </div>
   </div>
   </div>
-  <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which I call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
+  <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
 
   <p><strong>The levers.</strong> An experiment is some combination of the knobs below, and every experiment is tagged on the dashboard by the most powerful lever it pulls — its <strong>type</strong>. There are three: <span class="pill p-infer">Inference</span> changes how the model answers with no retraining (this is what the autonomous agent explores), while <span class="pill p-sft">SFT</span> and <span class="pill p-orpo">ORPO</span> retrain the model's <em>weights</em> by hand. SFT and ORPO produce the same artifact — a trained adapter — and differ only in the training <em>recipe</em>.</p>
 
   <div class="bento-group">
     <p class="bento-label"><span class="pill p-infer">Inference</span> &nbsp;Inference-time knobs <span class="l-sub">— change how the model answers, no retraining (what the autonomous agent explores)</span></p>
     <div class="bento">
-      <div class="tile t-infer s3"><h4>Decoding</h4><p>How the model picks each next word — always the single most likely one (predictable) or sampling for variety. I found predictable ("greedy") to be both better and less noisy here.</p></div>
+      <div class="tile t-infer s3"><h4>Decoding</h4><p>How the model picks each next word — always the single most likely one (predictable) or sampling for variety. We found predictable ("greedy") to be both better and less noisy here.</p></div>
       <div class="tile t-infer s3"><h4>Prompt &amp; instructions</h4><p>The exact wording of the request and any guidance baked into it.</p></div>
       <div class="tile t-infer s2"><h4>Output schema</h4><p>Forcing the shape of the answer — exactly seven questions, one-topic-per-slot, or deliberately <em>eight</em>-then-trim (the trick behind the current best).</p></div>
       <div class="tile t-infer s2"><h4>Multi-step pipelines</h4><p>Chaining calls — draft, then self-critique and revise; or generate several candidates and pick, vote, or run a tournament between them.</p></div>
@@ -182,15 +183,15 @@
   </div>
   <p class="muted" style="font-size:14px">The autonomous agent turns the <span class="pill p-infer">Inference</span> knobs on its own; it can't retrain the model, so when it judges the weights are the answer it flags a request for the manual track. The weights — <span class="pill p-sft">SFT</span> today, <span class="pill p-orpo">ORPO</span> in training now — are trained by hand, the track aimed squarely at the coverage gap.</p>
   <div class="callout key">
-    <strong>The measurement lesson, learned the hard way.</strong> I first screened ideas on a small 10-case proxy with random sampling. Twice, that produced a "win" that <em>evaporated</em> on the full set. The fix is now law: gate every decision on all <strong>30 cases with deterministic (greedy) decoding</strong>. Noise had been masquerading as progress.
+    <strong>The measurement lesson, learned the hard way.</strong> We first screened ideas on a small 10-case proxy with random sampling. Twice, that produced a "win" that <em>evaporated</em> on the full set. The fix is now law: gate every decision on all <strong>30 cases with deterministic (greedy) decoding</strong>. Noise had been masquerading as progress.
   </div>
   <div class="callout">
-    <strong>Why I never copy examples.</strong> The agent retrieves similar past examples to learn from. One experiment scored a suspicious 0.498 — far above everything else. It turned out the retrieval had handed several test cases <em>their own gold answer</em> as a "demonstration," which the model copied and was then graded against. The agent caught this itself, flagged the result invalid, and I hard-wired a "leave-one-out" guard so it can never happen again. A real safeguard against fooling myself.
+    <strong>Why we never copy examples.</strong> The agent retrieves similar past examples to learn from. One experiment scored a suspicious 0.498 — far above everything else. It turned out the retrieval had handed several test cases <em>their own gold answer</em> as a "demonstration," which the model copied and was then graded against. The agent caught this itself, flagged the result invalid, and we hard-wired a "leave-one-out" guard so it can never happen again. A real safeguard against fooling ourselves.
   </div>
 </section>
 
 <section id="learned">
-  <h2><span class="num">5</span>What I've learned</h2>
+  <h2><span class="num">5</span>What we've learned</h2>
   <p class="sub">Around 60 experiments across two tracks. Here's the honest scorecard.</p>
 
   <p><strong>The climb so far</strong> (quality on the full 30-case gate):</p>
@@ -203,7 +204,7 @@
     <span class="arrow">&rarr;</span>
     <div class="step best"><div class="tag">Best experiment so far</div><div class="q">0.44</div><div class="lbl">Adapter + over-generate &amp; prune</div></div>
   </div>
-  <p class="muted" style="font-size:14px">For reference, a perfect tie with Sonnet on every case would be ~0.5; consistently beating it would be higher. I'm not there yet — the current best still loses about 21 of 30 head-to-heads — but the trajectory is real and every step is reproducible.</p>
+  <p class="muted" style="font-size:14px">For reference, a perfect tie with Sonnet on every case would be ~0.5; consistently beating it would be higher. We're not there yet — the current best still loses about 21 of 30 head-to-heads — but the trajectory is real and every step is reproducible.</p>
 
   <div class="cols">
     <div class="col no">
@@ -227,10 +228,10 @@
     <div class="col wow">
       <h3>Biggest surprises</h3>
       <ul>
-        <li><b>It's a capability gap, not a prompting gap.</b> 27 clever in-context experiments couldn't beat what a single fine-tuned adapter did — strong evidence the limit is what the model <em>knows</em>, not how I ask.</li>
+        <li><b>It's a capability gap, not a prompting gap.</b> 27 clever in-context experiments couldn't beat what a single fine-tuned adapter did — strong evidence the limit is what the model <em>knows</em>, not how we ask.</li>
         <li><b>Cheap beat expensive.</b> A single well-trained call consistently outperformed elaborate multi-call pipelines.</li>
         <li><b>"Coverage" is locked in the weights.</b> Every inference-time trick improves phrasing and reduces overlap, but none teaches the model <em>which</em> unknown actually matters most. That judgment seems to live in the weights, not the prompt.</li>
-        <li><b>The system caught itself cheating</b> (the 0.498 leak) — and I corrected it openly rather than banking the win.</li>
+        <li><b>The system caught itself cheating</b> (the 0.498 leak) — and we corrected it openly rather than banking the win.</li>
       </ul>
     </div>
   </div>
@@ -259,7 +260,7 @@
   <span class="kpi">Experiments run: <b>60+</b></span>
   <span class="kpi">On-device model: <b>Apple FM ~3B</b></span>
   <p style="margin-top:16px">This page is a narrative overview. For the full, live record — every experiment, its hypothesis, method, result, and process diagram — see the <a href="index.html">interactive dashboard</a>.</p>
-  <p style="margin-top:10px">Built and researched by <strong>Alexis Rondeau</strong>.</p>
+  <p style="margin-top:10px"><strong>Alexis Rondeau</strong> — research direction, supervision, and the manual fine-tuning runs. <strong>Claude Code</strong> (Anthropic) — autonomous generation and execution of the inference experiments.</p>
 </footer>
 
 </div>

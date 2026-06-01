@@ -37,9 +37,9 @@
 <body>
 
 <header class="hero">
-  <div class="eyebrow">Alexis Rondeau · final report</div>
+  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
   <h1>The wall that wasn't coverage</h1>
-  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever I could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
+  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -54,6 +54,7 @@
   <p class="sub">Move one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
   <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
   <p>To answer it honestly I built an <strong>autoresearch loop</strong>: a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
+  <p>The loop itself is run by <strong>Claude Code</strong>, Anthropic's coding agent. Each iteration it reads the running log of what's already been tried, proposes the next experiment, writes and runs the code against the ruler, and records the result — one experiment at a time. I worked alongside it as <strong>supervisor</strong>: steering which levers to pursue next, giving continuous feedback on its hypotheses, and triggering the manual fine-tuning runs. So throughout this report, <em>"we"</em> means that pairing — an AI agent generating and running the experiments under human direction.</p>
 </section>
 
 <section id="climb">
@@ -72,7 +73,7 @@
 </section>
 
 <section id="levers">
-  <h2><span class="num">3</span>Everything I tried</h2>
+  <h2><span class="num">3</span>Everything we tried</h2>
   <p class="sub">Five lever classes, 71 experiments, 9 that set a new best. One dimension stuck throughout.</p>
   <table class="rpt-tbl rpt-wide">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
@@ -103,7 +104,7 @@
 <section id="confirmation">
   <h2><span class="num">4</span>The confirmation experiment</h2>
   <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
-  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So I ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
+  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So we ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate model</th><th>Where</th><th>Quality</th><th>Coverage</th><th>vs gold (W/T/L)</th></tr></thead>
     <tbody>
@@ -121,8 +122,8 @@
 
 <section id="coverage-blind">
   <h2><span class="num">5</span>Is it really coverage?</h2>
-  <p class="sub">The obvious follow-up: if I stopped caring about coverage, would the model reach parity? No.</p>
-  <p>Here the story turns. Everything to this point — the climb, the 71 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where I stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, I re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
+  <p>Here the story turns. Everything to this point — the climb, the 71 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
     <tbody>
@@ -146,7 +147,7 @@
 <section id="verdict">
   <h2><span class="num">6</span>The verdict</h2>
   <div class="verdict">
-    <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method I failed to find.</h3>
+    <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method we failed to find.</h3>
     <p style="margin:0">Imitation, preference learning, and every inference-time technique in the 2024–2025 literature leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
   </div>
   <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality, about a point below on nearly every dimension, and strong in absolute terms (4 of 5 on most). The shortfall is broad and capacity-bound, so there is no single dimension to fix. Three honest paths:</p>
@@ -169,7 +170,7 @@
       <h3>Wait for a bigger base</h3>
       <ul>
         <li>Re-run this exact harness when Apple ships a larger on-device model; it is now a turnkey regression test.</li>
-        <li>No work until then; outcome outside my control.</li>
+        <li>No work until then; outcome outside our control.</li>
       </ul>
     </div>
   </div>
@@ -186,7 +187,7 @@
   <span class="kpi">On-device best<b>0.44</b></span>
   <span class="kpi">Coverage, on-device<b>3</b></span>
   <span class="kpi">Coverage, cloud<b>4</b></span>
-  <p style="margin-top:16px">Built and researched by <strong>Alexis Rondeau</strong>. On-device model: Apple Foundation Model (~3B). Reference models: Claude Haiku 4.5, Claude Sonnet 4.6.</p>
+  <p style="margin-top:16px"><strong>Alexis Rondeau</strong> — research direction, supervision, and the manual fine-tuning runs. <strong>Claude Code</strong> (Anthropic) — autonomous generation and execution of the inference experiments. On-device model: Apple Foundation Model (~3B). Reference models: Claude Haiku 4.5, Claude Sonnet 4.6.</p>
 </footer>
 
 </div>
