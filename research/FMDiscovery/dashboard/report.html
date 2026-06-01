@@ -19,6 +19,15 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
+/* §3 tapestry: simplified node-and-arrow diagrams, equal width, masonry-packed */
+.tap-wide{margin-top:18px;}
+@media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+.tapestry{display:flex;flex-wrap:wrap;align-items:flex-start;gap:20px 16px;}
+.tap-cell{margin:0;}
+.tap-legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin:10px 0 0;}
+.tap-legend span{display:inline-flex;align-items:center;gap:7px;}
+.tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
 </style>
 </head>
 <body>
@@ -75,6 +84,16 @@
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
   </div>
+
+  <p style="margin-top:22px"><strong>Every experiment, at a glance.</strong> One tile per run, in the order it was run — each its on-device pipeline stripped to bare structure, every dot drawn at the same scale. A filled dot is an on-device model call, tinted by lever family; a hollow dot is deterministic Swift code or the user in/out boundary; a gold left column is the dev-time chain that trained the LoRA adapter, feeding into the call that uses it. Read the <em>shapes</em>: thin single-shot baselines, ensembles fanning wide, the tall multi-call reasoning pipelines of the inference era, then the two-column adapter runs that fill the back half.</p>
+  <p class="tap-legend">
+    <span><i style="background:#9b998c"></i>Inference call</span>
+    <span><i style="background:#8a6a1e"></i>SFT adapter call</span>
+    <span><i style="background:#8c2f1f"></i>ORPO adapter call</span>
+    <span><i class="hollow"></i>Swift / user step</span>
+    <span><i style="background:#8a6a1e"></i><i class="hollow" style="margin-left:-3px"></i>Adapter training (dev-time)</span>
+  </p>
+  <div class="tap-wide"><div id="tapestry" class="tapestry"></div></div>
 </section>
 
 <section id="confirmation">
@@ -167,5 +186,6 @@
 </footer>
 
 </div>
+<script type="module" src="report-tapestry.js"></script>
 </body>
 </html>
