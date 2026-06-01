@@ -19,11 +19,12 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
-/* §3 tapestry: simplified node-and-arrow diagrams, equal width, masonry-packed */
+/* §3 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
 .tap-wide{margin-top:18px;}
 @media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
-.tapestry{position:relative;}
-.tap-cell{position:absolute;margin:0;}
+.tapestry{columns:104px;column-gap:20px;}
+.tap-cell{break-inside:avoid;margin:0 0 20px;}
+.tap-cell svg{margin:0 auto;}
 .tap-legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin:10px 0 0;}
 .tap-legend span{display:inline-flex;align-items:center;gap:7px;}
 .tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
