@@ -1,0 +1,25 @@
+{
+  "summary": "GRPO judge-reward policy adapter, epoch 3",
+  "hypothesis": "If GRPO is moving the policy in the right direction, a third epoch should extend the gain; if it is degrading the policy, a third epoch should make it worse — a direct test of whether the judge-reward signal is constructive on this base.",
+  "technique": "Same GRPO run as epoch 2 (warm-start v2a_e1, 150 tasks x 6 rubric-judged drafts, group-relative advantages, beta_kl=0), one epoch further — epoch 3.",
+  "result": "Scored 0.287 on the full-30 gate (0 win / 1 tie / 22 loss vs Sonnet), WORSE than epoch 2 (0.328), with refusals rising to 7 (vs 1) — the regression deepened monotonically with training, confirming unregularised policy-gradient degradation. Coverage stayed 3 throughout. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "generate",
+      "text": "GRPO adapter generates questions",
+      "knobs": {
+        "model": "adapter_grpo_e3",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "adapter_grpo_e3"
+}

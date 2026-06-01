@@ -22,6 +22,7 @@ const TYPES = {
   'Inference-Time':         { short: 'Inference', cls: 'ty-infer', title: 'Inference-time only — prompt / decoding / RAG / topology. No weight change.' },
   'Supervised Fine-Tuning': { short: 'SFT',       cls: 'ty-sft',   title: 'Runs on a LoRA adapter trained by imitation (supervised fine-tuning) on Sonnet gold.' },
   'Preference (ORPO)':      { short: 'ORPO',      cls: 'ty-orpo',  title: 'Runs on a LoRA adapter trained on chosen/rejected preference pairs (ORPO).' },
+  'Reinforcement (GRPO)':   { short: 'GRPO',      cls: 'ty-grpo',  title: 'Runs on a LoRA adapter trained by RL (GRPO) against the Sonnet rubric reward — group-relative advantages over the model\'s own judged drafts.' },
 };
 const typeBadge = t => {
   const o = TYPES[t];

@@ -1,0 +1,25 @@
+{
+  "summary": "GRPO judge-reward policy adapter, epoch 2",
+  "hypothesis": "Optimising the Sonnet rubric reward DIRECTLY with GRPO (group-relative advantages over the model's own judged drafts), rather than imitating gold (SFT) or odds-ratio preference (ORPO), should push the on-device policy past the ~0.41 plateau — the first objective aimed at the metric itself.",
+  "technique": "A LoRA adapter warm-started from the v2a_e1 SFT champion (0.409) and fine-tuned with GRPO: 150 corpus tasks x 6 on-policy drafts, each scored by the frozen Sonnet rubric (rubric-mean reward), group-relative advantage A=(r-mean)/(std+eps), loss = -mean(A * seq_mean_logprob), beta_kl=0, epoch 2.",
+  "result": "Scored 0.328 on the full-30 gate (0 win / 1 tie / 28 loss vs Sonnet) — a REGRESSION below the 0.409 warm-start base. Rubric atomicity=5 but coverage stayed 3 and naturalness FELL to 3; the unregularised (beta_kl=0) policy drifted off the natural-language manifold while coverage — which barely varies within a group — got no gradient. Hypothesis falsified; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "generate",
+      "text": "GRPO adapter generates questions",
+      "knobs": {
+        "model": "adapter_grpo_e2",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "adapter_grpo_e2"
+}

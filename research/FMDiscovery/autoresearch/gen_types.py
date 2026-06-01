@@ -21,10 +21,14 @@ OUT = PKG / "results" / "types.json"
 INFER = "Inference-Time"
 SFT = "Supervised Fine-Tuning"
 ORPO = "Preference (ORPO)"
+GRPO = "Reinforcement (GRPO)"
 
 
 def classify_adapter(path):
-    return ORPO if "orpo" in path.lower() else SFT
+    p = path.lower()
+    if "grpo" in p:
+        return GRPO
+    return ORPO if "orpo" in p else SFT
 
 
 def parse_configs(text):
@@ -63,12 +67,14 @@ def main():
             if lab in types:
                 continue
             low = lab.lower()
-            types[lab] = ORPO if "orpo" in low else SFT if low.startswith("adapter") else INFER
+            types[lab] = (GRPO if "grpo" in low else ORPO if "orpo" in low
+                          else SFT if low.startswith("adapter") else INFER)
 
     payload = {"_meta": "label -> method type. Derived from Configs.swift (does the "
                         "config set adapter:?) — never hand-edited. Inference-Time = no "
                         "weight change; Supervised Fine-Tuning = adapter trained by "
-                        "imitation; Preference (ORPO) = adapter trained on preference pairs."}
+                        "imitation; Preference (ORPO) = preference pairs; "
+                        "Reinforcement (GRPO) = adapter trained by RL on a judge reward."}
     payload.update(dict(sorted(types.items())))
     OUT.write_text(json.dumps(payload, indent=2) + "\n")
     print(f"[gen_types] wrote {OUT.relative_to(PKG)} ({len(types)} labels)")

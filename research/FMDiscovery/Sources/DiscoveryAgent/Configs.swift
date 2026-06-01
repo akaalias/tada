@@ -834,6 +834,27 @@ public enum Configs {
         "exp056": DiscoveryConfig(topology: .adapterCorpusCoverageSelect,
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // GRPO ROLLOUT SAMPLER (dev-time, NOT an eval config) — the champion v2a_e1 policy
+        // decoded WITH DIVERSITY so `fmresearch generate` run G times yields a GROUP of
+        // distinct on-policy drafts per corpus task (the raw material the Sonnet rubric judge
+        // scores into rewards for GRPO). Sampling, not greedy, on purpose. See autoresearch/run_grpo.sh.
+        "grpo_roll": DiscoveryConfig(topology: .adapterDirect,
+            selectTemp: 0.9, selectSampling: .topP(0.95),
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
+        // EXP-057: GRPO policy fine-tune — the first objective that optimises the Sonnet rubric
+        // reward DIRECTLY (vs SFT imitation / ORPO odds-ratio, both plateaued ~0.41 / coverage 3).
+        // Warm-started from the v2a_e1 champion, trained on GROUP-RELATIVE advantages over the
+        // model's own judged drafts (autoresearch/train_adapter_grpo.py). Eval is greedy on the
+        // frozen ruler, decoding IDENTICAL to adapter_v2a_e1, so the ONLY variable vs the champion
+        // is the weights. One entry per exported epoch; the best is logged as exp057 in program.md.
+        "adapter_grpo_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_e1.fmadapter"),
+        "adapter_grpo_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_e2.fmadapter"),
+        "adapter_grpo_e3": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_e3.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }
