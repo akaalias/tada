@@ -24,6 +24,11 @@
 
 <div class="wrap">
 
+<div role="note" style="margin:30px 0 0;padding:14px 20px;background:#f7ece5;border-left:3px solid var(--accent)">
+  <div style="font:600 12px/1 'Palatino',Georgia,serif;font-feature-settings:'smcp' 1;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:5px">Update · research concluded</div>
+  <div style="font-size:17px;color:#33312b">This project has reached its conclusion. The full findings and the verdict are in the <a href="report.html"><strong>final report</strong></a>.</div>
+</div>
+
 <section id="goal">
   <h2><span class="num">1</span>The goal</h2>
   <p class="sub">The aim: move one feature from the cloud onto the device — ideally with no quality loss. Whether that's achievable is exactly what we're testing.</p>
@@ -72,6 +77,10 @@
     </div>
   </div>
   <p>Each experiment produces one number — a <strong>quality score from 0 to 1</strong> — plus the judge's written reasoning for every case. Because the ruler is fixed, scores are comparable across months of experiments. The <a href="index.html">live dashboard</a> plots every experiment as a point and tracks the running best.</p>
+  <figure style="margin:28px 0 6px">
+    <div class="autoresearch-loop"></div>
+    <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and score it against the frozen ruler — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring against the ruler; rust marks human input.</figcaption>
+  </figure>
 </section>
 
 <section id="agent">
@@ -265,5 +274,6 @@
 
 </div>
 <script type="module" src="js/onboarding-snapshot.js"></script>
+<script type="module" src="js/autoresearch-loop.js"></script>
 </body>
 </html>

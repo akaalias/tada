@@ -55,6 +55,10 @@
   <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
   <p>To answer it honestly I built an <strong>autoresearch loop</strong>: a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
   <p>The loop itself is run by <strong>Claude Code</strong>, Anthropic's coding agent. Each iteration it reads the running log of what's already been tried, proposes the next experiment, writes and runs the code against the ruler, and records the result — one experiment at a time. I worked alongside it as <strong>supervisor</strong>: steering which levers to pursue next, giving continuous feedback on its hypotheses, and triggering the manual fine-tuning runs. So throughout this report, <em>"we"</em> means that pairing — an AI agent generating and running the experiments under human direction.</p>
+  <figure style="margin:28px 0 6px">
+    <div class="autoresearch-loop"></div>
+    <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and score it against the frozen ruler — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring against the ruler; rust marks human input.</figcaption>
+  </figure>
 </section>
 
 <section id="climb">
@@ -192,5 +196,6 @@
 
 </div>
 <script type="module" src="report-tapestry.js"></script>
+<script type="module" src="js/autoresearch-loop.js"></script>
 </body>
 </html>
