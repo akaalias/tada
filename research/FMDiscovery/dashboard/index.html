@@ -4,24 +4,33 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FM Discovery — Autoresearch Progress</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="tufte.css">
+<link rel="stylesheet" href="dashboard.css">
 <script src="d3.v7.min.js"></script>
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
-<header>
-  <h1 id="title">Autoresearch Progress</h1>
-  <div class="sub legend">
-    <span><span class="dot" style="background:var(--grey)"></span>Discarded</span>
-    <span><span class="dot" style="background:var(--green)"></span>Kept improvement</span>
-    <span>— Running best</span>
-    <span><a href="onboarding.html" style="color:#0e7490;font-weight:600;text-decoration:none">New here? Read the project overview &rarr;</a></span>
+<header class="hero dash-head">
+  <div class="eyebrow">Alexis Rondeau · live research log</div>
+  <h1>Autoresearch progress</h1>
+  <p class="sub" id="title">Loading the experiment record&hellip;</p>
+  <div class="nav">
+    <a href="onboarding.html">Project overview</a>
+    <a href="report.html">Final report</a>
+  </div>
+  <div class="dash-meta">
+    <div class="dash-legend">
+      <span class="k"><span class="dot" style="background:var(--disc)"></span>Discarded</span>
+      <span class="k"><span class="dot" style="background:var(--ink)"></span>Kept improvement</span>
+      <span class="k"><span class="bar"></span>Running best</span>
+      <span class="k"><span class="x">&times;</span>Invalid</span>
+    </div>
     <span id="updated"></span>
   </div>
 </header>
-<div class="wrap">
-  <div class="card"><canvas id="chart"></canvas></div>
-  <div class="card">
+<div class="dash-wrap">
+  <div class="chart-card"><canvas id="chart"></canvas></div>
+  <div class="tbl-card">
     <table id="tbl">
       <thead><tr>
         <th>#</th><th>Label</th>

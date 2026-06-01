@@ -1,0 +1,156 @@
+/* ============================================================================
+   Tufte style guide — the shared visual system for this project.
+   Design after Edward Tufte: cream paper, near-black ink, one rust accent,
+   serif type with old-style figures, thin rules instead of boxes, colour used
+   only where it carries data.
+
+   This is the single source of truth. Any page (onboarding, report, dashboard,
+   or a new one) links this file for tokens + base type + the reusable
+   components below, then adds only its own page-specific rules on top.
+   ========================================================================== */
+:root{
+  --paper:#fffff8;        /* Tufte cream */
+  --ink:#111111;          /* near-black body text */
+  --muted:#6b6a60;        /* warm gray — secondary text */
+  --faint:#9b998c;        /* fainter still — captions, axes */
+  --rule:#d9d5c3;         /* warm hairline */
+  --rule-soft:#ece9da;    /* fainter hairline (gridlines) */
+  --accent:#8c2f1f;       /* ET rust-red — used sparingly */
+  /* data-bearing marks (chart + table); muted, functional, not decorative */
+  --kept:#111111;         /* set a new best */
+  --disc:#b9b6a6;         /* discarded */
+  --invalid:#8c2f1f;      /* invalid (gold leak) */
+  --ochre:#8a6a1e;        /* the "weights / SFT" family */
+  --serif:"Palatino","Palatino Linotype","Book Antiqua","URW Palladio L",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;}
+html{background:var(--paper);}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:20px/1.62 var(--serif);
+  font-feature-settings:"onum" 1,"liga" 1;   /* old-style figures, ligatures */
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:780px;margin:0 auto;padding:0 28px 96px;}
+
+/* ---- headings & flow ----------------------------------------------------- */
+header.hero{max-width:780px;margin:0 auto;padding:64px 28px 8px;}
+.eyebrow{font:italic 17px/1 var(--serif);color:var(--accent);
+         letter-spacing:.01em;margin-bottom:14px;}
+h1{font-weight:400;font-size:42px;line-height:1.12;letter-spacing:-.01em;margin:0 0 14px;}
+.lede{font-size:22px;line-height:1.5;color:#33312b;margin:0;font-style:italic;}
+.nav{margin-top:26px;font-size:15px;color:var(--muted);}
+.nav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;}
+.nav a:not(:last-child)::after{content:" · ";color:var(--faint);border:0;}
+.nav a:hover{border-bottom-color:var(--accent);}
+
+section{margin-top:60px;}
+h2{font-weight:400;font-size:28px;line-height:1.2;margin:0 0 4px;scroll-margin-top:20px;}
+h2 .num{color:var(--faint);font-style:italic;margin-right:.5em;font-size:24px;}
+h3{font-weight:600;font-size:18px;margin:0 0 8px;}
+.sub{color:var(--muted);font-style:italic;font-size:18px;margin:0 0 20px;}
+p{margin:0 0 16px;}
+strong{font-weight:700;}
+em{font-style:italic;}
+a{color:var(--accent);}
+code{font:15px/1 var(--mono);background:transparent;
+     border-bottom:1px solid var(--rule);padding:0 1px;}
+.muted{color:var(--muted);}
+
+/* ---- the only "box": a plain block set off by a top hairline -------------- */
+.card{border:0;background:transparent;border-top:1px solid var(--rule);
+      padding:16px 0 2px;margin:20px 0;}
+.card h3{margin:0 0 8px;}
+ul,ol{padding-left:1.3em;}
+li{margin:0 0 8px;}
+
+/* ---- small-caps tags replace coloured pills ------------------------------ */
+.pill{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+      text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+      border-bottom:1px solid var(--rule);padding:0 1px 1px;}
+/* the three experiment TYPES: distinguished only by a restrained ink tint */
+.p-infer{color:var(--muted);}
+.p-sft,.p-lora{color:var(--ochre);border-bottom-color:#d8cba0;}
+.p-orpo{color:var(--accent);border-bottom-color:#dcae9f;}
+.p-fm,.p-judge{color:var(--muted);}
+
+/* ---- callouts: an aside set off by a left rule --------------------------- */
+.callout{border-left:2px solid var(--rule);background:transparent;border-radius:0;
+         padding:2px 0 2px 20px;margin:20px 0;font-size:18px;color:#33312b;}
+.callout.key{border-left-color:var(--accent);}
+
+/* ---- three-column findings (scoped to .cols so it never touches other
+        ".col" usages such as the dashboard's gold/fm/judge comparison) ------ */
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-top:10px;border-top:1.5px solid var(--ink);}
+@media(max-width:760px){.cols{grid-template-columns:1fr;}}
+.cols .col{border:0;background:transparent;padding:16px 22px 4px;}
+.cols .col:first-child{padding-left:0;}
+.cols .col:last-child{padding-right:0;}
+@media(min-width:761px){.cols .col + .col{border-left:1px solid var(--rule);}}
+.cols .col h3{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px;color:var(--ink);}
+.cols .col.no h3::before{content:"− ";color:var(--accent);}
+.cols .col.yes h3::before{content:"+ ";color:var(--ink);}
+.cols .col.wow h3::before{content:"★ ";color:var(--ochre);}
+.cols .col ul{margin:0;padding-left:1.1em;}
+.cols .col li{margin:0 0 11px;font-size:15px;line-height:1.5;}
+
+/* ---- record snapshot: a Tufte data table (rules not boxes) --------------- */
+.snap-legend{font-size:14px;color:var(--muted);margin:12px 0 0;display:flex;flex-wrap:wrap;gap:18px;}
+.snap-legend .k{display:inline-flex;align-items:center;gap:6px;}
+.snap-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.snap-tablewrap{overflow:visible;border:0;border-top:1.5px solid var(--ink);background:transparent;}
+.snap-tbl{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed;}
+/* Fixed columns so the MOVE cell is bounded and wraps (its 2-line clamp then works)
+   instead of sizing the whole table to the longest single-line note. Short columns
+   ellipsize any over-long token rather than spilling into their neighbour. */
+.snap-tbl th,.snap-tbl td{overflow:hidden;text-overflow:ellipsis;}
+.snap-tbl th:nth-child(1),.snap-tbl td:nth-child(1){width:54px;padding-left:14px;padding-right:8px;}  /* #       */
+.snap-tbl th:nth-child(2){width:12%;}                              /* Label   */
+.snap-tbl th:nth-child(3){width:8%;}                               /* Type    */
+.snap-tbl th:nth-child(4){width:6%;}                               /* Quality */
+.snap-tbl th:nth-child(5){width:11%;}                              /* Status  */
+/* col 6 (Move) takes the remainder and wraps to its 2-line clamp */
+.snap-tbl th:nth-child(7){width:9%;text-align:right;}              /* Cost    */
+.snap-tbl th{position:sticky;top:0;background:var(--paper);text-align:left;
+             font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+             text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;
+             padding:9px 16px 9px 0;border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+.snap-tbl td{padding:8px 16px 8px 0;border:0;border-bottom:1px solid var(--rule-soft);
+             vertical-align:top;white-space:nowrap;}
+.snap-tbl tr:last-child td{border-bottom:none;}
+.snap-keptrow{background:transparent;box-shadow:inset 2px 0 0 var(--ink);}
+/* bottom-line totals row */
+.snap-total td{border-top:1.5px solid var(--ink);border-bottom:none;padding-top:11px;font-weight:700;color:var(--ink);}
+.snap-total td:first-child{text-align:right;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.06em;font-size:13px;color:var(--muted);}
+.snap-q{font-variant-numeric:lining-nums tabular-nums;font-weight:700;}
+.snap-move{white-space:normal;color:#4a473e;}
+.snap-move span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;}
+.snap-st{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.st-kept{color:var(--ink);} .st-disc{color:var(--faint);} .st-inv{color:var(--accent);}
+.snap-ty{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.05em;}
+.snap-ty.t-inf{color:var(--muted);} .snap-ty.t-sft{color:var(--ochre);} .snap-ty.t-orpo{color:var(--accent);}
+.snap-cost{font-variant-numeric:lining-nums tabular-nums;color:#4a473e;text-align:right;}
+.snap-dash{color:var(--faint);}
+
+/* ---- full-bleed helpers -------------------------------------------------- */
+.fullbleed{margin-top:14px;}
+.snap-full{margin-top:16px;}
+/* Wide blocks break out to 2/3 of the viewport, centred. Applied only on screens
+   where 2/3 is actually wider than the ~724px reading column. */
+@media(min-width:1120px){
+  .fullbleed,.snap-full,.cols{width:66.666vw;margin-left:calc(50% - 33.333vw);}
+}
+
+/* ---- footer -------------------------------------------------------------- */
+footer{margin-top:72px;padding-top:24px;border-top:1.5px solid var(--ink);color:var(--muted);font-size:16px;}
+.kpi{display:inline-block;margin:4px 28px 4px 0;color:var(--muted);
+     font:600 12px/1.4 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+     text-transform:uppercase;letter-spacing:.06em;}
+.kpi b{display:block;font-size:26px;font-weight:400;font-feature-settings:"lnum" 1;
+       font-variant-numeric:lining-nums tabular-nums;letter-spacing:0;color:var(--ink);margin-top:3px;}

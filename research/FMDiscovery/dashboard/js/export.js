@@ -6,12 +6,12 @@
 import { callCount, isAdapter, callLabels } from './util.js';
 import { layoutPipe } from './pipeline.js';
 
-const execType = d => d.model ? ['FM', '#db2777']
-  : (d.kind === 'input' || d.kind === 'output') ? ['User', '#64748b']
-  : ['Swift', '#ea580c'];
+const execType = d => d.model ? ['FM', '#111111']
+  : (d.kind === 'input' || d.kind === 'output') ? ['User', '#9b998c']
+  : ['Swift', '#6b6a60'];
 
 const xml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const FONT = '-apple-system,system-ui,sans-serif';
+const FONT = '"Palatino","Palatino Linotype",Georgia,serif';
 
 function wrap(s, maxChars) {
   const words = String(s).split(/\s+/), lines = []; let cur = '';
@@ -57,15 +57,15 @@ function buildExportSVG(spec) {
     return { x, y, topx: x + NODEW / 2, topy: y, botx: x + NODEW / 2, boty: y + NODEH };
   };
 
-  let s = `<rect width="${W}" height="${H}" fill="#ffffff"/>`;
-  s += `<text x="${MARGIN}" y="${MARGIN + 19}" font-family="${FONT}" font-size="15" font-weight="700" fill="#0f172a">${xml(title)}</text>`;
+  let s = `<rect width="${W}" height="${H}" fill="#fffff8"/>`;
+  s += `<text x="${MARGIN}" y="${MARGIN + 19}" font-family="${FONT}" font-size="15" font-weight="700" fill="#111111">${xml(title)}</text>`;
   s += `<defs>` +
-    `<marker id="exa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>` +
-    `<marker id="exg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ca8a04"/></marker></defs>`;
+    `<marker id="exa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9b998c"/></marker>` +
+    `<marker id="exg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6a1e"/></marker></defs>`;
 
   for (const e of edges) {
     const a = pos(e.from), b = pos(e.to), ty = b.topy - 5, my = (a.boty + ty) / 2;
-    s += `<path d="M${a.botx},${a.boty} C${a.botx},${my} ${b.topx},${my} ${b.topx},${ty}" fill="none" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#exa)"/>`;
+    s += `<path d="M${a.botx},${a.boty} C${a.botx},${my} ${b.topx},${my} ${b.topx},${ty}" fill="none" stroke="#d9d5c3" stroke-width="1.5" marker-end="url(#exa)"/>`;
   }
   // adapter + training chain (top-down column feeding the FM call)
   if (useChain) {
@@ -76,51 +76,51 @@ function buildExportSVG(spec) {
     const nodeY = i => fmCenterY - PH / 2 - (L - 1 - i) * PSTEPH;
     for (let i = 0; i < L - 1; i++) {           // vertical dashed connectors
       const x = colX + PW / 2;
-      s += `<path d="M${x},${nodeY(i) + PH} L${x},${nodeY(i + 1) - 5}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+      s += `<path d="M${x},${nodeY(i) + PH} L${x},${nodeY(i + 1) - 5}" fill="none" stroke="#8a6a1e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
     }
     const adTopY = nodeY(L - 1), fy = adTopY + PH / 2, fx0 = colX + PW, tx = ap.x - 5, ty = fmCenterY, mx = (fx0 + tx) / 2;
-    s += `<path d="M${fx0},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+    s += `<path d="M${fx0},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#8a6a1e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
     chain.forEach((c, i) => {
       const y = nodeY(i), isAd = c.type === 'adapter';
-      s += `<rect x="${colX}" y="${y}" width="${PW}" height="${PH}" rx="8" fill="${isAd ? '#fffbeb' : '#fffef5'}" stroke="#ca8a04" stroke-width="${isAd ? 2 : 1.5}"${isAd ? '' : ' stroke-dasharray="3 2"'}/>`;
+      s += `<rect x="${colX}" y="${y}" width="${PW}" height="${PH}" rx="8" fill="${isAd ? '#f3ead0' : '#faf6e4'}" stroke="#8a6a1e" stroke-width="${isAd ? 2 : 1.5}"${isAd ? '' : ' stroke-dasharray="3 2"'}/>`;
       const kind = isAd ? 'LORA ADAPTER' : (c.st.title || '').toUpperCase();
-      s += `<text x="${colX + 9}" y="${y + 17}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="${isAd ? '#ca8a04' : '#a16207'}">${xml(kind)}</text>`;
+      s += `<text x="${colX + 9}" y="${y + 17}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="${isAd ? '#8a6a1e' : '#6f5618'}">${xml(kind)}</text>`;
       const subLines = isAd ? [c.name] : wrap(c.st.sub || '', 24).slice(0, 2);
-      subLines.forEach((ln, k) => { s += `<text x="${colX + 9}" y="${y + 34 + k * 14}" font-family="${FONT}" font-size="11" fill="#334155">${xml(ln)}</text>`; });
+      subLines.forEach((ln, k) => { s += `<text x="${colX + 9}" y="${y + 34 + k * 14}" font-family="${FONT}" font-size="11" fill="#33312b">${xml(ln)}</text>`; });
       if (!isAd) {
         const bw = (c.st.by || '').length * 5.4 + 9;
-        s += `<rect x="${colX + PW - bw - 7}" y="${y + 7}" width="${bw}" height="13" rx="3" fill="#a16207"/>`;
-        s += `<text x="${colX + PW - bw / 2 - 7}" y="${y + 16.5}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fff" text-anchor="middle">${xml(c.st.by || '')}</text>`;
+        s += `<rect x="${colX + PW - bw - 7}" y="${y + 7}" width="${bw}" height="13" rx="3" fill="#6f5618"/>`;
+        s += `<text x="${colX + PW - bw / 2 - 7}" y="${y + 16.5}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fffff8" text-anchor="middle">${xml(c.st.by || '')}</text>`;
       }
     });
   } else if (hasAdapter) {
     for (const n of adapterNodes) {
       const p = pos(n.id), ax = p.x - ADGAP - ADW, ay = p.y + (NODEH - ADH) / 2;
       const fx = ax + ADW, fy = ay + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (fx + tx) / 2;
-      s += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
-      s += `<rect x="${ax}" y="${ay}" width="${ADW}" height="${ADH}" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="2"/>`;
-      s += `<text x="${ax + 9}" y="${ay + 16}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="#ca8a04">LORA ADAPTER</text>`;
-      s += `<text x="${ax + 9}" y="${ay + 31}" font-family="${FONT}" font-size="11" fill="#334155">${xml(n.adapterName)}</text>`;
+      s += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#8a6a1e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#exg)"/>`;
+      s += `<rect x="${ax}" y="${ay}" width="${ADW}" height="${ADH}" rx="8" fill="#f3ead0" stroke="#8a6a1e" stroke-width="2"/>`;
+      s += `<text x="${ax + 9}" y="${ay + 16}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="#8a6a1e">LORA ADAPTER</text>`;
+      s += `<text x="${ax + 9}" y="${ay + 31}" font-family="${FONT}" font-size="11" fill="#33312b">${xml(n.adapterName)}</text>`;
     }
   }
   for (const n of nodes) {
     const p = pos(n.id), [blab, bcol] = execType(n);
-    s += `<rect x="${p.x}" y="${p.y}" width="${NODEW}" height="${NODEH}" rx="8" fill="#fff" stroke="${bcol}" stroke-width="2"/>`;
+    s += `<rect x="${p.x}" y="${p.y}" width="${NODEW}" height="${NODEH}" rx="8" fill="#fffff8" stroke="${bcol}" stroke-width="2"/>`;
     s += `<text x="${p.x + 9}" y="${p.y + 18}" font-family="${FONT}" font-size="9.5" font-weight="800" fill="${bcol}">${xml((n.title || '').toUpperCase())}</text>`;
     wrap(n.sub || '', 25).slice(0, 3).forEach((ln, i) => {
-      s += `<text x="${p.x + 9}" y="${p.y + 33 + i * 14}" font-family="${FONT}" font-size="11" fill="#334155">${xml(ln)}</text>`;
+      s += `<text x="${p.x + 9}" y="${p.y + 33 + i * 14}" font-family="${FONT}" font-size="11" fill="#33312b">${xml(ln)}</text>`;
     });
     const bw = blab.length * 5.7 + 9;
     s += `<rect x="${p.x + NODEW - bw - 6}" y="${p.y + 6}" width="${bw}" height="13" rx="3" fill="${bcol}"/>`;
-    s += `<text x="${p.x + NODEW - bw / 2 - 6}" y="${p.y + 16}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fff" text-anchor="middle">${xml(blab)}</text>`;
+    s += `<text x="${p.x + NODEW - bw / 2 - 6}" y="${p.y + 16}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fffff8" text-anchor="middle">${xml(blab)}</text>`;
   }
 
   const ly = OY + diagH + 22;
-  s += `<text x="${MARGIN}" y="${ly}" font-family="${FONT}" font-size="11" fill="#64748b">Node colour = who runs it:  ` +
-    `<tspan fill="#db2777" font-weight="700">FM</tspan> model call · ` +
-    `<tspan fill="#ea580c" font-weight="700">Swift</tspan> deterministic code · ` +
-    `<tspan fill="#64748b" font-weight="700">User</tspan> input/output · ` +
-    `<tspan fill="#ca8a04" font-weight="700">LoRA</tspan> adapter · gold dashed chain = how it was <tspan fill="#a16207" font-weight="700">trained</tspan> (dev-time).   Vertical = parallel, horizontal = sequential.</text>`;
+  s += `<text x="${MARGIN}" y="${ly}" font-family="${FONT}" font-size="11" fill="#6b6a60">Node colour = who runs it:  ` +
+    `<tspan fill="#111111" font-weight="700">FM</tspan> model call · ` +
+    `<tspan fill="#6b6a60" font-weight="700">Swift</tspan> deterministic code · ` +
+    `<tspan fill="#9b998c" font-weight="700">User</tspan> input/output · ` +
+    `<tspan fill="#8a6a1e" font-weight="700">LoRA</tspan> adapter · ochre dashed chain = how it was <tspan fill="#6f5618" font-weight="700">trained</tspan> (dev-time).   Vertical = parallel, horizontal = sequential.</text>`;
 
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`, W, H };
 }

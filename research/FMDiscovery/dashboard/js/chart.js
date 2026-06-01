@@ -8,7 +8,11 @@
 // than one cross-denominator line. Both render in solid green; which metric a point
 // belongs to is shown in the table (Set column) and the hover tooltip.
 
-const GREEN = '#16a34a', GREY = '#94a3b8', MUTED = '#94a3b8', LINE = '#e2e8f0';
+// Tufte palette: near-black data ink for kept points + best line, receding warm
+// gray for discarded, rust for invalid, warm hairline gridlines, cream "halo".
+const GREEN = '#111111', GREY = '#b9b6a6', MUTED = '#6b6a60', LINE = '#ece9da';
+const INVALID = '#8c2f1f', PAPER = '#fffff8';
+const FONT = '12px "Palatino","Palatino Linotype",Georgia,serif';
 let chartPoints = [];   // {x, y, r} in CSS px, for hit-testing on hover
 
 export function drawChart(runs) {
@@ -29,7 +33,7 @@ export function drawChart(runs) {
   const X = i => pad.l + (nn === 1 ? (W - pad.l - pad.r) / 2 : i * (W - pad.l - pad.r) / (nn - 1));
   const Y = q => pad.t + (1 - (q - lo) / (hi - lo)) * (H - pad.t - pad.b);
 
-  ctx.strokeStyle = LINE; ctx.fillStyle = MUTED; ctx.font = '12px system-ui'; ctx.lineWidth = 1;
+  ctx.strokeStyle = LINE; ctx.fillStyle = MUTED; ctx.font = FONT; ctx.lineWidth = 1;
   for (let k = 0; k <= 5; k++) {
     const q = lo + (hi - lo) * k / 5, y = Y(q);
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
@@ -58,16 +62,16 @@ export function drawChart(runs) {
   runs.forEach((r, i) => {
     const x = X(i), y = Y(r.quality);
     chartPoints.push({ x, y, r });
-    if (r.invalid) {                          // invalid (e.g. gold leak): red ✕, excluded from best-line
-      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+    if (r.invalid) {                          // invalid (e.g. gold leak): rust ✕, excluded from best-line
+      ctx.strokeStyle = INVALID; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
-      ctx.fillStyle = '#dc2626'; ctx.font = '12px system-ui'; ctx.fillText(r.label + ' (invalid)', x + 9, y - 9);
+      ctx.fillStyle = INVALID; ctx.font = FONT; ctx.fillText(r.label + ' (invalid)', x + 9, y - 9);
       return;
     }
     ctx.beginPath(); ctx.arc(x, y, r.kept ? 6 : 5, 0, 7);
     ctx.fillStyle = r.kept ? GREEN : GREY; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
-    if (r.kept) { ctx.fillStyle = GREEN; ctx.font = '12px system-ui'; ctx.fillText(r.label, x + 9, y - 9); }
+    ctx.lineWidth = 2; ctx.strokeStyle = PAPER; ctx.stroke();
+    if (r.kept) { ctx.fillStyle = GREEN; ctx.font = FONT; ctx.fillText(r.label, x + 9, y - 9); }
   });
 }
 

@@ -63,7 +63,7 @@ export async function renderDetail(label, cell) {
     + `</div>` : '';
   cell.innerHTML = `<div class="detail-inner"><div class="pipe-head">${pipeSummary(spec)}${spec ? '<button class="png-btn">⬇ PNG</button>' : ''}</div>`
     + `<div class="pipe-grid"><div class="pipe-diagram"><div class="pipe-d3"></div></div>${explain}</div>`
-    + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#db2777">FM</b> on-device model call · <b style="color:#ea580c">Swift</b> deterministic code · <b style="color:#64748b">User</b> input/output · gold <b style="color:#ca8a04">LoRA</b> node = adapter feeding a call · gold dashed column above it = how the adapter was <b style="color:#a16207">trained</b> (dev-time, top-down: Sonnet corpus → format → fine-tune). Vertical = parallel, horizontal = sequential · hover for details</div>`
+    + `<div class="legend-kinds"><b>Node colour = who runs it:</b> <b style="color:#111111">FM</b> on-device model call · <b style="color:#6b6a60">Swift</b> deterministic code · <b style="color:#9b998c">User</b> input/output · ochre <b style="color:#8a6a1e">LoRA</b> node = adapter feeding a call · ochre dashed column above it = how the adapter was <b style="color:#6f5618">trained</b> (dev-time, top-down: Sonnet corpus → format → fine-tune). Vertical = parallel, horizontal = sequential · hover for details</div>`
     + `${triedHtml}${blocks}</div>`;
   if (spec) {
     renderPipeD3(spec, cell.querySelector('.pipe-d3'));

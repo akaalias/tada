@@ -11,7 +11,7 @@ export function pipeSummary(spec) {
   const fmCount = spec.stages.reduce((a, s) => a + callCount(s), 0);
   const adapter = spec.stages.some(isAdapter);
   return spec.summary
-    ? `<div class="pipe-sum">${esc(spec.summary)} <span style="color:#94a3b8;font-weight:400">· ${fmCount} on-device model call${fmCount === 1 ? '' : 's'}${adapter ? ' · <b style="color:#ca8a04">LoRA adapter</b>' : ''}</span></div>`
+    ? `<div class="pipe-sum">${esc(spec.summary)} <span style="color:#9b998c;font-weight:400">· ${fmCount} on-device model call${fmCount === 1 ? '' : 's'}${adapter ? ' · <b style="color:#8a6a1e">LoRA adapter</b>' : ''}</span></div>`
     : '';
 }
 
@@ -97,12 +97,12 @@ export function renderPipeD3(spec, el) {
     .attr('id', id).attr('viewBox', '0 0 10 10').attr('refX', 8).attr('refY', 5)
     .attr('markerWidth', 7).attr('markerHeight', 7).attr('orient', 'auto')
     .append('path').attr('d', 'M0,0 L10,5 L0,10 z').attr('fill', color);
-  arrowMarker(uid + 'arrow', '#94a3b8');       // main flow
-  arrowMarker(uid + 'arrowGold', '#ca8a04');   // adapter feed
+  arrowMarker(uid + 'arrow', '#9b998c');       // main flow (warm faint)
+  arrowMarker(uid + 'arrowGold', '#8a6a1e');   // adapter feed (ochre)
 
   // main-flow edges (vertical: depth → depth), arrowhead pointing into the target
   svg.append('g').selectAll('path.flow').data(edges).join('path').attr('class', 'flow')
-    .attr('fill', 'none').attr('stroke', '#cbd5e1').attr('stroke-width', 1.5).attr('marker-end', 'url(#' + uid + 'arrow)')
+    .attr('fill', 'none').attr('stroke', '#d9d5c3').attr('stroke-width', 1.5).attr('marker-end', 'url(#' + uid + 'arrow)')
     .attr('d', d => { const a = pos(d.from), b = pos(d.to), ty = b.topy - 5, my = (a.boty + ty) / 2; return 'M' + a.botx + ',' + a.boty + ' C' + a.botx + ',' + my + ' ' + b.topx + ',' + my + ' ' + b.topx + ',' + ty; });
 
   // adapter + its training chain. With provenance: a TOP-DOWN left column
@@ -121,46 +121,46 @@ export function renderPipeD3(spec, el) {
     const vconns = [];
     for (let i = 0; i < L - 1; i++) vconns.push([nodeY(i) + PH, nodeY(i + 1)]);
     svg.append('g').selectAll('path.provv').data(vconns).join('path').attr('class', 'provv')
-      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('fill', 'none').attr('stroke', '#8a6a1e').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
       .attr('d', d => { const x = colX + PW / 2; return 'M' + x + ',' + d[0] + ' L' + x + ',' + (d[1] - 5); });
     // horizontal dashed feed: adapter (bottom node) → FM node
     const adTopY = nodeY(L - 1), fy = adTopY + PH / 2, fx0 = colX + PW, tx = aPos.x - 5, ty = fmCenterY, mx = (fx0 + tx) / 2;
     svg.append('g').append('path')
-      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('fill', 'none').attr('stroke', '#8a6a1e').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
       .attr('d', 'M' + fx0 + ',' + fy + ' C' + mx + ',' + fy + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty);
 
     // chain nodes
     const cg = svg.append('g').selectAll('g.chain').data(chain.map((c, i) => ({ c, i }))).join('g')
       .attr('transform', d => 'translate(' + colX + ',' + nodeY(d.i) + ')');
     cg.append('rect').attr('width', PW).attr('height', PH).attr('rx', 8)
-      .attr('fill', d => d.c.type === 'adapter' ? '#fffbeb' : '#fffef5')
-      .attr('stroke', '#ca8a04').attr('stroke-width', d => d.c.type === 'adapter' ? 2 : 1.5)
+      .attr('fill', d => d.c.type === 'adapter' ? '#f3ead0' : '#faf6e4')
+      .attr('stroke', '#8a6a1e').attr('stroke-width', d => d.c.type === 'adapter' ? 2 : 1.5)
       .attr('stroke-dasharray', d => d.c.type === 'adapter' ? null : '3 2');
     const cfo = cg.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', PW).attr('height', PH - 6);
     const cbox = cfo.append('xhtml:div').attr('class', 'nodebox');
-    cbox.append('xhtml:div').attr('class', 'nb-kind').style('color', d => d.c.type === 'adapter' ? '#ca8a04' : '#a16207')
+    cbox.append('xhtml:div').attr('class', 'nb-kind').style('color', d => d.c.type === 'adapter' ? '#8a6a1e' : '#6f5618')
       .text(d => d.c.type === 'adapter' ? 'LORA ADAPTER' : (d.c.s.title || '').toUpperCase());
     cbox.append('xhtml:div').attr('class', 'nb-sub').text(d => d.c.type === 'adapter' ? d.c.name : (d.c.s.sub || ''));
     // actor badge (Sonnet / Python / Toolkit) on the provenance nodes
     const pbw = by => (by || '').length * 5.4 + 9;
     const pbg = cg.filter(d => d.c.type === 'prov').append('g').attr('transform', d => 'translate(' + (PW - pbw(d.c.s.by) - 7) + ',7)');
-    pbg.append('rect').attr('width', d => pbw(d.c.s.by)).attr('height', 13).attr('rx', 3).attr('fill', '#a16207');
+    pbg.append('rect').attr('width', d => pbw(d.c.s.by)).attr('height', 13).attr('rx', 3).attr('fill', '#6f5618');
     pbg.append('text').attr('x', d => pbw(d.c.s.by) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
-      .attr('font-weight', 800).attr('fill', '#fff').text(d => d.c.s.by);
+      .attr('font-weight', 800).attr('fill', '#fffff8').text(d => d.c.s.by);
     cg.on('mousemove', (e, d) => showTip(e, d.c.type === 'adapter'
       ? 'LoRA adapter “' + esc(d.c.name) + '” — fine-tuned weights feeding this on-device call'
       : '<b>' + esc(d.c.s.title) + '</b> · ' + esc(d.c.s.by) + ' (dev-time)<span class="t-note">' + esc(d.c.s.sub) + '</span>')).on('mouseleave', hideTip);
   } else if (hasAdapter) {
     const adX = n => pos(n.id).x - ADGAP - ADW, adY = n => pos(n.id).y + (NODEH - ADH) / 2;
     svg.append('g').selectAll('path.feed').data(adapterNodes).join('path').attr('class', 'feed')
-      .attr('fill', 'none').attr('stroke', '#ca8a04').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
+      .attr('fill', 'none').attr('stroke', '#8a6a1e').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
       .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
     const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
       .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
-    ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#fffbeb').attr('stroke', '#ca8a04').attr('stroke-width', 2);
+    ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#f3ead0').attr('stroke', '#8a6a1e').attr('stroke-width', 2);
     const afo = ag.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', ADW).attr('height', ADH - 6);
     const abox = afo.append('xhtml:div').attr('class', 'nodebox');
-    abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#ca8a04').text('LoRA ADAPTER');
+    abox.append('xhtml:div').attr('class', 'nb-kind').style('color', '#8a6a1e').text('LoRA ADAPTER');
     abox.append('xhtml:div').attr('class', 'nb-sub').text(n => n.adapterName);
     ag.on('mousemove', (e, n) => showTip(e, 'LoRA adapter “' + esc(n.adapterName) + '” — fine-tuned weights feeding this on-device call')).on('mouseleave', hideTip);
   }
@@ -171,10 +171,10 @@ export function renderPipeD3(spec, el) {
   // CONSISTENT colour by EXECUTION TYPE (same across every experiment): the node's
   // border/label/badge colour says WHO runs it; the specific stage kind is the text.
   //   FM = on-device model call (pink) · Swift = deterministic code (orange) · User = input (slate)
-  const execType = d => d.model ? ['FM', '#db2777']
-    : (d.kind === 'input' || d.kind === 'output') ? ['User', '#64748b']   // user-facing boundary
-    : ['Swift', '#ea580c'];
-  g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fff')
+  const execType = d => d.model ? ['FM', '#111111']
+    : (d.kind === 'input' || d.kind === 'output') ? ['User', '#9b998c']   // user-facing boundary
+    : ['Swift', '#6b6a60'];
+  g.append('rect').attr('width', NODEW).attr('height', NODEH).attr('rx', 8).attr('fill', '#fffff8')
     .attr('stroke', d => execType(d)[1]).attr('stroke-width', 2);
   const fo = g.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', NODEW).attr('height', NODEH - 6);
   const box = fo.append('xhtml:div').attr('class', 'nodebox');
@@ -184,6 +184,6 @@ export function renderPipeD3(spec, el) {
   const bg = g.append('g').attr('transform', d => 'translate(' + (NODEW - bwid(execType(d)[0]) - 6) + ',6)');
   bg.append('rect').attr('width', d => bwid(execType(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => execType(d)[1]);
   bg.append('text').attr('x', d => bwid(execType(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
-    .attr('font-weight', 800).attr('fill', '#fff').text(d => execType(d)[0]);
+    .attr('font-weight', 800).attr('fill', '#fffff8').text(d => execType(d)[0]);
   g.on('mousemove', (e, d) => showTip(e, esc(d.full))).on('mouseleave', hideTip);
 }
