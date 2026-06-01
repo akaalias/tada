@@ -855,6 +855,16 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_e2.fmadapter"),
         "adapter_grpo_e3": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_e3.fmadapter"),
+
+        // EXP-058: KL-ANCHORED GRPO — exp057 regressed (0.328) because beta_kl=0 let the policy
+        // drift off the natural-language manifold (naturalness 4→3, refusals 1→7 by epoch 3). Same
+        // cached rollouts+rewards+advantages; the ONLY change is a working KL anchor (β·mean((logπ−ref)²)
+        // to the frozen v2a_e1 warm-start, β=1.0) + 2 epochs. Tests whether the regression was
+        // under-regularisation (→ recovers toward 0.409) vs GRPO fundamentally unable to help.
+        "adapter_grpo_kl_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_kl_e1.fmadapter"),
+        "adapter_grpo_kl_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_kl_e2.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

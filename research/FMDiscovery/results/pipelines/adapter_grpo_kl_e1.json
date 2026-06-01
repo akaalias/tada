@@ -1,0 +1,13 @@
+{
+  "summary": "KL-anchored GRPO policy adapter, epoch 1",
+  "hypothesis": "exp057 GRPO regressed (0.328) because beta_kl=0 let the policy drift off the natural-language manifold. Adding a working KL anchor to the frozen v2a_e1 warm-start (beta=1.0) should stop the drift — distinguishing 'regressed because under-regularised' from 'GRPO fundamentally can't help'.",
+  "technique": "Same cached on-policy rollouts, Sonnet rubric rewards and group-relative advantages as exp057; the only change is a KL anchor beta*mean((logpi - ref)^2) to the frozen warm-start policy's per-draft log-probs (precomputed once), beta=1.0, epoch 1.",
+  "result": "Scored 0.407 on the full-30 gate (3 win / 1 tie / 25 loss) — a TIE with the 0.409 warm-start base, and +0.079 over exp057's unregularised 0.328. The anchor fixed the drift: naturalness recovered 3->4 and refusals fell 7->1. BUT coverage stayed 3 and quality landed AT the base, not above — confirming on-policy reward carries no coverage gradient (all drafts in a group miss the same unknown). GRPO recovers the base but cannot exceed it; discarded.",
+  "stages": [
+    { "kind": "input", "text": "User one-liner input" },
+    { "kind": "generate", "text": "KL-anchored GRPO adapter generates questions",
+      "knobs": { "model": "adapter_grpo_kl_e1", "sampling": "greedy" } },
+    { "kind": "output", "text": "Final 7 questions" }
+  ],
+  "label": "adapter_grpo_kl_e1"
+}

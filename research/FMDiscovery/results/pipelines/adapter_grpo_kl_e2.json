@@ -1,0 +1,13 @@
+{
+  "summary": "KL-anchored GRPO policy adapter, epoch 2",
+  "hypothesis": "A second anchored epoch tests whether further GRPO steps add anything once drift is controlled, or whether the policy simply sits at its warm-start.",
+  "technique": "Same KL-anchored GRPO run as epoch 1 (cached rollouts/rewards/advantages, beta=1.0 anchor to the frozen v2a_e1 warm-start), one epoch further — epoch 2.",
+  "result": "Scored 0.378 on the full-30 gate (2 win / 1 tie / 26 loss), below epoch 1 (0.407) and the base; naturalness held 4 and refusals stayed 1 (no drift), but coverage stayed 3. Confirms the anchored policy does not improve with more steps — it converges to the warm-start and the coverage wall holds. Discarded.",
+  "stages": [
+    { "kind": "input", "text": "User one-liner input" },
+    { "kind": "generate", "text": "KL-anchored GRPO adapter generates questions",
+      "knobs": { "model": "adapter_grpo_kl_e2", "sampling": "greedy" } },
+    { "kind": "output", "text": "Final 7 questions" }
+  ],
+  "label": "adapter_grpo_kl_e2"
+}
