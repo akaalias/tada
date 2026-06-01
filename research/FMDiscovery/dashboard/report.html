@@ -19,6 +19,9 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
+/* let the wide lever table break out to 2/3 viewport so columns don't scrunch */
+@media(min-width:1120px){ .rpt-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+.rpt-wide th,.rpt-wide td:not(:first-child){white-space:nowrap;}
 /* §3 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
 .tap-wide{margin-top:18px;}
 @media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
@@ -71,7 +74,7 @@
 <section id="levers">
   <h2><span class="num">3</span>Everything I tried</h2>
   <p class="sub">Five lever classes, 71 experiments, 9 that set a new best. One dimension stuck throughout.</p>
-  <table class="rpt-tbl">
+  <table class="rpt-tbl rpt-wide">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
       <tr><td>Stock baseline</td><td class="num">1</td><td class="num">0.28</td><td class="num">3</td><td>full-30</td></tr>
