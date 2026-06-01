@@ -96,12 +96,62 @@ function diagramSVG(spec, fill, steps, uid) {
     : `<circle cx="${f(cx(n))}" cy="${f(cy(n))}" r="${R - 0.6}" fill="${PAPER}" stroke="${HOLLOW}" stroke-width="1.1"/>`).join('');
 
   const marker = (id, color) => `<marker id="${id}${uid}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1.5 L8.5,5 L0,8.5" fill="none" stroke="${color}" stroke-width="2"/></marker>`;
-  return `<svg width="${f(VW * SCALE)}" height="${f(VH * SCALE)}" viewBox="0 0 ${f(VW)} ${f(VH)}" style="display:block">`
+  const svg = `<svg width="${f(VW * SCALE)}" height="${f(VH * SCALE)}" viewBox="0 0 ${f(VW)} ${f(VH)}" style="display:block">`
     + `<defs>${marker('ar', EDGE)}${marker('ag', GOLDLINE)}</defs>`
     + `<g stroke="${EDGE}" stroke-width="1.2" fill="none">${flow.join('')}</g>`
     + `<g stroke="${GOLDLINE}" stroke-width="1.2" fill="none">${train}</g>`
     + ellipsis + dots + `</svg>`;
+  return { svg, w: VW * SCALE, h: VH * SCALE };
 }
+
+// Skyline bin-packing: place each tile (in run order) into the lowest gap it fits,
+// flowing like a Pinterest mosaic in both width and height. Positions only — sizes
+// are known up front, so no DOM measurement / reflow.
+function pack(items, CW, gap) {
+  let sky = [{ x: 0, w: CW, y: 0 }];
+  const pos = [];
+  for (const it of items) {
+    const w = Math.min(it.w + gap, CW), h = it.h + gap;
+    let best = null;
+    for (const s of sky) {
+      const x = s.x;
+      if (x + w > CW + 0.5) continue;
+      let y = 0, rem = w;
+      for (const t of sky) {                       // max skyline height across the span
+        if (t.x + t.w <= x) continue;
+        if (t.x >= x + w) break;
+        y = Math.max(y, t.y); rem -= Math.min(t.x + t.w, x + w) - Math.max(t.x, x);
+      }
+      if (rem > 0.5) continue;                      // span runs off the right edge
+      if (!best || y < best.y - 0.5 || (Math.abs(y - best.y) < 0.5 && x < best.x)) best = { x, y };
+    }
+    if (!best) best = { x: 0, y: Math.max(...sky.map(s => s.y)) };
+    pos.push({ x: best.x, y: best.y });
+    sky = raise(sky, best.x, w, best.y + h);
+  }
+  return { pos, totalH: Math.max(...sky.map(s => s.y)) - gap };
+}
+
+function raise(sky, x0, w, y) {
+  const x1 = x0 + w, out = [];
+  for (const s of sky) {
+    const a = s.x, b = s.x + s.w;
+    if (b <= x0 || a >= x1) { out.push(s); continue; }
+    if (a < x0) out.push({ x: a, w: x0 - a, y: s.y });
+    out.push({ x: Math.max(a, x0), w: Math.min(b, x1) - Math.max(a, x0), y });
+    if (b > x1) out.push({ x: x1, w: b - x1, y: s.y });
+  }
+  out.sort((a, b) => a.x - b.x);
+  const merged = [out[0]];
+  for (let k = 1; k < out.length; k++) {
+    const last = merged[merged.length - 1];
+    if (Math.abs(last.y - out[k].y) < 0.01 && Math.abs(last.x + last.w - out[k].x) < 0.01) last.w += out[k].w;
+    else merged.push(out[k]);
+  }
+  return merged;
+}
+
+const GAP = 16;
 
 async function render() {
   const el = document.getElementById('tapestry');
@@ -109,15 +159,26 @@ async function render() {
   const [runs, types, prov] = await Promise.all([fetchRuns(), fetchTypes(), fetchProvenance()]);
   if (!runs.length) { el.innerHTML = '<p class="muted" style="font-size:14px">Run the dashboard server to load the diagrams.</p>'; return; }
 
-  const cells = await Promise.all(runs.map(async (r, i) => {
+  const items = (await Promise.all(runs.map(async (r, i) => {
     const spec = await pipe(r.label);
+    if (!spec) return null;
     const fill = FAMILY[types[r.label]] || FAMILY['Inference-Time'];
-    const adapterStage = spec && (spec.stages || []).find(s => s.knobs && s.knobs.model);
+    const adapterStage = (spec.stages || []).find(s => s.knobs && s.knobs.model);
     const steps = adapterStage ? provenanceSteps(prov, adapterStage.knobs.model) : null;
-    const svg = spec ? diagramSVG(spec, fill, steps, i) : '';
-    return `<div class="tap-cell" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage}">${svg}</div>`;
-  }));
-  el.innerHTML = cells.join('');
+    const { svg, w, h } = diagramSVG(spec, fill, steps, i);
+    return { w, h, html: `<div class="tap-cell" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage}">${svg}</div>` };
+  }))).filter(Boolean);
+
+  el.innerHTML = items.map(it => it.html).join('');
+  const nodes = [...el.children];
+  const layout = () => {
+    const CW = el.clientWidth || Math.round(window.innerWidth * 0.66);
+    const { pos, totalH } = pack(items, CW, GAP);
+    pos.forEach((p, i) => { nodes[i].style.left = p.x + 'px'; nodes[i].style.top = p.y + 'px'; });
+    el.style.height = totalH + 'px';
+  };
+  layout();
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(layout, 120); });
 }
 
 render();
