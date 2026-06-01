@@ -27,7 +27,7 @@ function arcs() {
   // inset 14° each end so the arrowheads clear the numbered nodes.
   let out = '';
   for (const s of STEPS) {
-    const a = pt(s.deg + 14), b = pt(s.deg + 58);
+    const a = pt(s.deg + 13), b = pt(s.deg + 65);
     out += `<path d="M${f(a.x)} ${f(a.y)} A${R} ${R} 0 0 1 ${f(b.x)} ${f(b.y)}" `
          + `fill="none" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#arw)"/>`;
   }
@@ -93,7 +93,7 @@ const SVG = `
     <tspan x="648">steers levers · gives feedback</tspan>
     <tspan x="648" dy="15">runs the manual fine-tuning track</tspan>
   </text>
-  <path d="M634 170 Q566 176 528 188" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
+  <path d="M636 172 Q582 180 548 190" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
   <circle cx="648" cy="166" r="4.5" fill="var(--accent)"/>
 
   <!-- caption inside the frame: who drives the cycle -->
