@@ -93,7 +93,7 @@ const SVG = `
     <tspan x="624">steers levers · gives feedback</tspan>
     <tspan x="624" dy="15">runs the manual fine-tuning track</tspan>
   </text>
-  <path d="M616 174 Q588 180 550 187" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
+  <path d="M620 172 Q556 174 538 195" fill="none" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#arwA)"/>
   <circle cx="624" cy="168" r="4.5" fill="var(--accent)"/>
 
   <!-- caption inside the frame: who drives the cycle -->
