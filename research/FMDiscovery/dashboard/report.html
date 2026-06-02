@@ -39,7 +39,7 @@
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
   <h1>The wall that wasn't coverage</h1>
-  <p class="lede">Across 71 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning and preference-learning lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
+  <p class="lede">Across 77 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, the 2025–2026 methods that still couldn't close the last notch, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -76,7 +76,7 @@
   <figure style="margin:20px 0 6px">
     <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
          font-family="Palatino,Georgia,serif" role="img"
-         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 71.">
+         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 77.">
       <line x1="56" y1="60"  x2="548" y2="60"  stroke="var(--rule-soft)" stroke-width="1"/>
       <line x1="56" y1="133" x2="548" y2="133" stroke="var(--rule-soft)" stroke-width="1"/>
       <line x1="56" y1="166" x2="548" y2="166" stroke="var(--rule)" stroke-width="1"/>
@@ -93,16 +93,16 @@
       <text x="288" y="44"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
       <text x="365" y="22"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
       <text x="458" y="24"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
-      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">71 experiments, in run order &rarr;</text>
+      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">77 experiments, in run order &rarr;</text>
     </svg>
-    <figcaption class="ex-caption">Running best quality across the 71 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then thirty-plus further experiments add nothing. Roughly doubled, then flat.</figcaption>
+    <figcaption class="ex-caption">Running best quality across the 77 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then thirty-plus further experiments, judge-reward RL and adversarial distillation among them, add nothing. Roughly doubled, then flat.</figcaption>
   </figure>
   <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
 </section>
 
 <section id="levers">
   <h2><span class="num">3</span>Everything we tried</h2>
-  <p class="sub">Five lever classes, 71 experiments, 9 that set a new best. One dimension stuck throughout.</p>
+  <p class="sub">Seven lever classes, 77 experiments, 9 that set a new best. One dimension stuck throughout.</p>
   <table class="rpt-tbl rpt-wide">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
@@ -111,9 +111,11 @@
       <tr><td><span class="pill p-sft">SFT</span> &nbsp;LoRA adapters (imitation), incl. more data &amp; coverage-forced data</td><td class="num">34</td><td class="num hi">0.44</td><td class="num">3</td><td>full-30</td></tr>
       <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, style-vs-style pairs</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
       <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, on-policy pairs (gold vs the model's own drafts)</td><td class="num">2</td><td class="num">0.40</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-grpo">GRPO</span> &nbsp;judge-reward RL — group-relative advantages over the model's own judged drafts, incl. KL-anchored</td><td class="num">4</td><td class="num">0.41</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-gad">GAD</span> &nbsp;adversarial distillation — reward is a discriminator trained to tell Sonnet gold sets from the model's drafts</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
     </tbody>
   </table>
-  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 71 runs</em> (the only values ever observed, on either gate, were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, or for preference learning.</p>
+  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 77 runs</em> (the only values ever observed were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, for preference learning, for reinforcement learning against the rubric itself, or for adversarial distillation from the teacher.</p>
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
   </div>
@@ -152,7 +154,7 @@
 <section id="coverage-blind">
   <h2><span class="num">5</span>Is it really coverage?</h2>
   <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
-  <p>Here the story turns. Everything to this point — the climb, the 71 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <p>Here the story turns. Everything to this point — the climb, the 77 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
     <tbody>
@@ -171,14 +173,16 @@
     </tbody>
   </table>
   <p>The on-device model matches the frontier on <strong>specificity alone</strong> and trails by about a point on everything else. Coverage is the joint-lowest, but it is not special — the gap is <strong>broad</strong>. That is why re-weighting it away does nothing: the model is a uniform notch below the frontier, and coverage is simply the symptom the judge can name in a sentence.</p>
+  <p>A correlation audit puts numbers on <em>broad</em>. Across all <strong>1,552</strong> judged question-sets the five rubric dimensions are not independent: a single latent quality factor explains <strong>58%</strong> of their variance, and coverage correlates 0.69 with specificity and 0.61 with naturalness. So coverage was never a separable axis you could target in isolation — it co-moves with the rest, which is precisely why any coverage-specific fix was structurally unlikely to land.</p>
 </section>
 
 <section id="verdict">
   <h2><span class="num">6</span>The verdict</h2>
   <div class="verdict">
     <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method we failed to find.</h3>
-    <p style="margin:0">Imitation, preference learning, and every inference-time technique in the 2024–2025 literature leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
+    <p style="margin:0">Imitation, preference learning, reinforcement learning against the rubric reward, adversarial distillation from the teacher, and every inference-time technique we could find leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
   </div>
+  <p><strong>Four angles on coverage, one wall — and the mechanism for each.</strong> The final stretch attacked coverage directly from every side, and each route failed for a reason we could measure. <em>Generation</em> (fine-tuning) imitates the gold's phrasing but not the judgment that chose it. <em>On-policy reward</em> (GRPO) has nothing to optimise — the model's own drafts almost never vary on coverage, so the group-relative signal is flat; left unregularised it drifts off the natural-language manifold, and a KL anchor pulls it straight back to the 0.41 baseline. <em>Adversarial distillation</em> (GAD) grounds the reward in the teacher, but a probe shows a discriminator separates the model from Sonnet on <em>style</em> (AUC 0.76), not content (0.62) — so it re-learns the register, not the coverage. <em>Discrimination</em> — a dedicated critic that only has to <em>recognise</em> the better set — fails too: trained to predict the judge's coverage score it reaches 0.999 on seen tasks but generalises to nothing on new ones, because recognising the pivotal unknown takes the same value-of-information judgment as producing it. Every channel for importing that judgment from outside the 3B narrows the gap or recovers the baseline; none crosses it.</p>
   <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality, about a point below on nearly every dimension, and strong in absolute terms (4 of 5 on most). The shortfall is broad and capacity-bound, so there is no single dimension to fix. Three honest paths:</p>
   <div class="cols">
     <div class="col yes">
@@ -208,11 +212,11 @@
 
 <section id="repro">
   <h2><span class="num">7</span>Reproducibility</h2>
-  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training and ORPO scripts, the on-policy draft generator, the cloud ceiling-confirmation harness, and the coverage-blind re-judge (§5) are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the coverage-blind re-judge in §5 are reference analyses only, deliberately kept out of the on-device run log.</p>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§5), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the mechanistic analyses in §5–§6 are reference only, deliberately kept out of the on-device run log.</p>
 </section>
 
 <footer>
-  <span class="kpi">Experiments<b>71</b></span>
+  <span class="kpi">Experiments<b>77</b></span>
   <span class="kpi">On-device best<b>0.44</b></span>
   <span class="kpi">Coverage, on-device<b>3</b></span>
   <span class="kpi">Coverage, cloud<b>4</b></span>
