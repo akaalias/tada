@@ -8,7 +8,7 @@ set -uo pipefail
 PKG="/Users/alexisrondeau/Workshop/tada/research/FMDiscovery"
 ADP="$PKG/adapter"
 TOOLKIT="${TOOLKIT:-$PKG/adapter_training_toolkit_v26_0_0}"
-DATA="$ADP/data_critic"; CKPT="$ADP/checkpoints_critic"
+DATA="${DATA:-$ADP/data_critic}"; CKPT="${CKPT:-$ADP/checkpoints_critic}"
 EPOCHS="${EPOCHS:-6}"; LR="${LR:-5e-4}"; BATCH="${BATCH:-4}"; ACCUM="${ACCUM:-1}"; NAME="${NAME:-discovery_critic}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT"; exit 1; }
 [ -f "$DATA/train.jsonl" ] || { echo "no critic data — run format_critic_data.py"; exit 1; }

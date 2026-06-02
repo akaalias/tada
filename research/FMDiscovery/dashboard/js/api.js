@@ -25,6 +25,11 @@ export async function fetchTypes() {
   catch (e) { return {}; }
 }
 
+export async function fetchAnalyses() {
+  try { return (await (await fetch('../results/analyses.json' + bust())).json()).analyses || []; }
+  catch (e) { return []; }
+}
+
 let provCache = null;
 export async function fetchProvenance() {
   if (provCache) return provCache;

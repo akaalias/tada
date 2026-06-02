@@ -37,6 +37,15 @@ canvas#chart{width:100%;height:480px;display:block;}
 #tbl th[title]{cursor:help;border-bottom:1.5px solid var(--ink);}
 #tbl th[title]::after{content:"\00b0";color:var(--faint);font-feature-settings:normal;}
 .q{font-variant-numeric:lining-nums tabular-nums;font-weight:700;}
+/* reference analyses table — mirrors #tbl, read-only (no row expand) */
+#analyses-tbl{width:100%;border-collapse:collapse;font-size:14px;}
+#analyses-tbl th,#analyses-tbl td{text-align:left;padding:9px 12px 9px 0;vertical-align:top;border-bottom:1px solid var(--rule-soft);}
+#analyses-tbl th{font:600 12px/1.2 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+#analyses-tbl .an-q{color:var(--muted);max-width:300px;}
+#analyses-tbl .an-r{max-width:420px;}
+.an-scripts{font-size:11px;color:var(--faint);margin-top:3px;}
+.an-verdict{color:var(--accent);white-space:nowrap;}
 
 /* small-caps tags replace the coloured pills (one restrained ink tint each) */
 .op-badge,.ty-badge,.status-badge{font:600 11.5px/1 "Palatino",Georgia,serif;
