@@ -66,6 +66,17 @@
       "verdict": "soft fail",
       "scripts": ["autoresearch/format_critic_data.py", "autoresearch/train_critic.sh", "autoresearch/critic_gate.py"],
       "date": "2026-06-02"
+    },
+    {
+      "id": "A7",
+      "afterIndex": 76,
+      "title": "FM critic-adapter — pairwise gate (#2)",
+      "question": "Does a pairwise (A-vs-B) critic recognise coverage better than the pointwise one?",
+      "result": "No sign of it (preliminary). An undertrained epoch-1 pairwise critic, via a round-robin tournament over the 6 drafts, captures -14% of the oracle headroom (picks 2.86 vs 2.92 random) — below random and below the pointwise critic's 32%.",
+      "detail": "CAVEAT: training was interrupted at 95% of epoch 1 by a battery-death reboot, so this is an undertrained checkpoint (the pointwise critic's best was epoch 3). Not a conclusive 'pairwise fails', but no sign of clearing the wall; a full re-run would confirm.",
+      "verdict": "below random (undertrained)",
+      "scripts": ["autoresearch/format_critic_pairwise_data.py", "autoresearch/critic_gate_pairwise.py"],
+      "date": "2026-06-02"
     }
   ]
 }
