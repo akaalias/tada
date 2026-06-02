@@ -12,6 +12,8 @@ DATA="${DATA:-$ADP/data_critic}"; CKPT="${CKPT:-$ADP/checkpoints_critic}"
 EPOCHS="${EPOCHS:-6}"; LR="${LR:-5e-4}"; BATCH="${BATCH:-4}"; ACCUM="${ACCUM:-1}"; NAME="${NAME:-discovery_critic}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT"; exit 1; }
 [ -f "$DATA/train.jsonl" ] || { echo "no critic data — run format_critic_data.py"; exit 1; }
+# shellcheck disable=SC1091
+source "$PKG/autoresearch/require_ac_power.sh"
 
 echo "[critic] fresh checkpoint dir $CKPT"; rm -rf "$CKPT"; mkdir -p "$CKPT"
 # shellcheck disable=SC1091

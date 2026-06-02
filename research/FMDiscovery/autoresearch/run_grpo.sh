@@ -28,6 +28,8 @@ WORKERS="${WORKERS:-8}"; BETA_KL="${BETA_KL:-0}"; FORCE="${FORCE:-0}"; NAME="${N
 
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT"; exit 1; }
 [ -f "$WARM" ]    || { echo "warm-start checkpoint missing: $WARM"; exit 1; }
+# shellcheck disable=SC1091
+source "$AR/require_ac_power.sh"
 have() { [ "$FORCE" = "0" ] && [ -s "$1" ]; }
 
 # 1. ROLLOUTS — G diverse drafts per task from the champion policy (grpo_roll sampler).

@@ -13,6 +13,8 @@ TOOLKIT="${TOOLKIT:-$PKG/adapter_training_toolkit_v26_0_0}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT"; exit 1; }
 DATA="$ADP/data_orpo_onpolicy"
 [ -f "$DATA/train.jsonl" ] || { echo "no on-policy pairs at $DATA — run gen_orpo_pairs_onpolicy.py"; exit 1; }
+# shellcheck disable=SC1091
+source "$AR/require_ac_power.sh"
 
 EPOCHS="${EPOCHS:-6}"; LR="${LR:-5e-4}"; BATCH="${BATCH:-2}"; ACCUM="${ACCUM:-2}"
 MAXSEQ="${MAXSEQ:-1024}"; LAMBDA="${LAMBDA:-0.2}"; NAME="${NAME:-discovery_orpo_op}"

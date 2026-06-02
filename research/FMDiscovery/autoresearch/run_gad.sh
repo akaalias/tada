@@ -22,6 +22,8 @@ EPOCHS="${EPOCHS:-2}"; LR="${LR:-1e-4}"; BATCH="${BATCH:-2}"; ACCUM="${ACCUM:-2}
 MAXSEQ="${MAXSEQ:-1024}"; BETA_KL="${BETA_KL:-1.0}"; NAME="${NAME:-discovery_gad}"; FORCE="${FORCE:-0}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found"; exit 1; }
 [ -f "$WARM" ] || { echo "warm-start missing: $WARM"; exit 1; }
+# shellcheck disable=SC1091
+source "$AR/require_ac_power.sh"
 have() { [ "$FORCE" = "0" ] && [ -s "$1" ]; }
 
 # shellcheck disable=SC1091

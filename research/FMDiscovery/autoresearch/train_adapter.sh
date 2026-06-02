@@ -15,6 +15,8 @@ ADP="$PKG/adapter"
 # Default to the toolkit unzipped inside the package; override with TOOLKIT=...
 TOOLKIT="${TOOLKIT:-$PKG/adapter_training_toolkit_v26_0_0}"
 [ -d "$TOOLKIT" ] || { echo "toolkit not found at $TOOLKIT (set TOOLKIT=/path)"; exit 1; }
+# shellcheck disable=SC1091
+source "$AR/require_ac_power.sh"
 EPOCHS="${EPOCHS:-6}"; LR="${LR:-1e-3}"; BATCH="${BATCH:-4}"; NAME="${NAME:-discovery_v1}"
 # Memory-frugal knobs (this toolkit is memory-hungry on Mac; activation checkpointing on
 # by default to avoid swap-thrashing). ACCUM keeps effective batch = BATCH*ACCUM.
