@@ -1,0 +1,13 @@
+{
+  "summary": "GAD (adversarial distillation) adapter, epoch 1",
+  "hypothesis": "GRPO's self-reward gave no coverage gradient (all the model's drafts miss the same unknown). GAD's reward instead comes from a discriminator trained to tell Sonnet gold sets from the model's drafts — grounded in the TEACHER, whose sets contain the missing unknown — so in principle it could reward teacher-like coverage.",
+  "technique": "An embedding-MLP discriminator (MiniLM set-embedding, val AUC 0.629) scores each draft by teacher-likeness; that score is the reward in the same KL-anchored group-relative policy gradient as exp058 (warm-start v2a_e1, beta_kl=1.0), epoch 1.",
+  "result": "Scored 0.355 on the full-30 gate (0 win / 3 tie / 26 loss) — a regression below the 0.409 base; coverage stayed 3 and specificity fell 4->3. As two pre-registered diagnostics predicted, the teacher/student signal a discriminator climbs is STYLE (AUC 0.76) not content (0.62), so GAD pushed toward Sonnet's phrasing (which SFT already gave) and the style-chase cost specificity. Coverage is not a separable axis. Discarded.",
+  "stages": [
+    { "kind": "input", "text": "User one-liner input" },
+    { "kind": "generate", "text": "GAD adapter generates questions",
+      "knobs": { "model": "adapter_gad_e1", "sampling": "greedy" } },
+    { "kind": "output", "text": "Final 7 questions" }
+  ],
+  "label": "adapter_gad_e1"
+}

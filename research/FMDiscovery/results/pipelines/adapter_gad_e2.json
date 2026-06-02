@@ -1,0 +1,13 @@
+{
+  "summary": "GAD (adversarial distillation) adapter, epoch 2",
+  "hypothesis": "A second epoch tests whether more adversarial steps help once the discriminator reward is applied, or whether the style-chase persists.",
+  "technique": "Same GAD run as epoch 1 (discriminator teacher-likeness reward, KL anchor beta_kl=1.0, warm-start v2a_e1), one epoch further.",
+  "result": "Scored 0.349 on the full-30 gate (0 win / 3 tie / 26 loss), atomicity also slipping to 4; coverage stayed 3. More steps did not help — confirms the discriminator reward chases style, not coverage. Discarded.",
+  "stages": [
+    { "kind": "input", "text": "User one-liner input" },
+    { "kind": "generate", "text": "GAD adapter generates questions",
+      "knobs": { "model": "adapter_gad_e2", "sampling": "greedy" } },
+    { "kind": "output", "text": "Final 7 questions" }
+  ],
+  "label": "adapter_gad_e2"
+}
