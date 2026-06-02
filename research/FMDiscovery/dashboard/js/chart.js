@@ -11,11 +11,12 @@
 // Tufte palette: near-black data ink for kept points + best line, receding warm
 // gray for discarded, rust for invalid, warm hairline gridlines, cream "halo".
 const GREEN = '#111111', GREY = '#b9b6a6', MUTED = '#6b6a60', LINE = '#ece9da';
-const INVALID = '#8c2f1f', PAPER = '#fffff8';
+const INVALID = '#8c2f1f', PAPER = '#fffff8', DIAG = '#6b4fa0';   // violet = reference analyses
 const FONT = '12px "Palatino","Palatino Linotype",Georgia,serif';
-let chartPoints = [];   // {x, y, r} in CSS px, for hit-testing on hover
+const SMALL = '10.5px "Palatino","Palatino Linotype",Georgia,serif';
+let chartPoints = [];   // {x, y, r} (run) or {x, y, a} (analysis) in CSS px, for hover hit-testing
 
-export function drawChart(runs) {
+export function drawChart(runs, analyses = []) {
   const cv = document.getElementById('chart');
   const dpr = window.devicePixelRatio || 1;
   const W = cv.clientWidth, H = cv.clientHeight;
@@ -81,6 +82,27 @@ export function drawChart(runs) {
     ctx.lineWidth = 2; ctx.strokeStyle = PAPER; ctx.stroke();
     if (r.kept) { ctx.fillStyle = GREEN; ctx.font = FONT; ctx.fillText(r.label, x + 9, y - 9); }
   });
+
+  // Reference analyses (probes/gates): no ruler score, so they sit on the BASELINE
+  // (quality-0 floor) as violet diamonds at roughly the experiment index they followed.
+  if (analyses.length) {
+    const yBase = H - pad.b;                                  // the chart floor
+    const groups = {};                                        // jitter dots that share an x
+    analyses.forEach(a => { (groups[a.afterIndex] ??= []).push(a); });
+    Object.values(groups).forEach(g => g.forEach((a, k) => {
+      const x = X(Math.max(0, Math.min(nn - 1, a.afterIndex))) + (k - (g.length - 1) / 2) * 11;
+      const d = 5;
+      ctx.save(); ctx.translate(x, yBase); ctx.rotate(Math.PI / 4);  // square rotated 45° = diamond
+      ctx.fillStyle = DIAG; ctx.fillRect(-d, -d, 2 * d, 2 * d);
+      ctx.lineWidth = 1.5; ctx.strokeStyle = PAPER; ctx.strokeRect(-d, -d, 2 * d, 2 * d);
+      ctx.restore();
+      ctx.fillStyle = DIAG; ctx.font = SMALL; ctx.textAlign = 'center';
+      ctx.fillText(a.id, x, yBase - 11); ctx.textAlign = 'left';
+      chartPoints.push({ x, y: yBase, a });
+    }));
+    ctx.fillStyle = DIAG; ctx.font = SMALL;
+    ctx.fillText('◆ reference analyses (no ruler score — placed at quality 0, by when they ran)', pad.l + 6, H - pad.b - 26);
+  }
 }
 
 // Wire the hover tooltip once (any point, kept or discarded).
@@ -91,7 +113,12 @@ export function initChartHover() {
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
     let hit = null, bd = 144;
     for (const p of chartPoints) { const d = (p.x - mx) ** 2 + (p.y - my) ** 2; if (d < bd) { bd = d; hit = p; } }
-    if (hit) {
+    if (hit && hit.a) {
+      const a = hit.a;
+      tip.innerHTML = `<b>${a.id} · ${a.title}</b> <span class="t-note">reference analysis · no ruler score</span>`
+        + `<span class="t-note">${a.result}</span>`;
+      tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;
+    } else if (hit) {
       const r = hit.r;
       tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.invalid ? 'INVALID' : r.kept ? 'kept' : 'discarded'}`
         + (r.invalid && r.invalidReason ? `<span class="t-note">⚠ ${r.invalidReason}</span>` : '')

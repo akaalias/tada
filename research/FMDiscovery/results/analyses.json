@@ -1,8 +1,9 @@
 {
-  "_meta": "Reference ANALYSES — diagnostics and controlled probes that are NOT scored on the frozen ruler (so they never enter runs.jsonl), but are part of the experiment record. Each closes or reframes a question. Hand-maintained alongside program.md.",
+  "_meta": "Reference ANALYSES — diagnostics and controlled probes that are NOT scored on the frozen ruler (so they never enter runs.jsonl), but are part of the experiment record. Each closes or reframes a question. afterIndex = the experiment index it chronologically followed (for placing it on the dashboard chart's time axis at quality 0). Hand-maintained alongside program.md.",
   "analyses": [
     {
       "id": "A1",
+      "afterIndex": 71,
       "title": "Cloud ceiling confirmation",
       "question": "Is coverage locked by the harness, or by the 3B's capacity?",
       "result": "Capacity. Haiku 4.5 and Sonnet 4.6 through the IDENTICAL harness score coverage 4 (vs the 3B's 3) and quality 0.55 / 0.65.",
@@ -13,6 +14,7 @@
     },
     {
       "id": "A2",
+      "afterIndex": 72,
       "title": "Coverage-blind re-judge",
       "question": "If we stop scoring coverage, does the 3B reach parity?",
       "result": "No. Dropping coverage from the rubric AND the verdict changes quality ~0; the judge still prefers gold 22-24/30. The losses were never mostly about coverage.",
@@ -23,6 +25,7 @@
     },
     {
       "id": "A3",
+      "afterIndex": 74,
       "title": "Rubric correlation audit",
       "question": "Is the ~1-point gap five independent deficits, or one latent factor?",
       "result": "One factor. Across 1,552 judged sets a single latent quality factor explains 58% of rubric variance; coverage correlates 0.69 with specificity, 0.61 with naturalness.",
@@ -33,6 +36,7 @@
     },
     {
       "id": "A4",
+      "afterIndex": 74,
       "title": "GAD discriminator probe",
       "question": "Does a teacher-vs-student discriminator key on coverage or style?",
       "result": "Style. Teacher (gold) vs student (draft) sets separate at AUC 0.76 on style features but only 0.62 on content.",
@@ -43,6 +47,7 @@
     },
     {
       "id": "A5",
+      "afterIndex": 76,
       "title": "Coverage critic — MiniLM probe (Gate 1)",
       "question": "Can a lightweight critic recognise coverage well enough to select?",
       "result": "No. A MiniLM-embedding critic captures only 18% of the oracle best-of-6 headroom on disjoint tasks (0.999 in-sample AUC, but ~random out-of-task).",
@@ -53,6 +58,7 @@
     },
     {
       "id": "A6",
+      "afterIndex": 76,
       "title": "FM critic-adapter — pointwise gate (#1/#9)",
       "question": "Does a full FM critic-adapter recognise coverage where the shallow probe failed?",
       "result": "Modestly, not enough. A real LoRA critic-adapter (SFT on 755 task->coverage examples) captures 26-32% of the oracle headroom (best epoch 3: 32%) vs MiniLM's 18% — a soft fail against the 40% bar.",

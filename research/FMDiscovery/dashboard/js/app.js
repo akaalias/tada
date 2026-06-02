@@ -33,7 +33,8 @@ async function load() {
   document.getElementById('title').textContent =
     `Autoresearch Progress: ${runs.length} Experiment${runs.length === 1 ? '' : 's'}, ${kept} Kept (${denom})`;
 
-  drawChart(runs);
+  const analyses = await fetchAnalyses();
+  drawChart(runs, analyses);
 
   state.costs = await fetchCosts();
   state.operators = await fetchOperators();
@@ -41,7 +42,6 @@ async function load() {
   const sig = runs.map(r => r.label + ':' + r.quality + ':' + r.kept + ':' + (state.costs[r.label] ?? '') + ':' + (state.operators[r.label] ?? '') + ':' + (state.types[r.label] ?? '')).join('|');
   if (sig !== state.lastSig) { state.lastSig = sig; fillTable(runs, state.expanded, state.costs, state.operators, state.types); }
 
-  const analyses = await fetchAnalyses();
   const asig = analyses.map(a => a.id + ':' + a.result).join('|');
   if (asig !== state.analysesSig) { state.analysesSig = asig; fillAnalyses(analyses); }
 }
