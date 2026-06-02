@@ -89,15 +89,16 @@ export function drawChart(runs, analyses = []) {
     const yBase = H - pad.b;                                  // the chart floor
     const groups = {};                                        // jitter dots that share an x
     analyses.forEach(a => { (groups[a.afterIndex] ??= []).push(a); });
+    const LBL = '9px "Palatino","Palatino Linotype",Georgia,serif';
     Object.values(groups).forEach(g => g.forEach((a, k) => {
-      const x = X(Math.max(0, Math.min(nn - 1, a.afterIndex))) + (k - (g.length - 1) / 2) * 11;
-      const d = 5;
+      const x = X(Math.max(0, Math.min(nn - 1, a.afterIndex))) + (k - (g.length - 1) / 2) * 13;
+      const d = 3.2;
       ctx.save(); ctx.translate(x, yBase); ctx.rotate(Math.PI / 4);  // square rotated 45° = diamond
       ctx.fillStyle = DIAG; ctx.fillRect(-d, -d, 2 * d, 2 * d);
-      ctx.lineWidth = 1.5; ctx.strokeStyle = PAPER; ctx.strokeRect(-d, -d, 2 * d, 2 * d);
+      ctx.lineWidth = 1; ctx.strokeStyle = PAPER; ctx.strokeRect(-d, -d, 2 * d, 2 * d);
       ctx.restore();
-      ctx.fillStyle = DIAG; ctx.font = SMALL; ctx.textAlign = 'center';
-      ctx.fillText(a.id, x, yBase - 11); ctx.textAlign = 'left';
+      ctx.fillStyle = DIAG; ctx.font = LBL; ctx.textAlign = 'center';
+      ctx.fillText(a.id, x, yBase - 7); ctx.textAlign = 'left';
       chartPoints.push({ x, y: yBase, a });
     }));
     ctx.fillStyle = DIAG; ctx.font = SMALL;
