@@ -1,0 +1,155 @@
+/* ============================================================================
+   Glossary tooltips. Inline term marker + the hover/focus popover.
+   Tokens (--ink, --accent, --rule, --paper, --muted, --serif…) come from
+   tufte.css, which every page already loads.
+   ========================================================================== */
+
+/* the in-text term: a quiet dotted underline, no color shift — keeps the prose
+   looking like prose until you hover */
+.gloss{
+  border-bottom:1px dotted var(--muted);
+  cursor:help;
+  text-decoration:none;
+}
+.gloss:hover,
+.gloss:focus-visible{
+  border-bottom-color:var(--accent);
+  outline:none;
+}
+.gloss:focus-visible{
+  background:rgba(140,47,31,.07);   /* faint rust wash for keyboard focus */
+  border-radius:2px;
+}
+
+/* pill chips as triggers: keep their own colored chip border; add only a
+   cursor hint and a soft hover/focus wash so they read as interactive */
+.pill.gloss-pill{cursor:help;}
+.pill.gloss-pill:hover,
+.pill.gloss-pill:focus-visible{
+  background:rgba(140,47,31,.06);
+  outline:none;
+}
+.pill.gloss-pill:focus-visible{box-shadow:0 0 0 2px rgba(140,47,31,.22);border-radius:2px;}
+
+/* the popover */
+.gloss-pop{
+  position:absolute;
+  z-index:9999;
+  max-width:360px;
+  background:var(--paper);
+  border:1px solid var(--rule);
+  border-top:2px solid var(--accent);
+  box-shadow:0 6px 22px rgba(17,17,17,.13);
+  padding:13px 16px 14px;
+  font-family:var(--serif);
+  color:var(--ink);
+}
+.gloss-pop[hidden]{display:none;}
+
+.gloss-title{
+  font:600 12px/1.1 var(--serif);
+  font-feature-settings:"smcp" 1;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--accent);
+  margin-bottom:7px;
+}
+.gloss-def{
+  font-size:15px;
+  line-height:1.5;
+  color:#33312b;
+}
+.gloss-ex{
+  font-size:14px;
+  line-height:1.5;
+  color:var(--muted);
+  font-style:italic;
+  margin-top:9px;
+  padding-top:9px;
+  border-top:1px solid var(--rule-soft);
+}
+.gloss-ex-tag{
+  display:inline-block;
+  font:600 11px/1 var(--serif);
+  font-feature-settings:"smcp" 1;
+  font-style:normal;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--faint);
+  margin-right:7px;
+}
+
+@media (max-width:600px){
+  .gloss-pop{max-width:calc(100vw - 24px);}
+}
+
+/* ---- glossary drawer ----------------------------------------------------- */
+
+/* the always-present launcher, bottom-right */
+.gloss-fab{
+  position:fixed; right:22px; bottom:22px; z-index:9998;
+  font:600 12px/1 var(--serif); font-feature-settings:"smcp" 1;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:var(--paper); background:var(--accent);
+  border:none; border-radius:3px; padding:11px 17px; cursor:pointer;
+  box-shadow:0 3px 14px rgba(17,17,17,.22);
+  transition:background .15s;
+}
+.gloss-fab:hover{background:#73271a;}
+.gloss-fab:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+
+.gloss-backdrop{
+  position:fixed; inset:0; z-index:10000;
+  background:rgba(17,17,17,.18);
+  opacity:0; transition:opacity .24s ease;
+}
+.gloss-backdrop.open{opacity:1;}
+.gloss-backdrop[hidden]{display:none;}
+
+.gloss-drawer{
+  position:fixed; top:0; right:0; z-index:10001;
+  height:100vh; width:min(430px,100vw);
+  background:var(--paper); border-left:1px solid var(--rule);
+  box-shadow:-10px 0 34px rgba(17,17,17,.14);
+  transform:translateX(100%); transition:transform .24s ease;
+  display:flex; flex-direction:column;
+}
+.gloss-drawer.open{transform:none;}
+.gloss-drawer[hidden]{display:none;}
+
+.gloss-drawer-head{
+  padding:18px 22px 15px; border-bottom:1px solid var(--rule);
+  background:var(--paper);
+}
+.gloss-drawer-bar{display:flex; align-items:center; justify-content:space-between;}
+.gloss-drawer-title{
+  font:600 13px/1 var(--serif); font-feature-settings:"smcp" 1;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--accent);
+}
+.gloss-drawer-close{
+  border:none; background:none; font-size:26px; line-height:1;
+  color:var(--muted); cursor:pointer; padding:0 2px; margin:-4px -4px 0 0;
+}
+.gloss-drawer-close:hover{color:var(--ink);}
+.gloss-search{
+  width:100%; margin-top:13px; padding:9px 12px;
+  font:16px/1.3 var(--serif); color:var(--ink);
+  background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+}
+.gloss-search::placeholder{color:var(--faint); font-style:italic;}
+.gloss-search:focus{outline:none; border-color:var(--accent);}
+.gloss-empty{margin-top:12px; font-size:15px; font-style:italic; color:var(--muted);}
+.gloss-empty[hidden]{display:none;}
+
+.gloss-drawer-body{overflow-y:auto; padding:4px 22px 48px; flex:1;}
+.gloss-drawer-body[hidden]{display:none;}
+.gloss-group{
+  font:600 11px/1 var(--serif); font-feature-settings:"smcp" 1;
+  text-transform:uppercase; letter-spacing:.07em; color:var(--faint);
+  margin:24px 0 4px; padding-bottom:6px; border-bottom:1px solid var(--rule-soft);
+}
+.gloss-group[hidden]{display:none;}
+.gloss-item{padding:12px 0; border-bottom:1px solid var(--rule-soft);}
+.gloss-item[hidden]{display:none;}
+/* inside the drawer the title needs a touch more room than in the popover */
+.gloss-item .gloss-title{margin-bottom:6px;}

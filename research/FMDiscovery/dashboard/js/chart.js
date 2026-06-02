@@ -29,6 +29,7 @@ export function drawChart(runs) {
   const qs = runs.map(r => r.quality);
   let lo = Math.min(...qs), hi = Math.max(...qs);
   const span = Math.max(0.05, hi - lo); lo = Math.max(0, lo - span * 0.25); hi = Math.min(1, hi + span * 0.35);
+  hi = Math.min(1, Math.max(hi, 0.52));   // always keep the 0.50 parity line in view
   const nn = runs.length;
   const X = i => pad.l + (nn === 1 ? (W - pad.l - pad.r) / 2 : i * (W - pad.l - pad.r) / (nn - 1));
   const Y = q => pad.t + (1 - (q - lo) / (hi - lo)) * (H - pad.t - pad.b);
@@ -39,6 +40,13 @@ export function drawChart(runs) {
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
     ctx.fillText(q.toFixed(3), 16, y + 4);
   }
+  // parity reference: 0.50 = a dead tie with the gold model on every case
+  { const yp = Y(0.5);
+    ctx.save(); ctx.strokeStyle = INVALID; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, yp); ctx.lineTo(W - pad.r, yp); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = INVALID; ctx.font = FONT;
+    ctx.fillText('0.50 · parity (tie on every case)', pad.l + 6, yp - 6); ctx.restore(); }
+
   ctx.fillText('Experiment #', W / 2 - 30, H - 12);
   ctx.save(); ctx.translate(16, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Quality (higher is better)', -70, -44); ctx.restore();
 

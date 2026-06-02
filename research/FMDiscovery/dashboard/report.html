@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The wall that wasn't coverage — Final Report</title>
 <link rel="stylesheet" href="onboarding.css">
+<link rel="stylesheet" href="glossary.css">
 <style>
 /* report-only table styling — kept here so onboarding.css stays untouched */
 .rpt-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px;
@@ -34,7 +35,7 @@
 .tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
 </style>
 </head>
-<body>
+<body data-glossary-root=".wrap, .hero .lede">
 
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
@@ -76,23 +77,27 @@
   <figure style="margin:20px 0 6px">
     <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
          font-family="Palatino,Georgia,serif" role="img"
-         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 77.">
-      <line x1="56" y1="60"  x2="548" y2="60"  stroke="var(--rule-soft)" stroke-width="1"/>
-      <line x1="56" y1="133" x2="548" y2="133" stroke="var(--rule-soft)" stroke-width="1"/>
+         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 77 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
+      <!-- 0.50 = parity: tying Sonnet's gold on every one of the 30 cases -->
+      <line x1="56" y1="30" x2="548" y2="30" stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 4"/>
+      <text x="548" y="24" text-anchor="end" font-size="11.5" font-style="italic" fill="var(--accent)">0.50 — parity: a tie on every case</text>
+      <line x1="56" y1="85"  x2="548" y2="85"  stroke="var(--rule-soft)" stroke-width="1"/>
+      <line x1="56" y1="139" x2="548" y2="139" stroke="var(--rule-soft)" stroke-width="1"/>
       <line x1="56" y1="166" x2="548" y2="166" stroke="var(--rule)" stroke-width="1"/>
-      <text x="48" y="64"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.40</text>
-      <text x="48" y="137" text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.30</text>
-      <path d="M56 148 L260 119 L288 53 L365 31 L548 31" fill="none" stroke="var(--ink)"
+      <text x="48" y="34"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.50</text>
+      <text x="48" y="89"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.40</text>
+      <text x="48" y="143" text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.30</text>
+      <path d="M56 150 L260 128 L288 79 L365 63 L548 63" fill="none" stroke="var(--ink)"
             stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="56"  cy="148" r="3.6" fill="var(--ink)"/>
-      <circle cx="260" cy="119" r="3.6" fill="var(--ink)"/>
-      <circle cx="288" cy="53"  r="3.6" fill="var(--ink)"/>
-      <circle cx="365" cy="31"  r="3.6" fill="var(--accent)"/>
-      <text x="58"  y="162" text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.28</text>
-      <text x="248" y="110" text-anchor="end"    font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.32</text>
-      <text x="288" y="44"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
-      <text x="365" y="22"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
-      <text x="458" y="24"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
+      <circle cx="56"  cy="150" r="3.6" fill="var(--ink)"/>
+      <circle cx="260" cy="128" r="3.6" fill="var(--ink)"/>
+      <circle cx="288" cy="79"  r="3.6" fill="var(--ink)"/>
+      <circle cx="365" cy="63"  r="3.6" fill="var(--accent)"/>
+      <text x="58"  y="164" text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.28</text>
+      <text x="248" y="124" text-anchor="end"    font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.32</text>
+      <text x="288" y="71"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
+      <text x="365" y="55"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
+      <text x="460" y="78"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
       <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">77 experiments, in run order &rarr;</text>
     </svg>
     <figcaption class="ex-caption">Running best quality across the 77 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then thirty-plus further experiments, judge-reward RL and adversarial distillation among them, add nothing. Roughly doubled, then flat.</figcaption>
@@ -226,5 +231,6 @@
 </div>
 <script type="module" src="report-tapestry.js"></script>
 <script type="module" src="js/autoresearch-loop.js"></script>
+<script type="module" src="js/glossary.js"></script>
 </body>
 </html>

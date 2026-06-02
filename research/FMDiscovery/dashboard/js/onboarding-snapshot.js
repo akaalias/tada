@@ -17,7 +17,7 @@ function chartSVG(runs) {
   const valid = runs.filter(r => !r.invalid);
   if (!valid.length) return '';
   const qs = valid.map(r => r.quality);
-  let lo = Math.max(0, Math.min(...qs) - 0.03), hi = Math.min(1, Math.max(...qs) + 0.03);
+  let lo = Math.max(0, Math.min(...qs) - 0.03), hi = Math.min(1, Math.max(Math.max(...qs) + 0.03, 0.52));
   const n = runs.length;
   const X = i => pad.l + (n <= 1 ? (W - pad.l - pad.r) / 2 : i * (W - pad.l - pad.r) / (n - 1));
   const Y = q => pad.t + (1 - (q - lo) / (hi - lo)) * (H - pad.t - pad.b);
@@ -28,6 +28,10 @@ function chartSVG(runs) {
     s += `<line x1="${pad.l}" y1="${y}" x2="${W - pad.r}" y2="${y}" stroke="${LINE}" stroke-width="1"/>`;
     s += `<text x="${pad.l - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${MUTED}">${q.toFixed(2)}</text>`;
   }
+  // parity reference: 0.50 = a dead tie with Sonnet on every case
+  { const yP = Y(0.5);
+    s += `<line x1="${pad.l}" y1="${yP}" x2="${W - pad.r}" y2="${yP}" stroke="${RED}" stroke-width="1" stroke-dasharray="5 4"/>`;
+    s += `<text x="${pad.l + 6}" y="${yP - 6}" font-size="11" fill="${RED}">0.50 · parity (tie on every case)</text>`; }
   s += `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="${MUTED}">experiments, in order &rarr;</text>`;
   // per-subset running-best staircase (invalid excluded), like the live chart
   const bestLine = (subset, color, dash) => {
