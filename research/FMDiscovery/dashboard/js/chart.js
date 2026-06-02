@@ -101,8 +101,11 @@ export function drawChart(runs, analyses = []) {
       ctx.fillText(a.id, x, yBase - 7); ctx.textAlign = 'left';
       chartPoints.push({ x, y: yBase, a });
     }));
-    ctx.fillStyle = DIAG; ctx.font = SMALL;
-    ctx.fillText('◆ reference analyses (no ruler score — placed at quality 0, by when they ran)', pad.l + 6, H - pad.b - 26);
+    // legend sits just LEFT of the first diamond, right-aligned, leading into the cluster
+    const firstX = X(Math.max(0, Math.min(nn - 1, Math.min(...analyses.map(a => a.afterIndex)))));
+    ctx.fillStyle = DIAG; ctx.font = LBL; ctx.textAlign = 'right';
+    ctx.fillText('reference analyses — no ruler score, at quality 0 by when they ran  ◆', firstX - 9, yBase + 3.5);
+    ctx.textAlign = 'left';
   }
 }
 
