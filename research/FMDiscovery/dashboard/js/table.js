@@ -23,6 +23,7 @@ const TYPES = {
   'Supervised Fine-Tuning': { short: 'SFT',       cls: 'ty-sft',   title: 'Runs on a LoRA adapter trained by imitation (supervised fine-tuning) on Sonnet gold.' },
   'Preference (ORPO)':      { short: 'ORPO',      cls: 'ty-orpo',  title: 'Runs on a LoRA adapter trained on chosen/rejected preference pairs (ORPO).' },
   'Reinforcement (GRPO)':   { short: 'GRPO',      cls: 'ty-grpo',  title: 'Runs on a LoRA adapter trained by RL (GRPO) against the Sonnet rubric reward — group-relative advantages over the model\'s own judged drafts.' },
+  'Distillation (GAD)':     { short: 'GAD',       cls: 'ty-gad',   title: 'Runs on a LoRA adapter trained by Generative Adversarial Distillation — reward is a discriminator trained to tell Sonnet gold sets from the model\'s own drafts.' },
 };
 const typeBadge = t => {
   const o = TYPES[t];

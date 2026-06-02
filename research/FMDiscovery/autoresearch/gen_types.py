@@ -22,10 +22,13 @@ INFER = "Inference-Time"
 SFT = "Supervised Fine-Tuning"
 ORPO = "Preference (ORPO)"
 GRPO = "Reinforcement (GRPO)"
+GAD = "Distillation (GAD)"
 
 
 def classify_adapter(path):
     p = path.lower()
+    if "gad" in p:
+        return GAD
     if "grpo" in p:
         return GRPO
     return ORPO if "orpo" in p else SFT
@@ -67,7 +70,7 @@ def main():
             if lab in types:
                 continue
             low = lab.lower()
-            types[lab] = (GRPO if "grpo" in low else ORPO if "orpo" in low
+            types[lab] = (GAD if "gad" in low else GRPO if "grpo" in low else ORPO if "orpo" in low
                           else SFT if low.startswith("adapter") else INFER)
 
     payload = {"_meta": "label -> method type. Derived from Configs.swift (does the "

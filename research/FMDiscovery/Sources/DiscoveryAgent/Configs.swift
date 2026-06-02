@@ -865,6 +865,16 @@ public enum Configs {
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_kl_e1.fmadapter"),
         "adapter_grpo_kl_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_kl_e2.fmadapter"),
+
+        // EXP-059: GAD (Generative Adversarial Distillation), round 0. The reward is a
+        // DISCRIMINATOR trained to tell Sonnet gold sets from the model's own drafts — grounded
+        // in the TEACHER (which contains the missing unknown), unlike GRPO's flat-coverage
+        // self-reward. Same KL-anchored group-relative policy gradient; only the reward source
+        // changes (D-score, not judge rubric). Warm-start v2a_e1; greedy eval, identical decoding.
+        "adapter_gad_e1": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_gad_e1.fmadapter"),
+        "adapter_gad_e2": DiscoveryConfig(topology: .adapterDirect, selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_gad_e2.fmadapter"),
     ]
 
     public static func named(_ name: String) -> DiscoveryConfig? { registry[name] }

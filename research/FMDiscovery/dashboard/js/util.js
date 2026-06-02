@@ -29,6 +29,7 @@ export const isAdapter = s => /adapter|lora|fine-?tun/i.test(JSON.stringify((s &
 // version family, so we can look up its provenance chain. Dash/underscore agnostic.
 export const adapterFamily = name => {
   const n = String(name || '').toLowerCase().replace(/-/g, '_');
+  if (n.includes('gad')) return 'gad';            // adversarial distillation (GAD)
   if (n.includes('grpo')) return 'grpo';          // judge-reward RL (GRPO)
   if (n.includes('orpo_op')) return 'orpo_op';   // on-policy ORPO (before 'orpo')
   if (n.includes('orpo')) return 'orpo';
