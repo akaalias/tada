@@ -115,7 +115,7 @@ async function render() {
     const adapterStage = spec && (spec.stages || []).find(s => s.knobs && s.knobs.model);
     const steps = adapterStage ? provenanceSteps(prov, adapterStage.knobs.model) : null;
     const svg = spec ? diagramSVG(spec, fill, steps, i) : '';
-    return `<div class="tap-cell" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage}">${svg}</div>`;
+    return `<a class="tap-cell" href="index.html#${r.label}" target="_blank" rel="noopener" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage} — open this experiment on the dashboard">${svg}</a>`;
   }));
   el.innerHTML = cells.join('');
 }
