@@ -11,7 +11,10 @@ const execType = d => d.model ? ['FM', '#111111']
   : ['Swift', '#6b6a60'];
 
 const xml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const FONT = '"Palatino","Palatino Linotype",Georgia,serif';
+// Single-quote the family names: this string is interpolated inside a double-quoted
+// SVG font-family attribute, so double quotes here would break the XML and the
+// rasterised <img> would silently fail to load.
+const FONT = "'Palatino','Palatino Linotype',Georgia,serif";
 
 function wrap(s, maxChars) {
   const words = String(s).split(/\s+/), lines = []; let cur = '';
