@@ -37,6 +37,22 @@ a.tap-cell:hover{background:#ece4d4;}
 .tap-legend span{display:inline-flex;align-items:center;gap:7px;}
 .tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
+/* §8 references: grouped, with paper summary + how-we-used-it */
+.ref-group{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+           margin:30px 0 0;padding-bottom:7px;border-bottom:1px solid var(--rule);}
+.ref-list{list-style:none;margin:0;padding:0;}
+.ref-list>li{padding:15px 0;border-bottom:1px solid var(--rule-soft);}
+.ref-list>li:last-child{border-bottom:none;}
+.ref-cite{font-size:16px;line-height:1.5;}
+.ref-cite .meta{color:var(--muted);}
+.ref-sum{font-size:15px;color:#4a473f;margin:5px 0 0;line-height:1.55;}
+.ref-use{font-size:15px;color:var(--ink);margin:5px 0 0;line-height:1.55;}
+.ref-use b{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-right:7px;}
+.ref-exp{font-size:14px;color:var(--muted);margin:5px 0 0;line-height:1.5;}
+.ref-exp b{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-right:7px;}
 </style>
 </head>
 <body data-glossary-root=".wrap, .hero .lede">
@@ -45,7 +61,7 @@ a.tap-cell:hover{background:#ece4d4;}
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
   <h1>The wall that wasn't coverage</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 77 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got, the 2025–2026 methods that still couldn't close the last notch, and the controlled tests that show the gap is a broad capability limit — not a single missing skill.</p>
+  <p class="lede">Across 77 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got: we applied the current post-training playbook — from established fine-tuning to 2025's rubric-grounded RL — and none of it closed the last notch. The controlled tests then show the gap is a broad capability limit, not a single missing skill. <a href="#references">The methods we drew on are referenced in §8.</a></p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -245,6 +261,129 @@ a.tap-cell:hover{background:#ece4d4;}
 <section id="repro">
   <h2><span class="num">7</span>Reproducibility</h2>
   <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§5), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the mechanistic analyses in §5–§6 are reference only, deliberately kept out of the on-device run log.</p>
+</section>
+
+<section id="references">
+  <h2><span class="num">8</span>References</h2>
+  <p class="sub">Not built from scratch — the levers we tried, and the papers each one came from. For each: what the paper introduced, and how we used it here.</p>
+
+  <h3 class="ref-group">In-context phase — prompting, retrieval, decoding</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">Language Models are Few-Shot Learners</a> <span class="meta">· Brown et al., 2020 · GPT-3 · NeurIPS 2020</span></p>
+      <p class="ref-sum">Showed a large language model can perform a new task from a few examples placed in the prompt, with no weight updates.</p>
+      <p class="ref-use"><b>Used</b>Our first lever: feeding the 3B a handful of gold question-sets as in-prompt demonstrations to steer its output before touching the weights.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used by the early few-shot prompting runs — exp003 (2 nearest exemplars) and exp007 (semantic-embedding retrieval); influenced the whole in-context phase (exp003–exp027) that all built on in-prompt demonstrations.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a> <span class="meta">· Lewis et al., 2020 · RAG · NeurIPS 2020</span></p>
+      <p class="ref-sum">Pairs a generator with a retriever that pulls relevant passages from an external index at inference time.</p>
+      <p class="ref-use"><b>Used</b>Retrieving the most relevant gold examples per task to use as demonstrations, instead of a fixed prompt set.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in the retrieval runs — exp003/exp007 (nearest-exemplar retrieval), exp020 (corpus-grounded ranking over a 3-temp pool), and exp040 (leak-free 619-pair corpus RAG, the best honest in-context add-on at 0.405); also exp033 leave-one-out RAG on the adapter.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://dl.acm.org/doi/10.1145/290941.291025" target="_blank" rel="noopener">The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries</a> <span class="meta">· Carbonell &amp; Goldstein, 1998 · SIGIR'98</span></p>
+      <p class="ref-sum">A selection criterion that trades off relevance against novelty to avoid picking redundant items.</p>
+      <p class="ref-use"><b>Used</b>Choosing demonstration sets that were relevant but diverse; in our runs MMR selection didn't beat a simpler top-k.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in exp043 (MMR-diverse corpus few-shot, k=3, λ=0.6), which scored 0.382 — below exp040's plain top-2-nearest (0.405); diversifying the demos did not diversify the output.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener">The Curious Case of Neural Text Degeneration</a> <span class="meta">· Holtzman et al., 2019 · nucleus / top-p sampling · ICLR 2020</span></p>
+      <p class="ref-sum">Introduced top-p (nucleus) sampling, truncating the unreliable tail of the distribution to balance quality and diversity.</p>
+      <p class="ref-use"><b>Used</b>Our decoding controls — the top-p / temperature settings for single-shot output and for the over-generate-and-prune sampler (topP .95, t .9).</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used by the multi-temperature over-generate-and-prune runs — exp004 (best-of-4 temps), exp020 (21 candidates over temps 0.4/0.7/1.0), and the GRPO on-policy samplers (topP .95 / t .9 in exp057–058); the over-generate-and-prune champion is exp056 (0.44).</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Fine-tuning</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2109.01652" target="_blank" rel="noopener">Finetuned Language Models Are Zero-Shot Learners</a> <span class="meta">· Wei et al., 2021 · FLAN · ICLR 2022</span></p>
+      <p class="ref-sum">Fine-tuning on tasks phrased as natural-language instructions sharply improves zero-shot generalization.</p>
+      <p class="ref-use"><b>Used</b>The template for our supervised fine-tuning — training the model on (task → seven questions) pairs in instruction form.</p>
+      <p class="ref-exp"><b>Experiments</b>The template for every SFT adapter: adapter_e1 (first dev-10 spike), adapter_v2a_e1 (the 0.409 SFT champion), and the v2b coverage-forced variant — all trained on (task → seven questions) instruction pairs.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA: Low-Rank Adaptation of Large Language Models</a> <span class="meta">· Hu et al., 2021 · ICLR 2022</span></p>
+      <p class="ref-sum">Freezes the base weights and trains small low-rank adapter matrices, cutting trainable parameters by orders of magnitude.</p>
+      <p class="ref-use"><b>Used</b>Our main fine-tuning method — the LoRA adapter that lifted quality from the 0.32 prompting ceiling to 0.41.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used for every adapter run: adapter_v2a_e1 was the first to clear the prompting ceiling (0.409), and it became the base for the entire 0.40–0.44 adapter family (exp028–exp056) plus all the ORPO/GRPO/GAD fine-tunes.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Preference learning &amp; reinforcement learning</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">Direct Preference Optimization: Your Language Model is Secretly a Reward Model</a> <span class="meta">· Rafailov et al., 2023 · DPO · NeurIPS 2023</span></p>
+      <p class="ref-sum">Aligns a model to preference pairs with a simple classification loss — no separate reward model or RL loop.</p>
+      <p class="ref-use"><b>Used</b>Preference-learning experiments: training on chosen/rejected question-set pairs to push toward gold-like output.</p>
+      <p class="ref-exp"><b>Experiments</b>Influence/precedent only — no DPO run exists. It motivated the preference-learning direction; the variant we actually implemented was ORPO (adapter_orpo_e1/e2 and on-policy adapter_orpo_op_e1/e2).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2403.07691" target="_blank" rel="noopener">ORPO: Monolithic Preference Optimization without Reference Model</a> <span class="meta">· Hong et al., 2024</span></p>
+      <p class="ref-sum">Folds preference optimization into SFT in a single stage via an odds-ratio penalty, with no reference model.</p>
+      <p class="ref-use"><b>Used</b>Our preference runs combining the SFT and preference objectives in one pass, including the on-policy ORPO variant.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in adapter_orpo_e1/e2 (offline ORPO, chosen=gold vs rejected=model drafts) and adapter_orpo_op_e1/e2 (on-policy ORPO); both stayed at/below the SFT champion and left coverage pinned at 3.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2402.03300" target="_blank" rel="noopener">DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models</a> <span class="meta">· Shao et al., 2024 · introduces GRPO</span></p>
+      <p class="ref-sum">Introduced GRPO, a PPO variant that drops the critic and estimates the baseline from group-relative scores of sampled outputs.</p>
+      <p class="ref-use"><b>Used</b>The RL algorithm behind exp057–058: a judge-rubric reward with group-relative advantage over G=6 on-policy drafts per task.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly implemented in exp057 (judge-reward GRPO, no KL anchor, 0.328), exp058 / adapter_grpo_kl_e1 (KL-anchored, recovered to 0.407 ≈ base), and reused as the policy-gradient core of the GAD run (exp059).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</a> <span class="meta">· DeepSeek-AI, 2025 · also Nature 645:633–638</span></p>
+      <p class="ref-sum">Showed strong reasoning can be incentivized by RL against a reward, without supervised reasoning traces.</p>
+      <p class="ref-use"><b>Used</b>The motivation for trying rubric-grounded RL on our non-verifiable, judge-scored task — the lever sweep that pointed us at GRPO.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing/motivation only — the literature sweep cited in exp057's log that pointed us at rubric-grounded RL; it maps to no run of its own, only to the GRPO attempts (exp057–058) it inspired.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Training Language Models to Follow Instructions with Human Feedback</a> <span class="meta">· Ouyang et al., 2022 · InstructGPT / RLHF · NeurIPS 2022</span></p>
+      <p class="ref-sum">Defined the standard RLHF pipeline (SFT → reward model → RL), and found a 1.3B aligned model preferred over 175B GPT-3.</p>
+      <p class="ref-use"><b>Used</b>The conceptual backbone for our reward-based fine-tuning — and direct evidence for the thesis that a small specialized model can beat a far larger general one.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing for the whole study (the specialization thesis) plus the conceptual backbone for the reward-based runs — the ORPO (adapter_orpo_*) and GRPO (exp057–058) fine-tunes; not a single run.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener">Constitutional AI: Harmlessness from AI Feedback</a> <span class="meta">· Bai et al., 2022 · RLAIF</span></p>
+      <p class="ref-sum">Replaces human preference labels with model-generated ones (RL from AI Feedback), supervised only by a set of principles.</p>
+      <p class="ref-use"><b>Used</b>The precedent for using an AI (Sonnet) rather than humans as the preference and reward source throughout our loop.</p>
+      <p class="ref-exp"><b>Experiments</b>Influenced the whole loop — the Sonnet AI-feedback reward in exp057–058 (GRPO judge-rubric reward) and the discriminator teacher-likeness reward in exp059 (GAD); also the source of the ORPO preference pairs.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Evaluation &amp; the specialization thesis</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a> <span class="meta">· Zheng et al., 2023 · NeurIPS 2023 D&amp;B</span></p>
+      <p class="ref-sum">Validated using a strong LLM as an automatic judge — including pairwise comparison — against human preference.</p>
+      <p class="ref-use"><b>Used</b>The basis for our frozen Sonnet "ruler": rubric scoring plus pairwise win-rate as the metric held constant across every experiment.</p>
+      <p class="ref-exp"><b>Experiments</b>Used by every experiment — the frozen Sonnet rubric + pairwise judge scored all 77 runs (baseline through exp059); it was also the literal reward signal in the GRPO runs (exp057–058).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2110.08207" target="_blank" rel="noopener">Multitask Prompted Training Enables Zero-Shot Task Generalization</a> <span class="meta">· Sanh et al., 2021 · T0 · ICLR 2022</span></p>
+      <p class="ref-sum">An 11B model trained on prompted multitask data often beats models up to 16× larger, zero-shot.</p>
+      <p class="ref-use"><b>Used</b>Prior evidence that specialization can close size gaps — the optimistic prior this whole study set out to test on a 3B.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing/motivation for the whole study — the specialization prior the entire program tested; not tied to any single run.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Distillation lineage — the GAD experiment</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">Distilling the Knowledge in a Neural Network</a> <span class="meta">· Hinton, Vinyals &amp; Dean, 2015 · NIPS 2014 DL Workshop</span></p>
+      <p class="ref-sum">Trains a small "student" model to match a larger "teacher" model's outputs, transferring its knowledge.</p>
+      <p class="ref-use"><b>Used</b>The conceptual basis for distilling Sonnet (teacher) into the 3B (student) — the framing behind our GAD experiment.</p>
+      <p class="ref-exp"><b>Experiments</b>The distillation framing behind exp059 / adapter_gad_e1 (Sonnet teacher → 3B student); the SFT adapters (adapter_v2a, v2b) are also a form of teacher-text distillation from Sonnet gold.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">Generative Adversarial Networks</a> <span class="meta">· Goodfellow et al., 2014</span></p>
+      <p class="ref-sum">Trains a generator against a discriminator in a minimax game; the discriminator learns to tell real data from generated.</p>
+      <p class="ref-use"><b>Used</b>The adversarial setup we adapted for GAD (exp059): a discriminator trained to separate the model's drafts from Sonnet's, its teacher-likeness score used as the RL reward. GAD itself is our own construction — there is no single canonical "generative adversarial distillation" paper.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in exp059 / adapter_gad_e1: a MiniLM-embedding discriminator (val AUC 0.629) trained to separate the model's drafts from Sonnet's, its P(teacher-like) score feeding the GRPO reward; regressed to 0.355 and left coverage at 3.</p>
+    </li>
+  </ol>
+
+  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §1). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
 </section>
 
 <footer>
