@@ -34,7 +34,7 @@ async function pipe(label) {
   return pipeCache[label];
 }
 
-function diagramSVG(spec, fill, steps, uid) {
+export function diagramSVG(spec, fill, steps, uid) {
   const { nodes, edges } = layoutPipe(spec);
   if (!nodes.length) return '';
   const lanes = Math.max(1, ...nodes.map(n => n.rows));

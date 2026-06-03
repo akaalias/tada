@@ -1,8 +1,13 @@
 // Mined experiment lineage: the hand-mined parent→child edges (lineage_prose.json)
-// over the 76 runs, on a vertical run-order axis with arcs to the right. Node facts
+// over the 76 runs, on a horizontal run-order axis with arcs above. Node facts
 // (index / quality / kept / kind) come from lineage_auto.json — it doubles as the
 // experiment table; only its EDGES are ignored here. Hover a node to isolate its
-// parents and children.
+// parents and children and pop a card (title + hypothesis/method/result) anchored
+// at the node, lazy-loaded from its pipeline spec.
+
+import { esc, callCount, isAdapter, provenanceSteps } from './util.js';
+import { fetchProvenance } from './api.js';
+import { diagramSVG } from '../report-tapestry.js';   // the bare-dots §3 tile renderer (incl. LoRA training column)
 
 const KIND = { inference: '#9b998c', sft: '#8a6a1e', orpo: '#8c2f1f', grpo: '#3f6e6e', gad: '#5a4b8a' };
 const REL = {                                  // relation → [colour, dash, width, baseOpacity]
@@ -14,14 +19,15 @@ const REL = {                                  // relation → [colour, dash, wi
 const bust = () => '?t=' + (window.__t || (window.__t = String(performance.now() | 0)));
 
 async function load() {
-  const [auto, prose] = await Promise.all([
+  const [auto, prose, prov] = await Promise.all([
     fetch('../results/lineage_auto.json' + bust()).then(r => r.json()),   // node facts only
     fetch('../results/lineage_prose.json' + bust()).then(r => r.json()),
+    fetchProvenance(),                                                    // adapter training chains
   ]);
-  return { auto, prose };
+  return { auto, prose, prov };
 }
 
-function render({ auto, prose }) {
+function render({ auto, prose, prov }) {
   const nodes = auto.nodes.slice().sort((a, b) => a.index - b.index);
   const yOf = {}; nodes.forEach((n, i) => yOf[n.label] = i);
   const edges = prose.edges.filter(e => e.from in yOf && e.to in yOf);
@@ -29,8 +35,6 @@ function render({ auto, prose }) {
   // parents/children adjacency for hover isolation
   const parents = {}, kids = {};
   edges.forEach(e => { (kids[e.from] = kids[e.from] || []).push(e.to); (parents[e.to] = parents[e.to] || []).push(e.from); });
-  const roots = nodes.filter(n => !parents[n.label]).map(n => n.label);
-  const multi = nodes.filter(n => (parents[n.label] || []).length > 1).map(n => n.label);
 
   // ---- legend ----
   document.getElementById('legend').innerHTML =
@@ -47,6 +51,47 @@ function render({ auto, prose }) {
   const hideTip = () => { tip.style.opacity = 0; };
   const x = i => MX + i * COL;
 
+  // per-experiment pipeline spec (lazy, cached) → the popover's title + hypothesis/method/result
+  const specCache = {};
+  const getSpec = async label => {
+    if (!(label in specCache)) {
+      try { specCache[label] = await fetch(`../results/pipelines/${label}.json` + bust()).then(r => r.ok ? r.json() : null); }
+      catch { specCache[label] = null; }
+    }
+    return specCache[label];
+  };
+  const popTitle = (d, spec) => {
+    if (!spec) return `${esc(d.label)} · quality ${d.quality.toFixed(3)}${d.kept ? ' · kept ★' : ''}`;
+    const fm = spec.stages.reduce((a, s) => a + callCount(s), 0), ad = spec.stages.some(isAdapter);
+    return esc((spec.summary || d.label) + ' · ' + fm + ' on-device model call' + (fm === 1 ? '' : 's') + (ad ? ' · LoRA adapter' : ''));
+  };
+  const popBody = spec => {
+    const sec = (cls, h, t) => t ? `<div class="pop-sec"><div class="pop-h ${cls}">${h}</div><p>${esc(t)}</p></div>` : '';
+    return sec('hyp', 'Hypothesis — the bet', spec.hypothesis) +
+      sec('tech', 'Method — how we test it', spec.technique) +
+      sec('res', 'Result — what happened', spec.result);
+  };
+  // anchor the popover at the node (fixed), clamped to the viewport; render the
+  // pipeline diagram beside the hypothesis/method/result.
+  const showPop = (anchor, d, spec) => {
+    const hasDiag = spec && spec.stages && spec.stages.length;
+    tip.innerHTML = `<div class="pop-title">${popTitle(d, spec)}</div>` +
+      (spec ? `<div class="pop-grid">${hasDiag ? '<div class="pop-diagram"></div>' : ''}<div class="pop-body">${popBody(spec)}</div></div>` : '');
+    tip.style.opacity = 1;
+    if (hasDiag) {
+      const adapterStage = spec.stages.find(s => s.knobs && s.knobs.model);
+      const steps = adapterStage ? provenanceSteps(prov, adapterStage.knobs.model) : null;
+      const host = tip.querySelector('.pop-diagram');
+      host.innerHTML = diagramSVG(spec, KIND[d.kind] || '#9b998c', steps, 'lin' + d.index);
+      const sv = host.querySelector('svg');                 // CONSTANT scale across all tiles → uniform stroke & dot sizes
+      if (sv) { const vb = sv.viewBox.baseVal, K = 2.2;
+        sv.setAttribute('width', (vb.width * K).toFixed(1)); sv.setAttribute('height', (vb.height * K).toFixed(1)); }
+    }
+    const r = anchor.getBoundingClientRect(), w = tip.offsetWidth;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 12));
+    tip.style.left = left + 'px'; tip.style.top = (r.bottom + 14) + 'px';   // always below the node
+  };
+
   const svg = d3.select('#diagram').html('').append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
 
   // arcs anchored on the axis at each node's x, bulging UP (parent ← child)
@@ -61,7 +106,7 @@ function render({ auto, prose }) {
     const p = gE.append('path').attr('fill', 'none').attr('stroke', c).attr('stroke-width', wdt)
       .attr('stroke-dasharray', dash).attr('opacity', o)
       .attr('d', arc(x(yOf[e.from]), x(yOf[e.to])))
-      .on('mousemove', ev => showTip(ev, `<b>${e.to}</b> ← ${e.from}<br>${e.relation} · ${e.confidence || ''}<br><span style="color:#cbc8ba">${e.evidence || ''}</span>`))
+      .on('mousemove', ev => showTip(ev, `<div class="tt-title">${e.to} <span class="ar">←</span> ${e.from}</div><div class="tt-meta">${e.relation}${e.confidence ? ' · ' + e.confidence : ''}</div>${e.evidence ? `<div class="tt-ev">${e.evidence}</div>` : ''}`))
       .on('mouseleave', hideTip);
     return { e, p, base: o };
   });
@@ -72,8 +117,6 @@ function render({ auto, prose }) {
     .attr('stroke', d => d.kept ? '#111111' : 'none').attr('stroke-width', 1);
   const lbl = gN.append('text').attr('transform', 'rotate(90)').attr('x', 12).attr('y', 4)
     .attr('font-size', 11.5).attr('fill', '#111111').text(d => d.label);
-  // wider invisible hit target so the whole column is hoverable
-  gN.append('rect').attr('x', -COL / 2).attr('y', -ARCH).attr('width', COL).attr('height', ARCH + LABELH).attr('fill', 'transparent');
 
   // hover a node → isolate edges touching it; dim the rest
   const isolate = label => {
@@ -89,18 +132,16 @@ function render({ auto, prose }) {
     paths.forEach(({ p, base, e }) => p.attr('opacity', base).attr('stroke-width', REL[e.relation]?.[2] || 1.4));
     lbl.attr('fill', '#111111').attr('font-weight', 400);
   };
-  gN.style('cursor', 'pointer')
-    .on('mouseenter', (ev, d) => isolate(d.label))
-    .on('mousemove', (ev, d) => showTip(ev, `<b>${d.label}</b> · quality ${d.quality.toFixed(3)}${d.kept ? ' · kept ★' : ''}`))
-    .on('mouseleave', () => { restore(); hideTip(); });
+  // trigger only on the experiment label (not the whole column)
+  let hovering = null;
+  lbl.style('cursor', 'pointer')
+    .on('mouseenter', (ev, d) => {
+      hovering = d.label; isolate(d.label);
+      const circ = ev.currentTarget.parentNode.querySelector('circle');
+      getSpec(d.label).then(spec => { if (hovering === d.label) showPop(circ, d, spec); });
+    })
+    .on('mouseleave', () => { hovering = null; restore(); hideTip(); });
 
-  // ---- roots / multi-parent notes ----
-  const fmtP = l => (prose.edges.filter(e => e.to === l).map(e => `${e.from} (${e.relation})`).join(', ')) || '—';
-  document.getElementById('notes').innerHTML =
-    `<h3>Roots (no mined parent · ${roots.length})</h3><ul>` +
-    roots.map(l => `<li><code>${l}</code></li>`).join('') + `</ul>` +
-    `<h3>Multiple parents (${multi.length})</h3><ul>` +
-    multi.map(l => `<li><code>${l}</code> ← <b>${fmtP(l)}</b></li>`).join('') + `</ul>`;
 }
 
 load().then(render).catch(e => { document.getElementById('notes').innerHTML = '<span class="warn">failed to load lineage data: ' + e + '</span>'; });
