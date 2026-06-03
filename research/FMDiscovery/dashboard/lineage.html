@@ -31,16 +31,12 @@ h1{font-size:30px;margin:0 0 6px;}
 </head>
 <body>
 <div class="lin-wrap">
-  <h1>Experiment lineage: automatic vs. mined</h1>
-  <p class="sub">The same 76 experiments in run order. <b>Left arcs</b> = the cheap automatic guess (parent = the reigning score champion when a run executed). <b>Right arcs</b> = the lineage hand-mined from the log (what each run actually built on). Where they disagree, the automatic guess got the parent wrong.</p>
+  <h1>Experiment lineage</h1>
+  <p class="sub">The 76 experiments in run order. Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to isolate just its parents and children.</p>
   <div class="lin-stats" id="stats">loading…</div>
   <div class="lin-legend" id="legend"></div>
-  <div style="display:flex;justify-content:space-between;max-width:none;margin:8px 0 -6px;">
-    <span class="col-head-l">← automatic (champion-at-runtime)</span>
-    <span class="col-head-r">mined from program.md →</span>
-  </div>
   <div id="diagram"></div>
-  <div class="diffs" id="diffs"></div>
+  <div class="diffs" id="notes"></div>
 </div>
 <div id="tip"></div>
 <script src="d3.v7.min.js"></script>
