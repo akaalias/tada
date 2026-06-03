@@ -2,14 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=1280">
 <title>Experiment lineage — automatic vs. mined</title>
 <link rel="stylesheet" href="tufte.css">
 <style>
 html,body{overflow-x:hidden;}   /* the full-bleed timeline is 100vw; stop it adding a page-wide scrollbar */
-.lin-wrap{max-width:1100px;margin:0 auto;padding:36px 24px 80px;}
-h1{font-size:30px;margin:0 0 6px;}
+.lin-wrap{max-width:1100px;margin:0 auto;padding:8px 24px 80px;}
 .sub{font:400 18px/1.4 var(--serif);color:var(--muted);margin:0 0 18px;}
+/* pivotal-path table — the runs that moved the needle toward the best result */
+.pivotal{margin:38px 0 0;}
+.pivotal h2{font-weight:400;font-size:24px;line-height:1.2;margin:0 0 4px;}
+.pivotal .psub{font:400 16px/1.45 var(--serif);color:var(--muted);margin:0 0 14px;max-width:780px;}
+.piv-tbl{width:100%;border-collapse:collapse;font-size:15px;
+         border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
+.piv-tbl th{text-align:left;font:600 11.5px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
+            letter-spacing:.05em;color:var(--muted);padding:9px 16px 9px 0;border-bottom:1px solid var(--rule);}
+.piv-tbl td{padding:10px 16px 10px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top;}
+.piv-tbl tr:last-child td{border-bottom:none;}
+.piv-tbl tbody tr{cursor:pointer;transition:background .1s;}
+.piv-tbl tbody tr:hover{background:#f2eedd;}
+.piv-tbl .num{font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;}
+.piv-tbl .lbl{font-weight:600;color:var(--ink);white-space:nowrap;}
+.piv-tbl .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle;}
+.piv-tbl tr.best td{background:#f6ebe3;}
+.piv-tbl tr.best:hover td{background:#f1e2d6;}
 .lin-stats{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:14px;color:var(--muted);
            border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:12px 0;margin:14px 0 6px;}
 .lin-stats b{color:var(--ink);font-variant-numeric:tabular-nums;}
@@ -55,16 +71,21 @@ h1{font-size:30px;margin:0 0 6px;}
 </style>
 </head>
 <body>
-<div class="lin-wrap">
+<header class="hero">
+  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · experiment lineage</div>
   <h1>Experiment lineage</h1>
-  <p class="sub">The 76 experiments left→right in run order (scroll sideways). Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to isolate just its parents and children.</p>
+  <p class="hero-sub">How 77 experiments descend from one another — the mined parent&rarr;child record over the full run.</p>
   <div class="nav">
-    <a href="index.html">Live dashboard</a>
     <a href="onboarding.html">Project overview</a>
+    <a href="index.html">Live dashboard</a>
     <a href="report.html">Final report</a>
   </div>
+</header>
+<div class="lin-wrap">
+  <p class="sub">The 76 experiments left→right in run order (scroll sideways). Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to trace its whole bloodline — every ancestor back to the root and every descendant forward.</p>
   <div class="lin-legend" id="legend"></div>
   <div id="diagram"></div>
+  <div class="pivotal" id="pivotal"></div>
   <div class="diffs" id="notes"></div>
 </div>
 <div id="tip"></div>

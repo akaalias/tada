@@ -118,14 +118,33 @@ function render({ auto, prose, prov }) {
   const lbl = gN.append('text').attr('transform', 'rotate(90)').attr('x', 12).attr('y', 4)
     .attr('font-size', 11.5).attr('fill', '#111111').text(d => d.label);
 
-  // hover a node → isolate edges touching it; dim the rest
+  // transitive closure up the parent links (all ancestors) / down the child links (all descendants)
+  const climb = (start, adj) => {
+    const out = new Set(), stack = [...(adj[start] || [])];
+    while (stack.length) { const n = stack.pop(); if (out.has(n)) continue; out.add(n); (adj[n] || []).forEach(m => stack.push(m)); }
+    return out;
+  };
+
+  // hover a node → light up its whole bloodline: every ancestor back to the root and
+  // every descendant forward. Immediate family stays strongest so the node still pops.
   const isolate = label => {
-    const near = new Set([label, ...(parents[label] || []), ...(kids[label] || [])]);
+    const anc = climb(label, parents), desc = climb(label, kids);
+    const lineage = new Set([label, ...anc, ...desc]);
+    const direct = new Set([label, ...(parents[label] || []), ...(kids[label] || [])]);
     paths.forEach(({ e, p }) => {
-      const on = e.from === label || e.to === label;
-      p.attr('opacity', on ? 0.98 : 0.05).attr('stroke-width', on ? (REL[e.relation]?.[2] || 1.4) + 0.6 : (REL[e.relation]?.[2] || 1.4));
+      const touches = e.from === label || e.to === label;
+      // an edge belongs to the bloodline iff it sits on a path that reaches the hovered node:
+      // upward (parent→child both ancestors of, or at, the node) or downward (both descendants)
+      const inAnc  = anc.has(e.from)  && (e.to === label || anc.has(e.to));
+      const inDesc = desc.has(e.to)   && (e.from === label || desc.has(e.from));
+      const w = REL[e.relation]?.[2] || 1.4;
+      if (touches)            p.attr('opacity', 0.98).attr('stroke-width', w + 0.6);   // immediate
+      else if (inAnc || inDesc) p.attr('opacity', 0.6).attr('stroke-width', w + 0.3);  // distant lineage
+      else                    p.attr('opacity', 0.05).attr('stroke-width', w);          // off
     });
-    lbl.attr('fill', d => near.has(d.label) ? '#111111' : '#cbc8ba')
+    lbl.attr('fill', d => d.label === label || direct.has(d.label) ? '#111111'   // hovered + immediate family
+                        : lineage.has(d.label) ? '#6b6a60'                       // distant ancestors / descendants
+                        : '#cbc8ba')                                             // unrelated
        .attr('font-weight', d => d.label === label ? 700 : 400);
   };
   const restore = () => {
@@ -141,6 +160,48 @@ function render({ auto, prose, prov }) {
       getSpec(d.label).then(spec => { if (hovering === d.label) showPop(circ, d, spec); });
     })
     .on('mouseleave', () => { hovering = null; restore(); hideTip(); });
+
+  // ---- pivotal-path table: the curated runs that moved the needle toward the best
+  // verified result (exp056). Hovering a row lights up that run's lineage in the graph
+  // above — same isolation as a node hover, but no popover. ----
+  const PIVOTAL = [
+    ['baseline',       'Raw on-device FM, no scaffolding — the starting line.'],
+    ['exp003',         'Single FM call with RAG few-shot exemplars. First new best.'],
+    ['exp011',         'Contrastive good-vs-bad few-shot. The inference base a dozen later probes built on.'],
+    ['adapter_e1',     'First LoRA fine-tune on Sonnet gold — the decisive jump (+0.08).'],
+    ['adapter_v2a_e1', 'Doubled the training corpus (312→619 examples). The SFT champion that warm-started every RL run.'],
+    ['exp046',         'Over-generate 8 questions, then dedup to 7, on the champion adapter. Best inference topology.'],
+    ['exp056',         'Refined exp046’s redundancy drop — the best verified result.'],
+  ];
+  const nodeOf = {}; nodes.forEach(n => nodeOf[n.label] = n);
+  const pivHost = document.getElementById('pivotal');
+  if (pivHost) {
+    const rows = PIVOTAL.filter(([l]) => l in nodeOf).map(([l, why]) => {
+      const n = nodeOf[l];
+      return `<tr data-label="${l}"${l === 'exp056' ? ' class="best"' : ''}>` +
+        `<td class="num">${n.index}</td>` +
+        `<td class="lbl"><span class="dot" style="background:${KIND[n.kind] || '#9b998c'}"></span>${esc(l)}</td>` +
+        `<td class="num">${n.quality.toFixed(3)}</td>` +
+        `<td>${esc(why)}</td></tr>`;
+    }).join('');
+    pivHost.innerHTML =
+      '<h2>The path to the best result</h2>' +
+      '<p class="psub">Seven runs that carried the score from the raw model (0.307) to our best verified result (exp056, 0.44). ' +
+      'Hover a row to light up that run’s lineage in the graph above. ' +
+      '(exp032 scored higher at 0.498 but leaked gold answers into its eval, so it’s disqualified.)</p>' +
+      '<table class="piv-tbl"><thead><tr><th>#</th><th>Experiment</th><th>Quality</th><th>Why it mattered</th></tr></thead>' +
+      `<tbody>${rows}</tbody></table>`;
+    const diagramEl = document.getElementById('diagram');
+    const scrollToNode = label => {                          // reveal the node if it's scrolled out of view
+      if (!(label in yOf)) return;
+      diagramEl.scrollTo({ left: x(yOf[label]) - diagramEl.clientWidth / 2, behavior: 'smooth' });
+    };
+    pivHost.querySelectorAll('tbody tr').forEach(tr => {
+      const label = tr.getAttribute('data-label');
+      tr.addEventListener('mouseenter', () => { isolate(label); scrollToNode(label); });
+      tr.addEventListener('mouseleave', () => restore());
+    });
+  }
 
 }
 
