@@ -152,10 +152,16 @@ export function renderPipeD3(spec, el) {
       : '<b>' + esc(d.c.s.title) + '</b> · ' + esc(d.c.s.by) + ' (dev-time)<span class="t-note">' + esc(d.c.s.sub) + '</span>')).on('mouseleave', hideTip);
   } else if (hasAdapter) {
     const adX = n => pos(n.id).x - ADGAP - ADW, adY = n => pos(n.id).y + (NODEH - ADH) / 2;
-    svg.append('g').selectAll('path.feed').data(adapterNodes).join('path').attr('class', 'feed')
+    // An ensemble shares ONE adapter across its parallel lanes; draw a single box per
+    // adapter at the far left (feeding its leftmost call) rather than a duplicate box
+    // wedged beside every lane — which crowds the boxes into the main column.
+    const repByName = {};
+    adapterNodes.forEach(n => { const m = repByName[n.adapterName]; if (!m || n.col < m.col || (n.col === m.col && n.row < m.row)) repByName[n.adapterName] = n; });
+    const reps = Object.keys(repByName).map(k => repByName[k]);
+    svg.append('g').selectAll('path.feed').data(reps).join('path').attr('class', 'feed')
       .attr('fill', 'none').attr('stroke', '#8a6a1e').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('marker-end', 'url(#' + uid + 'arrowGold)')
       .attr('d', n => { const p = pos(n.id), ax = adX(n) + ADW, ay = adY(n) + ADH / 2, tx = p.x - 5, ty = p.y + NODEH / 2, mx = (ax + tx) / 2; return 'M' + ax + ',' + ay + ' C' + mx + ',' + ay + ' ' + mx + ',' + ty + ' ' + tx + ',' + ty; });
-    const ag = svg.append('g').selectAll('g.adapter').data(adapterNodes).join('g')
+    const ag = svg.append('g').selectAll('g.adapter').data(reps).join('g')
       .attr('transform', n => 'translate(' + adX(n) + ',' + adY(n) + ')');
     ag.append('rect').attr('width', ADW).attr('height', ADH).attr('rx', 8).attr('fill', '#f3ead0').attr('stroke', '#8a6a1e').attr('stroke-width', 2);
     const afo = ag.append('foreignObject').attr('x', 0).attr('y', 4).attr('width', ADW).attr('height', ADH - 6);
