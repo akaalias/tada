@@ -8,11 +8,11 @@
 
 /* ---- wide layout (overrides tufte's centred reading column) -------------- */
 body{overflow-x:auto;}
-/* a centered 80%-viewport column — wide enough for the full experiment table */
-.dash-head{max-width:80vw;margin:0 auto;padding:40px 0 6px;}
+/* a centered 90%-viewport column — wide enough for the full experiment table */
+.dash-head{max-width:90vw;margin:0 auto;padding:40px 0 6px;}
 .dash-head h1{font-size:34px;margin:0 0 8px;}
 .dash-head .sub{margin:0 0 14px;}
-.dash-wrap{max-width:80vw;margin:0 auto;padding:4px 0 64px;}
+.dash-wrap{max-width:90vw;margin:0 auto;padding:4px 0 64px;}
 @media(max-width:1100px){ .dash-head,.dash-wrap{max-width:none;padding-left:32px;padding-right:32px;} }
 
 /* ---- header legend + meta ------------------------------------------------ */
@@ -95,6 +95,9 @@ canvas#chart{width:100%;height:480px;display:block;}
 .case:first-child{border-top:none;}
 .case-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
 .case-task{font-weight:700;}
+/* the verdict + rubric chips: pushed to the right edge of the row */
+.case-meta{margin-left:auto;}
+.case-meta .chip:last-child{margin-right:0;}
 .badge{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
        text-transform:uppercase;letter-spacing:.05em;padding:0;background:none;}
 .b-win{color:var(--ink);}
@@ -112,7 +115,21 @@ canvas#chart{width:100%;height:480px;display:block;}
 .col-fm .col-head{color:var(--ochre);}
 .col-judge .col-head{color:var(--accent);}
 .judge-note{font-size:14px;line-height:1.55;color:#33312b;}
+/* each judge sentence as its own left-ruled item, so the verdict scans cleanly */
+.judge-pts{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.judge-pts li{font-size:13.5px;line-height:1.5;color:#33312b;border-left:2px solid var(--rule);padding:3px 0 3px 11px;}
+/* judge "Qn" references ↔ the candidate questions they flag */
+.qref{color:var(--ochre);font-weight:600;cursor:default;}
+.qs li.q-flag{background:#f6ecdc;border-radius:3px;}
+.qs li.q-flag::marker{color:var(--ochre);font-weight:700;}
+.qs li.q-hi,.qref.q-hi{background:#ecd9b6;border-radius:3px;}
 @media(max-width:900px){.cmp{grid-template-columns:1fr;}}
+/* heading that separates the diagram/legend from the per-case eval results */
+.eval-head{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+           margin:20px 0 2px;padding-top:14px;border-top:1.5px solid var(--ink);
+           display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.eval-sub{font:italic 13px/1.4 "Palatino",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--faint);}
 
 /* the "what was tried" note + chips: hairline rules, no filled tiles */
 .tried{background:transparent;border:0;border-left:2px solid var(--rule);border-radius:0;
@@ -128,11 +145,12 @@ details.trywrap > summary{cursor:pointer;color:var(--muted);font-weight:600;font
 /* the hypothesis / method / result explainer: left-rule asides, not tiles */
 .pipe-head{display:flex;align-items:center;justify-content:space-between;gap:14px;}
 .pipe-sum{font-size:13.5px;font-weight:600;color:#33312b;margin:2px 0 10px;}
-.png-btn{flex:0 0 auto;font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+.pipe-actions{flex:0 0 auto;display:flex;gap:8px;align-items:center;}
+.png-btn,.wu-btn{flex:0 0 auto;font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
          text-transform:uppercase;letter-spacing:.05em;padding:5px 12px;
          border:1px solid var(--rule);border-radius:0;background:transparent;color:var(--muted);
          cursor:pointer;white-space:nowrap;}
-.png-btn:hover{background:#f7f3e3;border-color:var(--muted);color:var(--ink);}
+.png-btn:hover,.wu-btn:hover{background:#f7f3e3;border-color:var(--muted);color:var(--ink);}
 .pipe-d3{overflow-x:auto;padding-bottom:6px;}
 .pipe-d3 svg text{font-family:var(--serif);}
 .pipe-d3 .nodebox{font:11px/1.3 var(--serif);padding:7px 9px 6px;box-sizing:border-box;height:100%;overflow:hidden;}

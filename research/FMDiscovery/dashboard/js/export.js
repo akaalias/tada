@@ -49,11 +49,31 @@ function buildExportSVG(spec) {
   const adapter = spec.stages.some(isAdapter);
   const title = (spec.summary || 'pipeline') + '  ·  ' + fmCount + ' on-device model call' + (fmCount === 1 ? '' : 's') + (adapter ? '  ·  LoRA adapter' : '');
 
-  const MARGIN = 22, HEAD = 40, LEGEND = 34;
-  const W = Math.max(diagW, 820) + MARGIN * 2;
-  const H = HEAD + diagH + LEGEND + MARGIN * 2;
-  const OX = MARGIN + Math.max(0, (W - MARGIN * 2 - diagW) / 2);
+  // Right-hand explanation column (hypothesis → method → result), mirroring the
+  // browser's left-rule asides, so the PNG carries the same context as the screen.
+  const EXP_W = 380, EXP_GAP = 22, EXP_WRAP = 54;
+  const ebDefs = [
+    spec.hypothesis ? { h: 'Hypothesis — the bet', c: '#6b6a60', text: spec.hypothesis } : null,
+    spec.technique ? { h: 'Method — how we test it', c: '#8a6a1e', text: spec.technique } : null,
+    spec.result ? { h: 'Result — what happened', c: '#111111', text: spec.result } : null,
+  ].filter(Boolean);
+  const hasExplain = ebDefs.length > 0;
+  let explainH = 0;
+  const ebLaid = ebDefs.map(b => {
+    const lines = wrap(b.text, EXP_WRAP);
+    const bh = 46 + (lines.length - 1) * 17;
+    const top = explainH;
+    explainH += bh + 14;
+    return { ...b, lines, bh, top };
+  });
+  if (hasExplain) explainH -= 14;   // drop the trailing inter-block gap
+
+  const MARGIN = 22, HEAD = 40, LEGEND = 52, CREDIT = 16;   // two-line legend + attribution
   const OY = MARGIN + HEAD;
+  const contentH = Math.max(diagH, hasExplain ? PADY + explainH : 0);
+  const W = hasExplain ? MARGIN * 2 + diagW + EXP_GAP + EXP_W : Math.max(diagW, 820) + MARGIN * 2;
+  const H = OY + contentH + LEGEND + CREDIT + MARGIN;
+  const OX = hasExplain ? MARGIN : MARGIN + Math.max(0, (W - MARGIN * 2 - diagW) / 2);
   const pos = id => {
     const n = byId[id], laneOff = (totalLanes - n.rows) / 2;
     const x = OX + PADX + LEFTPAD + (laneOff + n.row) * LANEW, y = OY + PADY + YSHIFT + n.col * STEPH;
@@ -118,12 +138,28 @@ function buildExportSVG(spec) {
     s += `<text x="${p.x + NODEW - bw / 2 - 6}" y="${p.y + 16}" font-family="${FONT}" font-size="8" font-weight="800" fill="#fffff8" text-anchor="middle">${xml(blab)}</text>`;
   }
 
-  const ly = OY + diagH + 22;
+  // explanation blocks, to the right of the diagram
+  if (hasExplain) {
+    const ex = OX + diagW + EXP_GAP, ey0 = OY + PADY;
+    for (const b of ebLaid) {
+      const by = ey0 + b.top;
+      s += `<rect x="${ex}" y="${by}" width="${EXP_W}" height="${b.bh}" rx="3" fill="#ffffff" stroke="#ece9da" stroke-width="1"/>`;
+      s += `<rect x="${ex}" y="${by}" width="2.5" height="${b.bh}" fill="${b.c}"/>`;
+      s += `<text x="${ex + 15}" y="${by + 16}" font-family="${FONT}" font-size="11" font-weight="800" fill="${b.c}">${xml(b.h.toUpperCase())}</text>`;
+      b.lines.forEach((ln, i) => { s += `<text x="${ex + 15}" y="${by + 34 + i * 17}" font-family="${FONT}" font-size="13" fill="#33312b">${xml(ln)}</text>`; });
+    }
+  }
+
+  const ly = OY + contentH + 22;
   s += `<text x="${MARGIN}" y="${ly}" font-family="${FONT}" font-size="11" fill="#6b6a60">Node colour = who runs it:  ` +
     `<tspan fill="#111111" font-weight="700">FM</tspan> model call · ` +
     `<tspan fill="#6b6a60" font-weight="700">Swift</tspan> deterministic code · ` +
     `<tspan fill="#9b998c" font-weight="700">User</tspan> input/output · ` +
-    `<tspan fill="#8a6a1e" font-weight="700">LoRA</tspan> adapter · ochre dashed chain = how it was <tspan fill="#6f5618" font-weight="700">trained</tspan> (dev-time).   Vertical = parallel, horizontal = sequential.</text>`;
+    `<tspan fill="#8a6a1e" font-weight="700">LoRA</tspan> adapter</text>`;
+  s += `<text x="${MARGIN}" y="${ly + 16}" font-family="${FONT}" font-size="11" fill="#6b6a60">` +
+    `ochre dashed chain = how it was <tspan fill="#6f5618" font-weight="700">trained</tspan> (dev-time).   Vertical = parallel, horizontal = sequential.</text>`;
+  // faint copyleft attribution, bottom-left ("All Rights Reversed" = the classic copyleft pun)
+  s += `<text x="${MARGIN}" y="${OY + contentH + LEGEND + 12}" font-family="${FONT}" font-size="10" fill="#c7c3b4">ↄ Copyleft 2026 Alexis Rondeau &amp; Claude Code — All Rights <tspan font-style="italic">Reversed</tspan></text>`;
 
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`, W, H };
 }
@@ -151,4 +187,23 @@ export async function downloadPipePNG(spec, label) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// Download the experiment write-up as a formatted Markdown file: title + metadata,
+// the hypothesis/method/result asides, then the full program-log write-up.
+export function downloadWriteupMD(spec, tried, label) {
+  const fmCount = spec ? spec.stages.reduce((a, st) => a + callCount(st), 0) : 0;
+  const adapter = spec ? spec.stages.some(isAdapter) : false;
+  const title = (spec && spec.summary) || label;
+  let md = `# ${title}\n\n`;
+  md += `_${label} · ${fmCount} on-device model call${fmCount === 1 ? '' : 's'}${adapter ? ' · LoRA adapter' : ''}_\n`;
+  if (spec && spec.hypothesis) md += `\n## Hypothesis — the bet\n\n${spec.hypothesis}\n`;
+  if (spec && spec.technique) md += `\n## Method — how we test it\n\n${spec.technique}\n`;
+  if (spec && spec.result) md += `\n## Result — what happened\n\n${spec.result}\n`;
+  if (tried) md += `\n## Full write-up\n\n${tried}\n`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
+  a.download = label + '-writeup.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
 }
