@@ -32,15 +32,6 @@ function render({ auto, prose }) {
   const roots = nodes.filter(n => !parents[n.label]).map(n => n.label);
   const multi = nodes.filter(n => (parents[n.label] || []).length > 1).map(n => n.label);
 
-  // ---- stats ----
-  const byRel = {}; edges.forEach(e => byRel[e.relation] = (byRel[e.relation] || 0) + 1);
-  document.getElementById('stats').innerHTML =
-    `<span><b>${nodes.length}</b> experiments</span>` +
-    `<span><b>${edges.length}</b> lineage edges</span>` +
-    Object.keys(REL).filter(r => byRel[r]).map(r => `<span>${r} <b>${byRel[r]}</b></span>`).join('') +
-    `<span><b>${roots.length}</b> roots</span>` +
-    `<span><b>${multi.length}</b> multi-parent</span>`;
-
   // ---- legend ----
   document.getElementById('legend').innerHTML =
     Object.entries(KIND).map(([k, c]) => `<span><i style="background:${c}"></i>${k}</span>`).join('') +
@@ -48,20 +39,20 @@ function render({ auto, prose }) {
     Object.entries(REL).map(([k, [c, d]]) =>
       `<span><i class="line" style="border-top-style:${d ? 'dashed' : 'solid'};border-top-color:${c}"></i>${k}</span>`).join('');
 
-  // ---- diagram ----
-  const ROW = 22, TOP = 14, AX = 330, W = 1100, NODEW = 300;
-  const H = TOP + nodes.length * ROW + 14;
+  // ---- diagram (horizontal: run order left→right, arcs above, scroll sideways) ----
+  const MX = 40, COL = 26, TOP = 18, ARCH = 360, AXIS = TOP + ARCH, LABELH = 150;
+  const W = MX * 2 + (nodes.length - 1) * COL, H = AXIS + LABELH;
   const tip = document.getElementById('tip');
   const showTip = (e, html) => { tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; };
   const hideTip = () => { tip.style.opacity = 0; };
-  const y = i => TOP + i * ROW + ROW / 2;
+  const x = i => MX + i * COL;
 
   const svg = d3.select('#diagram').html('').append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
 
-  // arcs (parent above → child below), anchored at AX, bulging right
-  const arc = (yp, yc) => {
-    const cx = AX + Math.min(W - AX - 30, 24 + 0.34 * Math.abs(yc - yp));
-    return `M${AX},${yp} C${cx},${yp} ${cx},${yc} ${AX},${yc}`;
+  // arcs anchored on the axis at each node's x, bulging UP (parent ← child)
+  const arc = (xp, xc) => {
+    const up = AXIS - Math.min(ARCH - 12, 16 + 0.34 * Math.abs(xc - xp));
+    return `M${xp},${AXIS} C${xp},${up} ${xc},${up} ${xc},${AXIS}`;
   };
   const gE = svg.append('g');
   const paths = edges.map(e => {
@@ -69,23 +60,25 @@ function render({ auto, prose }) {
     const o = op * (e.confidence === 'low' ? 0.5 : 1);
     const p = gE.append('path').attr('fill', 'none').attr('stroke', c).attr('stroke-width', wdt)
       .attr('stroke-dasharray', dash).attr('opacity', o)
-      .attr('d', arc(y(yOf[e.from]), y(yOf[e.to])))
+      .attr('d', arc(x(yOf[e.from]), x(yOf[e.to])))
       .on('mousemove', ev => showTip(ev, `<b>${e.to}</b> ← ${e.from}<br>${e.relation} · ${e.confidence || ''}<br><span style="color:#cbc8ba">${e.evidence || ''}</span>`))
       .on('mouseleave', hideTip);
     return { e, p, base: o };
   });
 
-  // nodes
-  const gN = svg.append('g').selectAll('g').data(nodes).join('g').attr('transform', (d, i) => `translate(0,${y(i)})`);
-  gN.append('circle').attr('cx', 16).attr('r', 4).attr('fill', d => KIND[d.kind] || '#9b998c');
-  const lbl = gN.append('text').attr('x', 28).attr('y', 4).attr('font-size', 12).attr('fill', '#111111').text(d => d.label);
-  gN.append('text').attr('x', NODEW).attr('y', 4).attr('font-size', 11).attr('text-anchor', 'end')
-    .attr('fill', '#9b998c').attr('font-variant-numeric', 'tabular-nums').text(d => d.quality.toFixed(3) + (d.kept ? ' ★' : ''));
+  // nodes: a kind dot on the axis + the label hanging below, rotated
+  const gN = svg.append('g').selectAll('g').data(nodes).join('g').attr('transform', (d, i) => `translate(${x(i)},${AXIS})`);
+  gN.append('circle').attr('r', d => d.kept ? 4.5 : 3.5).attr('fill', d => KIND[d.kind] || '#9b998c')
+    .attr('stroke', d => d.kept ? '#111111' : 'none').attr('stroke-width', 1);
+  const lbl = gN.append('text').attr('transform', 'rotate(90)').attr('x', 12).attr('y', 4)
+    .attr('font-size', 11.5).attr('fill', '#111111').text(d => d.label);
+  // wider invisible hit target so the whole column is hoverable
+  gN.append('rect').attr('x', -COL / 2).attr('y', -ARCH).attr('width', COL).attr('height', ARCH + LABELH).attr('fill', 'transparent');
 
   // hover a node → isolate edges touching it; dim the rest
   const isolate = label => {
     const near = new Set([label, ...(parents[label] || []), ...(kids[label] || [])]);
-    paths.forEach(({ e, p, base }) => {
+    paths.forEach(({ e, p }) => {
       const on = e.from === label || e.to === label;
       p.attr('opacity', on ? 0.98 : 0.05).attr('stroke-width', on ? (REL[e.relation]?.[2] || 1.4) + 0.6 : (REL[e.relation]?.[2] || 1.4));
     });
@@ -97,7 +90,9 @@ function render({ auto, prose }) {
     lbl.attr('fill', '#111111').attr('font-weight', 400);
   };
   gN.style('cursor', 'pointer')
-    .on('mouseenter', (ev, d) => isolate(d.label)).on('mouseleave', restore);
+    .on('mouseenter', (ev, d) => isolate(d.label))
+    .on('mousemove', (ev, d) => showTip(ev, `<b>${d.label}</b> · quality ${d.quality.toFixed(3)}${d.kept ? ' · kept ★' : ''}`))
+    .on('mouseleave', () => { restore(); hideTip(); });
 
   // ---- roots / multi-parent notes ----
   const fmtP = l => (prose.edges.filter(e => e.to === l).map(e => `${e.from} (${e.relation})`).join(', ')) || '—';
@@ -108,4 +103,4 @@ function render({ auto, prose }) {
     multi.map(l => `<li><code>${l}</code> ← <b>${fmtP(l)}</b></li>`).join('') + `</ul>`;
 }
 
-load().then(render).catch(e => { document.getElementById('stats').innerHTML = '<span class="warn">failed to load lineage data: ' + e + '</span>'; });
+load().then(render).catch(e => { document.getElementById('notes').innerHTML = '<span class="warn">failed to load lineage data: ' + e + '</span>'; });

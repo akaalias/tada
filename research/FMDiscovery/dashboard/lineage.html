@@ -23,6 +23,8 @@ h1{font-size:30px;margin:0 0 6px;}
 .diffs code{font:12.5px var(--mono);color:var(--ink);background:#f2eedd;padding:0 4px;border-radius:3px;}
 .col-head-l,.col-head-r{font:600 12px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
           letter-spacing:.05em;color:var(--muted);}
+/* full-bleed: break the timeline out of the reading column to the full viewport */
+#diagram{overflow-x:auto;padding:0 24px 8px;box-sizing:border-box;width:100vw;margin-left:calc(50% - 50vw);}
 #diagram svg text{font-family:var(--serif);}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12px;
      font-family:var(--serif);padding:6px 9px;border-radius:0;max-width:340px;opacity:0;transition:opacity .08s;z-index:10;}
@@ -32,8 +34,7 @@ h1{font-size:30px;margin:0 0 6px;}
 <body>
 <div class="lin-wrap">
   <h1>Experiment lineage</h1>
-  <p class="sub">The 76 experiments in run order. Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to isolate just its parents and children.</p>
-  <div class="lin-stats" id="stats">loading…</div>
+  <p class="sub">The 76 experiments left→right in run order (scroll sideways). Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to isolate just its parents and children.</p>
   <div class="lin-legend" id="legend"></div>
   <div id="diagram"></div>
   <div class="diffs" id="notes"></div>
