@@ -835,6 +835,66 @@ public enum Configs {
             selectTemp: 0, selectSampling: .greedy,
             adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
 
+        // EXP-060 / EXP-061: the [model]×[topology] cross. exp056's winning corpus-coverage-select
+        // topology is the BEST inference scaffolding (0.440 on the SFT champ), but it has only ever
+        // run on the v2a_e1 SFT base. These two cells swap the base to the strongest RL adapters
+        // (grpo_kl_e1 0.407 raw, orpo_op_e1 0.396 raw) with EVERYTHING ELSE identical — a clean
+        // single-variable test of whether the scaffolding's +0.031 stacks on an RL base or whether
+        // RL already spent the redundancy/coverage headroom the selection step exploits.
+        "exp060": DiscoveryConfig(topology: .adapterCorpusCoverageSelect,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_grpo_kl_e1.fmadapter"),
+        "exp061": DiscoveryConfig(topology: .adapterCorpusCoverageSelect,
+            selectTemp: 0, selectSampling: .greedy,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_orpo_op_e1.fmadapter"),
+
+        // EXP-062..078: the [inference topology]x[best LoRA] CROSS. Every in-context
+        // topology exp001-027 was only ever run on the RAW 3B (plateau ~0.32). Each of
+        // these re-runs that EXACT topology on the champion adapter v2a_e1 (0.409) — the
+        // barely-explored class AGENT.md flags: "take a proven in-context topology and run
+        // it ON the adapter; every prior multi-FM loss was on the weak stock 3B." Only the
+        // ~17 raw topologies WITHOUT an existing adapter twin are crossed here (exp003/007/
+        // 012/013/017/023/025 already have one in exp028-056). adapter is appended; all other
+        // knobs are cloned verbatim from the raw config so the ONLY variable is the base model.
+        "exp062": DiscoveryConfig(topology: .brainstormSelect,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp063": DiscoveryConfig(topology: .overGenerateScore,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp064": DiscoveryConfig(topology: .ragCoverageBestOfN,
+            sampleTemps: [0.3, 0.6, 0.9, 1.0],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp065": DiscoveryConfig(topology: .ragCritiqueRevise, selectTemp: 0.3,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp066": DiscoveryConfig(topology: .ragCoverageScaffold,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp067": DiscoveryConfig(topology: .ragAdaptExemplar,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp068": DiscoveryConfig(topology: .ragCoverageRepair, selectTemp: 0.3,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp069": DiscoveryConfig(topology: .ragSelfConsistency,
+            sampleTemps: [0.4, 0.6, 0.8, 1.0],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp070": DiscoveryConfig(topology: .ragContrastiveFewShot,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp071": DiscoveryConfig(topology: .ragDimensionalSchema,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp072": DiscoveryConfig(topology: .ragSequential,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp073": DiscoveryConfig(topology: .ragReasonedFewShot,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp074": DiscoveryConfig(topology: .ragCorpusSelect,
+            sampleTemps: [0.4, 0.7, 1.0],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp075": DiscoveryConfig(topology: .ragPerspectiveEnsemble,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp076": DiscoveryConfig(topology: .ragJustifiedQuestions,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp077": DiscoveryConfig(topology: .ragCompositeBestOfN,
+            sampleTemps: [0.4, 0.6, 0.8, 1.0],
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+        "exp078": DiscoveryConfig(topology: .ragAntiModalContrast,
+            adapter: "/Users/alexisrondeau/Workshop/tada/research/FMDiscovery/adapter/exports/discovery_v2a_e1.fmadapter"),
+
         // GRPO ROLLOUT SAMPLER (dev-time, NOT an eval config) — the champion v2a_e1 policy
         // decoded WITH DIVERSITY so `fmresearch generate` run G times yields a GROUP of
         // distinct on-policy drafts per corpus task (the raw material the Sonnet rubric judge

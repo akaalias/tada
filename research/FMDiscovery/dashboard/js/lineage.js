@@ -2,8 +2,8 @@
 // over the 76 runs, on a horizontal run-order axis with arcs above. Node facts
 // (index / quality / kept / kind) come from lineage_auto.json — it doubles as the
 // experiment table; only its EDGES are ignored here. Hover a node to isolate its
-// parents and children and pop a card (title + hypothesis/method/result) anchored
-// at the node, lazy-loaded from its pipeline spec.
+// ancestry (every parent back to the root) and pop a card (title + hypothesis/
+// method/result) anchored at the node, lazy-loaded from its pipeline spec.
 
 import { esc, callCount, isAdapter, provenanceSteps } from './util.js';
 import { fetchProvenance } from './api.js';
@@ -32,9 +32,9 @@ function render({ auto, prose, prov }) {
   const yOf = {}; nodes.forEach((n, i) => yOf[n.label] = i);
   const edges = prose.edges.filter(e => e.from in yOf && e.to in yOf);
 
-  // parents/children adjacency for hover isolation
-  const parents = {}, kids = {};
-  edges.forEach(e => { (kids[e.from] = kids[e.from] || []).push(e.to); (parents[e.to] = parents[e.to] || []).push(e.from); });
+  // parent adjacency for hover isolation (ancestry only)
+  const parents = {};
+  edges.forEach(e => { (parents[e.to] = parents[e.to] || []).push(e.from); });
 
   // ---- legend ----
   document.getElementById('legend').innerHTML =
@@ -118,33 +118,31 @@ function render({ auto, prose, prov }) {
   const lbl = gN.append('text').attr('transform', 'rotate(90)').attr('x', 12).attr('y', 4)
     .attr('font-size', 11.5).attr('fill', '#111111').text(d => d.label);
 
-  // transitive closure up the parent links (all ancestors) / down the child links (all descendants)
+  // transitive closure up the parent links (all ancestors)
   const climb = (start, adj) => {
     const out = new Set(), stack = [...(adj[start] || [])];
     while (stack.length) { const n = stack.pop(); if (out.has(n)) continue; out.add(n); (adj[n] || []).forEach(m => stack.push(m)); }
     return out;
   };
 
-  // hover a node → light up its whole bloodline: every ancestor back to the root and
-  // every descendant forward. Immediate family stays strongest so the node still pops.
+  // hover a node → light up ONLY its ancestry: every parent back to the root, going
+  // backwards up the family tree. Descendants (forward) stay dimmed. Immediate parents
+  // stay strongest so the node still pops.
   const isolate = label => {
-    const anc = climb(label, parents), desc = climb(label, kids);
-    const lineage = new Set([label, ...anc, ...desc]);
-    const direct = new Set([label, ...(parents[label] || []), ...(kids[label] || [])]);
+    const anc = climb(label, parents);
+    const lineage = new Set([label, ...anc]);
+    const direct = new Set([label, ...(parents[label] || [])]);
     paths.forEach(({ e, p }) => {
-      const touches = e.from === label || e.to === label;
-      // an edge belongs to the bloodline iff it sits on a path that reaches the hovered node:
-      // upward (parent→child both ancestors of, or at, the node) or downward (both descendants)
-      const inAnc  = anc.has(e.from)  && (e.to === label || anc.has(e.to));
-      const inDesc = desc.has(e.to)   && (e.from === label || desc.has(e.from));
+      const touches = e.to === label;                                       // immediate parent edge (into the node)
+      const inAnc   = anc.has(e.from) && (e.to === label || anc.has(e.to));  // an upward edge on a path to a root
       const w = REL[e.relation]?.[2] || 1.4;
-      if (touches)            p.attr('opacity', 0.98).attr('stroke-width', w + 0.6);   // immediate
-      else if (inAnc || inDesc) p.attr('opacity', 0.6).attr('stroke-width', w + 0.3);  // distant lineage
-      else                    p.attr('opacity', 0.05).attr('stroke-width', w);          // off
+      if (touches)        p.attr('opacity', 0.98).attr('stroke-width', w + 0.6);   // immediate parent
+      else if (inAnc)     p.attr('opacity', 0.6).attr('stroke-width', w + 0.3);    // distant ancestor
+      else                p.attr('opacity', 0.05).attr('stroke-width', w);          // off (incl. all descendants)
     });
-    lbl.attr('fill', d => d.label === label || direct.has(d.label) ? '#111111'   // hovered + immediate family
-                        : lineage.has(d.label) ? '#6b6a60'                       // distant ancestors / descendants
-                        : '#cbc8ba')                                             // unrelated
+    lbl.attr('fill', d => d.label === label || direct.has(d.label) ? '#111111'   // hovered + immediate parents
+                        : lineage.has(d.label) ? '#6b6a60'                       // distant ancestors
+                        : '#cbc8ba')                                             // unrelated / descendants
        .attr('font-weight', d => d.label === label ? 700 : 400);
   };
   const restore = () => {
