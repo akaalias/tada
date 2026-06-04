@@ -1,5 +1,5 @@
 // Mined experiment lineage: the hand-mined parent→child edges (lineage_prose.json)
-// over the 76 runs, on a horizontal run-order axis with arcs above. Node facts
+// over the 96 runs, on a horizontal run-order axis with arcs above. Node facts
 // (index / quality / kept / kind) come from lineage_auto.json — it doubles as the
 // experiment table; only its EDGES are ignored here. Hover a node to isolate its
 // ancestry (every parent back to the root) and pop a card (title + hypothesis/

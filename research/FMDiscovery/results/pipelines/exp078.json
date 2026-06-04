@@ -1,0 +1,29 @@
+{
+  "summary": "RAG anti-modal contrast topology on champion LoRA v2a_e1",
+  "hypothesis": "Applying the ragAntiModalContrast in-context topology (from exp027) to the champion LoRA adapter v2a_e1 should beat the current best, because combining a proven retrieval-contrast prompt structure with the best fine-tuned weights might push past the coverage wall the adapter alone cannot clear.",
+  "technique": "A RAG-augmented in-context pipeline using the anti-modal contrast topology (originally from exp027) is crossed onto the champion LoRA adapter v2a_e1, run greedy/deterministic \u2014 part of an all-inference \u00d7 best-LoRA matrix sweep.",
+  "result": "Scored 0.470 on the full-30 greedy eval (6 wins / 4 ties / 20 losses vs Sonnet), with rubric atom=4, spec=4, cover=3, nat=4, nonRed=3; initially logged as a new best (kept=true). However, re-judging the identical deterministic output (exp079) scored 0.402 \u2014 a 0.068 swing attributable purely to stochastic judge noise \u2014 putting the mean at ~0.436, squarely within the noise band around champion exp056 (0.440). The 0.470 was the top of the judge-noise band; the anti-modal contrast topology on the adapter ties the champion within noise and does not beat it, and the coverage wall (cover=3) holds.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of anti-modal contrast exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Greedy draft via champion LoRA v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions emitted"
+    }
+  ],
+  "label": "exp078"
+}

@@ -1,0 +1,38 @@
+{
+  "summary": "RAG self-consistency topology on champion LoRA adapter",
+  "hypothesis": "Grafting the ragSelfConsistency in-context topology (from exp010) onto the champion LoRA adapter v2a_e1 should combine the best inference strategy with the best fine-tuned weights, yielding a quality higher than either alone.",
+  "technique": "A matrix sweep crossing all inference topologies against the best LoRA adapter: the ragSelfConsistency pipeline (RAG retrieval feeding a multi-sample self-consistency ensemble) is run on top of the v2a_e1 LoRA adapter instead of the base model, via greedy decoding evaluated on the full-30 held-out set.",
+  "result": "Scored 0.314 on the full-30 greedy eval \u2014 a real improvement over the raw exp010 topology baseline (0.222), but well below the champion exp056 (0.440). The combination failed to beat the best adapter's own pipeline, so the hypothesis was falsified and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of nearest exemplars"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Self-consistency multi-sample drafts",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "self-consistency"
+      },
+      "call_labels": [
+        "draft sample 1 with RAG context",
+        "draft sample 2 with RAG context",
+        "draft sample 3 with RAG context"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Aggregate & pick consistent questions"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp069"
+}

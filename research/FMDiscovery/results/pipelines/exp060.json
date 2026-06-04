@@ -1,0 +1,33 @@
+{
+  "summary": "Best scaffolding + best RL adapter additivity test",
+  "hypothesis": "Combining the strongest inference scaffold (exp056's expand\u2192coverage-select topology) with the best RL-trained adapter (grpo_kl_e1) should compound their individual gains \u2014 if the scaffold's lift is additive on top of RL, we'd expect a new quality ceiling above the SFT champion (0.440).",
+  "technique": "The exp056 pipeline topology (expand 8 candidates on-device, then deterministically select top-7 by corpus-coverage score in Swift) is re-run with the grpo_kl_e1 RL adapter swapped in as the generative model, using greedy decoding, to test whether scaffold and adapter gains are complementary.",
+  "result": "Scored 0.415 on the full-30 greedy gate (2 wins / 4 ties / 23 losses vs Sonnet), well below the SFT champion (exp056, 0.440). The scaffolding lift collapsed to +0.008 on the RL base vs +0.031 on the SFT base; nonRed was already 4 and coverage remained pinned at 3, confirming the RL adapter had already consumed the redundancy/coverage headroom the corpus-coverage select exploits \u2014 the two are substitutes, not complements. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-produce 8 candidate question sets",
+      "knobs": {
+        "model": "adapter_grpo_kl_e1",
+        "n": "8",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Swift corpus-coverage select top-7",
+      "knobs": {
+        "k": "7"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp060"
+}

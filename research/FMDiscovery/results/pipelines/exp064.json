@@ -1,0 +1,39 @@
+{
+  "summary": "ragCoverageBestOfN topology + LoRA v2a_e1 adapter",
+  "hypothesis": "Grafting the champion LoRA adapter (v2a_e1) onto the ragCoverageBestOfN in-context topology (exp004) should lift quality above the raw exp004 baseline (0.245), because the adapter's fine-tuned judgment should amplify what the RAG + coverage-aware best-of-N structure already provides.",
+  "technique": "A matrix-sweep cross of the ragCoverageBestOfN in-context pipeline topology (originally from exp004) run end-to-end with the champion LoRA adapter v2a_e1 substituted in for every on-device model call, evaluated greedy on the full-30 held-out set.",
+  "result": "Scored 0.341 on the full-30 greedy gate (1 win / 2 ties / 26 losses vs Sonnet), a clear lift over raw exp004 (0.245) but well below the champion exp056 (0.440); rubric shows atomicity at 4 but specificity, coverage, naturalness, and non-redundancy all at 3, indicating the topology itself is the bottleneck the adapter cannot overcome. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of coverage exemplars"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Best-of-N drafts with LoRA v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      },
+      "call_labels": [
+        "draft variant 1 with RAG context",
+        "draft variant 2 with RAG context",
+        "draft variant 3 with RAG context",
+        "draft variant 4 with RAG context"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Coverage-aware Swift pick of top-7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp064"
+}

@@ -1,0 +1,29 @@
+{
+  "summary": "RAG reasoned few-shot topology + champion LoRA v2a_e1",
+  "hypothesis": "Crossing the ragReasonedFewShot in-context topology (exp018) onto the best LoRA adapter (v2a_e1) should combine retrieval-grounded reasoning with fine-tuned weights, beating either ingredient alone.",
+  "technique": "A matrix sweep pairing all inference topologies against the best LoRA adapter: specifically, the RAG + reasoned few-shot in-context pipeline (exp018) is re-run with the champion LoRA adapter v2a_e1 driving the generation call, evaluated greedy on the full-30 held-out set.",
+  "result": "Scored 0.313 on the full-30 greedy gate \u2014 a clear improvement over the raw exp018 topology baseline (0.247) but well below the champion exp056 (0.440). The combination of RAG few-shot reasoning and the LoRA adapter did not compound their individual strengths sufficiently, and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of reasoned few-shot exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Reasoned few-shot draft via LoRA v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions output"
+    }
+  ],
+  "label": "exp073"
+}

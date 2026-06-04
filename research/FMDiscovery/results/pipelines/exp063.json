@@ -1,0 +1,29 @@
+{
+  "summary": "overGenerateScore in-context topology + LoRA v2a_e1",
+  "hypothesis": "Grafting the overGenerateScore in-context topology (exp002) onto the champion LoRA adapter v2a_e1 should combine the best inference strategy with the best model weights, yielding a quality above either alone.",
+  "technique": "A matrix sweep crossing the overGenerateScore in-context pipeline (exp002 topology) with the champion LoRA adapter v2a_e1: the adapter replaces the stock base model in the expand stage, evaluated greedy on the full-30 set.",
+  "result": "Scored 0.296 on the full-30 greedy gate \u2014 an improvement over the raw exp002 baseline (0.263) but well below the champion exp056 (0.440). The all-inference \u00d7 best-LoRA cross did not yield the expected synergy; experiment was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-generate candidates via LoRA adapter v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Score and pick top-7 in Swift"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp063"
+}

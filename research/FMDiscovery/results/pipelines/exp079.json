@@ -1,0 +1,29 @@
+{
+  "summary": "RAG anti-modal contrast on v2a_e1 LoRA re-judge",
+  "hypothesis": "The +0.030 quality gain seen in exp078 (0.470 vs champion 0.440) is a real signal above judge-noise, not a lucky Sonnet draw \u2014 re-running the identical deterministic pipeline with a fresh Sonnet judge should replicate the score and confirm exp078 as the new best.",
+  "technique": "Exact replication of exp078's deterministic on-device pipeline (RAG anti-modal contrast retrieval feeding a v2a_e1 LoRA generate call, greedy decoding) with a fresh independent Sonnet judge pass \u2014 no pipeline changes, only a new stochastic judge call \u2014 to isolate judge noise from true quality signal.",
+  "result": "Scored 0.402 on the full-30 greedy eval, well below exp078's 0.470 and even below champion exp056's 0.440 \u2014 the re-judge did not replicate the prior score, indicating the exp078 result fell within judge-noise variance rather than representing a genuine quality improvement. Discarded; exp078 is not confirmed as the new best.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG anti-modal contrast exemplar fetch"
+    },
+    {
+      "kind": "generate",
+      "text": "v2a_e1 LoRA greedy draft questions",
+      "knobs": {
+        "model": "v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp079"
+}

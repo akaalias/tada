@@ -1,0 +1,32 @@
+{
+  "summary": "RAG corpus-select topology + champion LoRA v2a_e1",
+  "hypothesis": "Crossing the ragCorpusSelect in-context topology (from exp020) onto the champion LoRA adapter v2a_e1 should combine the best retrieval strategy with the best fine-tuned weights, yielding a quality above either alone.",
+  "technique": "A matrix sweep crossing the ragCorpusSelect inference topology (RAG-based exemplar retrieval + in-context generation, raw from exp020) with the champion LoRA adapter v2a_e1, evaluated greedy on the full-30 set \u2014 a systematic all-inference \u00d7 best-LoRA cross product.",
+  "result": "Scored 0.238 on the full-30 greedy gate \u2014 above the raw exp020 baseline (0.195) but far below the champion exp056 (0.440). The RAG topology did not benefit from the LoRA adapter as hoped; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG corpus-select: fetch nearest exemplars",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "generate",
+      "text": "Generate questions with LoRA v2a_e1 + RAG context",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions output"
+    }
+  ],
+  "label": "exp074"
+}

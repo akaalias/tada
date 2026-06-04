@@ -1,0 +1,38 @@
+{
+  "summary": "RAG perspective ensemble + LoRA adapter v2a_e1",
+  "hypothesis": "Combining the ragPerspectiveEnsemble in-context topology from exp021 with the champion LoRA adapter v2a_e1 should yield additive gains \u2014 the adapter's fine-tuned judgment paired with diverse RAG-seeded perspective drafts should outperform either lever alone.",
+  "technique": "A matrix sweep crossing the ragPerspectiveEnsemble in-context pipeline topology (from exp021) with the best LoRA adapter (v2a_e1): RAG retrieval feeds a multi-perspective ensemble of on-device adapter calls, evaluated greedy on the full-30 held-out set.",
+  "result": "Scored 0.223 on the full-30 greedy gate \u2014 above the raw exp021 baseline (0.177) but far below the champion exp056 (0.440). The combination failed to produce additive gains; the hypothesis was falsified and the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of perspective exemplars"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Multi-perspective draft ensemble via adapter v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      },
+      "call_labels": [
+        "draft perspective 1",
+        "draft perspective 2",
+        "draft perspective 3"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Deterministic Swift pick of best draft"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp075"
+}

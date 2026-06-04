@@ -1,0 +1,39 @@
+{
+  "summary": "RAG composite best-of-N topology + LoRA v2a_e1",
+  "hypothesis": "Crossing the ragCompositeBestOfN in-context topology (exp026) onto the champion LoRA adapter v2a_e1 should combine the coverage benefits of RAG-driven best-of-N selection with the quality gains of the fine-tuned weights, beating either alone.",
+  "technique": "A matrix sweep crossing the ragCompositeBestOfN inference topology from exp026 with the best available LoRA adapter (v2a_e1): retrieval of exemplars feeds a best-of-N ensemble of adapter calls, with greedy decoding at eval time.",
+  "result": "Scored 0.323 on the full-30 greedy gate \u2014 above the raw exp026 in-context baseline (0.297) but far below the champion exp056 (0.440). The topology\u2013adapter cross did not transfer the champion's gains; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User query in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of exemplars for context"
+    },
+    {
+      "kind": "ensemble",
+      "text": "Best-of-N drafts via LoRA adapter v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      },
+      "call_labels": [
+        "draft variant 1 with RAG context",
+        "draft variant 2 with RAG context",
+        "draft variant 3 with RAG context",
+        "draft variant 4 with RAG context"
+      ]
+    },
+    {
+      "kind": "select",
+      "text": "Deterministic Swift pick of best draft"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp077"
+}

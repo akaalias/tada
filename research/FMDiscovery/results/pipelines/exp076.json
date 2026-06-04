@@ -1,0 +1,29 @@
+{
+  "summary": "RAG in-context topology on champion LoRA adapter v2a_e1",
+  "hypothesis": "Grafting the ragJustifiedQuestions in-context topology (exp022) onto the champion LoRA adapter v2a_e1 should improve over the raw in-context baseline, because the adapter's fine-tuned judgment might amplify the RAG retrieval signal rather than rely on it alone.",
+  "technique": "A matrix sweep crossing all inference topologies against the best LoRA adapters: specifically, the ragJustifiedQuestions retrieval-augmented in-context pipeline (exp022) re-run with the champion LoRA adapter v2a_e1 substituted in place of the stock base model, using greedy decoding.",
+  "result": "Scored 0.340 on the full-30 greedy gate \u2014 above the raw exp022 in-context baseline (0.302) but well short of the champion exp056 (0.440). The LoRA adapter did lift the RAG topology modestly, but the gap to the best known configuration remained large; discarded as the cross did not produce a competitive pipeline.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG: fetch justified-question exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions with adapter v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp076"
+}

@@ -1,0 +1,29 @@
+{
+  "summary": "RAG coverage scaffold + champion LoRA adapter v2a_e1",
+  "hypothesis": "Combining the ragCoverageScaffold in-context topology (exp006) with the best-performing LoRA adapter (v2a_e1) should yield additive gains \u2014 the adapter's learned quality plus the scaffold's structured retrieval coverage ought to outperform either alone.",
+  "technique": "A matrix sweep crossing the ragCoverageScaffold inference topology (RAG + coverage scaffold prompt, from exp006) with the champion LoRA adapter v2a_e1 at greedy decoding, evaluated on the full-30 held-out set.",
+  "result": "Scored 0.336 on the full-30 greedy gate \u2014 above the raw exp006 baseline (0.290) but well below the champion exp056 (0.440). The cross did not yield additive gains; discarded, confirming the scaffold topology does not complement the LoRA adapter as hoped.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch: coverage scaffold exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions via LoRA adapter v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp066"
+}

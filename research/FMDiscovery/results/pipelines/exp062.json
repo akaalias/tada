@@ -1,0 +1,38 @@
+{
+  "summary": "BrainstormSelect in-context topology + LoRA v2a_e1",
+  "hypothesis": "Grafting the brainstorm-then-select in-context topology (exp001) onto the champion LoRA adapter (v2a_e1) should beat either ingredient alone, because the adapter's learned question style combined with the multi-stage generation/selection logic should compound their individual gains.",
+  "technique": "A two-FM-call brainstorm-then-select pipeline (first call drafts candidate questions, second call selects/phrases the final set) where both model calls run through the LoRA adapter v2a_e1 instead of the stock base model \u2014 a systematic all-inference-topology \u00d7 best-LoRA matrix sweep entry.",
+  "result": "Scored 0.320 on the full-30 greedy eval \u2014 a clear improvement over the raw exp001 in-context baseline (0.235) but well below the champion exp056 (0.440). The hypothesis was falsified: the brainstormSelect topology does not compound well with the LoRA adapter at this quality level. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "generate",
+      "text": "Brainstorm candidate questions via LoRA v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1"
+      },
+      "call_labels": [
+        "brainstorm candidate questions"
+      ]
+    },
+    {
+      "kind": "generate",
+      "text": "Select and phrase final questions via LoRA v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "v2a_e1"
+      },
+      "call_labels": [
+        "select and phrase final 7"
+      ]
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp062"
+}

@@ -1,0 +1,29 @@
+{
+  "summary": "RAG exemplar topology + champion LoRA adapter v2a_e1",
+  "hypothesis": "Grafting the RAG-exemplar in-context topology from exp008 onto the best LoRA adapter (v2a_e1) should outperform either ingredient alone, because the adapter's fine-tuned judgment combined with retrieved exemplars ought to compound their individual gains.",
+  "technique": "A matrix sweep crossing all inference topologies against the best LoRA adapter: here the ragAdaptExemplar in-context topology (raw exp008) is run with the champion adapter v2a_e1 instead of the base model, using greedy decoding, evaluated on the full-30 set.",
+  "result": "Scored 0.309 on the full-30 greedy gate \u2014 above the raw exp008 baseline (0.247) but well below the champion exp056 (0.440). The combination did not compound gains as hoped, and the run was discarded; the hypothesis was falsified.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User topic input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch RAG exemplars (ragAdaptExemplar topology)"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions via LoRA adapter v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp067"
+}

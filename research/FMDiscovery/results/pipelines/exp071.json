@@ -1,0 +1,29 @@
+{
+  "summary": "RAG dimensional schema + LoRA adapter v2a_e1 cross",
+  "hypothesis": "Grafting the ragDimensionalSchema in-context topology (exp015) onto the champion LoRA adapter v2a_e1 should combine the structured retrieval signal with the adapter's learned quality, pushing beyond either alone.",
+  "technique": "A matrix-sweep cross of the exp015 RAG-dimensional-schema inference topology run on top of the best LoRA adapter (v2a_e1), evaluated greedily on the full-30 set \u2014 testing whether the best inference topology and best adapter are complementary.",
+  "result": "Scored 0.304 on the full-30 greedy gate \u2014 above the raw exp015 baseline (0.243) but well below the champion exp056 (0.440). The combination did not unlock additive gains; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG dimensional schema exemplar fetch"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions via LoRA adapter v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp071"
+}

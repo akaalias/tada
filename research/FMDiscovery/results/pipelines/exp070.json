@@ -1,0 +1,29 @@
+{
+  "summary": "RAG contrastive few-shot + LoRA adapter v2a_e1",
+  "hypothesis": "Combining the ragContrastiveFewShot in-context topology (from exp011) with the champion LoRA adapter v2a_e1 should yield better quality than either alone, since the retrieval-grounded prompt structure and the fine-tuned weights might be complementary levers.",
+  "technique": "A matrix sweep crossing the ragContrastiveFewShot in-context retrieval topology (exp011) with the best LoRA adapter (v2a_e1): RAG few-shot exemplars are injected at inference time into a single greedy generate call running on the v2a_e1 adapter, evaluated on the full-30 greedy gate.",
+  "result": "Scored 0.318 on the full-30 greedy gate, below both the raw exp011 baseline (0.323) and the champion exp056 (0.440). The ragContrastiveFewShot topology actively hurt the LoRA adapter rather than complementing it, confirming the two levers are not additive. Discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch contrastive RAG few-shot exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Single greedy call, adapter v2a_e1",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp070"
+}

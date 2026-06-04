@@ -1,0 +1,37 @@
+{
+  "summary": "RAG-critique-revise topology on LoRA adapter v2a_e1",
+  "hypothesis": "Combining the ragCritiqueRevise in-context topology (exp005) with the champion LoRA adapter v2a_e1 should yield additive gains \u2014 the adapter's fine-tuned judgment plus the retrieval-and-revision pipeline should push quality beyond either alone.",
+  "technique": "A matrix sweep crossing all inference topologies against the best LoRA adapter: here, the exp005 RAG\u2192generate\u2192critique/revise pipeline is re-run with the v2a_e1 LoRA adapter swapped in at every model call, testing whether the adapter generalises to a multi-stage in-context topology.",
+  "result": "Scored 0.372 on the full-30 greedy gate, up from the raw exp005 baseline (0.315) but well below the champion exp056 (0.440). The topology + adapter combination did not transfer the champion's gains, so the run was discarded; the cross-sweep reveals the adapter's benefit is topology-sensitive.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of nearest exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions with v2a_e1 adapter",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Critique and revise draft with v2a_e1",
+      "knobs": {
+        "model": "v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp065"
+}

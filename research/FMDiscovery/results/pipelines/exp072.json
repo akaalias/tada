@@ -1,0 +1,29 @@
+{
+  "summary": "RAG sequential in-context + LoRA adapter v2a_e1",
+  "hypothesis": "Combining the ragSequential in-context topology (exp016) with the champion LoRA adapter v2a_e1 should yield additive gains \u2014 the retrieval-augmented prompt structure and the fine-tuned weights each independently help, so together they should outperform either alone.",
+  "technique": "A matrix-sweep cross of the ragSequential in-context inference topology (raw exp016) with the best LoRA adapter (v2a_e1): RAG exemplars are retrieved and injected into context, then the adapter-fine-tuned model generates questions \u2014 testing whether the two orthogonal improvements compound.",
+  "result": "Scored 0.248 on the full-30 greedy eval \u2014 barely above the raw exp016 baseline (0.245) and far below the champion exp056 (0.440). The in-context RAG topology provided no meaningful lift when crossed onto the LoRA adapter, falsifying the compounding-gains hypothesis; discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "retrieve",
+      "text": "Fetch sequential RAG exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "LoRA adapter v2a_e1 generates questions",
+      "knobs": {
+        "sampling": "greedy",
+        "model": "adapter_v2a_e1"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp072"
+}

@@ -61,7 +61,7 @@ a.tap-cell:hover{background:#ece4d4;}
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
   <h1>The wall that wasn't coverage</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 77 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got: we applied the current post-training playbook — from established fine-tuning to 2025's rubric-grounded RL — and none of it closed the last notch. The controlled tests then show the gap is a broad capability limit, not a single missing skill. <a href="#references">The methods we drew on are referenced in §8.</a></p>
+  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got: we applied the current post-training playbook — from established fine-tuning to 2025's rubric-grounded RL — and none of it closed the last notch. The controlled tests then show the gap is a broad capability limit, not a single missing skill. <a href="#references">The methods we drew on are referenced in §8.</a></p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -121,7 +121,7 @@ a.tap-cell:hover{background:#ece4d4;}
   <figure style="margin:20px 0 6px">
     <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
          font-family="Palatino,Georgia,serif" role="img"
-         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 77 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
+         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 96 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
       <!-- 0.50 = parity: tying Sonnet's gold on every one of the 30 cases -->
       <line x1="56" y1="30" x2="548" y2="30" stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 4"/>
       <text x="548" y="24" text-anchor="end" font-size="11.5" font-style="italic" fill="var(--accent)">0.50 — parity: a tie on every case</text>
@@ -142,16 +142,16 @@ a.tap-cell:hover{background:#ece4d4;}
       <text x="288" y="71"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
       <text x="365" y="55"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
       <text x="460" y="78"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
-      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">77 experiments, in run order &rarr;</text>
+      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">96 experiments, in run order &rarr;</text>
     </svg>
-    <figcaption class="ex-caption">Running best quality across the 77 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then thirty-plus further experiments, judge-reward RL and adversarial distillation among them, add nothing. Roughly doubled, then flat.</figcaption>
+    <figcaption class="ex-caption">Running best quality across the 96 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then fifty-plus further experiments — judge-reward RL, adversarial distillation, and an exhaustive inference-topology×best-adapter cross among them — add nothing (one cross cell, exp078, flashed 0.47 but a confirmation re-judge of its identical output fell to 0.40: judge noise, not a gain). Roughly doubled, then flat.</figcaption>
   </figure>
   <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
 </section>
 
 <section id="levers">
   <h2><span class="num">3</span>Everything we tried</h2>
-  <p class="sub">Seven lever classes, 77 experiments, 9 that set a new best. One dimension stuck throughout.</p>
+  <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
   <table class="rpt-tbl rpt-wide">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
@@ -164,7 +164,7 @@ a.tap-cell:hover{background:#ece4d4;}
       <tr><td><span class="pill p-gad">GAD</span> &nbsp;adversarial distillation — reward is a discriminator trained to tell Sonnet gold sets from the model's drafts</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
     </tbody>
   </table>
-  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 77 runs</em> (the only values ever observed were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, for preference learning, for reinforcement learning against the rubric itself, or for adversarial distillation from the teacher.</p>
+  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 96 runs</em> (the only values ever observed were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, for preference learning, for reinforcement learning against the rubric itself, or for adversarial distillation from the teacher.</p>
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
   </div>
@@ -203,7 +203,7 @@ a.tap-cell:hover{background:#ece4d4;}
 <section id="coverage-blind">
   <h2><span class="num">5</span>Is it really coverage?</h2>
   <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
-  <p>Here the story turns. Everything to this point — the climb, the 77 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <p>Here the story turns. Everything to this point — the climb, the 96 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
   <table class="rpt-tbl">
     <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
     <tbody>
@@ -358,7 +358,7 @@ a.tap-cell:hover{background:#ece4d4;}
       <p class="ref-cite"><a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a> <span class="meta">· Zheng et al., 2023 · NeurIPS 2023 D&amp;B</span></p>
       <p class="ref-sum">Validated using a strong LLM as an automatic judge — including pairwise comparison — against human preference.</p>
       <p class="ref-use"><b>Used</b>The basis for our frozen Sonnet "ruler": rubric scoring plus pairwise win-rate as the metric held constant across every experiment.</p>
-      <p class="ref-exp"><b>Experiments</b>Used by every experiment — the frozen Sonnet rubric + pairwise judge scored all 77 runs (baseline through exp059); it was also the literal reward signal in the GRPO runs (exp057–058).</p>
+      <p class="ref-exp"><b>Experiments</b>Used by every experiment — the frozen Sonnet rubric + pairwise judge scored all 96 runs (baseline through exp079); it was also the literal reward signal in the GRPO runs (exp057–058).</p>
     </li>
     <li>
       <p class="ref-cite"><a href="https://arxiv.org/abs/2110.08207" target="_blank" rel="noopener">Multitask Prompted Training Enables Zero-Shot Task Generalization</a> <span class="meta">· Sanh et al., 2021 · T0 · ICLR 2022</span></p>

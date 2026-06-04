@@ -1,0 +1,33 @@
+{
+  "summary": "RAG + coverage-repair topology on LoRA adapter v2a_e1",
+  "hypothesis": "Grafting the ragCoverageRepair in-context topology (exp009) onto the champion LoRA adapter v2a_e1 should combine retrieval-grounded coverage repair with the adapter's learned question style, pushing quality above either alone.",
+  "technique": "A matrix sweep crossing all inference topologies against the best LoRA adapters: specifically, the ragCoverageRepair pipeline (RAG retrieval \u2192 generate \u2192 deterministic coverage-repair post-processing) from exp009 is run on the v2a_e1 LoRA adapter instead of the stock base model.",
+  "result": "Scored 0.278 on the full-30 greedy eval \u2014 an improvement over the raw exp009 baseline (0.213) but well below the champion exp056 (0.440). The adapter did not transfer the topology's benefit to competitive quality, so the run was discarded.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner task input"
+    },
+    {
+      "kind": "retrieve",
+      "text": "RAG fetch of nearest exemplars"
+    },
+    {
+      "kind": "generate",
+      "text": "Draft questions via LoRA adapter v2a_e1",
+      "knobs": {
+        "model": "adapter_v2a_e1",
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic coverage-repair post-processing"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions"
+    }
+  ],
+  "label": "exp068"
+}

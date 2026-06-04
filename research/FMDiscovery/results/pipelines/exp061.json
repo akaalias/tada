@@ -1,0 +1,30 @@
+{
+  "summary": "RL adapter + over-count(8) + corpus-coverage select",
+  "hypothesis": "Layering the exp056 over-count(8)+corpus-coverage-select topology onto the orpo_op_e1 RL adapter should compound gains \u2014 the softer-preference RL base should provide a better prior, and the proven inference topology should then extract further quality on top of it.",
+  "technique": "The exp056 topology (expand 8 candidates, then deterministically select by corpus-coverage score in Swift) is run unchanged, but the underlying generative model is swapped from the SFT champion adapter to the orpo_op_e1 RL adapter \u2014 testing whether the best topology and a softer-preference RL base are additive.",
+  "result": "Scored 0.388 on the full-30 greedy gate (2 wins / 2 ties / 25 losses vs Sonnet), which is below the orpo_op_e1 single-call baseline of 0.396 and well below the SFT champion exp056 at 0.440; coverage stayed at 3 on the rubric, confirming the topology and RL base interfere rather than stack. Discarded \u2014 SFT champion exp056 (0.440) holds.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User one-liner in"
+    },
+    {
+      "kind": "expand",
+      "text": "Over-produce 8 candidate question sets",
+      "knobs": {
+        "n": "8",
+        "sampling": "greedy",
+        "model": "adapter_orpo_op_e1"
+      }
+    },
+    {
+      "kind": "select",
+      "text": "Swift corpus-coverage scorer picks top-7"
+    },
+    {
+      "kind": "output",
+      "text": "Final 7 questions out"
+    }
+  ],
+  "label": "exp061"
+}
