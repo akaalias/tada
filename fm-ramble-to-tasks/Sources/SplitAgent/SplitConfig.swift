@@ -8,6 +8,7 @@ public struct SplitConfig: Sendable {
         case singleShot          // 1 call: input -> 0..N tasks
         case singleShotReasoned  // 1 call: reasoning-first gated schema -> 0..N tasks
         case singleShotCoverage  // 1 call: reasoned gate + exhaustive candidate sweep -> 0..N tasks
+        case extractAudit        // 2 calls: reasoned extract, then coverage-audit adds missing tasks
         // Future experiments add: segmentExtract, overGenerateFilter,
         // brainstormSelect, extractCritique, adapterDirect, ...
     }

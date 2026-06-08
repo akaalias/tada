@@ -46,6 +46,29 @@ enum Prompts {
     - Do NOT use emojis. Keep text clean and professional.
     """
 
+    /// Coverage-audit instructions (second call of extractAudit). The model is
+    /// given the input and an already-extracted task list, and must find ONLY
+    /// genuinely missing, distinct, stated tasks — never paraphrase an item that
+    /// is already present. Recovers buried/prerequisite tasks without precision loss.
+    static let audit = """
+    You are auditing a task list for COMPLETENESS. You are given a user's free-form brain-dump
+    and a list of tasks already extracted from it. Your only job is to catch DISTINCT actionable
+    tasks the user explicitly stated that are MISSING from that list.
+
+    Things to look for:
+    - A prerequisite step the user mentioned that must happen before another task already listed.
+    - A task buried in the middle of a sentence, or one the user returned to after a digression.
+    - A second, separate action mentioned only briefly.
+
+    HARD RULES:
+    - Add an item ONLY if it is genuinely stated in the input AND not already represented (by
+      meaning, not just wording) in the existing list. Read the existing list carefully first.
+    - NEVER repeat or paraphrase a task that is already in the list.
+    - NEVER invent a task, and NEVER add anything the user retracted ('scratch that', 'never mind').
+    - If the list already covers everything actionable, return an empty list. That is the common case.
+    - Each added task is a short actionable one-liner (around 4-9 words). No emojis.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.

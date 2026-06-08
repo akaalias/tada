@@ -30,6 +30,21 @@ struct FMRambleSplitReasoned {
     }
 }
 
+/// Coverage-audit pass (second call of the extractAudit topology). Given the
+/// input AND the tasks already extracted, it surfaces ONLY distinct actionable
+/// intentions that are genuinely STATED in the input but MISSING from that list
+/// (e.g. a prerequisite step, or a task buried mid-sentence / returned to after a
+/// digression). Because it can see the committed list, it won't re-add a
+/// paraphrase of an item already present — the failure mode that sank exp002.
+@Generable
+struct FMRambleAudit {
+    @Guide(description: "One sentence. Re-read the WHOLE input and the already-extracted list. Name any distinct action the user explicitly wants to DO that is STATED in the input but is NOT yet represented (by meaning) in that list — e.g. a prerequisite step, or a task buried mid-sentence or returned to after a digression. If the list already covers everything, say so.")
+    var omissionCheck: String
+
+    @Guide(description: "ONLY the distinct actionable tasks that are stated in the input but MISSING from the already-extracted list. Each a short one-liner (around 4-9 words) in the user's own terms. Do NOT repeat or paraphrase anything already in the list. Do NOT invent. Empty if the list is already complete.")
+    var missingTasks: [String]
+}
+
 /// Coverage-first variant: keeps the zero-task gate, but adds an exhaustive
 /// over-generate step. Before the final list, the model must enumerate EVERY
 /// distinct thing the user wants to do across the WHOLE ramble — including

@@ -14,7 +14,60 @@ public struct ConfiguredAgent: Sendable {
         case .singleShot: return try await singleShot(input)
         case .singleShotReasoned: return try await singleShotReasoned(input)
         case .singleShotCoverage: return try await singleShotCoverage(input)
+        case .extractAudit: return try await extractAudit(input)
         }
+    }
+
+    /// Two-call EXTRACT -> COVERAGE-AUDIT. Call 1 is the proven exp001 reasoned
+    /// extraction (precision 1.0). Call 2 runs ONLY when call 1 found >=1 task —
+    /// this protects the solved zero-task gate (we never let the audit invent a
+    /// task on venting/musing). The auditor sees the committed list, so unlike
+    /// exp002's blind over-generate it won't re-add a paraphrase. Recovers buried
+    /// / prerequisite tasks (the entire residual recall gap in exp001).
+    private func extractAudit(_ input: String) async throws -> RambleResult {
+        let base = try await singleShotReasoned(input)
+        // Zero-task gate already decided there is nothing to do — do not audit.
+        guard !base.tasks.isEmpty else { return base }
+
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.audit }
+        let prompt = """
+        The user brain-dumped:
+
+        "\(input)"
+
+        Tasks already extracted from it:
+        \(listed)
+
+        List ONLY distinct actionable tasks that are stated in the input but MISSING from the list above. Return an empty list if the list already covers everything.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleAudit.self,
+            options: config.options()
+        )
+        return RambleResult(tasks: mergeDedup(base.tasks, r.content.missingTasks))
+    }
+
+    /// Append audited additions to the base list, dropping any that normalize to
+    /// an item already present (cheap safety net against exact/near duplicates;
+    /// the auditor is the primary dedup, this just guarantees no leak).
+    private func mergeDedup(_ base: [String], _ additions: [String]) -> [String] {
+        func norm(_ s: String) -> String {
+            s.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                .filter { !$0.isPunctuation }
+        }
+        var seen = Set(base.map(norm))
+        var out = base
+        for a in additions {
+            let trimmed = a.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = norm(a)
+            if seen.insert(key).inserted { out.append(trimmed) }
+        }
+        return out
     }
 
     private func singleShotCoverage(_ input: String) async throws -> RambleResult {
