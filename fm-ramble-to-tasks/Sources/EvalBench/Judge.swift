@@ -36,11 +36,15 @@ public struct Rubric: Codable, Sendable, Equatable {
 public struct JudgeVerdict: Codable, Sendable {
     public var pairwise: Pairwise
     public var rubric: Rubric
+    /// Number of candidate tasks that correctly match a distinct gold task
+    /// (paraphrase-aware) — the basis for precision/recall/F1. Set by the judge.
+    public var matched: Int
     public var notes: String
 
-    public init(pairwise: Pairwise, rubric: Rubric, notes: String) {
+    public init(pairwise: Pairwise, rubric: Rubric, matched: Int, notes: String) {
         self.pairwise = pairwise
         self.rubric = rubric
+        self.matched = matched
         self.notes = notes
     }
 }
@@ -58,7 +62,8 @@ public struct StubJudge: Judge {
         JudgeVerdict(
             pairwise: .tie,
             rubric: Rubric(faithfulness: 3, atomicity: 3, actionability: 3, coverage: 3, nonRedundancy: 3),
-            notes: "stub judge — no real evaluation"
+            matched: TaskSetMatcher.lexicalMatched(pred: candidate.tasks, gold: gold.tasks),
+            notes: "stub judge — lexical match only"
         )
     }
 }

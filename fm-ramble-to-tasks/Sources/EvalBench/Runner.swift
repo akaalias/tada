@@ -23,12 +23,18 @@ public struct Runner {
                     scores.append(CaseScore(id: c.id, input: c.input, spec: spec, match: nil, verdict: nil, candidate: candidate, error: nil))
                     continue
                 }
-                let match = TaskSetMatcher.match(pred: candidate.tasks, gold: c.gold.tasks)
-                // Judge only when there is content on both sides to compare — the
-                // rubric is meaningless for an (correctly or incorrectly) empty set.
+                // The judge does the semantic (paraphrase-aware) matching AND the rubric
+                // in one call. Empty-on-either-side cases are scored deterministically
+                // (zero-task binary) with no judge call.
                 var verdict: JudgeVerdict? = nil
-                if !candidate.tasks.isEmpty && !c.gold.tasks.isEmpty {
-                    verdict = try? await judge.judge(input: c.input, gold: c.gold, candidate: candidate)
+                let match: SetMatch
+                if c.gold.tasks.isEmpty || candidate.tasks.isEmpty {
+                    match = TaskSetMatcher.fromMatched(0, predCount: candidate.tasks.count, goldCount: c.gold.tasks.count)
+                } else if let v = try? await judge.judge(input: c.input, gold: c.gold, candidate: candidate) {
+                    verdict = v
+                    match = TaskSetMatcher.fromMatched(v.matched, predCount: candidate.tasks.count, goldCount: c.gold.tasks.count)
+                } else {
+                    match = TaskSetMatcher.match(pred: candidate.tasks, gold: c.gold.tasks)
                 }
                 log?("    F1 \(String(format: "%.2f", match.quality))  (p \(String(format: "%.2f", match.precision)) / r \(String(format: "%.2f", match.recall)))")
                 scores.append(CaseScore(id: c.id, input: c.input, spec: spec, match: match, verdict: verdict, candidate: candidate, error: nil))

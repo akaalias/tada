@@ -21,11 +21,11 @@ public struct AnthropicClient: Sendable {
     }
 
     /// Force the model to call `tool` and return its `input` object as JSON Data.
-    public func toolCall(system: String, user: String, tool: [String: Any], maxTokens: Int = 2048) async throws -> Data {
+    public func toolCall(system: String, user: String, tool: [String: Any], maxTokens: Int = 2048, temperature: Double? = nil) async throws -> Data {
         guard let toolName = tool["name"] as? String else {
             throw AnthropicError(message: "tool schema missing name")
         }
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
             "system": system,
@@ -33,6 +33,7 @@ public struct AnthropicClient: Sendable {
             "tool_choice": ["type": "tool", "name": toolName],
             "messages": [["role": "user", "content": user]],
         ]
+        if let temperature { body["temperature"] = temperature }
         var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
         req.httpMethod = "POST"
         req.setValue(apiKey, forHTTPHeaderField: "x-api-key")

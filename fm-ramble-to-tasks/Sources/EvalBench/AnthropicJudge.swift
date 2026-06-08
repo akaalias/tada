@@ -22,7 +22,7 @@ public struct AnthropicJudge: Judge {
 
         Score SET B on each rubric dimension (1-5), then decide which set better captures the user's actual tasks for this specific input.
         """
-        let data = try await client.toolCall(system: Self.system, user: user, tool: Self.tool, maxTokens: 1024)
+        let data = try await client.toolCall(system: Self.system, user: user, tool: Self.tool, maxTokens: 1024, temperature: 0)
         let out = try JSONDecoder().decode(JudgeToolOutput.self, from: data)
         let pairwise: Pairwise = {
             switch out.better.uppercased() {
@@ -31,11 +31,13 @@ public struct AnthropicJudge: Judge {
             default: return .tie
             }
         }()
+        let cap = min(candidate.tasks.count, gold.tasks.count)
         return JudgeVerdict(
             pairwise: pairwise,
             rubric: Rubric(faithfulness: clamp(out.faithfulness), atomicity: clamp(out.atomicity),
                            actionability: clamp(out.actionability), coverage: clamp(out.coverage),
                            nonRedundancy: clamp(out.nonRedundancy)),
+            matched: max(0, min(out.matched, cap)),
             notes: out.notes
         )
     }
@@ -53,11 +55,13 @@ public struct AnthropicJudge: Judge {
     - coverage: the set captures EVERY distinct intention in the input, missing none.
     - nonRedundancy: no two tasks are the same intention (including a thought the user repeated or returned to).
     An empty set is the correct answer when the input contains no actionable task.
+    Also COUNT how many of SET B's tasks correctly correspond to a DISTINCT task in SET A — the same intention even if worded differently (a paraphrase, or more/less detail, still counts as the same task). That is the `matched` count; it can never exceed the number of tasks in either set.
     Then pick which SET (A or B) better captures the user's actual tasks, or "tie" if genuinely equal. Be willing to say B is better when it is — do not favour A by default. Judge only what is written.
     """
 
     struct JudgeToolOutput: Codable {
         let better: String
+        let matched: Int
         let faithfulness: Int
         let atomicity: Int
         let actionability: Int
@@ -73,6 +77,7 @@ public struct AnthropicJudge: Judge {
             "type": "object",
             "properties": [
                 "better": ["type": "string", "enum": ["A", "B", "tie"], "description": "Which set is better overall, or tie"],
+                "matched": ["type": "integer", "minimum": 0, "description": "How many of SET B's tasks correctly correspond to a distinct task in SET A (same intention; paraphrase ok). Cannot exceed the count of either set."],
                 "faithfulness": intScore("every task traces to the input; nothing invented"),
                 "atomicity": intScore("each task is ONE action, no and/or"),
                 "actionability": intScore("real to-dos, not vague musings"),
@@ -80,7 +85,7 @@ public struct AnthropicJudge: Judge {
                 "nonRedundancy": intScore("no two tasks are the same intention"),
                 "notes": ["type": "string", "description": "One or two sentences: the candidate's main weakness vs the reference, to guide iteration."],
             ],
-            "required": ["better", "faithfulness", "atomicity", "actionability", "coverage", "nonRedundancy", "notes"],
+            "required": ["better", "matched", "faithfulness", "atomicity", "actionability", "coverage", "nonRedundancy", "notes"],
         ],
     ] }
 

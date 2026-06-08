@@ -1,9 +1,9 @@
 import Foundation
-import NaturalLanguage
 
-/// Deterministic set-match between a candidate task list and the gold task list.
-/// This is the headline ruler: precision / recall / F1 over a one-to-one match by
-/// sentence-embedding cosine similarity, plus the zero-task binary case.
+/// Set-match between a candidate task list and the gold task list. The headline
+/// ruler: precision / recall / F1 over a one-to-one match, plus the zero-task
+/// binary case. The match count is supplied by the (paraphrase-aware) Sonnet judge
+/// via `fromMatched`; `match` is a deterministic lexical fallback for offline runs.
 public struct SetMatch: Sendable, Codable {
     public let precision: Double
     public let recall: Double
@@ -22,64 +22,63 @@ public struct SetMatch: Sendable, Codable {
 }
 
 public enum TaskSetMatcher {
-    /// Cosine similarity at or above which two task strings count as the same task.
-    /// Starting value — calibrate against the seed gold cases.
-    public static let defaultThreshold = 0.78
-
-    // Read-only after init; dev-time eval is effectively single-threaded.
-    nonisolated(unsafe) private static let embedding = NLEmbedding.sentenceEmbedding(for: .english)
-
-    public static func match(pred: [String], gold: [String], threshold: Double = defaultThreshold) -> SetMatch {
-        let goldEmpty = gold.isEmpty
-
-        // Zero-task and empty-prediction cases are scored directly.
-        if goldEmpty || pred.isEmpty {
-            let bothEmpty = goldEmpty && pred.isEmpty
+    /// Build a SetMatch from a known matched count (e.g. the judge's count).
+    public static func fromMatched(_ matched: Int, predCount: Int, goldCount: Int) -> SetMatch {
+        let goldEmpty = goldCount == 0
+        if goldEmpty || predCount == 0 {
+            let bothEmpty = goldEmpty && predCount == 0
             let v = bothEmpty ? 1.0 : 0.0
             return SetMatch(precision: v, recall: v, f1: v, matched: 0,
-                            predCount: pred.count, goldCount: gold.count,
+                            predCount: predCount, goldCount: goldCount,
                             goldEmpty: goldEmpty, zeroTaskCorrect: bothEmpty)
         }
-
-        // Greedy one-to-one match: each gold task claims its best unused prediction
-        // whose similarity clears the threshold.
-        var usedPred = Set<Int>()
-        var matched = 0
-        for g in gold {
-            var bestI = -1
-            var bestSim = threshold
-            for (i, p) in pred.enumerated() where !usedPred.contains(i) {
-                let sim = similarity(g, p)
-                if sim >= bestSim { bestSim = sim; bestI = i }
-            }
-            if bestI >= 0 { usedPred.insert(bestI); matched += 1 }
-        }
-
-        let precision = Double(matched) / Double(pred.count)
-        let recall = Double(matched) / Double(gold.count)
+        let m = max(0, min(matched, min(predCount, goldCount)))
+        let precision = Double(m) / Double(predCount)
+        let recall = Double(m) / Double(goldCount)
         let f1 = (precision + recall) == 0 ? 0 : 2 * precision * recall / (precision + recall)
-        return SetMatch(precision: precision, recall: recall, f1: f1, matched: matched,
-                        predCount: pred.count, goldCount: gold.count,
+        return SetMatch(precision: precision, recall: recall, f1: f1, matched: m,
+                        predCount: predCount, goldCount: goldCount,
                         goldEmpty: false, zeroTaskCorrect: false)
     }
 
-    /// Cosine similarity in [-1, 1]; falls back to word-Jaccard if no embedding model.
-    static func similarity(_ a: String, _ b: String) -> Double {
-        if a.compare(b, options: .caseInsensitive) == .orderedSame { return 1.0 }
-        if let e = embedding {
-            // NLDistanceType.cosine returns cosine DISTANCE (0 = identical).
-            let d = e.distance(between: a, and: b, distanceType: .cosine)
-            return 1.0 - d
-        }
-        return jaccard(a, b)
+    /// Deterministic fallback (offline / no API key): greedy one-to-one match on
+    /// content-word overlap. Approximate — the real matcher is the Sonnet judge,
+    /// which is paraphrase-aware. Used only when the judge is unavailable.
+    public static let lexicalThreshold = 0.6
+
+    public static func match(pred: [String], gold: [String]) -> SetMatch {
+        fromMatched(lexicalMatched(pred: pred, gold: gold), predCount: pred.count, goldCount: gold.count)
     }
 
-    static func jaccard(_ a: String, _ b: String) -> Double {
-        let wa = Set(a.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init))
-        let wb = Set(b.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init))
-        guard !wa.isEmpty || !wb.isEmpty else { return 0 }
-        let inter = wa.intersection(wb).count
-        let union = wa.union(wb).count
-        return union == 0 ? 0 : Double(inter) / Double(union)
+    public static func lexicalMatched(pred: [String], gold: [String], threshold: Double = lexicalThreshold) -> Int {
+        if gold.isEmpty || pred.isEmpty { return 0 }
+        var used = Set<Int>()
+        var matched = 0
+        for g in gold {
+            var bestI = -1
+            var best = threshold
+            for (i, p) in pred.enumerated() where !used.contains(i) {
+                let s = similarity(g, p)
+                if s >= best { best = s; bestI = i }
+            }
+            if bestI >= 0 { used.insert(bestI); matched += 1 }
+        }
+        return matched
+    }
+
+    private static let stop: Set<String> = [
+        "the", "a", "an", "to", "of", "for", "and", "or", "my", "your", "i", "is",
+        "it", "that", "this", "with", "on", "in", "at", "be", "do", "get", "got",
+        "some", "please", "need", "should", "up", "out", "about", "so", "just",
+    ]
+    private static func tokens(_ s: String) -> Set<String> {
+        Set(s.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init).filter { !stop.contains($0) })
+    }
+    private static func similarity(_ a: String, _ b: String) -> Double {
+        if a.compare(b, options: .caseInsensitive) == .orderedSame { return 1.0 }
+        let ta = tokens(a), tb = tokens(b)
+        if ta.isEmpty || tb.isEmpty { return 0 }
+        // Overlap coefficient: lenient to length/detail differences.
+        return Double(ta.intersection(tb).count) / Double(min(ta.count, tb.count))
     }
 }
