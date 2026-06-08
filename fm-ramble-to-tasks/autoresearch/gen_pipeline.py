@@ -34,7 +34,8 @@ TOOL = {
                             "input=the user's free-form ramble; retrieve=RAG fetch of exemplars; generate=an on-device FM call that extracts tasks (or drafts/segments); expand=one FM call that over-produces N candidate tasks; select=deterministic Swift ranking/pick; critique=a second FM pass that audits/edits a draft (drop non-actionable/retracted/duplicate); ensemble=best-of-N variants then pick; post=deterministic Swift post-processing (dedup/filter); output=the final 0..N tasks."},
                         "text": {"type": "string", "description": "<=8 words: what this stage does for THIS experiment."},
                         "knobs": {"type": "object", "description": "Optional knob values shown as chips, e.g. {\"temp\":\"0.7\",\"sampling\":\"greedy\",\"k\":\"2\",\"n\":\"4\"}. Omit if none."},
-                        "call_labels": {"type": "array", "items": {"type": "string"}, "description": "REQUIRED when this stage makes more than one model call (n>1 for an ensemble, or calls>1 for a model-based select/tournament/loop): one concise description per call (<=7 words), in order, length equal to the call count. NEVER leave multiple calls as bare numbers."}
+                        "call_labels": {"type": "array", "items": {"type": "string"}, "description": "REQUIRED when this stage makes more than one model call (n>1 for an ensemble, or calls>1 for a model-based select/tournament/loop): one concise description per call (<=7 words), in order, length equal to the call count. NEVER leave multiple calls as bare numbers."},
+                        "prompt": {"type": "string", "description": "FM calls (generate/expand/critique/ensemble) ONLY: the VERBATIM prompt for this call — the system/instructions text AND the user-message template — copied EXACTLY from the provided Swift source (Prompts.swift + the topology function). Do NOT paraphrase, summarize, or invent. Omit entirely for deterministic stages (input/output/retrieve/select/post)."}
                     },
                     "required": ["kind", "text"]
                 }
@@ -120,12 +121,27 @@ def main():
     if not entry and not note:
         fail(f"no description found for {label}")
 
+    # Source so the model can attach the VERBATIM prompt to each FM stage.
+    def _read(rel):
+        f = PKG / rel
+        return f.read_text(encoding="utf-8") if f.exists() else ""
+    prompts_src = _read("Sources/SplitAgent/Prompts.swift")
+    agent_src = _read("Sources/SplitAgent/ConfiguredAgent.swift")
+    cfgtext = _read("Sources/SplitAgent/Configs.swift")
+    mt = re.search(r'"' + re.escape(label) + r'":\s*SplitConfig\(\s*topology:\s*\.(\w+)', cfgtext)
+    topo = mt.group(1) if mt else ""
+
     user = (f"Experiment label: {label}\nShort note: {note}\nFull log entry: {entry}\n"
-            f"Measured metrics (use these EXACT numbers for 'result'): {metrics or 'none recorded'}\n\n"
+            f"Measured metrics (use these EXACT numbers for 'result'): {metrics or 'none recorded'}\n"
+            f"This config's topology is `.{topo}`.\n\n"
+            f"For each FM stage (generate/expand/critique/ensemble), set its `prompt` to the EXACT "
+            f"system instructions + user-message template that the `.{topo}` topology uses, copied "
+            f"VERBATIM from the source below (do not paraphrase). The agent source:\n"
+            f"=== Prompts.swift ===\n{prompts_src}\n=== ConfiguredAgent.swift ===\n{agent_src}\n\n"
             f"Produce the pipeline_spec.")
     body = json.dumps({
         "model": "claude-sonnet-4-6",
-        "max_tokens": 900,
+        "max_tokens": 2500,
         "system": SYSTEM,
         "tools": [TOOL],
         "tool_choice": {"type": "tool", "name": "pipeline_spec"},

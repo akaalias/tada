@@ -30,20 +30,20 @@ export function layoutPipe(spec) {
       const ids = [];
       for (let r = 0; r < n; r++) {
         const id = si + '_' + r; ids.push(id);
-        nodes.push({ id, col, row: r, rows: n, kind, adapterName, model: true, title: 'generate', sub: labels[r] || ('#' + (r + 1)), full: kind + ': ' + (s.text || '') + ' (' + (labels[r] || '') + ')' });
+        nodes.push({ id, col, row: r, rows: n, kind, adapterName, model: true, title: 'generate', sub: labels[r] || ('#' + (r + 1)), full: kind + ': ' + (s.text || '') + ' (' + (labels[r] || '') + ')', prompt: s.prompt });
       }
       info.push({ entry: ids, exit: ids }); col += 1;
     } else if (n > 1) {                                 // sequential chain
       const ids = [];
       for (let k = 0; k < n; k++) {
         const id = si + '_' + k; ids.push(id);
-        nodes.push({ id, col: col + k, row: 0, rows: 1, kind, adapterName, model: true, title: kind, sub: labels[k] || (kind + ' ' + (k + 1)), full: kind + ' call ' + (k + 1) + '/' + n + ': ' + (labels[k] || '') + ' — ' + (s.text || '') });
+        nodes.push({ id, col: col + k, row: 0, rows: 1, kind, adapterName, model: true, title: kind, sub: labels[k] || (kind + ' ' + (k + 1)), full: kind + ' call ' + (k + 1) + '/' + n + ': ' + (labels[k] || '') + ' — ' + (s.text || ''), prompt: s.prompt });
         if (k > 0) edges.push({ from: si + '_' + (k - 1), to: id });
       }
       info.push({ entry: [ids[0]], exit: [ids[n - 1]] }); col += n;
     } else {                                            // single node
       const id = si + '_0';
-      nodes.push({ id, col, row: 0, rows: 1, kind, adapterName, model: n > 0, title: kind, sub: s.text || '', full: kind + ': ' + (s.text || '') });
+      nodes.push({ id, col, row: 0, rows: 1, kind, adapterName, model: n > 0, title: kind, sub: s.text || '', full: kind + ': ' + (s.text || ''), prompt: s.prompt });
       info.push({ entry: [id], exit: [id] }); col += 1;
     }
   });
@@ -191,6 +191,6 @@ export function renderPipeD3(spec, el) {
   bg.append('rect').attr('width', d => bwid(execType(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => execType(d)[1]);
   bg.append('text').attr('x', d => bwid(execType(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
     .attr('font-weight', 800).attr('fill', '#fffff8').text(d => execType(d)[0]);
-  g.on('mousemove', (e, d) => showTip(e, esc(d.full))).on('mouseleave', hideTip);
+  g.on('mousemove', (e, d) => showTip(e, esc(d.full) + (d.prompt ? '<pre class="t-prompt">' + esc(d.prompt) + '</pre>' : ''))).on('mouseleave', hideTip);
   return W;
 }
