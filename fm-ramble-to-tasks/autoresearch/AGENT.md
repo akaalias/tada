@@ -59,9 +59,11 @@ implement judging or scoring.
   you add retrieval/few-shot, demonstrations must be OTHER tasks — never an eval case's
   own (or a near-duplicate) gold.
 - HELD-OUT TEST: you are scored on the DEV split (the default of `evaluate`). A separate
-  TEST split is held out and checked by the operator to detect overfitting. NEVER read,
-  target, or tune anything toward the test cases — gains must come from the model
-  generalizing, not from memorizing inputs. A dev gain that does not hold on test is not real.
+  TEST split is held out. The WRAPPER (not you) runs it automatically on every new dev
+  best — you must NEVER run `--subset test` yourself, never read `*_test` results, and
+  never read or tune toward the test cases or their lines in `runs.jsonl`. Gains must
+  come from the model generalizing, not from memorizing inputs. A dev gain that does not
+  hold on test is not real.
 - Every experiment MUST end with a GREEN build and exactly one NEW logged run.
 - Keep all previous configs intact; each experiment ADDS a new named config (`expNNN`).
 

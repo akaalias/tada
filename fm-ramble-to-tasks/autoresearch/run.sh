@@ -19,8 +19,12 @@ AR="$PKG/autoresearch"
 
 TARGET="${1:-50}"
 CODER_MODEL="${CODER_MODEL:-opus}"           # newest/most capable coder
-PER_ITER_BUDGET="${PER_ITER_BUDGET:-2.00}"   # hard $ cap on the coder per iteration
-PER_ITER_TIMEOUT="${PER_ITER_TIMEOUT:-1800}" # wall-clock cap per iteration (s)
+# Both per-iteration limits are OPTIONAL.
+#   PER_ITER_BUDGET: hard $ cap on the coder. Empty (default) = NO cap. Set e.g. 2.00 to cap.
+#   PER_ITER_TIMEOUT: wall-clock cap (seconds). Default 600 (10m). Set 0/empty to disable.
+#     Raise it for training runs, which take far longer than inference experiments.
+PER_ITER_BUDGET="${PER_ITER_BUDGET:-}"
+PER_ITER_TIMEOUT="${PER_ITER_TIMEOUT:-600}"
 
 # Immutable ruler: any agent changes here are reverted every iteration.
 PROTECTED=(
@@ -41,7 +45,7 @@ fi
 
 count() { local n; n=$(wc -l < "$PKG/results/runs.jsonl" 2>/dev/null || echo 0); echo "${n//[[:space:]]/}"; }
 
-echo "[autoresearch] start: $(count)/$TARGET experiments | coder=$CODER_MODEL | per-iter cap \$$PER_ITER_BUDGET"
+echo "[autoresearch] start: $(count)/$TARGET experiments | coder=$CODER_MODEL | budget=${PER_ITER_BUDGET:-none} | timeout=${PER_ITER_TIMEOUT:-none}s"
 mkdir -p "$AR"
 
 while [ "$(count)" -lt "$TARGET" ]; do
@@ -70,16 +74,23 @@ while [ "$(count)" -lt "$TARGET" ]; do
   # Scoped allowlist (NOT a full permission bypass): read, edit/write files,
   # build, run the eval, inspect. No arbitrary shell, no network, no git — the
   # wrapper owns all git. Unlisted tools are denied (non-interactive => no hang).
-  result=$(timeout "$PER_ITER_TIMEOUT" claude -p "$DIRECTIVE" \
-      --append-system-prompt "$(cat "$AR/AGENT.md")" \
-      --bare \
-      --allowedTools "Read" "Edit" "Write" "Glob" "Grep" \
-        "Bash(swift build:*)" "Bash(swift run:*)" \
-        "Bash(ls:*)" "Bash(cat:*)" "Bash(head:*)" "Bash(tail:*)" "Bash(sed:*)" \
-      --add-dir "$REPO" \
-      --model "$CODER_MODEL" \
-      --max-budget-usd "$PER_ITER_BUDGET" \
-      --output-format json 2>>"$AR/agent.err")
+  # Assemble the coder command; both per-iteration limits are optional.
+  claude_cmd=(claude -p "$DIRECTIVE"
+      --append-system-prompt "$(cat "$AR/AGENT.md")"
+      --bare
+      --allowedTools "Read" "Edit" "Write" "Glob" "Grep"
+        "Bash(swift build:*)" "Bash(swift run:*)"
+        "Bash(ls:*)" "Bash(cat:*)" "Bash(head:*)" "Bash(tail:*)" "Bash(sed:*)"
+      --add-dir "$REPO"
+      --model "$CODER_MODEL"
+      --output-format json)
+  [ -n "$PER_ITER_BUDGET" ] && claude_cmd+=(--max-budget-usd "$PER_ITER_BUDGET")
+
+  if [ -n "$PER_ITER_TIMEOUT" ] && [ "$PER_ITER_TIMEOUT" != "0" ]; then
+    result=$(timeout "$PER_ITER_TIMEOUT" "${claude_cmd[@]}" 2>>"$AR/agent.err")
+  else
+    result=$("${claude_cmd[@]}" 2>>"$AR/agent.err")
+  fi
   rc=$?
 
   cost=$(printf '%s' "$result" | jq -r '.total_cost_usd // 0' 2>/dev/null || echo 0)
@@ -93,9 +104,20 @@ while [ "$(count)" -lt "$TARGET" ]; do
   AFTER=$(count)
   if [ "$AFTER" -gt "$N" ]; then
     # A run was logged => the build was green (swift run requires it). Commit progress.
+    NEWLABEL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.label // empty' 2>/dev/null)
+    KEPT=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.kept // false' 2>/dev/null)
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
     echo "[autoresearch] OK: new experiment logged (total=$AFTER, coder \$$cost)"
+    # Wrapper-run held-out TEST check on a new DEV best — REPORTING ONLY. The coder
+    # agent never runs test, never sees these results, and must not tune toward them.
+    # This keeps the honesty check automatic without contaminating the optimization.
+    if [ "$KEPT" = "true" ] && [ -n "$NEWLABEL" ]; then
+      echo "[autoresearch] new dev best ($NEWLABEL) — running held-out TEST check"
+      swift run --package-path "$PKG" fmramble evaluate --agent "$NEWLABEL" --subset test --label "${NEWLABEL}_test" >/dev/null 2>>"$AR/agent.err" || true
+      git add -A "$PKG" 2>/dev/null
+      git commit -q -m "autoresearch: held-out test for $NEWLABEL" 2>/dev/null || true
+    fi
   else
     # No run logged. Revert any half-finished agent edits to keep the tree green.
     git checkout -- "fm-ramble-to-tasks/Sources/SplitAgent" 2>/dev/null || true

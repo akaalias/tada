@@ -51,8 +51,14 @@ public struct ConfiguredAgent: Sendable {
     }
 
     private func resolveModel() throws -> SystemLanguageModel {
-        guard let path = config.adapter else { return SystemLanguageModel.default }
+        // Apple's default guardrails over-trigger on benign input (code, mixed-language,
+        // blunt phrasing), causing false refusals on ordinary rambles. Use permissive
+        // content transformations so the splitter sees the real input.
+        let guardrails = SystemLanguageModel.Guardrails.permissiveContentTransformations
+        guard let path = config.adapter else {
+            return SystemLanguageModel(guardrails: guardrails)
+        }
         let adapter = try SystemLanguageModel.Adapter(fileURL: URL(filePath: path))
-        return SystemLanguageModel(adapter: adapter)
+        return SystemLanguageModel(adapter: adapter, guardrails: guardrails)
     }
 }
