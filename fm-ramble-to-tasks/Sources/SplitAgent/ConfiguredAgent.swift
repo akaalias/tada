@@ -15,6 +15,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotReasoned: return try await singleShotReasoned(input)
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .extractAudit: return try await extractAudit(input)
+        case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         }
     }
 
@@ -24,10 +25,18 @@ public struct ConfiguredAgent: Sendable {
     /// task on venting/musing). The auditor sees the committed list, so unlike
     /// exp002's blind over-generate it won't re-add a paraphrase. Recovers buried
     /// / prerequisite tasks (the entire residual recall gap in exp001).
-    private func extractAudit(_ input: String) async throws -> RambleResult {
+    /// `minBaseTasks` gates the audit to contexts where it pays off. exp003 showed
+    /// the audit recovers buried/prereq tasks on MULTI-task inputs (interleaved_deck
+    /// 0.8->1.0, multi_errands 0.8->1.0) but over-fires on SINGLE-task inputs,
+    /// re-emitting a paraphrase of the lone task (dedup_groceries, mixed_weekend each
+    /// gained a spurious dup). Requiring base.count >= 2 keeps the recall wins while
+    /// skipping the single-task cases the audit can only hurt. (exp003 used 1.)
+    private func extractAudit(_ input: String, minBaseTasks: Int = 1) async throws -> RambleResult {
         let base = try await singleShotReasoned(input)
         // Zero-task gate already decided there is nothing to do — do not audit.
-        guard !base.tasks.isEmpty else { return base }
+        // Also skip below the multi-task threshold: a coverage audit can only add
+        // duplicates on a single-task input, never recover a genuinely missing one.
+        guard base.tasks.count >= minBaseTasks, !base.tasks.isEmpty else { return base }
 
         let listed = base.tasks.enumerated()
             .map { "\($0.offset + 1). \($0.element)" }

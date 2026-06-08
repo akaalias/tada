@@ -1,23 +1,24 @@
 {
-  "summary": "Reasoning-first boolean gate before task list",
-  "hypothesis": "Forcing the model to explicitly name venting/musing/retractions and commit a boolean (hasActionableTasks) before listing tasks will fix false-positive task invention on non-actionable rambles \u2014 because the gate makes the model's intent explicit before it can \"drift\" into fabricating tasks.",
-  "technique": "A single greedy on-device call with a reasoning-first @Generable schema: the model must produce a free-text analysis and a hasActionableTasks boolean before the task list is unlocked, gating extraction on an explicit structural commitment.",
-  "result": "Quality 0.955 on dev-11 (W/T/L vs Sonnet = 0/5/4); specPass 100%; rubric faith=5, atom=5, action=5, cover=4, nonRed=5. KEPT as new best \u2014 the boolean gate eliminated false-positive task invention on venting/musing inputs, confirming the hypothesis.",
+  "summary": "Reasoning-first gated schema with boolean task gate",
+  "hypothesis": "Forcing the model to explicitly name non-actionable content (venting, musing, retractions) and commit to a boolean before listing tasks will fix false-positive task invention on zero-task inputs.",
+  "technique": "A single greedy on-device FM call using a reasoning-first @Generable schema (singleShotReasoned topology) that requires the model to produce an analysis field and a hasActionableTasks boolean gate before emitting the task list.",
+  "result": "Quality 0.955 on dev-11 (W/T/L vs Sonnet = 0/5/4); specPass 100%; rubric faith=5, atom=5, action=5, cover=4, nonRed=5. This is the new best, and the experiment was KEPT.",
   "stages": [
     {
       "kind": "input",
-      "text": "User's free-form voice ramble"
+      "text": "User free-form ramble text"
     },
     {
       "kind": "generate",
-      "text": "Analysis + bool gate, then extract tasks",
+      "text": "Reasoned extract: analysis + bool gate + tasks",
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"[input]\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none).",
       "knobs": {
         "sampling": "greedy"
       }
     },
     {
       "kind": "output",
-      "text": "0..N actionable tasks"
+      "text": "Final 0..N actionable tasks"
     }
   ],
   "label": "exp001"

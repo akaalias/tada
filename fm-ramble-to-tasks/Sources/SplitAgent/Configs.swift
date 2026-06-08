@@ -17,6 +17,12 @@ public enum Configs {
         // genuinely-missing stated tasks. Audit skipped on zero-task (protects the
         // solved gate). Targets exp001's pure recall gap without exp002's dedup leak.
         "exp003": SplitConfig(topology: .extractAudit, sampling: .greedy),
+        // exp004: extractAudit GATED to multi-task contexts. Same recovery audit as
+        // exp003, but it only fires when the base extraction found >=2 tasks. exp003's
+        // only regressions were two SINGLE-task cases where the audit re-added a
+        // paraphrase dup; gating to base.count>=2 keeps the multi-task recall wins
+        // (interleaved_deck, multi_errands -> 1.0) without that single-task cost.
+        "exp004": SplitConfig(topology: .extractAuditGated, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

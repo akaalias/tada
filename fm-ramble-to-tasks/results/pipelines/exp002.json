@@ -1,27 +1,21 @@
 {
-  "summary": "Coverage-first exhaustive candidate sweep then select",
-  "hypothesis": "Over-generating candidate intentions before committing to a final list will improve recall on multi-task rambles by surfacing buried tasks that a single-shot extract misses.",
-  "technique": "A multi-call in-schema expand stage exhaustively enumerates candidate intentions (over-listing), followed by a deterministic post-processing pass to select the final task list \u2014 testing whether a coverage-first sweep beats the single-shot baseline.",
-  "result": "Quality scored 0.943 on dev-11 (W/T/L vs Sonnet 0/5/4), down \u22120.012 from exp001's 0.955, and was discarded. The expand sweep recovered buried tasks (multi_errands 0.8\u21921.0) but introduced duplicates (dedup_groceries precision 1.0\u21920.955), confirming that pushing recall via in-schema over-listing costs precision and the net is a wash; a dedup pass robust to leakage is needed.",
+  "summary": "Coverage-first exhaustive candidate sweep, single call",
+  "hypothesis": "An exhaustive in-schema candidateIntentions sweep before the final task list will improve recall on interleaved/buried-task rambles by forcing the model to visit the whole input before committing, without needing a second call.",
+  "technique": "A single greedy on-device FM call using the `coverage` prompt with a four-step guided schema: analysis \u2192 hasActionableTasks gate \u2192 candidateIntentions over-listing sweep \u2192 final tasks merge. The over-listing is done entirely within one structured generation using the `FMRambleSplitCoverage` schema.",
+  "result": "Quality 0.943 on dev-11 (W/T/L vs Sonnet = 0/5/4), down \u22120.012 from exp001's 0.955; discarded. The sweep recovered multi_errands (buried task) but caused a duplicate in dedup_groceries (precision 1.0\u21920.955) and interleaved_deck still dropped its prerequisite. In-schema over-listing trades dedup precision for recall \u2014 a net wash; the rubric flagged cover=4, confirming the recall gap persists.",
   "stages": [
     {
       "kind": "input",
-      "text": "User's free-form ramble input"
+      "text": "User free-form ramble received"
     },
     {
-      "kind": "expand",
-      "text": "Exhaustive candidate intentions sweep in-schema",
-      "knobs": {
-        "sampling": "greedy"
-      }
-    },
-    {
-      "kind": "post",
-      "text": "Deterministic dedup/select final task list"
+      "kind": "generate",
+      "text": "Coverage sweep: analyze, gate, over-list, merge",
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks. Crucially, tasks are often INTERLEAVED: the user starts one thought,\ndrifts into a digression or a second topic, then jumps BACK to finish the first. A task can also\nbe buried in the middle of a sentence. Read the WHOLE input before deciding \u2014 do not stop early.\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. candidateIntentions: sweep the entire input start to finish and list EVERY distinct action,\n   in order of appearance, including brief or buried ones and ones the user returned to after a\n   digression. Be exhaustive \u2014 over-list rather than miss something.\n4. tasks: merge candidates that mean the same thing into one; keep every genuinely distinct one.\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"\\(input)\"\n\nFirst analyze what is and isn't actionable and decide whether any real task remains. Then sweep the whole input and list every distinct intention you find, even ones buried mid-sentence or returned to after a digression. Finally merge duplicates into the final task list (empty if none)."
     },
     {
       "kind": "output",
-      "text": "Final 0..N actionable tasks"
+      "text": "Final 0..N deduplicated tasks emitted"
     }
   ],
   "label": "exp002"
