@@ -1,0 +1,38 @@
+{
+  "summary": "Extract then coverage-audit adds missing buried/prereq tasks",
+  "hypothesis": "A second scoped model call that sees the committed task list and adds only genuinely-missing buried or prerequisite tasks will improve recall on hard interleaved inputs without hurting precision. We expected the audit to recover tasks the base extract missed while the empty-list guard and dedup net would keep false positives in check.",
+  "technique": "A two-call pipeline: the first call is the reasoned extract from exp001; the second is a scoped coverage-audit call that receives the committed list and is instructed to emit only tasks absent from it. The audit is skipped entirely when the base list is empty to protect the zero-task gate. A deterministic paraphrase-blind string dedup runs as a safety net after both calls.",
+  "result": "Quality 0.931 on dev-11 (W/T/L vs Sonnet = 0/5/4), discarded \u2014 a \u22120.024 regression vs exp001's 0.955. The audit successfully recovered buried/prereq tasks on the hardest interleaved inputs (recall 0.924\u21920.985, multi_errands 0.8\u21921.0) but over-fired on single-task cases, emitting paraphrased/deadline-qualified duplicates that string dedup could not catch (precision 1.0\u21920.909); rubric scores cover=4 and nonRed=4 confirm the recall\u2194precision tension, and the net quality loss means the hypothesis is falsified at this gating level.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form ramble input"
+    },
+    {
+      "kind": "generate",
+      "text": "Reasoned extract: base task list (exp001)",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Coverage-audit: add only missing buried/prereq tasks",
+      "knobs": {
+        "sampling": "greedy"
+      },
+      "call_labels": [
+        "Coverage audit: emit missing tasks only"
+      ]
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic paraphrase-blind string dedup"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N deduplicated tasks"
+    }
+  ],
+  "label": "exp003"
+}
