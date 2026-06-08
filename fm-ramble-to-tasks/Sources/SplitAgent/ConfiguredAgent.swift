@@ -14,6 +14,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShot: return try await singleShot(input)
         case .singleShotReasoned: return try await singleShotReasoned(input)
         case .singleShotCoverage: return try await singleShotCoverage(input)
+        case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
@@ -179,6 +180,29 @@ public struct ConfiguredAgent: Sendable {
             if seen.insert(key).inserted { out.append(trimmed) }
         }
         return out
+    }
+
+    /// exp007: singleShotCoverage + a PHRASING contract. Identical topology to the
+    /// current best (exp002), but the prompt and the final-tasks schema guide add an
+    /// explicit STYLE rule — capitalized, complete, conversational one-liners that
+    /// keep meaningful detail (purpose / recipient / subject / deadline) while dropping
+    /// vague filler timing. Targets the dominant unsaturated gap: phrasing 2/5 across
+    /// every prior config (terse all-lowercase fragments). F1 should be unchanged.
+    private func singleShotCoveragePhrased(_ input: String) async throws -> RambleResult {
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.coveragePhrased }
+        let prompt = """
+        Here is what the user brain-dumped:
+
+        "\(input)"
+
+        First analyze what is and isn't actionable and decide whether any real task remains. Then sweep the whole input and list every distinct intention you find, even ones buried mid-sentence or returned to after a digression. Finally write the merged final list, phrasing each task as a complete, capitalized, natural one-liner that keeps the meaningful detail (empty if none).
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleSplitCoveragePhrased.self,
+            options: config.options()
+        )
+        return r.content.toContract()
     }
 
     private func singleShotCoverage(_ input: String) async throws -> RambleResult {

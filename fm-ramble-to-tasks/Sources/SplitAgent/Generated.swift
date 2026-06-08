@@ -100,3 +100,29 @@ struct FMRambleSplitCoverage {
         RambleResult(tasks: hasActionableTasks ? tasks : [])
     }
 }
+
+/// Coverage-first + PHRASING variant (exp007). Identical pipeline to
+/// FMRambleSplitCoverage (analysis gate -> exhaustive candidate sweep -> merged
+/// final list), but the final `tasks` @Guide carries an explicit STYLE contract so
+/// the one-liners match Sonnet's capitalized, conversational, complete phrasing.
+/// This attacks the dominant unsaturated gap: every prior config scores phrasing
+/// 2/5 because the on-device model emits terse all-lowercase fragments that drop
+/// meaningful detail (purpose / recipient / subject / deadline).
+@Generable
+struct FMRambleSplitCoveragePhrased {
+    @Guide(description: "One or two sentences. Identify any material that is NOT a task: venting/emotion, idle musing, vague wishes or aspirations ('it would be nice to...', 'I keep daydreaming about...'), and anything the user retracted ('scratch that', 'never mind', 'actually no'). Then say whether any concrete action the user actually intends to DO remains.")
+    var analysis: String
+
+    @Guide(description: "true ONLY if the input contains at least one concrete action the user actually wants to do. false for pure venting, idle musing, vague wishes/aspirations, or when everything actionable was retracted.")
+    var hasActionableTasks: Bool
+
+    @Guide(description: "Scan the ENTIRE input from start to finish and list EVERY distinct action the user wants to do, in order of appearance — including any mentioned only briefly, buried mid-sentence, or returned to after the user digressed and jumped back to an earlier thought. Be exhaustive here: it is better to over-list now and merge duplicates in the next field. Exclude retracted items and pure venting/musing. Empty if hasActionableTasks is false.")
+    var candidateIntentions: [String]
+
+    @Guide(description: "The final distinct actionable tasks. Merge candidateIntentions that mean the same thing into one; keep every genuinely distinct one. PHRASE each task the way a thoughtful human assistant would write it: start with a CAPITAL letter and an action verb, write a COMPLETE natural one-liner (never an all-lowercase fragment), and KEEP the meaningful detail the user gave — who it is for, what it is about, its purpose, and any concrete deadline. DROP only vague filler timing ('sometime', 'at some point') and pure hedges. Around 4-9 words, in the user's own words. MUST be empty if hasActionableTasks is false. Never invent detail not in the input; exclude anything retracted.")
+    var tasks: [String]
+
+    func toContract() -> RambleResult {
+        RambleResult(tasks: hasActionableTasks ? tasks : [])
+    }
+}

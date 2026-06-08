@@ -37,6 +37,14 @@ public enum Configs {
         // to only genuinely-committed candidates and merges duplicates — separating
         // the kept softly-hedged action from the dropped explicit deferral.
         "exp006": SplitConfig(topology: .overGenerateFilter, sampling: .greedy),
+        // exp007: build on the current best (exp002 singleShotCoverage). Same gate +
+        // exhaustive-sweep topology, but add an explicit PHRASING/STYLE contract to the
+        // prompt and the final-tasks schema guide. The dominant unsaturated gap is
+        // phrasing (every config scores 2/5: terse all-lowercase fragments that drop
+        // meaningful detail). The contract asks for capitalized, complete, conversational
+        // one-liners that keep purpose/recipient/subject/deadline while trimming vague
+        // filler timing — aiming to lift the rubric's phrasing without touching F1.
+        "exp007": SplitConfig(topology: .singleShotCoveragePhrased, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }
