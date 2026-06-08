@@ -41,6 +41,15 @@ State of the gap:
   prompt wording, the `@Generable` `@Guide` descriptions, or a light deterministic post-pass.
 - Old F1-only scores in program.md are NOT comparable to current ones (the metric changed).
 
+## Two parents & pivots (the loop tells you these each iteration)
+Each iteration the wrapper names TWO parents to build on: the CHAMPION (best dev config)
+and the PREVIOUS experiment. Combine them — take the best-known approach and fold in what
+the latest attempt learned. After several experiments with no new best, the wrapper
+triggers a PIVOT: it tells you to DROP the champion and try something FUNDAMENTALLY
+different, continuing only from the previous experiment (to escape a plateau). On a pivot,
+begin your program.md log line AND your `evaluate --note` with `PIVOT: `. The loop records
+the parents + pivot for the lineage view automatically — you do not.
+
 The harness JUDGES and LOGS automatically when you run the eval command. You do not
 implement judging or scoring.
 

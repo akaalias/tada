@@ -25,6 +25,7 @@ CODER_MODEL="${CODER_MODEL:-opus}"           # newest/most capable coder
 #     Raise it for training runs, which take far longer than inference experiments.
 PER_ITER_BUDGET="${PER_ITER_BUDGET:-}"
 PER_ITER_TIMEOUT="${PER_ITER_TIMEOUT:-600}"
+PATIENCE="${PATIENCE:-5}"                     # consecutive no-improvement experiments before a PIVOT
 
 # Immutable ruler: any agent changes here are reverted every iteration.
 PROTECTED=(
@@ -83,7 +84,17 @@ while [ "$(count)" -lt "$TARGET" ]; do
   echo "=================================================================="
   echo "[autoresearch] iteration $((N+1)) | experiments=$N/$TARGET | $(date)"
 
-  DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. Experiments completed so far: $N. End with a green build and exactly one new logged run for your new config."
+  # Two-parent lineage + patience: champion (best dev) + previous experiment; PIVOT
+  # after PATIENCE no-improvements (drops the champion, continues from previous only).
+  CHAMP=""; CHAMPQ="0"; PREV=""; PATIENCE_CNT="0"; PIVOT="0"
+  eval "$(python3 "$AR/loop_state.py" "$PATIENCE" 2>/dev/null)"
+  echo "[autoresearch] champion=$CHAMP ($CHAMPQ) | previous=$PREV | no-improve streak=$PATIENCE_CNT/$PATIENCE$([ "$PIVOT" = "1" ] && echo '  -> PIVOT')"
+
+  if [ "$PIVOT" = "1" ]; then
+    DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. Experiments completed so far: $N. *** PIVOT ***: the last $PATIENCE_CNT experiments did NOT beat the champion ($CHAMP, quality $CHAMPQ). Take a step back — DROP the champion approach entirely and try something FUNDAMENTALLY different, continuing ONLY from the previous experiment ($PREV). Begin your program.md log line and your evaluate --note with 'PIVOT: '. End with a green build and exactly one new logged run for your new config."
+  else
+    DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. Experiments completed so far: $N. Build your new config on TWO parents — the current champion ($CHAMP, quality $CHAMPQ) and the previous experiment ($PREV): combine the best-known approach with what the latest attempt learned. End with a green build and exactly one new logged run for your new config."
+  fi
 
   # Scoped allowlist (NOT a full permission bypass): read, edit/write files,
   # build, run the eval, inspect. No arbitrary shell, no network, no git — the
@@ -127,6 +138,7 @@ while [ "$(count)" -lt "$TARGET" ]; do
     python3 "$AR/gen_pipeline.py" "$NEWLABEL" 2>/dev/null || true
     OPF="$PKG/results/operators.json"; [ -f "$OPF" ] || echo '{}' > "$OPF"
     tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"
+    python3 "$AR/record_lineage.py" "$NEWLABEL" "$CHAMP" "$PREV" "$PIVOT" 2>/dev/null || true
     python3 "$AR/gen_costs.py" 2>/dev/null || true
     python3 "$AR/gen_types.py" 2>/dev/null || true
     python3 "$AR/build_lineage_auto.py" 2>/dev/null || true
