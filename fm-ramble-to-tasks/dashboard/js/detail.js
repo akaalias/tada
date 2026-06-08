@@ -81,8 +81,9 @@ export async function renderDetail(label, cell) {
       head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;
     }
     return `<div class="case">
-      <div class="case-head"><span class="case-task">${esc(s.input)}</span><span class="case-meta">${head}</span></div>
+      <div class="case-head"><span class="case-meta">${head}</span></div>
       <div class="cmp">
+        <div class="col col-input"><div class="col-head">Input</div><div class="col-model">user ramble</div><div class="case-task">${esc(s.input)}</div></div>
         <div class="col col-gold"><div class="col-head">Gold — Sonnet (Set A)</div><div class="col-model">${esc(GOLD_MODEL)}</div>${goldQs}</div>
         <div class="col col-fm"><div class="col-head">On-device — candidate (Set B)</div><div class="col-model">${esc(candModel)}</div>${fmQs}</div>
         <div class="col col-judge"><div class="col-head">Judge</div><div class="col-model">${esc(JUDGE_MODEL)}</div>${judgeBody}</div>
