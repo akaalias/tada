@@ -10,6 +10,7 @@ public struct SplitConfig: Sendable {
         case singleShotCoverage  // 1 call: reasoned gate + exhaustive candidate sweep -> 0..N tasks
         case extractAudit        // 2 calls: reasoned extract, then coverage-audit adds missing tasks
         case extractAuditGated   // extractAudit, but audit ONLY fires when base found >=2 tasks
+        case extractAuditSweep   // extractAuditGated, but audit enumerates-then-diffs (exp005)
         // Future experiments add: segmentExtract, overGenerateFilter,
         // brainstormSelect, extractCritique, adapterDirect, ...
     }

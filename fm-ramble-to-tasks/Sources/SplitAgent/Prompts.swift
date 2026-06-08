@@ -69,6 +69,31 @@ enum Prompts {
     - Each added task is a short actionable one-liner (around 4-9 words). No emojis.
     """
 
+    /// Sweep-audit instructions (second call of extractAuditSweep, exp005). Like
+    /// `audit`, but the model must first ENUMERATE every action in the input — soft
+    /// hedges included — then keep only the ones missing from the list. The forced
+    /// enumeration surfaces buried/hedged actions a single read-and-diff drops.
+    static let auditSweep = """
+    You are auditing a task list for COMPLETENESS. You are given a user's free-form brain-dump
+    and a list of tasks already extracted from it. Your job is to catch DISTINCT actionable tasks
+    the user stated that are MISSING from that list.
+
+    Do it in two steps:
+    1. allActions: re-read the WHOLE brain-dump slowly and list EVERY distinct action the user wants,
+       needs, should, or is going to do — in order of appearance. Be exhaustive. Soft, hedged actions
+       still count ('maybe...', 'I guess I should...', 'I ought to...', 'eventually...'). So do actions
+       buried mid-sentence or mentioned right after the user digressed onto something else.
+    2. missingTasks: keep ONLY the items from allActions whose meaning is not already represented in
+       the existing list.
+
+    HARD RULES:
+    - In allActions exclude pure venting/emotion, idle musing, vague wishes, and anything retracted
+      ('scratch that', 'never mind', 'actually no').
+    - In missingTasks NEVER repeat or paraphrase a task already in the list — read the list carefully.
+    - NEVER invent a task. If the list already covers every action, return an empty missingTasks list.
+    - Each added task is a short actionable one-liner (around 4-9 words). No emojis.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.

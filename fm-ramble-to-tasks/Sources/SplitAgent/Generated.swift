@@ -45,6 +45,21 @@ struct FMRambleAudit {
     var missingTasks: [String]
 }
 
+/// Sweep variant of the coverage-audit (exp005). Same job as FMRambleAudit, but
+/// instead of reading the input once and naming the gap, it first ENUMERATES every
+/// action in the input (including softly-hedged ones), THEN diffs that enumeration
+/// against the committed list. The forced sweep surfaces buried / hedged actions
+/// that a single read-and-diff drops (exp004's residual: a hedged task buried among
+/// digressions in a long many-task ramble). Still gated to base>=2.
+@Generable
+struct FMRambleAuditSweep {
+    @Guide(description: "Re-read the WHOLE input slowly, start to finish, and list EVERY distinct action the user says they want, need, should, or are going to DO — in order of appearance. Be exhaustive: include SOFTLY-HEDGED ones (phrased with 'maybe', 'I guess I should', 'I ought to', 'eventually') and any buried mid-sentence or mentioned right after a digression. Exclude ONLY pure venting, idle musing, vague wishes, and retracted items.")
+    var allActions: [String]
+
+    @Guide(description: "ONLY the items from allActions whose meaning is NOT already represented in the already-extracted list. Each a short one-liner (around 4-9 words) in the user's own terms. Do NOT repeat or paraphrase anything already in the list. Do NOT invent. Empty if the list already covers every action.")
+    var missingTasks: [String]
+}
+
 /// Coverage-first variant: keeps the zero-task gate, but adds an exhaustive
 /// over-generate step. Before the final list, the model must enumerate EVERY
 /// distinct thing the user wants to do across the WHOLE ramble — including

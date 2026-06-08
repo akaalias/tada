@@ -23,6 +23,12 @@ public enum Configs {
         // paraphrase dup; gating to base.count>=2 keeps the multi-task recall wins
         // (interleaved_deck, multi_errands -> 1.0) without that single-task cost.
         "exp004": SplitConfig(topology: .extractAuditGated, sampling: .greedy),
+        // exp005: extractAuditGated, but the gated audit ENUMERATES every action in
+        // the input (soft/hedged ones included) before diffing against the committed
+        // list. exp004's only residual was long_monday (0.909): a softly-hedged task
+        // buried among digressions that both base AND single-read audit dropped. The
+        // forced enumerate-then-diff sweep aims to surface it without precision cost.
+        "exp005": SplitConfig(topology: .extractAuditSweep, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

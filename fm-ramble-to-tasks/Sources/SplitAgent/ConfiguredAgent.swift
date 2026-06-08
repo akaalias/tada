@@ -16,7 +16,38 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
+        case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
         }
+    }
+
+    /// exp005: like extractAuditGated, but the audit ENUMERATES every action in the
+    /// input (hedged ones included) before diffing against the committed list. The
+    /// forced sweep targets exp004's only residual: a softly-hedged task buried among
+    /// digressions in a long many-task ramble that a single read-and-diff drops.
+    private func extractAuditSweep(_ input: String, minBaseTasks: Int) async throws -> RambleResult {
+        let base = try await singleShotReasoned(input)
+        guard base.tasks.count >= minBaseTasks, !base.tasks.isEmpty else { return base }
+
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.auditSweep }
+        let prompt = """
+        The user brain-dumped:
+
+        "\(input)"
+
+        Tasks already extracted from it:
+        \(listed)
+
+        First list EVERY action in the input (allActions), then return ONLY the ones MISSING from the list above (missingTasks). Return an empty missingTasks list if the list already covers everything.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleAuditSweep.self,
+            options: config.options()
+        )
+        return RambleResult(tasks: mergeDedup(base.tasks, r.content.missingTasks))
     }
 
     /// Two-call EXTRACT -> COVERAGE-AUDIT. Call 1 is the proven exp001 reasoned
