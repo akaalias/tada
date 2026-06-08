@@ -94,13 +94,13 @@ export function renderPipeD3(spec, el) {
     if (!tip) return;
     tip.classList.add('tip-prompt');
     tip.innerHTML = '<div class="pp-title">' + esc(d.full) + '</div><pre class="t-prompt">' + esc(d.prompt) + '</pre>';
-    tip.style.opacity = 1;
     const pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
     const rect = e.currentTarget.getBoundingClientRect();   // the node box (screen coords)
     let left = rect.right + 20;                              // always 20px right of the node
     if (left + w + pad > window.innerWidth) left = Math.max(pad, rect.left - 20 - w);
     const top = Math.max(pad, Math.min(e.clientY - h / 2, window.innerHeight - h - pad));
     tip.style.left = left + 'px'; tip.style.top = top + 'px';
+    tip.style.opacity = 1;   // position first, then fade in (no jump)
   };
 
   // arrowhead markers — unique ids per render so multiple panels don't collide
