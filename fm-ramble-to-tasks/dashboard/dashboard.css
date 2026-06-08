@@ -1,0 +1,203 @@
+/* ============================================================================
+   Live dashboard — page-specific styles on top of the shared tufte.css.
+   The dashboard is a wide working surface (chart + dense interactive table +
+   expandable per-experiment detail), so it overrides the 780px reading column
+   but keeps the Tufte vocabulary: cream paper, ink data, warm hairlines,
+   small-caps tags instead of coloured pills, rules instead of boxes.
+   ========================================================================== */
+
+/* ---- wide layout (overrides tufte's centred reading column) -------------- */
+body{overflow-x:auto;}
+/* a centered 90%-viewport column — wide enough for the full experiment table */
+.dash-head{max-width:90vw;margin:0 auto;padding:40px 0 6px;}
+.dash-head h1{font-size:34px;margin:0 0 8px;}
+.dash-head .sub{margin:0 0 14px;}
+.dash-wrap{max-width:90vw;margin:0 auto;padding:4px 0 64px;}
+@media(max-width:1100px){ .dash-head,.dash-wrap{max-width:none;padding-left:32px;padding-right:32px;} }
+
+/* ---- header legend + meta ------------------------------------------------ */
+.dash-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 26px;font-size:14px;color:var(--muted);}
+.dash-legend{display:flex;flex-wrap:wrap;gap:18px;align-items:center;}
+.dash-legend .k{display:inline-flex;align-items:center;gap:7px;}
+.dash-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.dash-legend .bar{width:16px;height:0;border-top:2px solid var(--ink);display:inline-block;}
+.dash-legend .x{color:var(--accent);font-weight:700;}
+#updated{color:var(--faint);font-style:italic;margin-left:auto;}
+
+/* ---- the chart sits under a thin top rule, not in a box ------------------ */
+.chart-card{border-top:1px solid var(--rule);padding:14px 0 4px;margin-top:18px;}
+canvas#chart{width:100%;height:480px;display:block;}
+
+/* ---- the progress table — Tufte data table, interactive ------------------ */
+.tbl-card{border-top:1.5px solid var(--ink);margin-top:26px;padding-top:0;}
+#tbl{width:100%;border-collapse:collapse;font-size:14.5px;}
+#tbl th,#tbl td{text-align:left;padding:9px 12px 9px 0;vertical-align:top;}
+/* # column: centered with side padding so the kept-row border doesn't clip the number.
+   Scoped to the main table's own rows so nested detail-panel tables are untouched. */
+#tbl>thead>tr>th:first-child,#tbl>tbody>tr.row-main>td:first-child{text-align:center;padding-left:10px;padding-right:14px;}
+#tbl th{font:600 12px/1.2 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;
+        border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+#tbl td{border-bottom:1px solid var(--rule-soft);}
+#tbl th[title]{cursor:help;border-bottom:1.5px solid var(--ink);}
+#tbl th[title]::after{content:"\00b0";color:var(--faint);font-feature-settings:normal;}
+.q{font-variant-numeric:lining-nums tabular-nums;font-weight:700;}
+/* reference analyses table — mirrors #tbl, read-only (no row expand) */
+#analyses-tbl{width:100%;border-collapse:collapse;font-size:14px;}
+#analyses-tbl th,#analyses-tbl td{text-align:left;padding:9px 12px 9px 0;vertical-align:top;border-bottom:1px solid var(--rule-soft);}
+#analyses-tbl th{font:600 12px/1.2 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1.5px solid var(--ink);white-space:nowrap;}
+#analyses-tbl .an-q{color:var(--muted);max-width:300px;}
+#analyses-tbl .an-r{max-width:420px;}
+.an-scripts{font-size:11px;color:var(--faint);margin-top:3px;}
+.an-verdict{color:var(--accent);white-space:nowrap;}
+
+/* small-caps tags replace the coloured pills (one restrained ink tint each) */
+.op-badge,.ty-badge,.status-badge{font:600 11.5px/1 "Palatino",Georgia,serif;
+        font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.05em;
+        padding:0;background:none;border-radius:0;white-space:nowrap;}
+.op-badge{cursor:help;}
+.op-human{color:var(--ink);}                 /* interactive (manual track)   */
+.op-agent{color:var(--muted);}               /* autonomous (headless run.sh) */
+.ty-badge{cursor:help;}
+.ty-infer{color:var(--muted);}
+.ty-sft{color:var(--ochre);}
+.ty-orpo{color:var(--accent);}
+.ty-grpo{color:#3f6e6e;}                      /* judge-reward RL (GRPO) — distinct from ORPO rust */
+.ty-gad{color:#5a4b8a;}                       /* adversarial distillation (GAD) — violet */
+.kept{color:var(--ink);font-weight:600;}
+.disc{color:var(--faint);}
+
+/* rows: hover warms slightly; a kept improvement is marked by an ink left-rule
+   (not a green fill), matching the snapshot table in the report/onboarding. */
+.row-main{cursor:pointer;}
+.row-main:hover{background:#f7f3e3;}
+.kept-row{background:transparent;box-shadow:inset 2px 0 0 var(--ink);}
+.kept-row:hover{background:#f7f3e3;}
+/* brief highlight when a row is reached via a deep link from the report tapestry */
+.row-flash td{animation:rowflash 1.8s ease-out;}
+@keyframes rowflash{0%,30%{background:#f0e2c4;}100%{background:transparent;}}
+.rowdot{display:none;}
+.move-cell{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
+.move-note{flex:1 1 auto;color:#4a473e;}
+.status-badge{flex:0 0 auto;}
+.sb-kept{color:var(--ink);}
+.sb-disc{color:var(--faint);}
+.sb-invalid{color:var(--accent);}
+.invalid-why{color:var(--accent);font-size:12px;font-style:italic;}
+.caret{color:var(--faint);display:inline-block;width:12px;transition:transform .15s;}
+.open .caret{transform:rotate(90deg);}
+
+/* ---- expanded detail ----------------------------------------------------- */
+.detail td{background:#fcfbf2;padding:0;border-bottom:1px solid var(--rule);}
+.detail-inner{padding:14px 18px 18px 38px;}
+.case{border-top:1px solid var(--rule);padding:13px 0;}
+.case:first-child{border-top:none;}
+.case-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
+.case-task{font-weight:700;}
+/* the verdict + rubric chips: pushed to the right edge of the row */
+.case-meta{margin-left:auto;}
+.case-meta .chip:last-child{margin-right:0;}
+.badge{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+       text-transform:uppercase;letter-spacing:.05em;padding:0;background:none;}
+.b-win{color:var(--ink);}
+.b-tie{color:var(--ochre);}
+.b-loss{color:var(--accent);}
+.rubric{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.qs{margin:6px 0 0;padding-left:20px;font-size:14px;}
+.qs li{margin:2px 0;}
+.note{margin-top:6px;font-size:13px;color:#4a473e;font-style:italic;}
+.cmp{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:22px;margin-top:8px;}
+.col-head{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+          text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+.col-model{font:11px/1 var(--mono);color:var(--faint);margin:-2px 0 6px;}
+.col-gold .col-head{color:var(--ink);}
+.col-fm .col-head{color:var(--ochre);}
+.col-judge .col-head{color:var(--accent);}
+.judge-note{font-size:14px;line-height:1.55;color:#33312b;}
+/* each judge sentence as its own left-ruled item, so the verdict scans cleanly */
+.judge-pts{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.judge-pts li{font-size:13.5px;line-height:1.5;color:#33312b;border-left:2px solid var(--rule);padding:3px 0 3px 11px;}
+/* judge "Qn" references ↔ the candidate questions they flag */
+.qref{color:var(--ochre);font-weight:600;cursor:default;}
+.qs li.q-flag{background:#f6ecdc;border-radius:3px;}
+.qs li.q-flag::marker{color:var(--ochre);font-weight:700;}
+.qs li.q-hi,.qref.q-hi{background:#ecd9b6;border-radius:3px;}
+@media(max-width:900px){.cmp{grid-template-columns:1fr;}}
+/* heading that separates the diagram/legend from the per-case eval results */
+.eval-head{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+           margin:20px 0 2px;padding-top:14px;border-top:1.5px solid var(--ink);
+           display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.eval-sub{font:italic 13px/1.4 "Palatino",Georgia,serif;text-transform:none;letter-spacing:0;color:var(--faint);}
+
+/* the "what was tried" note + chips: hairline rules, no filled tiles */
+.tried{background:transparent;border:0;border-left:2px solid var(--rule);border-radius:0;
+       padding:2px 0 2px 16px;margin-bottom:14px;font-size:13.5px;color:#33312b;}
+.tried b{color:var(--ink);}
+.chip{display:inline-block;border:0;border-bottom:1px solid var(--rule);border-radius:0;
+      padding:0 1px;margin-right:10px;font-size:12px;color:var(--muted);cursor:help;
+      font-variant-numeric:tabular-nums;}
+details.trywrap{margin:4px 0 12px;}
+details.trywrap > summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:13px;
+       font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.04em;}
+
+/* the hypothesis / method / result explainer: left-rule asides, not tiles */
+.pipe-head{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.pipe-sum{font-size:13.5px;font-weight:600;color:#33312b;margin:2px 0 10px;}
+.pipe-actions{flex:0 0 auto;display:flex;gap:8px;align-items:center;}
+.png-btn,.wu-btn{flex:0 0 auto;font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.05em;padding:5px 12px;
+         border:1px solid var(--rule);border-radius:0;background:transparent;color:var(--muted);
+         cursor:pointer;white-space:nowrap;}
+.png-btn:hover,.wu-btn:hover{background:#f7f3e3;border-color:var(--muted);color:var(--ink);}
+.pipe-d3{overflow-x:auto;padding-bottom:6px;}
+.pipe-d3 svg text{font-family:var(--serif);}
+.pipe-d3 .nodebox{font:11px/1.3 var(--serif);padding:7px 9px 6px;box-sizing:border-box;height:100%;overflow:hidden;}
+.pipe-d3 .nb-kind{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:2px;
+                  font-feature-settings:"smcp" 1;}
+.pipe-d3 .nb-sub{color:#33312b;overflow-wrap:anywhere;}
+.pipe-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,1fr);gap:24px;align-items:start;margin:2px 0 6px;}
+/* Wide diagrams: give the diagram the full row and float the explanation over its
+   right half (transparent, on top) so the two overlap and the diagram's nodes/lines
+   show through behind the text, rather than squeezing the diagram into a column. */
+.pipe-grid--wide{display:block;position:relative;}
+.pipe-grid--wide .explain{position:absolute;top:0;left:50%;right:0;z-index:2;background:transparent;}
+@media(max-width:900px){.pipe-grid{grid-template-columns:1fr;}}
+.pipe-diagram{min-width:0;}
+.explain{display:flex;flex-direction:column;gap:14px;padding-top:6px;}
+.explain-block{border:0;border-left:2px solid var(--rule);border-radius:0 3px 3px 0;padding:8px 14px 9px 16px;
+               background:#fff;box-shadow:0 1px 7px rgba(60,50,30,.08);}
+.explain-block.eb-hyp{border-left-color:var(--muted);}
+.explain-block.eb-tech{border-left-color:var(--ochre);}
+.explain-block.eb-res{border-left-color:var(--ink);}
+.explain-h{font:800 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;}
+.eb-hyp .explain-h{color:var(--muted);}
+.eb-tech .explain-h{color:var(--ochre);}
+.eb-res .explain-h{color:var(--ink);}
+.explain-block p{margin:0;font-size:14px;line-height:1.55;color:#33312b;}
+.legend-kinds{font-size:12px;color:var(--muted);margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;}
+.legend-kinds b{font-weight:700;}
+
+/* ---- chart hover tooltip (dark ink card, cream text) --------------------- */
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--paper);font-size:12px;
+     font-family:var(--serif);padding:6px 9px;border-radius:0;max-width:300px;opacity:0;
+     transition:opacity .08s;z-index:10;}
+#tip .t-note{color:#cbc8ba;display:block;margin-top:3px;}
+
+/* ---- column / rubric help disclosure ------------------------------------- */
+.help{margin-top:16px;font-size:13.5px;color:#4a473e;}
+.help > summary{cursor:pointer;color:var(--muted);font-weight:600;list-style:none;
+       font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.04em;font-size:12.5px;}
+.help > summary::-webkit-details-marker{display:none;}
+.help > summary::before{content:"▸  ";color:var(--faint);}
+.help[open] > summary::before{content:"▾  ";}
+.help-grid{margin:12px 0 2px;display:grid;grid-template-columns:max-content 1fr;gap:7px 18px;align-items:baseline;}
+.help-grid dt{font-weight:700;color:var(--ink);white-space:nowrap;}
+.help-grid dd{margin:0;}
+.help .gold{color:var(--ink);font-weight:700;}
+.help .fm{color:var(--ochre);font-weight:700;}
+.help code{background:transparent;border-bottom:1px solid var(--rule);padding:0 1px;font-size:12px;}
+.help .foot{margin-top:10px;color:var(--muted);font-style:italic;}
+.legend-kinds{margin-top:2px;}

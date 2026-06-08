@@ -130,6 +130,7 @@ case "evaluate":
         "note": stringFlag("--note") ?? "", "subset": subset, "n": cases.count,
         "quality": metric.quality, "precision": metric.precision, "recall": metric.recall,
         "f1": metric.f1, "zeroTaskAccuracy": metric.zeroTaskAccuracy, "specPass": metric.specPassRate,
+        "wins": metric.wins, "ties": metric.ties, "losses": metric.losses,
         "faithfulness": rm.faithfulness, "atomicity": rm.atomicity, "actionability": rm.actionability,
         "coverage": rm.coverage, "nonRedundancy": rm.nonRedundancy,
         "kept": metric.quality > bestBefore,

@@ -1,100 +1,110 @@
 [
   {
-    "spec" : {
-      "passed" : true,
-      "violations" : [
-
-      ]
+    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : true,
+      "matched" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "goldEmpty" : true
     },
     "id" : "bait_journal",
-    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
-    "candidate" : {
-      "tasks" : [
-
-      ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
-      "f1" : 1,
-      "goldEmpty" : true,
-      "goldCount" : 0,
-      "predCount" : 0,
-      "matched" : 0
-    }
-  },
-  {
     "spec" : {
       "passed" : true,
       "violations" : [
 
       ]
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    }
+  },
+  {
+    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : true,
+      "matched" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "goldEmpty" : true
     },
     "id" : "bait_ocean",
-    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
-    "candidate" : {
-      "tasks" : [
-
-      ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
-      "f1" : 1,
-      "goldEmpty" : true,
-      "goldCount" : 0,
-      "predCount" : 0,
-      "matched" : 0
-    }
-  },
-  {
     "spec" : {
       "passed" : true,
       "violations" : [
 
       ]
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    }
+  },
+  {
+    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : true,
+      "matched" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "goldEmpty" : true
     },
     "id" : "bait_someday",
-    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
-    "candidate" : {
-      "tasks" : [
-
-      ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
-      "f1" : 1,
-      "goldEmpty" : true,
-      "goldCount" : 0,
-      "predCount" : 0,
-      "matched" : 0
-    }
-  },
-  {
     "spec" : {
       "passed" : true,
       "violations" : [
 
       ]
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    }
+  },
+  {
+    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : false,
+      "matched" : 5,
+      "precision" : 1,
+      "goldCount" : 5,
+      "recall" : 1,
+      "predCount" : 5,
+      "goldEmpty" : false
     },
     "id" : "long_portugal",
     "verdict" : {
-      "pairwise" : "goldBetter",
+      "notes" : "SET B captures all five intentions but strips away important specifics: \"find accommodation\" loses the Airbnb/Lisbon detail, \"book flights\" drops the Portugal destination, and \"make travel list\" is vague compared to \"make a list of towns to visit in Portugal.\" The reduced specificity makes the tasks less actionable and harder to act on without re-reading the original input.",
       "matched" : 5,
       "rubric" : {
         "atomicity" : 5,
         "actionability" : 4,
-        "coverage" : 4,
         "nonRedundancy" : 5,
-        "faithfulness" : 5
+        "faithfulness" : 5,
+        "coverage" : 4
       },
-      "notes" : "SET B captures all five intentions but strips away important specificity — \"find accommodation\" loses the Airbnb/Lisbon detail, \"book flights\" drops the Portugal destination, and \"make travel list\" obscures that it's specifically a list of towns to visit. This vagueness reduces actionability and coverage quality compared to SET A's more faithful, context-rich phrasing."
+      "pairwise" : "goldBetter"
     },
-    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
     "candidate" : {
       "tasks" : [
         "book flights",
@@ -103,80 +113,70 @@
         "ask neighbor to water plants",
         "set out of office"
       ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
-      "f1" : 1,
-      "goldEmpty" : false,
-      "goldCount" : 5,
-      "predCount" : 5,
-      "matched" : 5
     }
   },
   {
+    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : false,
+      "matched" : 3,
+      "precision" : 1,
+      "goldCount" : 3,
+      "recall" : 1,
+      "predCount" : 3,
+      "goldEmpty" : false
+    },
+    "id" : "real_franziska",
+    "verdict" : {
+      "notes" : "SET B omits the \"2024\" qualifier from the tax document task, which is a minor loss of specificity present in both the input and SET A. Otherwise the two sets are functionally identical in intent and quality.",
+      "matched" : 3,
+      "rubric" : {
+        "atomicity" : 5,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "coverage" : 5
+      },
+      "pairwise" : "tie"
+    },
     "spec" : {
       "passed" : true,
       "violations" : [
 
       ]
     },
-    "id" : "real_franziska",
-    "verdict" : {
-      "pairwise" : "tie",
-      "matched" : 3,
-      "rubric" : {
-        "atomicity" : 5,
-        "actionability" : 5,
-        "coverage" : 5,
-        "nonRedundancy" : 5,
-        "faithfulness" : 5
-      },
-      "notes" : "SET B omits the \"2024\" qualifier from the tax document task, which is a minor loss of specificity present in both the input and SET A, but otherwise captures all three intentions faithfully and atomically. The difference is negligible."
-    },
-    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
     "candidate" : {
       "tasks" : [
         "Review tax document with Franziska",
         "Talk to Franziska about August",
         "Bring out trash"
       ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
-      "f1" : 1,
-      "goldEmpty" : false,
-      "goldCount" : 3,
-      "predCount" : 3,
-      "matched" : 3
     }
   },
   {
+    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
+    "match" : {
+      "f1" : 1,
+      "zeroTaskCorrect" : true,
+      "matched" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "goldEmpty" : true
+    },
+    "id" : "zero_frustrated",
     "spec" : {
       "passed" : true,
       "violations" : [
 
       ]
     },
-    "id" : "zero_frustrated",
-    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
     "candidate" : {
       "tasks" : [
 
       ]
-    },
-    "match" : {
-      "recall" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
-      "f1" : 1,
-      "goldEmpty" : true,
-      "goldCount" : 0,
-      "predCount" : 0,
-      "matched" : 0
     }
   }
 ]

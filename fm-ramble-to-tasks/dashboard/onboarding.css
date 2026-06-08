@@ -1,0 +1,97 @@
+/* ============================================================================
+   On-Device Discovery Planner — onboarding page.
+   The shared Tufte design system (tokens, base type, .pill, .callout, .card,
+   findings .cols, the snapshot data table, footer/.kpi) lives in tufte.css.
+   This file holds only the components unique to the onboarding narrative —
+   and, because report.html links this file, the few report also reuses
+   (.prog / .step / .arrow).
+   ========================================================================== */
+@import url("tufte.css");
+
+/* ---- ruler vs. agent: two columns split by a rule ------------------------ */
+.versus{display:flex;align-items:stretch;gap:0;margin:22px 0;border-top:1px solid var(--rule);}
+@media(max-width:680px){.versus{flex-direction:column;}}
+.vs-card{flex:1 1 0;min-width:0;padding:16px 26px 4px;}
+.vs-card:first-child{padding-left:0;}
+.vs-card:last-child{padding-right:0;}
+.vs-head{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.07em;color:var(--ink);margin-bottom:8px;}
+.vs-card p{margin:0;font-size:17px;line-height:1.5;color:#33312b;}
+.vs-sep{align-self:center;flex:0 0 auto;padding:0 18px;font-style:italic;color:var(--faint);}
+@media(min-width:681px){.vs-card:last-child{border-left:1px solid var(--rule);padding-left:26px;}.vs-sep{display:none;}}
+
+/* ---- input -> planner demo (Goal) ---------------------------------------- */
+.flowdemo{display:flex;align-items:stretch;gap:22px;margin:24px 0 8px;flex-wrap:wrap;}
+.fd-node{border:0;border-top:1px solid var(--rule);padding:12px 0 0;background:transparent;}
+.fd-tag{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.fd-input{flex:0 0 auto;align-self:flex-start;max-width:230px;}
+.fd-big{font-size:19px;font-style:italic;margin-top:8px;}
+.fd-arrow{flex:0 0 auto;align-self:center;color:var(--faint);font-size:26px;}
+.fd-planner{flex:1 1 320px;}
+.fd-planner ol{margin:10px 0 0;padding-left:22px;font-size:17px;line-height:1.5;color:#33312b;}
+@media(max-width:600px){.flowdemo{flex-direction:column;}.fd-arrow{transform:rotate(90deg);}.fd-input{max-width:none;}}
+.ex-caption{font-size:15px;color:var(--muted);font-style:italic;margin:12px 0 20px;line-height:1.55;}
+
+/* ---- worked four-column example: a clean table, rules not borders -------- */
+.ex-tag{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+        text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-right:10px;}
+.ex-intro{font-size:18px;}
+.ex-grid{display:grid;grid-template-columns:.7fr 1fr 1fr 1fr;border:0;border-top:1.5px solid var(--ink);
+         border-bottom:1.5px solid var(--ink);background:transparent;margin:14px 0;}
+@media(max-width:760px){.ex-grid{grid-template-columns:1fr;}}
+.ex-col{padding:14px 18px;border-right:1px solid var(--rule);}
+.ex-col:first-child{padding-left:0;}
+.ex-col:last-child{border-right:none;padding-right:0;}
+@media(max-width:760px){.ex-col{border-right:none;border-bottom:1px solid var(--rule);}}
+.ex-head{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+         text-transform:uppercase;letter-spacing:.07em;color:var(--ink);}
+.ex-model{font:12px/1 ui-monospace,Menlo,monospace;color:var(--faint);margin:4px 0 10px;}
+.ex-input{font-size:17px;font-style:italic;margin:0;}
+.ex-list{margin:0;padding-left:18px;font-size:14px;line-height:1.45;color:#33312b;}
+.ex-list li{margin:0 0 6px;}
+.ex-list li.bad{color:var(--accent);}
+.verdict-badge{display:inline-block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+               text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
+.ex-note{font-size:14px;line-height:1.5;color:#33312b;margin:10px 0 0;}
+.ex-rubric{display:flex;flex-wrap:wrap;gap:4px 14px;margin:12px 0 2px;}
+.rchip{font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink);}
+.rchip.lo{color:var(--accent);}              /* the dimensions stuck low */
+.rscale{font-size:13px;color:var(--faint);font-style:italic;margin:4px 0 0;}
+
+/* ---- the levers: rules + small-caps, no coloured tiles ------------------- */
+.bento-group{margin:24px 0 6px;}
+.bento-label{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+             text-transform:uppercase;letter-spacing:.06em;color:var(--ink);margin:0 0 12px;
+             padding-bottom:8px;border-bottom:1px solid var(--ink);}
+.bento-label .l-sub{font-weight:400;font-feature-settings:normal;text-transform:none;letter-spacing:0;
+                    font-size:16px;font-style:italic;color:var(--muted);}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px 26px;}
+@media(max-width:760px){.bento{grid-template-columns:1fr;}}
+.tile{border:0;border-top:1px solid var(--rule);background:transparent;padding:11px 0 0;}
+@media(max-width:760px){.tile{grid-column:auto !important;}}
+.tile h4{margin:0 0 4px;font-size:16px;font-weight:600;color:var(--ink);}
+.tile p{margin:0;font-size:15px;line-height:1.5;color:#33312b;}
+.t-weight{background:transparent;}
+.s2{grid-column:span 2;} .s3{grid-column:span 3;} .s4{grid-column:span 4;} .s6{grid-column:span 6;}
+/* the two recipes nested in the LoRA card */
+.subtiles{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:14px;border-top:1px solid var(--rule);}
+@media(max-width:760px){.subtiles{grid-template-columns:1fr;}}
+.subtile{border:0;background:transparent;padding:12px 22px 2px;}
+.subtile:first-child{padding-left:0;}
+.subtile:last-child{padding-right:0;}
+@media(min-width:761px){.subtile:last-child{border-left:1px solid var(--rule);}}
+.subtile h4{margin:0 0 4px;font-size:15px;font-weight:600;color:var(--ink);}
+.subtile p{margin:0;font-size:14px;line-height:1.5;color:#33312b;}
+
+/* ---- the climb: a numeric progression, no boxes (also used by report.html) */
+.prog{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin:14px 0 18px;border-top:1px solid var(--rule);}
+.step{flex:1 1 120px;padding:14px 20px 6px;}
+.step:first-child{padding-left:0;}
+.step .tag{font:600 11px/1.2 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+.step .q{font-variant-numeric:lining-nums tabular-nums;font-weight:400;font-size:30px;line-height:1;}
+.step .lbl{font-size:14px;color:var(--muted);margin-top:4px;}
+.step.best .tag{color:var(--accent);}
+.step.best .q{color:var(--accent);}
+.arrow{align-self:center;color:var(--faint);padding:0 4px;}

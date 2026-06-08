@@ -2,156 +2,90 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>fm-ramble-to-tasks — autoresearch</title>
-<style>
-  :root { --fg:#1a1a1a; --muted:#777; --line:#e3e3e0; --bg:#faf9f7; --accent:#2b6cb0; --good:#2f855a; --bad:#c05621; }
-  * { box-sizing: border-box; }
-  body { font: 15px/1.5 -apple-system, system-ui, sans-serif; color: var(--fg); background: var(--bg); margin: 0; padding: 28px; }
-  h1 { font-size: 19px; margin: 0 0 2px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  .cards { display: flex; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; min-width: 130px; }
-  .card .k { color: var(--muted); font-size: 12px; }
-  .card .v { font-size: 22px; font-weight: 600; }
-  .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
-  svg { width: 100%; height: 240px; display: block; }
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th, td { text-align: right; padding: 7px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th:first-child, td:first-child, th.l, td.l { text-align: left; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; }
-  tr.run { cursor: pointer; }
-  tr.run:hover { background: #f3f2ef; }
-  .badge { font-size: 11px; padding: 1px 7px; border-radius: 10px; }
-  .kept { background: #e6f4ea; color: var(--good); }
-  .disc { background: #f1f1ee; color: var(--muted); }
-  .note { color: var(--muted); font-size: 12.5px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
-  .detail { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-  .case { border-bottom: 1px solid var(--line); padding: 10px 0; }
-  .case:last-child { border-bottom: none; }
-  .case .in { color: var(--fg); }
-  .case .meta { color: var(--muted); font-size: 12.5px; margin: 3px 0; }
-  .cols { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 4px; }
-  .cols ul { margin: 2px 0; padding-left: 18px; font-size: 13px; }
-  .cols .h { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  .f1 { font-variant-numeric: tabular-nums; font-weight: 600; }
-  .empty { color: var(--muted); font-style: italic; }
-  a { color: var(--accent); text-decoration: none; }
-</style>
+<meta name="viewport" content="width=1280">
+<title>Ramble → Tasks — Autoresearch Progress</title>
+<meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta property="og:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta name="twitter:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Experiment lineage — a field of node-and-arrow chains tracing 77 experiments.">
+<meta name="twitter:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<link rel="stylesheet" href="tufte.css">
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="glossary.css">
+<script src="d3.v7.min.js"></script>
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/glossary.js"></script>
 </head>
-<body>
-  <h1>fm-ramble-to-tasks</h1>
-  <div class="sub">on-device FM: split a ramble into 0..N tasks. Headline = set-match F1 on the <b>dev</b> gate (gray dots = held-out <b>test</b>). Sonnet = 1.0.</div>
+<body data-glossary-root=".help">
+<header class="hero dash-head">
+  <div class="eyebrow">Alexis Rondeau · live research log</div>
+  <h1>Autoresearch progress</h1>
+  <p class="sub" id="title">Loading the experiment record&hellip;</p>
+  <div class="nav">
+    <a href="onboarding.html">Project overview</a>
+    <a href="report.html">Final report</a>
+    <a href="lineage.html">Experiment Lineage</a>
+  </div>
+  <div class="dash-meta">
+    <div class="dash-legend">
+      <span class="k"><span class="dot" style="background:var(--disc)"></span>Discarded</span>
+      <span class="k"><span class="dot" style="background:var(--ink)"></span>Kept improvement</span>
+      <span class="k"><span class="bar"></span>Running best</span>
+      <span class="k"><span class="x">&times;</span>Invalid</span>
+    </div>
+    <span id="updated"></span>
+  </div>
+</header>
+<div class="dash-wrap">
+  <div class="chart-card"><canvas id="chart"></canvas></div>
+  <div class="tbl-card">
+    <table id="tbl">
+      <thead><tr>
+        <th>#</th><th>Label</th>
+        <th title="Who ran the experiment. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one experiment per iteration.">Operator</th>
+        <th title="Which lever the experiment uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>
+        <th>Set</th><th>Quality</th>
+        <th title="Share of cases that pass the hard technical-spec gate: non-empty atomic tasks, no emojis, at most 12. Quality is forced to 0 for any case that fails.">Spec</th>
+        <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
+        <th title="Cost of the code-writing agent for this experiment (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>
+        <th>Move</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <details class="help">
+      <summary>What do the columns &amp; rubric mean?</summary>
+      <dl class="help-grid">
+        <dt>Type</dt><dd>The lever group. <b>Inference</b> = inference-time only (prompt / decoding / RAG / topology, no weight change). <b>SFT</b> = runs on a LoRA adapter trained by imitation on Sonnet gold. <b>ORPO</b> = runs on an adapter trained on chosen/rejected preference pairs.</dd>
+        <dt>Quality</dt><dd>0–1, higher is better — set-match <code>F1</code> against the gold task set; zero-task cases score 1 (correct empty) or 0. The target is 1.00 = matches Sonnet.</dd>
+        <dt>Spec</dt><dd>% of cases passing the hard technical gate: non-empty atomic tasks, no emojis, at most 12. A failed case scores 0.</dd>
+        <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device task set was judged <i>better</i> than Sonnet's.</dd>
+        <dt>The two sets</dt><dd><span class="gold">Set A = Gold (Sonnet)</span> &nbsp;vs&nbsp; <span class="fm">Set B = On-device</span>. The judge picks which is better and scores Set B 1–5 on five dimensions:</dd>
+        <dt>faithfulness</dt><dd>every task traces to the input; nothing invented</dd>
+        <dt>atomicity</dt><dd>each task is exactly one action (no “and/or”)</dd>
+        <dt>actionability</dt><dd>a real to-do, not a vague wish or musing</dd>
+        <dt>coverage</dt><dd>captures every distinct intention in the input</dd>
+        <dt>nonRedundancy</dt><dd>no two tasks are the same intention</dd>
+      </dl>
+      <div class="foot">Click any row to see what the experiment tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
+    </details>
+  </div>
 
-  <div class="cards" id="cards"></div>
-  <div class="panel"><svg id="chart" viewBox="0 0 800 240" preserveAspectRatio="none"></svg></div>
-  <div class="panel" style="padding:0;overflow:auto"><table id="runs"></table></div>
-  <div class="detail" id="detail"><span class="empty">Click a run to see its per-case results.</span></div>
-
-<script type="module">
-const bust = () => '?t=' + Date.now();
-const pct = x => (x == null ? '—' : Math.round(x * 100) + '%');
-const f3 = x => (x == null ? '—' : x.toFixed(3));
-
-async function fetchRuns() {
-  try {
-    const t = await (await fetch('../results/runs.jsonl' + bust())).text();
-    return t.trim().split('\n').filter(Boolean).map(s => { try { return JSON.parse(s); } catch { return null; } }).filter(Boolean);
-  } catch { return []; }
-}
-async function fetchResults(label) { try { return await (await fetch(`../results/${label}.json` + bust())).json(); } catch { return null; } }
-async function fetchGold(id) { try { return (await (await fetch(`../gold/${id}.json` + bust())).json()).gold; } catch { return null; } }
-
-function chart(dev, testByBase) {
-  const W = 800, H = 240, pad = 34;
-  const n = dev.length;
-  const x = i => n <= 1 ? pad : pad + (W - 2 * pad) * i / (n - 1);
-  const y = q => H - pad - (H - 2 * pad) * q;
-  let s = '';
-  // gridlines + target
-  for (const q of [0, 0.25, 0.5, 0.75, 1]) {
-    s += `<line x1="${pad}" y1="${y(q)}" x2="${W - pad}" y2="${y(q)}" stroke="${q===1?'#bbb':'#eee'}" stroke-width="1" ${q===1?'stroke-dasharray="4 3"':''}/>`;
-    s += `<text x="6" y="${y(q)+4}" font-size="10" fill="#999">${q.toFixed(2)}</text>`;
-  }
-  if (n) {
-    const pts = dev.map((r, i) => `${x(i)},${y(r.quality)}`).join(' ');
-    s += `<polyline points="${pts}" fill="none" stroke="#2b6cb0" stroke-width="2"/>`;
-    dev.forEach((r, i) => {
-      s += `<circle cx="${x(i)}" cy="${y(r.quality)}" r="3.5" fill="${r.kept ? '#2f855a' : '#9aa'}"/>`;
-      const t = testByBase[r.label];
-      if (t != null) s += `<circle cx="${x(i)}" cy="${y(t)}" r="3.5" fill="none" stroke="#777" stroke-width="1.5"/>`;
-    });
-  }
-  document.getElementById('chart').innerHTML = s;
-}
-
-function rubric(r) { return [r.faithfulness, r.atomicity, r.actionability, r.coverage, r.nonRedundancy].map(v => v ?? '–').join('·'); }
-
-async function render() {
-  const runs = await fetchRuns();
-  const dev = runs.filter(r => r.subset !== 'test');
-  const test = runs.filter(r => r.subset === 'test');
-  const testByBase = {};
-  for (const t of test) testByBase[t.label.replace(/_test$/, '')] = t.quality;
-
-  const best = dev.reduce((a, r) => r.quality > a.quality ? r : a, { quality: -1, label: '—' });
-  const bestTest = best.label in testByBase ? testByBase[best.label] : null;
-  document.getElementById('cards').innerHTML = `
-    <div class="card"><div class="k">experiments (dev)</div><div class="v">${dev.length}</div></div>
-    <div class="card"><div class="k">best dev F1</div><div class="v">${f3(best.quality < 0 ? null : best.quality)}</div></div>
-    <div class="card"><div class="k">best on held-out test</div><div class="v">${f3(bestTest)}</div></div>
-    <div class="card"><div class="k">best config</div><div class="v" style="font-size:16px">${best.label}</div></div>`;
-
-  chart(dev, testByBase);
-
-  const rows = dev.slice().reverse().map(r => `
-    <tr class="run" data-label="${r.label}">
-      <td class="l"><b>${r.label}</b></td>
-      <td class="l">${r.agent ?? ''}</td>
-      <td class="f1">${f3(r.quality)}</td>
-      <td>${f3(r.precision)}</td>
-      <td>${f3(r.recall)}</td>
-      <td>${pct(r.zeroTaskAccuracy)}</td>
-      <td>${rubric(r)}</td>
-      <td>${f3(testByBase[r.label])}</td>
-      <td><span class="badge ${r.kept ? 'kept' : 'disc'}">${r.kept ? 'best' : 'kept'}</span></td>
-      <td class="l note" title="${(r.note || '').replace(/"/g, '&quot;')}">${r.note || ''}</td>
-    </tr>`).join('');
-  document.getElementById('runs').innerHTML = `
-    <thead><tr>
-      <th class="l">exp</th><th class="l">agent</th><th>F1 (dev)</th><th>prec</th><th>rec</th>
-      <th>zero</th><th>rubric f·a·a·c·n</th><th>test</th><th></th><th class="l">note</th>
-    </tr></thead><tbody>${rows || '<tr><td class="l" colspan="10"><span class="empty">No runs yet — start a loop.</span></td></tr>'}</tbody>`;
-
-  document.querySelectorAll('tr.run').forEach(tr => tr.onclick = () => showDetail(tr.dataset.label));
-}
-
-async function showDetail(label) {
-  const d = document.getElementById('detail');
-  d.innerHTML = `<span class="empty">Loading ${label}…</span>`;
-  const cases = await fetchResults(label);
-  if (!cases) { d.innerHTML = `<span class="empty">No per-case file for ${label}.</span>`; return; }
-  const parts = [];
-  for (const c of cases) {
-    const gold = await fetchGold(c.id);
-    const cand = c.candidate?.tasks ?? [];
-    const f1 = c.match ? (c.match.goldEmpty ? (c.match.zeroTaskCorrect ? 1 : 0) : c.match.f1) : null;
-    const list = a => a && a.length ? `<ul>${a.map(t => `<li>${t}</li>`).join('')}</ul>` : '<div class="empty">(empty)</div>';
-    parts.push(`<div class="case">
-      <div class="in"><b>${c.id}</b> — <span class="f1">F1 ${f3(f1)}</span></div>
-      <div class="meta">${c.input}</div>
-      <div class="cols">
-        <div><div class="h">candidate (${cand.length})</div>${list(cand)}</div>
-        <div><div class="h">gold (${gold ? gold.length : '?'})</div>${list(gold)}</div>
-      </div>
-      ${c.verdict?.notes ? `<div class="meta">judge: ${c.verdict.notes}</div>` : ''}
-    </div>`);
-  }
-  d.innerHTML = `<h1 style="font-size:15px">${label} — per case</h1>${parts.join('')}`;
-}
-
-render();
-setInterval(render, 4000);   // live refresh while a loop runs
-</script>
+  <div class="tbl-card" id="analyses-card" style="margin-top:26px">
+    <h2 style="font:600 18px/1.2 'Palatino',Georgia,serif;margin:0 0 4px">Reference analyses</h2>
+    <p class="sub" style="margin:0 0 12px">Controlled probes and diagnostics — not scored on the frozen ruler, so they never enter the run log above, but they are part of the experiment record. Each closes or reframes a question.</p>
+    <table id="analyses-tbl">
+      <thead><tr><th>#</th><th>Analysis</th><th>Question</th><th>Result</th><th>Verdict</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<div id="tip"></div>
 </body>
 </html>

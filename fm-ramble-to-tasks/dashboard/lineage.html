@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Experiment lineage — automatic vs. mined</title>
+<meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta property="og:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta name="twitter:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Experiment lineage — a field of node-and-arrow chains tracing 77 experiments.">
+<meta name="twitter:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<link rel="stylesheet" href="tufte.css">
+<style>
+html,body{overflow-x:hidden;}   /* the full-bleed timeline is 100vw; stop it adding a page-wide scrollbar */
+.lin-wrap{max-width:1100px;margin:0 auto;padding:8px 24px 80px;}
+.sub{font:400 18px/1.4 var(--serif);color:var(--muted);margin:0 0 18px;}
+/* pivotal-path table — the runs that moved the needle toward the best result */
+.pivotal{margin:38px 0 0;}
+.pivotal h2{font-weight:400;font-size:24px;line-height:1.2;margin:0 0 4px;}
+.pivotal .psub{font:400 16px/1.45 var(--serif);color:var(--muted);margin:0 0 14px;max-width:780px;}
+.piv-tbl{width:100%;border-collapse:collapse;font-size:15px;
+         border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
+.piv-tbl th{text-align:left;font:600 11.5px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
+            letter-spacing:.05em;color:var(--muted);padding:9px 16px 9px 0;border-bottom:1px solid var(--rule);}
+.piv-tbl td{padding:10px 16px 10px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top;}
+.piv-tbl tr:last-child td{border-bottom:none;}
+.piv-tbl tbody tr{cursor:pointer;transition:background .1s;}
+.piv-tbl tbody tr:hover{background:#f2eedd;}
+.piv-tbl .num{font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;}
+.piv-tbl .lbl{font-weight:600;color:var(--ink);white-space:nowrap;}
+.piv-tbl .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle;}
+.piv-tbl tr.best td{background:#f6ebe3;}
+.piv-tbl tr.best:hover td{background:#f1e2d6;}
+.lin-stats{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:14px;color:var(--muted);
+           border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:12px 0;margin:14px 0 6px;}
+.lin-stats b{color:var(--ink);font-variant-numeric:tabular-nums;}
+.lin-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12.5px;color:var(--muted);margin:10px 0 6px;}
+.lin-legend span{display:inline-flex;align-items:center;gap:6px;}
+.lin-legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.lin-legend i.line{width:20px;height:0;border-radius:0;border-top:2px solid var(--muted);}
+.diffs{font-size:14px;line-height:1.6;color:#33312b;margin:14px 0 0;}
+.diffs h3{font:600 13px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
+          letter-spacing:.05em;color:var(--muted);margin:18px 0 6px;}
+.diffs li{margin:4px 0;}
+.diffs code{font:12.5px var(--mono);color:var(--ink);background:#f2eedd;padding:0 4px;border-radius:3px;}
+.col-head-l,.col-head-r{font:600 12px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
+          letter-spacing:.05em;color:var(--muted);}
+/* full-bleed: break the timeline out of the reading column to the full viewport */
+#diagram{overflow-x:auto;padding:0 24px 8px;box-sizing:border-box;width:100vw;margin-left:calc(50% - 50vw);
+         scrollbar-width:thin;scrollbar-color:var(--rule) transparent;}
+#diagram::-webkit-scrollbar{height:3px;-webkit-appearance:none;}
+#diagram::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px;}
+#diagram::-webkit-scrollbar-track{background:transparent;}
+#diagram svg text{font-family:var(--serif);}
+#tip{position:fixed;pointer-events:none;background:var(--paper);color:var(--ink);
+     font:13px/1.45 var(--serif);padding:9px 13px;border:1px solid var(--rule);border-radius:5px;
+     box-shadow:0 4px 18px rgba(60,50,30,.15);max-width:640px;opacity:0;transition:opacity .1s;z-index:10;}
+#tip .pop-title{font-weight:700;font-size:13.5px;line-height:1.4;margin-bottom:8px;}
+#tip .pop-grid{display:flex;gap:18px;align-items:flex-start;}
+#tip .pop-diagram{flex:0 0 auto;}
+#tip .pop-diagram svg{display:block;}
+#tip .pop-body{flex:1 1 auto;min-width:240px;max-width:400px;}
+#tip .pop-sec{margin-top:9px;}
+#tip .pop-sec:first-child{margin-top:0;}
+#tip .pop-h{font:800 10.5px/1 var(--serif);font-feature-settings:"smcp" 1;text-transform:uppercase;
+            letter-spacing:.05em;margin-bottom:3px;}
+#tip .pop-h.hyp{color:var(--muted);} #tip .pop-h.tech{color:var(--ochre);} #tip .pop-h.res{color:var(--ink);}
+#tip .pop-sec p{margin:0;font-size:12.5px;line-height:1.5;color:#33312b;}
+#tip .tt-title{font-weight:700;}
+#tip .tt-title .ar{color:var(--faint);font-weight:400;margin:0 2px;}
+#tip .tt-title .star{color:var(--ochre);}
+#tip .tt-meta{color:var(--muted);font-size:12px;margin-top:2px;}
+#tip .tt-ev{color:var(--ochre);font-style:italic;font-size:12px;margin-top:5px;line-height:1.4;
+            border-top:1px solid var(--rule-soft);padding-top:5px;}
+.warn{color:var(--accent);}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · experiment lineage</div>
+  <h1>Experiment lineage</h1>
+  <p class="hero-sub">How 96 experiments descend from one another — the mined parent&rarr;child record over the full run.</p>
+  <div class="nav">
+    <a href="onboarding.html">Project overview</a>
+    <a href="index.html">Live dashboard</a>
+    <a href="report.html">Final report</a>
+  </div>
+</header>
+<div class="lin-wrap">
+  <p class="sub">The 96 experiments left→right in run order (scroll sideways). Each arc links a run to a parent it built on — mined from <code>program.md</code> and the pipeline specs. <b>Hover a run</b> to trace its ancestry — every parent it built on, back to the root.</p>
+  <div class="lin-legend" id="legend"></div>
+  <div id="diagram"></div>
+  <div class="pivotal" id="pivotal"></div>
+  <div class="diffs" id="notes"></div>
+</div>
+<div id="tip"></div>
+<script src="d3.v7.min.js"></script>
+<script type="module" src="js/lineage.js"></script>
+</body>
+</html>

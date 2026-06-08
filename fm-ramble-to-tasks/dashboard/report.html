@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The wall that wasn't coverage — A post-training study on small-model specialization</title>
+<meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta property="og:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
+<meta name="twitter:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Experiment lineage — a field of node-and-arrow chains tracing 77 experiments.">
+<meta name="twitter:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
+<link rel="stylesheet" href="onboarding.css">
+<link rel="stylesheet" href="glossary.css">
+<style>
+/* report-only table styling — kept here so onboarding.css stays untouched */
+.rpt-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px;
+         border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
+.rpt-tbl th{text-align:left;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+            text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+            padding:9px 14px 9px 0;border-bottom:1px solid var(--rule);}
+.rpt-tbl td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top;}
+.rpt-tbl tr:last-child td{border-bottom:none;}
+.rpt-tbl .num{font-variant-numeric:lining-nums tabular-nums;}
+.rpt-tbl .hi{font-weight:700;}
+.rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
+.verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
+.verdict h3{margin:0 0 6px;}
+/* let the wide lever table break out to 2/3 viewport so columns don't scrunch */
+@media(min-width:1120px){ .rpt-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+.rpt-wide th,.rpt-wide td:not(:first-child){white-space:nowrap;}
+/* §3 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
+.tap-wide{margin-top:18px;}
+@media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+.tapestry{columns:104px;column-gap:20px;}
+.tap-cell{break-inside:avoid;margin:0 0 20px;}
+.tap-cell svg{margin:0 auto;}
+/* tiles link to their dashboard row */
+a.tap-cell{display:block;padding:5px 3px;margin:0 -3px 14px;border-radius:6px;
+           text-decoration:none;cursor:pointer;transition:background .12s ease;}
+a.tap-cell:hover{background:#ece4d4;}
+.tap-legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted);margin:10px 0 0;}
+.tap-legend span{display:inline-flex;align-items:center;gap:7px;}
+.tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
+/* §8 references: grouped, with paper summary + how-we-used-it */
+.ref-group{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+           margin:30px 0 0;padding-bottom:7px;border-bottom:1px solid var(--rule);}
+.ref-list{list-style:none;margin:0;padding:0;}
+.ref-list>li{padding:15px 0;border-bottom:1px solid var(--rule-soft);}
+.ref-list>li:last-child{border-bottom:none;}
+.ref-cite{font-size:16px;line-height:1.5;}
+.ref-cite .meta{color:var(--muted);}
+.ref-sum{font-size:15px;color:#4a473f;margin:5px 0 0;line-height:1.55;}
+.ref-use{font-size:15px;color:var(--ink);margin:5px 0 0;line-height:1.55;}
+.ref-use b{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-right:7px;}
+.ref-exp{font-size:14px;color:var(--muted);margin:5px 0 0;line-height:1.5;}
+.ref-exp b{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-right:7px;}
+</style>
+</head>
+<body data-glossary-root=".wrap, .hero .lede">
+
+<header class="hero">
+  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
+  <h1>The wall that wasn't coverage</h1>
+  <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
+  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got: we applied the current post-training playbook — from established fine-tuning to 2025's rubric-grounded RL — and none of it closed the last notch. The controlled tests then show the gap is a broad capability limit, not a single missing skill. <a href="#references">The methods we drew on are referenced in §8.</a></p>
+  <div class="nav">
+    <a href="onboarding.html">Project overview</a>
+    <a href="index.html">Live dashboard</a>
+    <a href="lineage.html">Experiment Lineage</a>
+    <a href="#verdict">The verdict</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section id="question">
+  <h2><span class="num">1</span>The question</h2>
+  <p class="sub">Move one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
+  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
+
+  <div class="flowdemo">
+    <div class="fd-node fd-input">
+      <div class="fd-tag">User input</div>
+      <div class="fd-big">"Plan a trip to Paris"</div>
+    </div>
+    <div class="fd-arrow">&rarr;</div>
+    <div class="fd-node fd-planner">
+      <div class="fd-tag">Discovery Planner</div>
+      <ol>
+        <li>What city are you departing from?</li>
+        <li>When are you planning to travel?</li>
+        <li>How many people are going on this trip?</li>
+        <li>How long do you plan to stay in Paris?</li>
+        <li>What is your total budget for this trip?</li>
+        <li>What type of accommodation do you prefer?</li>
+        <li>What is the main purpose of your visit?</li>
+      </ol>
+    </div>
+  </div>
+  <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
+
+  <p>To answer it honestly I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>): a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
+  <p>The loop itself is run by <strong>Claude Code</strong>, Anthropic's coding agent. Each iteration it reads the running log of what's already been tried, proposes the next experiment, writes and runs the code against the ruler, and records the result — one experiment at a time. I worked alongside it as <strong>supervisor</strong>: steering which levers to pursue next, giving continuous feedback on its hypotheses, and triggering the manual fine-tuning runs. So throughout this report, <em>"we"</em> means that pairing — an AI agent generating and running the experiments under human direction.</p>
+  <figure style="margin:28px 0 6px">
+    <div class="autoresearch-loop"></div>
+    <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and score it against the frozen ruler — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring against the ruler; rust marks human input.</figcaption>
+  </figure>
+</section>
+
+<section id="climb">
+  <h2><span class="num">2</span>The climb</h2>
+  <p class="sub">Real progress — quality roughly doubled. Then it stalled.</p>
+  <div class="prog">
+    <div class="step"><div class="tag">Stock baseline</div><div class="q">0.28</div><div class="lbl">3B, single shot</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">In-context ceiling</div><div class="q">0.32</div><div class="lbl">best of 29 prompting / RAG tries</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">Fine-tuned adapter</div><div class="q">0.41</div><div class="lbl">LoRA on the model's weights</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step best"><div class="tag">Best so far</div><div class="q">0.44</div><div class="lbl">adapter + over-generate &amp; prune</div></div>
+  </div>
+  <figure style="margin:20px 0 6px">
+    <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
+         font-family="Palatino,Georgia,serif" role="img"
+         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 96 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
+      <!-- 0.50 = parity: tying Sonnet's gold on every one of the 30 cases -->
+      <line x1="56" y1="30" x2="548" y2="30" stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 4"/>
+      <text x="548" y="24" text-anchor="end" font-size="11.5" font-style="italic" fill="var(--accent)">0.50 — parity: a tie on every case</text>
+      <line x1="56" y1="85"  x2="548" y2="85"  stroke="var(--rule-soft)" stroke-width="1"/>
+      <line x1="56" y1="139" x2="548" y2="139" stroke="var(--rule-soft)" stroke-width="1"/>
+      <line x1="56" y1="166" x2="548" y2="166" stroke="var(--rule)" stroke-width="1"/>
+      <text x="48" y="34"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.50</text>
+      <text x="48" y="89"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.40</text>
+      <text x="48" y="143" text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.30</text>
+      <path d="M56 150 L260 128 L288 79 L365 63 L548 63" fill="none" stroke="var(--ink)"
+            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="56"  cy="150" r="3.6" fill="var(--ink)"/>
+      <circle cx="260" cy="128" r="3.6" fill="var(--ink)"/>
+      <circle cx="288" cy="79"  r="3.6" fill="var(--ink)"/>
+      <circle cx="365" cy="63"  r="3.6" fill="var(--accent)"/>
+      <text x="58"  y="164" text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.28</text>
+      <text x="248" y="124" text-anchor="end"    font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.32</text>
+      <text x="288" y="71"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
+      <text x="365" y="55"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
+      <text x="460" y="78"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
+      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">96 experiments, in run order &rarr;</text>
+    </svg>
+    <figcaption class="ex-caption">Running best quality across the 96 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then fifty-plus further experiments — judge-reward RL, adversarial distillation, and an exhaustive inference-topology×best-adapter cross among them — add nothing (one cross cell, exp078, flashed 0.47 but a confirmation re-judge of its identical output fell to 0.40: judge noise, not a gain). Roughly doubled, then flat.</figcaption>
+  </figure>
+  <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
+</section>
+
+<section id="levers">
+  <h2><span class="num">3</span>Everything we tried</h2>
+  <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
+  <table class="rpt-tbl rpt-wide">
+    <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
+    <tbody>
+      <tr><td>Stock baseline</td><td class="num">1</td><td class="num">0.28</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-infer">Inference</span> &nbsp;prompt · schema · decoding · RAG · multi-call pipelines · self-critique · over-generate-prune · solution-space info-gain · answer-simulation · decomposed verification</td><td class="num">29</td><td class="num">0.32</td><td class="num">3</td><td>dev-10</td></tr>
+      <tr><td><span class="pill p-sft">SFT</span> &nbsp;LoRA adapters (imitation), incl. more data &amp; coverage-forced data</td><td class="num">34</td><td class="num hi">0.44</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, style-vs-style pairs</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-orpo">ORPO</span> &nbsp;preference, on-policy pairs (gold vs the model's own drafts)</td><td class="num">2</td><td class="num">0.40</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-grpo">GRPO</span> &nbsp;judge-reward RL — group-relative advantages over the model's own judged drafts, incl. KL-anchored</td><td class="num">4</td><td class="num">0.41</td><td class="num">3</td><td>full-30</td></tr>
+      <tr><td><span class="pill p-gad">GAD</span> &nbsp;adversarial distillation — reward is a discriminator trained to tell Sonnet gold sets from the model's drafts</td><td class="num">2</td><td class="num">0.36</td><td class="num">3</td><td>full-30</td></tr>
+    </tbody>
+  </table>
+  <p>Four findings hold across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. <strong>Coverage</strong> — whether the seven questions include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 96 runs</em> (the only values ever observed were 2 and 3). It did not move for prompting, for retrieval, for elaborate multi-call reasoning, for fine-tuning, for more or reshaped training data, for preference learning, for reinforcement learning against the rubric itself, or for adversarial distillation from the teacher.</p>
+  <div class="callout">
+    <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33) because the pairs contrasted two Sonnet styles, not good-vs-bad judgment — the model learned the wrong correlate. Rebuilding the pairs <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft for the same task) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis exactly — but coverage still did not move off 3. Even a clean, correct preference signal could not teach <em>which</em> unknown matters.
+  </div>
+
+  <p style="margin-top:22px"><strong>Every experiment, at a glance.</strong> One tile per run, in the order each was run — its on-device pipeline stripped to bare structure, coded by the legend below. Read the <em>shapes</em>: thin single-shot baselines, ensembles fanning wide, the tall multi-call reasoning pipelines of the inference era, then the two-column adapter runs that fill the back half.</p>
+  <p class="tap-legend">
+    <span><i style="background:#9b998c"></i>Inference call</span>
+    <span><i style="background:#8a6a1e"></i>SFT adapter call</span>
+    <span><i style="background:#8c2f1f"></i>ORPO adapter call</span>
+    <span><i class="hollow"></i>Swift / user step</span>
+    <span><i style="background:#8a6a1e"></i><i class="hollow" style="margin-left:-3px"></i>Adapter training (dev-time)</span>
+  </p>
+  <div class="tap-wide"><div id="tapestry" class="tapestry"></div></div>
+  <p class="muted" style="font-size:14px;margin-top:16px">You can view each experiment's details — its hypothesis, method, result and process diagram — on the <a href="index.html">live dashboard</a>.</p>
+</section>
+
+<section id="confirmation">
+  <h2><span class="num">4</span>The confirmation experiment</h2>
+  <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
+  <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So we ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Candidate model</th><th>Where</th><th>Quality</th><th>Coverage</th><th>vs gold (W/T/L)</th></tr></thead>
+    <tbody>
+      <tr><td>Apple Foundation Model (~3B)</td><td>on-device</td><td class="num">0.44</td><td class="num">3</td><td class="num">best 2/5/22</td></tr>
+      <tr class="anchor"><td>Claude Haiku 4.5</td><td>cloud</td><td class="num">0.55</td><td class="num hi">4</td><td class="num">4/11/15</td></tr>
+      <tr class="anchor"><td>Claude Sonnet 4.6 <span class="muted">(= the gold model)</span></td><td>cloud</td><td class="num">0.65</td><td class="num hi">4</td><td class="num">4/18/8</td></tr>
+    </tbody>
+  </table>
+  <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
+  <ul>
+    <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §5).</li>
+  </ul>
+</section>
+
+<section id="coverage-blind">
+  <h2><span class="num">5</span>Is it really coverage?</h2>
+  <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
+  <p>Here the story turns. Everything to this point — the climb, the 96 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
+    <tbody>
+      <tr><td>SFT baseline</td><td class="num">0.398</td><td class="num">0.399</td><td class="num">+0.00</td><td class="num">23 → 23</td></tr>
+      <tr><td>Best adapter (exp056)</td><td class="num">0.415</td><td class="num">0.412</td><td class="num">−0.00</td><td class="num">22 → 22</td></tr>
+      <tr><td>On-policy ORPO</td><td class="num">0.369</td><td class="num">0.370</td><td class="num">+0.00</td><td class="num">25 → 24</td></tr>
+    </tbody>
+  </table>
+  <p>Removing coverage changes quality by essentially zero — and, the telling part, the head-to-head barely moves: told to ignore coverage entirely, the judge <em>still</em> prefers the gold set ~22–24 times out of 30. The losses were never mostly about coverage.</p>
+  <p>The reason is visible in the rubric the same judge assigns each model <em>as a candidate</em>:</p>
+  <table class="rpt-tbl">
+    <thead><tr><th>Scored as candidate</th><th>atomicity</th><th>specificity</th><th>coverage</th><th>naturalness</th><th>non-redundancy</th></tr></thead>
+    <tbody>
+      <tr><td>On-device best (exp056)</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr>
+      <tr class="anchor"><td>Sonnet (cloud anchor)</td><td class="num">5</td><td class="num">4</td><td class="num">4</td><td class="num">5</td><td class="num">5</td></tr>
+    </tbody>
+  </table>
+  <p>The on-device model matches the frontier on <strong>specificity alone</strong> and trails by about a point on everything else. Coverage is the joint-lowest, but it is not special — the gap is <strong>broad</strong>. That is why re-weighting it away does nothing: the model is a uniform notch below the frontier, and coverage is simply the symptom the judge can name in a sentence.</p>
+  <p>A correlation audit puts numbers on <em>broad</em>. Across all <strong>1,552</strong> judged question-sets the five rubric dimensions are not independent: a single latent quality factor explains <strong>58%</strong> of their variance, and coverage correlates 0.69 with specificity and 0.61 with naturalness. So coverage was never a separable axis you could target in isolation — it co-moves with the rest, which is precisely why any coverage-specific fix was structurally unlikely to land.</p>
+</section>
+
+<section id="verdict">
+  <h2><span class="num">6</span>The verdict</h2>
+  <div class="verdict">
+    <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method we failed to find.</h3>
+    <p style="margin:0">Imitation, preference learning, reinforcement learning against the rubric reward, adversarial distillation from the teacher, and every inference-time technique we could find leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
+  </div>
+  <p><strong>Four angles on coverage, one wall — and the mechanism for each.</strong> The final stretch attacked coverage directly from every side, and each route failed for a reason we could measure. <em>Generation</em> (fine-tuning) imitates the gold's phrasing but not the judgment that chose it. <em>On-policy reward</em> (GRPO) has nothing to optimise — the model's own drafts almost never vary on coverage, so the group-relative signal is flat; left unregularised it drifts off the natural-language manifold, and a KL anchor pulls it straight back to the 0.41 baseline. <em>Adversarial distillation</em> (GAD) grounds the reward in the teacher, but a probe shows a discriminator separates the model from Sonnet on <em>style</em> (AUC 0.76), not content (0.62) — so it re-learns the register, not the coverage. <em>Discrimination</em> — a dedicated critic that only has to <em>recognise</em> the better set — fails too: trained to predict the judge's coverage score it reaches 0.999 on seen tasks but generalises to nothing on new ones, because recognising the pivotal unknown takes the same value-of-information judgment as producing it. Every channel for importing that judgment from outside the 3B narrows the gap or recovers the baseline; none crosses it.</p>
+  <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality, about a point below on nearly every dimension, and strong in absolute terms (4 of 5 on most). The shortfall is broad and capacity-bound, so there is no single dimension to fix. Three honest paths:</p>
+  <div class="cols">
+    <div class="col yes">
+      <h3>Ship &amp; document</h3>
+      <ul>
+        <li>Ship the 0.44 adapter; document it honestly as uniformly near-parity — a notch below the frontier, not broken on any one axis.</li>
+        <li>Best fit if local + free + private outweighs a consistently-slightly-weaker question set.</li>
+      </ul>
+    </div>
+    <div class="col wow">
+      <h3>Reframe the bar</h3>
+      <ul>
+        <li>Stop measuring against Sonnet-parity and measure <em>absolute</em> usefulness — does the set enable a good plan? The model may be plenty good for the product even a notch below the frontier.</li>
+        <li>Changes the question from "match the cloud" to "is this good enough," which the raw scores can't answer alone.</li>
+      </ul>
+    </div>
+    <div class="col no">
+      <h3>Wait for a bigger base</h3>
+      <ul>
+        <li>Re-run this exact harness when Apple ships a larger on-device model; it is now a turnkey regression test.</li>
+        <li>No work until then; outcome outside our control.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted" style="font-size:15px">My recommendation: <strong>ship and document, and reframe the bar to absolute usefulness.</strong> The model is a uniform notch below the frontier, not broken anywhere; at ~two-thirds of the practical ceiling and strong in absolute terms it is plausibly good enough — and the broad, capacity-bound gap won't yield to more work on this base. Re-test when a larger on-device model ships.</p>
+</section>
+
+<section id="repro">
+  <h2><span class="num">7</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§5), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the mechanistic analyses in §5–§6 are reference only, deliberately kept out of the on-device run log.</p>
+</section>
+
+<section id="references">
+  <h2><span class="num">8</span>References</h2>
+  <p class="sub">Not built from scratch — the levers we tried, and the papers each one came from. For each: what the paper introduced, and how we used it here.</p>
+
+  <h3 class="ref-group">In-context phase — prompting, retrieval, decoding</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">Language Models are Few-Shot Learners</a> <span class="meta">· Brown et al., 2020 · GPT-3 · NeurIPS 2020</span></p>
+      <p class="ref-sum">Showed a large language model can perform a new task from a few examples placed in the prompt, with no weight updates.</p>
+      <p class="ref-use"><b>Used</b>Our first lever: feeding the 3B a handful of gold question-sets as in-prompt demonstrations to steer its output before touching the weights.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used by the early few-shot prompting runs — exp003 (2 nearest exemplars) and exp007 (semantic-embedding retrieval); influenced the whole in-context phase (exp003–exp027) that all built on in-prompt demonstrations.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a> <span class="meta">· Lewis et al., 2020 · RAG · NeurIPS 2020</span></p>
+      <p class="ref-sum">Pairs a generator with a retriever that pulls relevant passages from an external index at inference time.</p>
+      <p class="ref-use"><b>Used</b>Retrieving the most relevant gold examples per task to use as demonstrations, instead of a fixed prompt set.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in the retrieval runs — exp003/exp007 (nearest-exemplar retrieval), exp020 (corpus-grounded ranking over a 3-temp pool), and exp040 (leak-free 619-pair corpus RAG, the best honest in-context add-on at 0.405); also exp033 leave-one-out RAG on the adapter.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://dl.acm.org/doi/10.1145/290941.291025" target="_blank" rel="noopener">The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries</a> <span class="meta">· Carbonell &amp; Goldstein, 1998 · SIGIR'98</span></p>
+      <p class="ref-sum">A selection criterion that trades off relevance against novelty to avoid picking redundant items.</p>
+      <p class="ref-use"><b>Used</b>Choosing demonstration sets that were relevant but diverse; in our runs MMR selection didn't beat a simpler top-k.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in exp043 (MMR-diverse corpus few-shot, k=3, λ=0.6), which scored 0.382 — below exp040's plain top-2-nearest (0.405); diversifying the demos did not diversify the output.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener">The Curious Case of Neural Text Degeneration</a> <span class="meta">· Holtzman et al., 2019 · nucleus / top-p sampling · ICLR 2020</span></p>
+      <p class="ref-sum">Introduced top-p (nucleus) sampling, truncating the unreliable tail of the distribution to balance quality and diversity.</p>
+      <p class="ref-use"><b>Used</b>Our decoding controls — the top-p / temperature settings for single-shot output and for the over-generate-and-prune sampler (topP .95, t .9).</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used by the multi-temperature over-generate-and-prune runs — exp004 (best-of-4 temps), exp020 (21 candidates over temps 0.4/0.7/1.0), and the GRPO on-policy samplers (topP .95 / t .9 in exp057–058); the over-generate-and-prune champion is exp056 (0.44).</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Fine-tuning</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2109.01652" target="_blank" rel="noopener">Finetuned Language Models Are Zero-Shot Learners</a> <span class="meta">· Wei et al., 2021 · FLAN · ICLR 2022</span></p>
+      <p class="ref-sum">Fine-tuning on tasks phrased as natural-language instructions sharply improves zero-shot generalization.</p>
+      <p class="ref-use"><b>Used</b>The template for our supervised fine-tuning — training the model on (task → seven questions) pairs in instruction form.</p>
+      <p class="ref-exp"><b>Experiments</b>The template for every SFT adapter: adapter_e1 (first dev-10 spike), adapter_v2a_e1 (the 0.409 SFT champion), and the v2b coverage-forced variant — all trained on (task → seven questions) instruction pairs.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA: Low-Rank Adaptation of Large Language Models</a> <span class="meta">· Hu et al., 2021 · ICLR 2022</span></p>
+      <p class="ref-sum">Freezes the base weights and trains small low-rank adapter matrices, cutting trainable parameters by orders of magnitude.</p>
+      <p class="ref-use"><b>Used</b>Our main fine-tuning method — the LoRA adapter that lifted quality from the 0.32 prompting ceiling to 0.41.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used for every adapter run: adapter_v2a_e1 was the first to clear the prompting ceiling (0.409), and it became the base for the entire 0.40–0.44 adapter family (exp028–exp056) plus all the ORPO/GRPO/GAD fine-tunes.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Preference learning &amp; reinforcement learning</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">Direct Preference Optimization: Your Language Model is Secretly a Reward Model</a> <span class="meta">· Rafailov et al., 2023 · DPO · NeurIPS 2023</span></p>
+      <p class="ref-sum">Aligns a model to preference pairs with a simple classification loss — no separate reward model or RL loop.</p>
+      <p class="ref-use"><b>Used</b>Preference-learning experiments: training on chosen/rejected question-set pairs to push toward gold-like output.</p>
+      <p class="ref-exp"><b>Experiments</b>Influence/precedent only — no DPO run exists. It motivated the preference-learning direction; the variant we actually implemented was ORPO (adapter_orpo_e1/e2 and on-policy adapter_orpo_op_e1/e2).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2403.07691" target="_blank" rel="noopener">ORPO: Monolithic Preference Optimization without Reference Model</a> <span class="meta">· Hong et al., 2024</span></p>
+      <p class="ref-sum">Folds preference optimization into SFT in a single stage via an odds-ratio penalty, with no reference model.</p>
+      <p class="ref-use"><b>Used</b>Our preference runs combining the SFT and preference objectives in one pass, including the on-policy ORPO variant.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in adapter_orpo_e1/e2 (offline ORPO, chosen=gold vs rejected=model drafts) and adapter_orpo_op_e1/e2 (on-policy ORPO); both stayed at/below the SFT champion and left coverage pinned at 3.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2402.03300" target="_blank" rel="noopener">DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models</a> <span class="meta">· Shao et al., 2024 · introduces GRPO</span></p>
+      <p class="ref-sum">Introduced GRPO, a PPO variant that drops the critic and estimates the baseline from group-relative scores of sampled outputs.</p>
+      <p class="ref-use"><b>Used</b>The RL algorithm behind exp057–058: a judge-rubric reward with group-relative advantage over G=6 on-policy drafts per task.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly implemented in exp057 (judge-reward GRPO, no KL anchor, 0.328), exp058 / adapter_grpo_kl_e1 (KL-anchored, recovered to 0.407 ≈ base), and reused as the policy-gradient core of the GAD run (exp059).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener">DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</a> <span class="meta">· DeepSeek-AI, 2025 · also Nature 645:633–638</span></p>
+      <p class="ref-sum">Showed strong reasoning can be incentivized by RL against a reward, without supervised reasoning traces.</p>
+      <p class="ref-use"><b>Used</b>The motivation for trying rubric-grounded RL on our non-verifiable, judge-scored task — the lever sweep that pointed us at GRPO.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing/motivation only — the literature sweep cited in exp057's log that pointed us at rubric-grounded RL; it maps to no run of its own, only to the GRPO attempts (exp057–058) it inspired.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Training Language Models to Follow Instructions with Human Feedback</a> <span class="meta">· Ouyang et al., 2022 · InstructGPT / RLHF · NeurIPS 2022</span></p>
+      <p class="ref-sum">Defined the standard RLHF pipeline (SFT → reward model → RL), and found a 1.3B aligned model preferred over 175B GPT-3.</p>
+      <p class="ref-use"><b>Used</b>The conceptual backbone for our reward-based fine-tuning — and direct evidence for the thesis that a small specialized model can beat a far larger general one.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing for the whole study (the specialization thesis) plus the conceptual backbone for the reward-based runs — the ORPO (adapter_orpo_*) and GRPO (exp057–058) fine-tunes; not a single run.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener">Constitutional AI: Harmlessness from AI Feedback</a> <span class="meta">· Bai et al., 2022 · RLAIF</span></p>
+      <p class="ref-sum">Replaces human preference labels with model-generated ones (RL from AI Feedback), supervised only by a set of principles.</p>
+      <p class="ref-use"><b>Used</b>The precedent for using an AI (Sonnet) rather than humans as the preference and reward source throughout our loop.</p>
+      <p class="ref-exp"><b>Experiments</b>Influenced the whole loop — the Sonnet AI-feedback reward in exp057–058 (GRPO judge-rubric reward) and the discriminator teacher-likeness reward in exp059 (GAD); also the source of the ORPO preference pairs.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Evaluation &amp; the specialization thesis</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a> <span class="meta">· Zheng et al., 2023 · NeurIPS 2023 D&amp;B</span></p>
+      <p class="ref-sum">Validated using a strong LLM as an automatic judge — including pairwise comparison — against human preference.</p>
+      <p class="ref-use"><b>Used</b>The basis for our frozen Sonnet "ruler": rubric scoring plus pairwise win-rate as the metric held constant across every experiment.</p>
+      <p class="ref-exp"><b>Experiments</b>Used by every experiment — the frozen Sonnet rubric + pairwise judge scored all 96 runs (baseline through exp079); it was also the literal reward signal in the GRPO runs (exp057–058).</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/2110.08207" target="_blank" rel="noopener">Multitask Prompted Training Enables Zero-Shot Task Generalization</a> <span class="meta">· Sanh et al., 2021 · T0 · ICLR 2022</span></p>
+      <p class="ref-sum">An 11B model trained on prompted multitask data often beats models up to 16× larger, zero-shot.</p>
+      <p class="ref-use"><b>Used</b>Prior evidence that specialization can close size gaps — the optimistic prior this whole study set out to test on a 3B.</p>
+      <p class="ref-exp"><b>Experiments</b>Framing/motivation for the whole study — the specialization prior the entire program tested; not tied to any single run.</p>
+    </li>
+  </ol>
+
+  <h3 class="ref-group">Distillation lineage — the GAD experiment</h3>
+  <ol class="ref-list">
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">Distilling the Knowledge in a Neural Network</a> <span class="meta">· Hinton, Vinyals &amp; Dean, 2015 · NIPS 2014 DL Workshop</span></p>
+      <p class="ref-sum">Trains a small "student" model to match a larger "teacher" model's outputs, transferring its knowledge.</p>
+      <p class="ref-use"><b>Used</b>The conceptual basis for distilling Sonnet (teacher) into the 3B (student) — the framing behind our GAD experiment.</p>
+      <p class="ref-exp"><b>Experiments</b>The distillation framing behind exp059 / adapter_gad_e1 (Sonnet teacher → 3B student); the SFT adapters (adapter_v2a, v2b) are also a form of teacher-text distillation from Sonnet gold.</p>
+    </li>
+    <li>
+      <p class="ref-cite"><a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">Generative Adversarial Networks</a> <span class="meta">· Goodfellow et al., 2014</span></p>
+      <p class="ref-sum">Trains a generator against a discriminator in a minimax game; the discriminator learns to tell real data from generated.</p>
+      <p class="ref-use"><b>Used</b>The adversarial setup we adapted for GAD (exp059): a discriminator trained to separate the model's drafts from Sonnet's, its teacher-likeness score used as the RL reward. GAD itself is our own construction — there is no single canonical "generative adversarial distillation" paper.</p>
+      <p class="ref-exp"><b>Experiments</b>Directly used in exp059 / adapter_gad_e1: a MiniLM-embedding discriminator (val AUC 0.629) trained to separate the model's drafts from Sonnet's, its P(teacher-like) score feeding the GRPO reward; regressed to 0.355 and left coverage at 3.</p>
+    </li>
+  </ol>
+
+  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §1). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
+</section>
+
+<footer>
+  <span class="kpi">Experiments<b>77</b></span>
+  <span class="kpi">On-device best<b>0.44</b></span>
+  <span class="kpi">Coverage, on-device<b>3</b></span>
+  <span class="kpi">Coverage, cloud<b>4</b></span>
+  <p style="margin-top:16px"><strong>Alexis Rondeau</strong> — research direction, supervision, and the manual fine-tuning runs. <strong>Claude Code</strong> (Anthropic) — autonomous generation and execution of the inference experiments. On-device model: Apple Foundation Model (~3B). Reference models: Claude Haiku 4.5, Claude Sonnet 4.6.</p>
+</footer>
+
+</div>
+<script type="module" src="report-tapestry.js"></script>
+<script type="module" src="js/autoresearch-loop.js"></script>
+<script type="module" src="js/glossary.js"></script>
+</body>
+</html>
