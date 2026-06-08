@@ -16,6 +16,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
+        case .singleShotCoverageRestyleGuarded: return try await singleShotCoverageRestyleGuarded(input)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
@@ -181,6 +182,116 @@ public struct ConfiguredAgent: Sendable {
             if seen.insert(key).inserted { out.append(trimmed) }
         }
         return out
+    }
+
+    /// exp009: exp008's DECOUPLED restyle pass, hardened against the failure that sank
+    /// exp008 — a FREE "restore the meaningful detail" rewrite let the model HALLUCINATE
+    /// plausible-but-absent specifics ("Sarah", "3 PM", "milk supplier"), so the 1:1 count
+    /// guard preserved cardinality but semantic drift WITHIN a slot still broke F1
+    /// (0.963->0.870). The exp008 log's prescribed fix: the rewrite may ONLY recase /
+    /// re-tense / re-attach detail that is VERBATIM present in the input or the base task —
+    /// no free generation. This is enforced deterministically with a per-task TOKEN-SUBSET
+    /// guard: a restyled task is accepted only if every CONTENT word in it stems to a word
+    /// present in (input ∪ that base task); a small function-word allowlist (the/a/to/for/
+    /// with/and...) is free so the model can add conversational glue. Any restyled task that
+    /// introduces a novel content word is REJECTED and the slot falls back to the base task.
+    /// EITHER way the slot is then deterministically capitalized, so the output is never an
+    /// all-lowercase fragment even when a restyle is rejected. Set membership is identical to
+    /// exp002 by construction (1:1 by index), so F1 is protected; only phrasing can move.
+    private func singleShotCoverageRestyleGuarded(_ input: String) async throws -> RambleResult {
+        let base = try await singleShotCoverage(input)
+        guard !base.tasks.isEmpty else { return base }
+
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyle }
+        let prompt = """
+        The user's original brain-dump:
+
+        "\(input)"
+
+        Tasks extracted from it (rewrite each one, same order, same set):
+        \(listed)
+
+        Return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that keeps the meaningful detail.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleRestyle.self,
+            options: config.options()
+        )
+        let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        // 1:1 mapping guard (same as exp008): any count mismatch -> keep the base set,
+        // but still recased so the phrasing rubric is not stuck at all-lowercase.
+        guard styled.count == base.tasks.count else {
+            return RambleResult(tasks: base.tasks.map(capitalizeFirst))
+        }
+        let inputVocab = vocab(input)
+        let merged = zip(base.tasks, styled).map { original, restyled -> String in
+            // Accept the restyle ONLY if it adds no new content word (anti-hallucination).
+            // Allowed source = the original input PLUS this task's own words.
+            let allowed = inputVocab.union(vocab(original))
+            if !restyled.isEmpty && contentTokensSubset(restyled, of: allowed) {
+                return capitalizeFirst(restyled)
+            }
+            return capitalizeFirst(original)
+        }
+        return RambleResult(tasks: merged)
+    }
+
+    /// Function/glue words a restyle may introduce freely (they carry no task content,
+    /// only conversational/grammatical completeness — capital + verb + natural phrasing).
+    private static let freeWords: Set<String> = [
+        "a", "an", "the", "to", "for", "with", "and", "or", "of", "on", "in", "at",
+        "by", "about", "regarding", "re", "your", "my", "our", "their", "his", "her",
+        "its", "that", "this", "these", "those", "it", "them", "up", "out", "off",
+        "into", "from", "as", "so", "then", "back", "over", "before", "after", "is",
+        "are", "be", "get", "make", "do", "have"
+    ]
+
+    /// Lowercased alphanumeric tokens of a string.
+    private func vocab(_ s: String) -> Set<String> {
+        Set(tokenize(s))
+    }
+
+    private func tokenize(_ s: String) -> [String] {
+        s.lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map(String.init)
+            .filter { !$0.isEmpty }
+    }
+
+    /// Light suffix stemmer so tense/number changes (call/calling, truck/trucks,
+    /// reschedule/rescheduling) don't falsely trip the guard.
+    private func stem(_ t: String) -> String {
+        for suffix in ["ing", "ed", "es", "s", "d"] {
+            if t.count > suffix.count + 2, t.hasSuffix(suffix) {
+                return String(t.dropLast(suffix.count))
+            }
+        }
+        return t
+    }
+
+    /// True iff every CONTENT token of `phrase` (non-free words) stems to a token
+    /// present (by stem) in `allowed`. Free function words are always permitted.
+    private func contentTokensSubset(_ phrase: String, of allowed: Set<String>) -> Bool {
+        let allowedStems = Set(allowed.map(stem))
+        for tok in tokenize(phrase) {
+            if Self.freeWords.contains(tok) { continue }
+            let s = stem(tok)
+            if allowedStems.contains(s) { continue }
+            // Tolerate short prefix overlaps (e.g. rescheduling vs reschedule).
+            if allowedStems.contains(where: { $0.hasPrefix(s) || s.hasPrefix($0) }) && s.count >= 4 { continue }
+            return false
+        }
+        return true
+    }
+
+    /// Capitalize the first alphabetic character; leave the rest untouched.
+    private func capitalizeFirst(_ s: String) -> String {
+        guard let idx = s.firstIndex(where: { $0.isLetter }) else { return s }
+        return String(s[..<idx]) + s[idx].uppercased() + String(s[s.index(after: idx)...])
     }
 
     /// exp008: exp002 base (singleShotCoverage) UNCHANGED, then a DECOUPLED style-only

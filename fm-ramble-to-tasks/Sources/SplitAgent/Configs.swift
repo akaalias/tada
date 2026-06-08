@@ -55,6 +55,17 @@ public enum Configs {
         // deterministic count/order guard keeps the task SET identical -> F1 protected by
         // construction; only the phrasing rubric can move.
         "exp008": SplitConfig(topology: .singleShotCoverageRestyle, sampling: .greedy),
+        // exp009: build on exp002 + exp008's DECOUPLED restyle pass, but HARDEN it against
+        // the hallucination that sank exp008 (free "restore detail" rewrite invented absent
+        // specifics -> F1 0.963->0.870 despite the 1:1 count guard). Per the exp008 log, the
+        // rewrite may ONLY recase / re-tense / re-attach detail VERBATIM-present in the input
+        // or base task. Enforced deterministically: a per-task TOKEN-SUBSET guard rejects any
+        // restyled task that introduces a content word not stemming to a word in (input ∪ base
+        // task) — a small function-word allowlist is free for conversational glue. Rejected
+        // slots fall back to the base task; EITHER way the slot is deterministically
+        // capitalized, so output is never all-lowercase. Set membership identical to exp002 by
+        // construction -> F1 cannot regress; only the phrasing rubric can move.
+        "exp009": SplitConfig(topology: .singleShotCoverageRestyleGuarded, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }
