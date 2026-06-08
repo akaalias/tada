@@ -33,6 +33,7 @@ PROTECTED=(
   "fm-ramble-to-tasks/Sources/fmramble"
   "fm-ramble-to-tasks/gold"
   "fm-ramble-to-tasks/Package.swift"
+  "fm-ramble-to-tasks/dashboard"
 )
 
 cd "$REPO" || exit 1
@@ -43,7 +44,12 @@ if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
   echo "[autoresearch] ERROR: ANTHROPIC_API_KEY not set (env or $REPO/.env)"; exit 1
 fi
 
-count() { local n; n=$(wc -l < "$PKG/results/runs.jsonl" 2>/dev/null || echo 0); echo "${n//[[:space:]]/}"; }
+# Count only DEV/FULL experiments (the agent's runs); exclude wrapper-run TEST lines.
+count() {
+  local n
+  n=$(jq -r 'select(.subset != "test") | .label' "$PKG/results/runs.jsonl" 2>/dev/null | wc -l)
+  echo "${n//[[:space:]]/}"
+}
 
 echo "[autoresearch] start: $(count)/$TARGET experiments | coder=$CODER_MODEL | budget=${PER_ITER_BUDGET:-none} | timeout=${PER_ITER_TIMEOUT:-none}s"
 mkdir -p "$AR"
