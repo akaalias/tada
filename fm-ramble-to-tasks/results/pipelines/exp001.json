@@ -1,0 +1,24 @@
+{
+  "summary": "Reasoning-first boolean gate before task list",
+  "hypothesis": "Forcing the model to explicitly name venting/musing/retractions and commit a boolean (hasActionableTasks) before listing tasks will fix false-positive task invention on non-actionable rambles \u2014 because the gate makes the model's intent explicit before it can \"drift\" into fabricating tasks.",
+  "technique": "A single greedy on-device call with a reasoning-first @Generable schema: the model must produce a free-text analysis and a hasActionableTasks boolean before the task list is unlocked, gating extraction on an explicit structural commitment.",
+  "result": "Quality 0.955 on dev-11 (W/T/L vs Sonnet = 0/5/4); specPass 100%; rubric faith=5, atom=5, action=5, cover=4, nonRed=5. KEPT as new best \u2014 the boolean gate eliminated false-positive task invention on venting/musing inputs, confirming the hypothesis.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form voice ramble"
+    },
+    {
+      "kind": "generate",
+      "text": "Analysis + bool gate, then extract tasks",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "0..N actionable tasks"
+    }
+  ],
+  "label": "exp001"
+}

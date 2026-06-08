@@ -52,7 +52,15 @@ count() {
 }
 
 echo "[autoresearch] start: $(count)/$TARGET experiments | coder=$CODER_MODEL | budget=${PER_ITER_BUDGET:-none} | timeout=${PER_ITER_TIMEOUT:-none}s"
-mkdir -p "$AR"
+mkdir -p "$AR" "$PKG/results/pipelines"
+
+# Backfill dashboard sidecars for any existing runs (best-effort, idempotent).
+for L in $(jq -r '.label' "$PKG/results/runs.jsonl" 2>/dev/null | sort -u); do
+  [ -f "$PKG/results/pipelines/$L.json" ] || python3 "$AR/gen_pipeline.py" "$L" 2>/dev/null || true
+done
+python3 "$AR/gen_costs.py" 2>/dev/null || true
+python3 "$AR/gen_types.py" 2>/dev/null || true
+python3 "$AR/build_lineage_auto.py" 2>/dev/null || true
 
 while [ "$(count)" -lt "$TARGET" ]; do
   # --- Training-track gate ---------------------------------------------------
@@ -115,6 +123,15 @@ while [ "$(count)" -lt "$TARGET" ]; do
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
     echo "[autoresearch] OK: new experiment logged (total=$AFTER, coder \$$cost)"
+    # Dashboard sidecars (auto): pipeline diagram, operator tag, cost / type / lineage.
+    python3 "$AR/gen_pipeline.py" "$NEWLABEL" 2>/dev/null || true
+    OPF="$PKG/results/operators.json"; [ -f "$OPF" ] || echo '{}' > "$OPF"
+    tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"
+    python3 "$AR/gen_costs.py" 2>/dev/null || true
+    python3 "$AR/gen_types.py" 2>/dev/null || true
+    python3 "$AR/build_lineage_auto.py" 2>/dev/null || true
+    git add -A "$PKG" 2>/dev/null
+    git commit -q -m "autoresearch: dashboard sidecars for $NEWLABEL" 2>/dev/null || true
     # Wrapper-run held-out TEST check on a new DEV best — REPORTING ONLY. The coder
     # agent never runs test, never sees these results, and must not tune toward them.
     # This keeps the honesty check automatic without contaminating the optimization.

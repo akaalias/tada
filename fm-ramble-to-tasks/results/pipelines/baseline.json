@@ -1,0 +1,24 @@
+{
+  "summary": "Single-shot greedy baseline on stock FM",
+  "hypothesis": "A plain single-shot greedy call on the stock FM can reliably extract actionable tasks from a ramble. This sets the floor: we expect it to handle clear extraction cases well but fail on edge cases like zero-task rambles and retractions.",
+  "technique": "A single greedy on-device call on the stock base FM with no retrieval, schema guidance, or post-processing \u2014 a minimal single-shot extract pipeline used as the seed baseline.",
+  "result": "Achieved quality 0.818 on dev-11 (W/T/L vs Sonnet = 0/8/1), with perfect rubric scores across all five axes (faith=5, atom=5, action=5, cover=5, nonRed=5) and specPass=100%. Hypothesis partially confirmed: extraction cases scored ~1.0, but the entire quality gap traces to 4 zero-task failures and one retraction miss; KEPT as new best (seed baseline).",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form ramble"
+    },
+    {
+      "kind": "generate",
+      "text": "Single-shot greedy task extraction",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N actionable tasks"
+    }
+  ],
+  "label": "baseline"
+}
