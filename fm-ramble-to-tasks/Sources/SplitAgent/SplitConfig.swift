@@ -9,6 +9,7 @@ public struct SplitConfig: Sendable {
         case singleShotReasoned  // 1 call: reasoning-first gated schema -> 0..N tasks
         case singleShotCoverage  // 1 call: reasoned gate + exhaustive candidate sweep -> 0..N tasks
         case singleShotCoveragePhrased // singleShotCoverage + explicit phrasing/style contract (exp007)
+        case singleShotCoverageRestyle // exp002 base + a DECOUPLED 1:1 style-only rewrite pass (exp008)
         case extractAudit        // 2 calls: reasoned extract, then coverage-audit adds missing tasks
         case extractAuditGated   // extractAudit, but audit ONLY fires when base found >=2 tasks
         case extractAuditSweep   // extractAuditGated, but audit enumerates-then-diffs (exp005)

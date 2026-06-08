@@ -101,6 +101,20 @@ struct FMRambleSplitCoverage {
     }
 }
 
+/// Style-only rewrite pass (second call of singleShotCoverageRestyle, exp008).
+/// Given the original input AND the already-extracted task list, it REWRITES each
+/// task in Sonnet's capitalized, complete, conversational style — restoring
+/// meaningful detail the terse extractor dropped (purpose / recipient / subject /
+/// deadline, recoverable from the input) — WITHOUT changing the set of tasks. It
+/// must return EXACTLY one styled task per input task, in the SAME order. The
+/// agent enforces this 1:1 mapping deterministically (count-mismatch -> keep the
+/// base list), so this pass can lift the phrasing rubric but can NEVER change F1.
+@Generable
+struct FMRambleRestyle {
+    @Guide(description: "Rewrite each task from the given list, IN THE SAME ORDER, returning EXACTLY one rewritten task per input task — never add, drop, split, merge, or reorder. For each task, keep its exact MEANING but rephrase it the way a thoughtful human assistant would write a to-do: start with a CAPITAL letter and an action verb, write a COMPLETE natural one-liner (never an all-lowercase fragment), and restore the meaningful detail the user gave that a terse note would drop — who it is for, what it is about, its purpose, and any concrete deadline (use the original brain-dump to recover that detail). Drop only true filler (vague timing like 'sometime', 'at some point'). Around 4-9 words. Never invent detail that is not in the input.")
+    var styled: [String]
+}
+
 /// Coverage-first + PHRASING variant (exp007). Identical pipeline to
 /// FMRambleSplitCoverage (analysis gate -> exhaustive candidate sweep -> merged
 /// final list), but the final `tasks` @Guide carries an explicit STYLE contract so

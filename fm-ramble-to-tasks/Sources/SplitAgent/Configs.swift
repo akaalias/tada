@@ -45,6 +45,16 @@ public enum Configs {
         // one-liners that keep purpose/recipient/subject/deadline while trimming vague
         // filler timing — aiming to lift the rubric's phrasing without touching F1.
         "exp007": SplitConfig(topology: .singleShotCoveragePhrased, sampling: .greedy),
+        // exp008: build on the current best (exp002 singleShotCoverage), UNCHANGED, then
+        // add a DECOUPLED style-only rewrite pass. exp007 proved phrasing is a real lever
+        // (rubric phrasing 2->4 in isolation) but bundling it into the extraction call
+        // poisoned recall (F1 0.963->0.829). The exp007 log's prescribed fix: apply
+        // phrasing as a style-only rewrite PASS over the already-extracted list, which
+        // cannot change set membership. Call 1 = exp002 extractor; call 2 rewrites each
+        // task 1:1 into Sonnet's capitalized/complete style, restoring dropped detail. A
+        // deterministic count/order guard keeps the task SET identical -> F1 protected by
+        // construction; only the phrasing rubric can move.
+        "exp008": SplitConfig(topology: .singleShotCoverageRestyle, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

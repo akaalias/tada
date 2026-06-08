@@ -15,6 +15,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotReasoned: return try await singleShotReasoned(input)
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
+        case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
@@ -180,6 +181,53 @@ public struct ConfiguredAgent: Sendable {
             if seen.insert(key).inserted { out.append(trimmed) }
         }
         return out
+    }
+
+    /// exp008: exp002 base (singleShotCoverage) UNCHANGED, then a DECOUPLED style-only
+    /// rewrite pass. exp007 proved the phrasing contract works in isolation (rubric
+    /// phrasing 2->4) but bundling it into the SAME extraction call poisoned recall
+    /// (F1 0.963->0.829 — the heavier prompt shifted the greedy decode and the model
+    /// spent capacity styling instead of extracting). The exp007 log's prescribed fix:
+    /// apply phrasing as a style-only rewrite PASS over the already-extracted list,
+    /// which cannot change set membership. Call 1 is the proven exp002 extractor. Call 2
+    /// sees the input + the extracted tasks and rewrites EACH into Sonnet's capitalized,
+    /// complete style, restoring dropped detail. A deterministic 1:1 guard (styled.count
+    /// must equal base.count, mapped by index, empty styled slots fall back to base)
+    /// guarantees the set of tasks is IDENTICAL to exp002 — so F1 is protected by
+    /// construction and only the phrasing rubric can move. Empty base -> no rewrite
+    /// (protects the solved zero-task gate).
+    private func singleShotCoverageRestyle(_ input: String) async throws -> RambleResult {
+        let base = try await singleShotCoverage(input)
+        guard !base.tasks.isEmpty else { return base }
+
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyle }
+        let prompt = """
+        The user's original brain-dump:
+
+        "\(input)"
+
+        Tasks extracted from it (rewrite each one, same order, same set):
+        \(listed)
+
+        Return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that keeps the meaningful detail.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleRestyle.self,
+            options: config.options()
+        )
+        // Deterministic 1:1 guard: the styled list must mirror the base set exactly.
+        // Any count mismatch -> keep the base list (F1 can never regress vs exp002).
+        let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard styled.count == base.tasks.count else { return base }
+        // Map by index; an empty styled slot falls back to the original task.
+        let merged = zip(base.tasks, styled).map { original, restyled in
+            restyled.isEmpty ? original : restyled
+        }
+        return RambleResult(tasks: merged)
     }
 
     /// exp007: singleShotCoverage + a PHRASING contract. Identical topology to the

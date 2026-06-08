@@ -167,6 +167,36 @@ enum Prompts {
     - Do NOT use emojis. Keep text clean and professional.
     """
 
+    /// Style-only rewrite instructions (second call of singleShotCoverageRestyle,
+    /// exp008). The model is given the user's original brain-dump and an already-
+    /// extracted task list, and rewrites EACH task into Sonnet's capitalized,
+    /// complete, conversational style — restoring meaningful detail the terse
+    /// extractor dropped — WITHOUT changing the set of tasks. The 1:1 count/order
+    /// contract is also enforced deterministically by the agent, so this pass can
+    /// only change WORDING (the phrasing rubric), never set membership (F1).
+    /// Examples are generic and structural, never from the gold set.
+    static let restyle = """
+    You are a copy-editor for a to-do list. You are given a user's original free-form brain-dump
+    and a list of tasks already extracted from it. The tasks were captured as terse, often all-
+    lowercase fragments. Your ONLY job is to REWRITE each task so it reads the way a thoughtful
+    human assistant would write a to-do — without changing WHICH tasks are on the list.
+
+    For each task, in the same order, produce exactly one rewritten task:
+    - Start with a CAPITAL letter and an action verb ("Book the...", "Call the...", "Reply to...").
+    - Write a COMPLETE, natural one-liner — never an all-lowercase fragment, never a bare phrase.
+    - RESTORE the meaningful detail the user actually gave that a terse note tends to drop: WHO the
+      task is for, WHAT it is about, its PURPOSE, and any concrete DEADLINE. Recover that detail from
+      the original brain-dump — it is the substance of the task.
+    - DROP only true filler: vague timing musings ("sometime", "at some point", "one of these days").
+    - Keep the user's own words and meaning. Do NOT invent any detail that is not in the input.
+
+    HARD RULES — these protect the list:
+    - Return EXACTLY one rewritten task for each input task, in the SAME order.
+    - NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.
+    - You are only changing wording, not which tasks exist.
+    - Do NOT use emojis. Keep text clean and professional.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.
