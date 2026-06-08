@@ -1,0 +1,28 @@
+{
+  "summary": "Coverage-first exhaustive candidate sweep then select",
+  "hypothesis": "Over-generating candidate intentions before committing to a final list will improve recall on multi-task rambles by surfacing buried tasks that a single-shot extract misses.",
+  "technique": "A multi-call in-schema expand stage exhaustively enumerates candidate intentions (over-listing), followed by a deterministic post-processing pass to select the final task list \u2014 testing whether a coverage-first sweep beats the single-shot baseline.",
+  "result": "Quality scored 0.943 on dev-11 (W/T/L vs Sonnet 0/5/4), down \u22120.012 from exp001's 0.955, and was discarded. The expand sweep recovered buried tasks (multi_errands 0.8\u21921.0) but introduced duplicates (dedup_groceries precision 1.0\u21920.955), confirming that pushing recall via in-schema over-listing costs precision and the net is a wash; a dedup pass robust to leakage is needed.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form ramble input"
+    },
+    {
+      "kind": "expand",
+      "text": "Exhaustive candidate intentions sweep in-schema",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic dedup/select final task list"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N actionable tasks"
+    }
+  ],
+  "label": "exp002"
+}
