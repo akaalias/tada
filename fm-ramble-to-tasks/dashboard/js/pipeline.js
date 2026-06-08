@@ -89,15 +89,16 @@ export function renderPipeD3(spec, el) {
   const tip = document.getElementById('tip');
   const showTip = (e, html) => { if (tip) { tip.classList.remove('tip-prompt'); tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; } };
   const hideTip = () => { if (tip) { tip.style.opacity = 0; tip.classList.remove('tip-prompt'); } };
-  // Fixed, readable prompt popover: to the RIGHT of the pointer, vertically centered, clamped.
+  // Fixed, readable prompt popover: 20px to the RIGHT of the node, vertically centered, clamped.
   const showPromptPop = (e, d) => {
     if (!tip) return;
     tip.classList.add('tip-prompt');
     tip.innerHTML = '<div class="pp-title">' + esc(d.full) + '</div><pre class="t-prompt">' + esc(d.prompt) + '</pre>';
     tip.style.opacity = 1;
-    const gap = 22, pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
-    let left = e.clientX + gap;
-    if (left + w + pad > window.innerWidth) left = Math.max(pad, e.clientX - gap - w);
+    const pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
+    const rect = e.currentTarget.getBoundingClientRect();   // the node box (screen coords)
+    let left = rect.right + 20;                              // always 20px right of the node
+    if (left + w + pad > window.innerWidth) left = Math.max(pad, rect.left - 20 - w);
     const top = Math.max(pad, Math.min(e.clientY - h / 2, window.innerHeight - h - pad));
     tip.style.left = left + 'px'; tip.style.top = top + 'px';
   };
