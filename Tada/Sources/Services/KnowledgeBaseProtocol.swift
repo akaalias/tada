@@ -190,6 +190,17 @@ final class PlannerAIServiceAdapter: PlannerAIServiceProtocol {
 
     func generateDiscoveryQuestions(for task: String) async throws -> TaskPlan {
         if let testMock { return try await testMock.generateDiscoveryQuestions(for: task) }
+        // Discovery questions run on-device (the fine-tuned FMDiscovery champion)
+        // when the system model + bundled adapter are available; on any failure we
+        // fall back to the cloud planner so discovery always works. Everything
+        // beyond discovery stays on the Claude API.
+        if OnDeviceDiscoveryService.isAvailable {
+            do {
+                return try await OnDeviceDiscoveryService().generateDiscoveryQuestions(for: task)
+            } catch {
+                NSLog("On-device discovery failed (\(error)); falling back to cloud planner.")
+            }
+        }
         let planner = PlannerAIService(apiKey: APIKeyManager.getAPIKey() ?? "")
         return try await planner.generateDiscoveryQuestions(for: task)
     }
