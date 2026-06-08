@@ -55,7 +55,7 @@ export async function renderDetail(label, cell) {
 
   const blocks = scores.map((s, i) => {
     const gold = golds[i];
-    const goldQs = gold ? `<ol class="qs">${gold.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : '<div class="disc">gold unavailable</div>';
+    const goldQs = gold ? (gold.tasks.length ? `<ol class="qs">${gold.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : '<div class="disc">(none)</div>') : '<div class="disc">gold unavailable</div>';
     const cand = s.candidate;
     const refused = !!s.error;
     const maxN = cand ? cand.tasks.length : 0;
@@ -69,16 +69,28 @@ export async function renderDetail(label, cell) {
         }).join('')}</ul>`
       : refused ? `<div class="judge-note">${esc(s.error)}</div>`
       : `<div class="judge-note disc">not judged</div>`;
-    const fmQs = cand ? `<ol class="qs">${cand.tasks.map((q, qi) =>
-        `<li data-qn="${qi + 1}"${refd.has(qi + 1) ? ' class="q-flag"' : ''}>${esc(q)}</li>`).join('')}</ol>`
+    const fmQs = cand ? (cand.tasks.length ? `<ol class="qs">${cand.tasks.map((q, qi) =>
+        `<li data-qn="${qi + 1}"${refd.has(qi + 1) ? ' class="q-flag"' : ''}>${esc(q)}</li>`).join('')}</ol>` : '<div class="disc">(none)</div>')
       : refused ? `<div class="disc">${esc(s.error)} — no output; excluded from quality</div>`
       : `<div class="disc">spec failed: ${(s.spec.violations || []).join('; ')}</div>`;
-    let head = refused
-      ? '<span class="badge b-tie">REFUSED</span> <span class="disc">FM content moderation — excluded from quality</span>'
-      : '<span class="disc">not judged (spec failed)</span>';
-    if (s.verdict) {
+    // Status header. A zero-task case (empty gold) is NOT judged — there is nothing to
+    // compare — so it is scored deterministically; show that, not a bogus "spec failed".
+    const m = s.match;
+    const f1 = m ? (m.goldEmpty ? (m.zeroTaskCorrect ? 1 : 0) : m.f1) : null;
+    const f1s = f1 != null ? f1.toFixed(2) : '—';
+    let head;
+    if (refused) {
+      head = '<span class="badge b-tie">REFUSED</span> <span class="disc">FM content moderation — excluded from quality</span>';
+    } else if (s.spec && !s.spec.passed) {
+      head = `<span class="badge b-loss">SPEC FAIL</span> <span class="disc">${esc((s.spec.violations || []).join('; '))}</span>`;
+    } else if (s.verdict) {
       const [cls, txt] = pw(s.verdict.pairwise);
-      head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;
+      head = `<span class="badge ${cls}">${txt}</span> <span class="rubric">F1 ${f1s} · rubric ${rmean(s.verdict.rubric)}</span> ${rubricChips(s.verdict.rubric)}`;
+    } else if (m && m.goldEmpty) {
+      const ok = m.zeroTaskCorrect;
+      head = `<span class="badge ${ok ? 'b-win' : 'b-loss'}">${ok ? 'CORRECT · EMPTY' : 'INVENTED TASKS'}</span> <span class="rubric">F1 ${f1s}</span> <span class="disc">no actionable task expected — not judged</span>`;
+    } else {
+      head = `<span class="badge b-loss">EMPTY OUTPUT</span> <span class="rubric">F1 ${f1s}</span> <span class="disc">no tasks extracted — not judged</span>`;
     }
     return `<div class="case">
       <div class="case-head"><span class="case-meta">${head}</span></div>
