@@ -18,22 +18,25 @@ list is the correct, expected answer when nothing in the input is actionable.
   with zero-task cases scored binary (correctly empty = 1, else 0). The Sonnet judge
   does the paraphrase-aware matching AND a 1-5 diagnostic rubric (faithfulness /
   atomicity / actionability / coverage / nonRedundancy). Higher is better. Gate on
-  the FULL set.
+  the DEV split (the default of `evaluate`); a held-out TEST split is checked by the operator.
 - Decoding: prefer GREEDY (`sampling: .greedy`, temp 0) for the final generation
   unless the technique inherently needs diverse samples (best-of-N / self-consistency),
-  in which case the aggregation must supply stability. With ~15 gold cases one case is
-  ~0.067, so a delta ≤ ~0.05 is noise, not a win.
+  in which case the aggregation must supply stability. With ~11 dev cases one case is
+  ~0.09, so a delta ≤ ~0.09 is noise, not a win.
 
 ## Current best to BUILD ON
-`baseline` — singleShot, greedy, stock FM — **quality 0.727** (full set). The gap is
-concentrated and specific:
-1. **ZERO-TASK (the #1 lever):** all 4 venting/bait cases score 0.000 — the stock FM
-   INVENTS tasks on non-actionable input ("Take a break" from venting, "journal more"
-   from idle musing). Teaching it to return `[]` when nothing is actionable is the
-   single biggest win available.
-2. **RETRACTION in long rambles:** `long_portugal` kept "Renew passport" after the
-   user said "scratch that" — a faithfulness miss.
-Faithfulness and coverage are the load-bearing rubric dims for this task.
+`exp001` — singleShotReasoned (reasoning-first gated `@Generable`: `analysis` →
+`hasActionableTasks` bool → `tasks`, gate enforced in `toContract()`), greedy, stock FM
+— **DEV 0.955 / TEST 1.000** (zero-task 100% on both, validated on held-out cases the
+config never had examples for). Build on it.
+
+State of the gap:
+- ZERO-TASK is SOLVED and generalizes. Do not re-litigate it.
+- The gold set is near-saturated — exp001 is close to ceiling. Until it grows, only
+  clear MULTI-case gains count (dev = 11 cases, one ≈ 0.09; ignore smaller wiggles).
+- Residual headroom is on the HARDEST inputs: long, heavily-interleaved, many-task
+  rambles where coverage and dedup are hardest. Prefer ideas that help there.
+Faithfulness and coverage remain the load-bearing rubric dims.
 
 The harness JUDGES and LOGS automatically when you run the eval command. You do not
 implement judging or scoring.
@@ -48,9 +51,17 @@ implement judging or scoring.
 - NEVER hand-edit `results/runs.jsonl` or `results/*.json`. The eval writes them.
 - NEVER change the gold, the judge, the metric, or the spec gate. Do not make the
   metric easier. Improve the agent, not the ruler.
-- GOLD-LEAK BAN: never copy, template, or paraphrase a gold task list into your output.
-  The agent must always GENERATE tasks from the input. If you add retrieval/few-shot,
-  demonstrations must be OTHER tasks — never the eval case's own gold.
+- GOLD-LEAK BAN: never copy, template, or paraphrase a gold task list into your output;
+  the agent must always GENERATE tasks from the input. ALSO do NOT hand-write few-shot
+  examples, worked contrasts, or test phrases that resemble (paraphrase, or share the
+  distinctive content of) any eval INPUT — illustrative examples must be generic and
+  clearly unrelated to the gold cases. Do NOT read `gold/` to look at eval inputs. If
+  you add retrieval/few-shot, demonstrations must be OTHER tasks — never an eval case's
+  own (or a near-duplicate) gold.
+- HELD-OUT TEST: you are scored on the DEV split (the default of `evaluate`). A separate
+  TEST split is held out and checked by the operator to detect overfitting. NEVER read,
+  target, or tune anything toward the test cases — gains must come from the model
+  generalizing, not from memorizing inputs. A dev gain that does not hold on test is not real.
 - Every experiment MUST end with a GREEN build and exactly one NEW logged run.
 - Keep all previous configs intact; each experiment ADDS a new named config (`expNNN`).
 

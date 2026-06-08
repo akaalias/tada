@@ -2,14 +2,18 @@
 
 Newest first. One line per experiment. The autonomous agent prepends here each run.
 
-**Current best:** `exp001` — singleShotReasoned, greedy, stock FM — quality **0.967** (full set).
+**Current best:** `exp001` — singleShotReasoned, greedy, stock FM — **DEV 0.955 / TEST 1.000** (held-out validated; zero-task 100% on both, incl. fresh bait the config never had examples for).
 
-**Dominant gap to attack:**
-- ZERO-TASK (#1 lever): all 4 venting/bait cases score 0.000 — the stock FM invents
-  tasks on non-actionable input. Make it return `[]` when nothing is actionable.
-- RETRACTION: long_portugal kept a "scratch that" task (faithfulness miss).
-Faithfulness and coverage are the load-bearing rubric dimensions.
+You are scored on the DEV split. The TEST split is held out — never tune toward it.
+
+**State of the gap:**
+- ZERO-TASK: SOLVED by exp001 (reasoning-first gate) and it GENERALIZES to held-out.
+- The gold set is now near-saturated (exp001 ≈ ceiling). Until it grows harder/larger,
+  only clear MULTI-case gains count — dev has 11 cases, one ≈ 0.09; ignore smaller wiggles.
+- Residual headroom is on the hardest inputs: long, heavily-interleaved, many-task
+  rambles where coverage/dedup are hardest. Prefer ideas that help THERE.
 
 ## Log
+- [operator] re-seeded onto DEV/TEST splits + tightened the leak rule; held-out TEST (2 fresh bait cases unlike any prompt example) confirms exp001 GENERALIZES — DEV 0.955, TEST 1.000, zero-task 100% on both. The win is real, not memorized.
 - exp001 reasoning-first gated schema (analysis + hasActionableTasks bool gate before tasks) — quality 0.967 (full), NEW BEST (+0.24 over baseline). Forcing the model to name venting/musing/retractions and commit a boolean before listing fixed all 4 zero-task cases (100% correct empties) and the long_portugal retraction; extraction cases unaffected.
 - baseline — singleShot greedy on stock FM — quality 0.727 (full), seed baseline. Extraction cases ~1.0; entire gap is the 4 zero-task failures + one retraction.

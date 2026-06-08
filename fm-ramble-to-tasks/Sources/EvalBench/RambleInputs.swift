@@ -62,10 +62,23 @@ public enum RambleInputs {
         // ── Long (~1.5 min): trip planning with a retraction and tangents ──
         RambleInput(id: "long_portugal", kind: "long", heldOutReal: false,
             input: "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now."),
+
+        // ── Fresh held-out zero/bait, deliberately UNLIKE any prompt example, to
+        //    honestly test whether a zero-task fix generalizes (not memorizes) ──
+        RambleInput(id: "zero_frustrated", kind: "zero", heldOutReal: false,
+            input: "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest."),
+        RambleInput(id: "bait_ocean", kind: "bait", heldOutReal: false,
+            input: "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess."),
     ]
 
-    /// Small fast subset for quick iteration (diverse: real, zero, multi, noisy, long).
-    public static let devSubsetIDs: Set<String> = ["real_franziska", "zero_venting", "multi_errands", "noisy_selfcorrect", "long_monday"]
+    /// Held-out TEST split — the honest gate. The autoresearch agent never optimizes
+    /// or crafts examples toward these. Includes fresh zero/bait cases unlike any
+    /// prompt example, plus the real dogfooded case. The loop gates on DEV (the rest).
+    public static let testIDs: Set<String> = [
+        "real_franziska", "bait_journal", "bait_someday",
+        "zero_frustrated", "bait_ocean", "long_portugal",
+    ]
+    public static func isTest(_ id: String) -> Bool { testIDs.contains(id) }
 
     public static func named(_ id: String) -> RambleInput? { all.first { $0.id == id } }
 }

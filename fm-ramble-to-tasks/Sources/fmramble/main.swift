@@ -79,9 +79,15 @@ case "evaluate":
     guard let all = try? GoldStore.load(from: goldDir), !all.isEmpty else {
         FileHandle.standardError.write(Data("no gold/ found — run `swift run fmramble gold` first\n".utf8)); exit(2)
     }
-    var cases = all
-    let subset = stringFlag("--subset") == "dev" ? "dev" : "full"
-    if subset == "dev" { cases = cases.filter { RambleInputs.devSubsetIDs.contains($0.id) } }
+    // Default to the DEV optimization gate; TEST is held out for honesty; FULL = all.
+    let subsetArg = stringFlag("--subset") ?? "dev"
+    let subset = (subsetArg == "test" || subsetArg == "full") ? subsetArg : "dev"
+    var cases: [GoldCase]
+    switch subset {
+    case "test": cases = all.filter { RambleInputs.isTest($0.id) }
+    case "full": cases = all
+    default:     cases = all.filter { !RambleInputs.isTest($0.id) }   // dev
+    }
     if let limit = intFlag("--limit") { cases = Array(cases.prefix(limit)) }
 
     let judge: Judge
