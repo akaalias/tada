@@ -105,9 +105,12 @@ fm-ramble-to-tasks/
       Prompts.swift      system instructions (mirrors the app's split contract)
       Configs.swift      experiment registry (the mutable lever space)
   Sources/fmramble/      CLI: availability | inspect (evaluate next)
-  [todo] Sources/EvalBench/  gold + Sonnet judge + set-match P/R metric + runner + gate
-  [todo] gold/               frozen gold cases
-  [todo] scenarios / gen     Sonnet scenario generator (synthetic) + real held-out
+  [todo] Sources/EvalBench/  RambleInputs (input set, synthetic + real held-out) +
+                             GoldCase + GoldGenerator (Sonnet gold) + Sonnet judge +
+                             set-match P/R metric + runner + gate. All Swift — mirrors
+                             FMDiscovery. NO Python, NO scenarios.py (that was the
+                             dropped juna plan).
+  [todo] gold/               frozen Sonnet-generated gold cases (GoldStore JSON)
   [todo] autoresearch/       run.sh loop + RunPod training driver
 ```
 
@@ -125,7 +128,7 @@ xcodebuild — that's only for the Tada app).
 - [x] **Phase 1 scaffold:** RambleSplit package builds; FM AVAILABLE; stock on-device FM
       splits the Franziska ramble into the 3 correct tasks (baseline candidate works).
 - [ ] EvalBench: gold loader, Sonnet judge, deterministic set-match P/R metric, runner, CLI `evaluate`.
-- [ ] Sonnet scenario generator (synthetic data) + seed real held-out (Franziska +).
+- [ ] GoldGenerator (Sonnet) for synthetic gold + RambleInputs incl. real held-out (Franziska +).
 - [ ] More topologies in Configs (segmentExtract, overGenerateFilter, ...).
 - [ ] autoresearch loop (run.sh driving claude) re-tasked.
 - [ ] RunPod training driver (the autonomy seam) + network volume + cost guards.
