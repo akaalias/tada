@@ -44,6 +44,9 @@ export async function fetchPipe(label) {
     const r = await fetch(`../results/pipelines/${label}.json` + bust());
     if (!r.ok) return null;                 // don't cache a miss
     const j = await r.json();
+    // Defensive: the generator can occasionally store `stages` as a JSON string; normalize.
+    if (j && typeof j.stages === 'string') { try { j.stages = JSON.parse(j.stages); } catch (e) { j.stages = []; } }
+    if (j && !Array.isArray(j.stages)) j.stages = [];
     pipeCache[label] = j;
     return j;
   } catch (e) { return null; }

@@ -166,6 +166,15 @@ def main():
         fail(f"no tool_use in response for {label}")
     spec["label"] = label
 
+    # Sonnet occasionally serializes the stages array as a JSON STRING; coerce to a list.
+    if isinstance(spec.get("stages"), str):
+        try:
+            spec["stages"] = json.loads(spec["stages"])
+        except Exception:
+            spec["stages"] = []
+    if not isinstance(spec.get("stages"), list):
+        spec["stages"] = []
+
     # DETERMINISTIC adapter knob: the ground truth of which adapter a config uses is
     # its `adapter:` path in Configs.swift. Stamp it onto the first on-device model
     # stage so the LoRA node renders correctly.
