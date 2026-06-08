@@ -3,7 +3,7 @@ name: Tada
 options:
   bundleIdPrefix: com.tada
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "26.0"
   xcodeVersion: "26.2"
 
 settings:
@@ -21,6 +21,11 @@ targets:
     sources:
       - Tada/Sources
       - Tada/Resources
+      # On-device discovery assets: the champion LoRA adapter + the corpus bank,
+      # bundled verbatim as a folder reference (Resources/OnDeviceModels/...).
+      - path: Tada/OnDeviceModels
+        type: folder
+        buildPhase: resources
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
