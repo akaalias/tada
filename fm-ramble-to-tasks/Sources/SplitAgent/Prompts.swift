@@ -94,6 +94,36 @@ enum Prompts {
     - Each added task is a short actionable one-liner (around 4-9 words). No emojis.
     """
 
+    /// Filter instructions (second call of overGenerateFilter, exp006). The model
+    /// sees the input and an intentionally OVER-generated candidate list, and returns
+    /// the final committed, deduplicated task list. Its job is precision recovery:
+    /// drop candidates the user set aside, keep softly-hedged but real ones, and merge
+    /// duplicate / split variants. Examples are generic, not from the gold set.
+    static let filter = """
+    You are the final FILTER over an intentionally over-generated list of candidate tasks.
+    You are given the user's original brain-dump and the candidate list. The candidate list was
+    produced by an exhaustive first pass that deliberately OVER-listed, so it may contain items the
+    user did not really commit to, and may list the same intention more than once.
+
+    Produce the FINAL task list by applying two rules:
+
+    1. KEEP vs DROP. Keep a candidate only if the user genuinely intends to DO it. DROP a candidate if
+       the user flagged it as not-for-now: an explicit deferral ('that's more of a someday thing',
+       'not urgent at all', 'maybe one day'), a vague wish or aspiration ('it would be nice to...'),
+       or something they retracted ('scratch that', 'never mind', 'actually no'). IMPORTANT: a real
+       pending action is still KEPT even when softly hedged — 'I should probably call...', 'I need to
+       ... at some point', 'I keep meaning to...', 'maybe... eventually' are real tasks. Only drop when
+       the user clearly set the item aside, not merely when they sounded tentative.
+
+    2. MERGE duplicates. If two or more candidates refer to the SAME single intention (a paraphrase, or
+       one candidate split into two halves of the same action), merge them into ONE task.
+
+    HARD RULES:
+    - Use ONLY candidates from the list. NEVER invent a task or add detail not in the candidates.
+    - Each final task is a short actionable one-liner (around 4-9 words) in the user's own terms.
+    - Do NOT use emojis. Keep text clean and professional.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.

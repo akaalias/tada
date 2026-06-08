@@ -1,24 +1,24 @@
 {
-  "summary": "Single-shot greedy baseline on stock FM",
-  "hypothesis": "A single greedy call to the stock on-device FM with plain task-extraction instructions is sufficient to split most rambles correctly. This establishes the quality floor before any multi-call or reasoning enhancements.",
-  "technique": "A single greedy on-device model call using the `singleShot` prompt \u2014 plain imperative rules with no reasoning chain, no retrieval, and no post-processing. Serves as the seed baseline against which all subsequent experiments are measured.",
-  "result": "Quality 0.818 on dev-11; W/T/L vs Sonnet = 0/8/1. All rubric dimensions (faith, atom, action, cover, nonRed) scored 5. KEPT as new best. The score confirms strong extraction on most cases, with the residual gap traced to 4 zero-task failures and one retraction miss (consistent with the full-set 0.727).",
+  "summary": "Single-shot greedy baseline extraction",
+  "hypothesis": "A plain single-shot greedy call on the stock FM can reliably split rambles into actionable tasks. The expected failure mode is zero-task inputs and retractions, where the model may fabricate or fail to suppress tasks.",
+  "technique": "A single greedy on-device FM call using the `singleShot` prompt and a flat `@Generable` task-list schema \u2014 no reasoning chain, no gating, no second pass.",
+  "result": "Quality 0.824 on dev-17 (W/T/L vs Sonnet = 0/5/9); all rubric dimensions (faith, atom, action, cover, nonRed) scored 5. KEPT as new best. The result confirms extraction cases are strong but the gap to Sonnet is driven by zero-task failures and a retraction miss, consistent with the known weaknesses of a flat schema.",
   "stages": [
     {
       "kind": "input",
-      "text": "User free-form ramble text"
+      "text": "User free-form ramble received"
     },
     {
       "kind": "generate",
-      "text": "Single-shot task extraction, greedy",
+      "text": "Single-shot greedy task extraction",
       "knobs": {
         "sampling": "greedy"
       },
-      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain:\n- ZERO tasks (venting, musing, or thinking out loud with nothing actionable)\n- ONE task\n- SEVERAL distinct tasks, sometimes interleaved (the user jumps back to an earlier thought)\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. A vague wish or feeling is NOT a task.\n- NEVER invent tasks. Every task must trace directly to something in the input.\n- If nothing in the input is an actionable task, return an empty list. Do not force a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"(input)\"\n\nExtract each distinct, actionable task as a short one-liner. If there are none, return an empty list."
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain:\n- ZERO tasks (venting, musing, or thinking out loud with nothing actionable)\n- ONE task\n- SEVERAL distinct tasks, sometimes interleaved (the user jumps back to an earlier thought)\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. A vague wish or feeling is NOT a task.\n- NEVER invent tasks. Every task must trace directly to something in the input.\n- If nothing in the input is an actionable task, return an empty list. Do not force a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"\\(input)\"\n\nExtract each distinct, actionable task as a short one-liner. If there are none, return an empty list."
     },
     {
       "kind": "output",
-      "text": "Final 0..N extracted task list"
+      "text": "Final 0..N tasks returned"
     }
   ],
   "label": "baseline"

@@ -69,6 +69,26 @@ public enum RambleInputs {
             input: "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest."),
         RambleInput(id: "bait_ocean", kind: "bait", heldOutReal: false,
             input: "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess."),
+
+        // ── More coverage (dev) ──
+        RambleInput(id: "single_plumber", kind: "single", heldOutReal: false,
+            input: "I really have to call a plumber about the kitchen sink, it has been dripping for days now."),
+        RambleInput(id: "multi_morning", kind: "multi", heldOutReal: false,
+            input: "This morning I need to drop the kids at school, pick up my dry cleaning, and swing by the pharmacy for my prescription."),
+        RambleInput(id: "interleaved_party", kind: "interleaved", heldOutReal: false,
+            input: "I should invite Tom to the barbecue this weekend, oh and I need to buy charcoal, and actually for the barbecue I have to text Tom the address too."),
+        RambleInput(id: "mixed_gym", kind: "mixed", heldOutReal: false,
+            input: "Felt great after the gym today, honestly I need to keep that up. Anyway, I have to renew my car registration before it expires on Friday."),
+        RambleInput(id: "dedup_email", kind: "dedup", heldOutReal: false,
+            input: "I need to reply to Dana's email about the contract. Yeah, definitely have to get back to Dana on that contract thing today."),
+        RambleInput(id: "noisy_filler", kind: "noisy", heldOutReal: false,
+            input: "So um, I guess I should, like, finally schedule the annual eye exam, my prescription is pretty old at this point."),
+
+        // ── More held-out (test) ──
+        RambleInput(id: "zero_reflect", kind: "zero", heldOutReal: false,
+            input: "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh."),
+        RambleInput(id: "long_household", kind: "long", heldOutReal: false,
+            input: "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there."),
     ]
 
     /// Held-out TEST split — the honest gate. The autoresearch agent never optimizes
@@ -77,6 +97,7 @@ public enum RambleInputs {
     public static let testIDs: Set<String> = [
         "real_franziska", "bait_journal", "bait_someday",
         "zero_frustrated", "bait_ocean", "long_portugal",
+        "zero_reflect", "long_household",
     ]
     public static func isTest(_ id: String) -> Bool { testIDs.contains(id) }
 

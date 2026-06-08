@@ -1,0 +1,37 @@
+{
+  "summary": "Over-generate candidates then filter to final list",
+  "hypothesis": "Splitting extraction into an exhaustive over-generate pass (to catch buried/hedged tasks) followed by a dedicated filter pass (to recover precision) would outperform exp004's single-shot reasoned base by capturing the residual missed task without sacrificing accuracy elsewhere.",
+  "technique": "A two-call pipeline: call 1 uses the `coverage` prompt to exhaustively over-list every candidate intention (including hedged/buried ones) with a zero-task gate; call 2 uses the `filter` prompt to drop non-committed candidates and merge duplicates. Simple inputs (0\u20131 candidate) bypass the filter entirely.",
+  "result": "Quality 0.741 on dev-17 (W/T/L vs Sonnet = 0/1/13), discarded. This is \u22120.251 below exp004's 0.992, far outside noise. The filter failed to reconstruct the clean base: it dropped real tasks, failed to deduplicate paraphrases, and wrecked a solved retraction case (noisy_selfcorrect 1.0\u21920.00). Hypothesis falsified \u2014 an over-generate base is strictly worse than the precise reasoned single-shot.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User free-form brain-dump ramble"
+    },
+    {
+      "kind": "expand",
+      "text": "Exhaustive over-list with zero-task gate",
+      "call_labels": [
+        "Coverage over-generate sweep"
+      ],
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks. Crucially, tasks are often INTERLEAVED: the user starts one thought,\ndrifts into a digression or a second topic, then jumps BACK to finish the first. A task can also\nbe buried in the middle of a sentence. Read the WHOLE input before deciding \u2014 do not stop early.\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. candidateIntentions: sweep the entire input start to finish and list EVERY distinct action,\n   in order of appearance, including brief or buried ones and ones the user returned to after a\n   digression. Be exhaustive \u2014 over-list rather than miss something.\n4. tasks: merge candidates that mean the same thing into one; keep every genuinely distinct one.\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"\\(input)\"\n\nFirst analyze what is and isn't actionable and decide whether any real task remains. Then sweep the whole input and list every distinct intention you find, even ones buried mid-sentence or returned to after a digression. Be exhaustive \u2014 over-list rather than miss something. Then give your best merged list (it will be filtered next)."
+    },
+    {
+      "kind": "critique",
+      "text": "Filter: drop non-committed, merge duplicates",
+      "call_labels": [
+        "Precision-recovery filter pass"
+      ],
+      "prompt": "System:\nYou are the final FILTER over an intentionally over-generated list of candidate tasks.\nYou are given the user's original brain-dump and the candidate list. The candidate list was\nproduced by an exhaustive first pass that deliberately OVER-listed, so it may contain items the\nuser did not really commit to, and may list the same intention more than once.\n\nProduce the FINAL task list by applying two rules:\n\n1. KEEP vs DROP. Keep a candidate only if the user genuinely intends to DO it. DROP a candidate if\n   the user flagged it as not-for-now: an explicit deferral ('that's more of a someday thing',\n   'not urgent at all', 'maybe one day'), a vague wish or aspiration ('it would be nice to...'),\n   or something they retracted ('scratch that', 'never mind', 'actually no'). IMPORTANT: a real\n   pending action is still KEPT even when softly hedged \u2014 'I should probably call...', 'I need to\n   ... at some point', 'I keep meaning to...', 'maybe... eventually' are real tasks. Only drop when\n   the user clearly set the item aside, not merely when they sounded tentative.\n\n2. MERGE duplicates. If two or more candidates refer to the SAME single intention (a paraphrase, or\n   one candidate split into two halves of the same action), merge them into ONE task.\n\nHARD RULES:\n- Use ONLY candidates from the list. NEVER invent a task or add detail not in the candidates.\n- Each final task is a short actionable one-liner (around 4-9 words) in the user's own terms.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nThe user brain-dumped:\n\n\"\\(input)\"\n\nA first pass over-generated this candidate list (it may include things the user did NOT really commit to, and may list the same intention more than once):\n\\(listed)\n\nReturn the FINAL task list: keep only candidates the user genuinely commits to doing, drop the ones they flagged as someday / not urgent / a vague wish / retracted, and merge any duplicates or split variants of the same intention into ONE task."
+    },
+    {
+      "kind": "post",
+      "text": "Deterministic dedup safety net"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N deduplicated tasks"
+    }
+  ],
+  "label": "exp006"
+}

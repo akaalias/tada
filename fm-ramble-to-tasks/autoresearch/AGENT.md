@@ -14,29 +14,32 @@ list is the correct, expected answer when nothing in the input is actionable.
 
 ## The artifact and the metric
 - The MUTABLE artifact you improve: `fm-ramble-to-tasks/Sources/SplitAgent/**` ONLY.
-- Headline metric: `quality` (0-1) = mean set-match **F1** over the full gold set,
-  with zero-task cases scored binary (correctly empty = 1, else 0). The Sonnet judge
-  does the paraphrase-aware matching AND a 1-5 diagnostic rubric (faithfulness /
-  atomicity / actionability / coverage / nonRedundancy). Higher is better. Gate on
-  the DEV split (the default of `evaluate`); a held-out TEST split is checked by the operator.
+- Headline metric: `quality` (0-1) = **0.5·F1 + 0.5·rubric** for judged cases (zero-task
+  cases scored binary: correctly empty = 1, else 0). F1 is the paraphrase-aware set match
+  (did you extract the RIGHT tasks); the 1-5 Sonnet rubric is the other half — faithfulness /
+  atomicity / actionability / coverage / nonRedundancy / **phrasing**. PHRASING counts:
+  match gold's STYLE — capitalized, conversational, complete (keep meaningful detail like
+  "with the post office") — a terse all-lowercase fragment scores low even if the meaning
+  matches. So getting the right tasks is not enough; phrase them like Sonnet. Gate on the
+  DEV split (the default of `evaluate`); a held-out TEST split is checked by the operator.
 - Decoding: prefer GREEDY (`sampling: .greedy`, temp 0) for the final generation
   unless the technique inherently needs diverse samples (best-of-N / self-consistency),
   in which case the aggregation must supply stability. With ~11 dev cases one case is
   ~0.09, so a delta ≤ ~0.09 is noise, not a win.
 
 ## Current best to BUILD ON
-`exp001` — singleShotReasoned (reasoning-first gated `@Generable`: `analysis` →
-`hasActionableTasks` bool → `tasks`, gate enforced in `toContract()`), greedy, stock FM
-— **DEV 0.955 / TEST 1.000** (zero-task 100% on both, validated on held-out cases the
-config never had examples for). Build on it.
+`exp002` — coverage-first (over-generate candidate intentions, then a final list),
+greedy, stock FM — **DEV 0.892 / TEST 0.931** (metric: 0.5·F1 + 0.5·rubric). Build on it.
 
 State of the gap:
-- ZERO-TASK is SOLVED and generalizes. Do not re-litigate it.
-- The gold set is near-saturated — exp001 is close to ceiling. Until it grows, only
-  clear MULTI-case gains count (dev = 11 cases, one ≈ 0.09; ignore smaller wiggles).
-- Residual headroom is on the HARDEST inputs: long, heavily-interleaved, many-task
-  rambles where coverage and dedup are hardest. Prefer ideas that help there.
-Faithfulness and coverage remain the load-bearing rubric dims.
+- ZERO-TASK is SOLVED (binary, 100%). Do not re-litigate it.
+- F1 / coverage are already strong (~0.96). The dominant, UNSATURATED gap is **PHRASING**
+  — every config scores phrasing 2-3/5: the on-device model emits terse, all-lowercase
+  fragments that drop meaningful detail ("book moving truck" vs gold "Book the moving
+  truck"; "to reschedule"; "with the post office"). The #1 lever is making the output
+  match Sonnet's capitalized, conversational, complete style WITHOUT losing F1 — try
+  prompt wording, the `@Generable` `@Guide` descriptions, or a light deterministic post-pass.
+- Old F1-only scores in program.md are NOT comparable to current ones (the metric changed).
 
 The harness JUDGES and LOGS automatically when you run the eval command. You do not
 implement judging or scoring.

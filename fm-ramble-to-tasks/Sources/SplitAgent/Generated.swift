@@ -60,6 +60,22 @@ struct FMRambleAuditSweep {
     var missingTasks: [String]
 }
 
+/// Filter pass (second call of the overGenerateFilter topology, exp006). Given the
+/// input AND an intentionally OVER-generated candidate list, it returns the final
+/// task list: keeping only candidates the user genuinely commits to (dropping ones
+/// flagged as someday / not urgent / vague wish / retracted) and merging duplicate
+/// or split variants of the same intention into one. This is where precision is
+/// recovered after the over-generate pass deliberately sacrificed it — it must
+/// separate a kept softly-hedged-but-pending action from a dropped explicit deferral.
+@Generable
+struct FMRambleFilter {
+    @Guide(description: "One sentence. For the candidate list, note which items the user genuinely commits to doing versus which they flagged as NOT now — someday / not urgent / a vague wish or aspiration / retracted ('never mind') — and which candidates are duplicates or split halves of the SAME single intention. A softly-hedged but real pending action ('I should probably...', 'I need to... at some point', 'maybe... eventually') is KEPT; an explicit deferral the user set aside ('that's more of a someday thing, not urgent') is dropped.")
+    var review: String
+
+    @Guide(description: "The FINAL distinct actionable tasks, each a short one-liner (around 4-9 words) in the user's own terms. Keep ONLY candidates the user genuinely commits to doing; drop candidates flagged as someday / not urgent / a vague wish / retracted. Merge any duplicates or split variants of the same intention into ONE task. Use only candidates from the list — never invent.")
+    var finalTasks: [String]
+}
+
 /// Coverage-first variant: keeps the zero-task gate, but adds an exhaustive
 /// over-generate step. Before the final list, the model must enumerate EVERY
 /// distinct thing the user wants to do across the WHOLE ramble — including

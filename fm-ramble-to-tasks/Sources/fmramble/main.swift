@@ -135,7 +135,7 @@ case "evaluate":
         "f1": metric.f1, "zeroTaskAccuracy": metric.zeroTaskAccuracy, "specPass": metric.specPassRate,
         "wins": metric.wins, "ties": metric.ties, "losses": metric.losses,
         "faithfulness": rm.faithfulness, "atomicity": rm.atomicity, "actionability": rm.actionability,
-        "coverage": rm.coverage, "nonRedundancy": rm.nonRedundancy,
+        "coverage": rm.coverage, "nonRedundancy": rm.nonRedundancy, "phrasing": rm.phrasing,
         "kept": metric.quality > bestBefore,
     ]
     if let line = try? JSONSerialization.data(withJSONObject: record),

@@ -11,9 +11,14 @@ public struct CaseScore: Sendable, Codable {
     public let candidate: RambleResult?
     public let error: String?
 
-    /// 0-1 quality: 0 if spec fails or generation errored, else the set-match quality.
+    /// 0-1 quality: 0 if spec fails or generation errored. Zero-task (empty-gold) cases
+    /// are scored binary (no rubric — no content to phrase). For non-empty cases that were
+    /// judged, quality blends WHAT (set-match F1) with HOW WELL (rubric, incl. phrasing):
+    /// 0.5·F1 + 0.5·rubric — so a correct-but-terse/lowercase set no longer scores 1.0.
     public var quality: Double {
         guard error == nil, spec.passed, let m = match else { return 0 }
+        if m.goldEmpty { return m.quality }
+        if let v = verdict { return 0.5 * m.f1 + 0.5 * v.rubric.normalized }
         return m.quality
     }
 }
@@ -49,12 +54,12 @@ public struct Metric: Sendable {
 
     public var rubricMeans: Rubric {
         let r = judged.map(\.rubric)
-        guard !r.isEmpty else { return Rubric(faithfulness: 0, atomicity: 0, actionability: 0, coverage: 0, nonRedundancy: 0) }
+        guard !r.isEmpty else { return Rubric(faithfulness: 0, atomicity: 0, actionability: 0, coverage: 0, nonRedundancy: 0, phrasing: 0) }
         func avg(_ kp: (Rubric) -> Int) -> Int { Int((r.map { Double(kp($0)) }.reduce(0, +) / Double(r.count)).rounded()) }
         return Rubric(
             faithfulness: avg(\.faithfulness), atomicity: avg(\.atomicity),
             actionability: avg(\.actionability), coverage: avg(\.coverage),
-            nonRedundancy: avg(\.nonRedundancy)
+            nonRedundancy: avg(\.nonRedundancy), phrasing: avg(\.phrasing)
         )
     }
 
@@ -67,13 +72,13 @@ public struct Metric: Sendable {
         return """
         ── metric ──────────────────────────────────────────
         cases:        \(count)  (answered \(answered), refused \(refused))
-        QUALITY (F1): \(String(format: "%.3f", quality))   (headline; 0-1, over answered cases)
-        precision:    \(String(format: "%.3f", precision))   recall: \(String(format: "%.3f", recall))
+        QUALITY:      \(String(format: "%.3f", quality))   (headline = 0.5·F1 + 0.5·rubric; zero-task binary)
+        F1:           \(String(format: "%.3f", f1))   precision: \(String(format: "%.3f", precision))   recall: \(String(format: "%.3f", recall))
         zero-task:    \(String(format: "%.0f%%", zeroTaskAccuracy * 100))   (correct empties)
         spec pass:    \(String(format: "%.0f%%", specPassRate * 100))   (of answered)
         refused:      \(refused)   (FM content moderation — excluded from quality)
         vs gold:      \(wins) win / \(ties) tie / \(losses) loss   (diagnostic)
-        rubric means: faithfulness \(rm.faithfulness)  atomicity \(rm.atomicity)  actionability \(rm.actionability)  coverage \(rm.coverage)  nonRedundancy \(rm.nonRedundancy)
+        rubric means: faithfulness \(rm.faithfulness)  atomicity \(rm.atomicity)  actionability \(rm.actionability)  coverage \(rm.coverage)  nonRedundancy \(rm.nonRedundancy)  phrasing \(rm.phrasing)
         ─────────────────────────────────────────────────────
         """
     }

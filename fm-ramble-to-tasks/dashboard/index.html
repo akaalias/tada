@@ -63,7 +63,7 @@
       <summary>What do the columns &amp; rubric mean?</summary>
       <dl class="help-grid">
         <dt>Type</dt><dd>The lever group. <b>Inference</b> = inference-time only (prompt / decoding / RAG / topology, no weight change). <b>SFT</b> = runs on a LoRA adapter trained by imitation on Sonnet gold. <b>ORPO</b> = runs on an adapter trained on chosen/rejected preference pairs.</dd>
-        <dt>Quality</dt><dd>0–1, higher is better — set-match <code>F1</code> against the gold task set; zero-task cases score 1 (correct empty) or 0. The target is 1.00 = matches Sonnet.</dd>
+        <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × F1 + 0.5 × rubric</code> for judged cases (zero-task cases score 1 if correctly empty, else 0). F1 = did we get the right tasks; rubric = how well (incl. phrasing). Target 1.00 = matches Sonnet.</dd>
         <dt>Spec</dt><dd>% of cases passing the hard technical gate: non-empty atomic tasks, no emojis, at most 12. A failed case scores 0.</dd>
         <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device task set was judged <i>better</i> than Sonnet's.</dd>
         <dt>The two sets</dt><dd><span class="gold">Set A = Gold (Sonnet)</span> &nbsp;vs&nbsp; <span class="fm">Set B = On-device</span>. The judge picks which is better and scores Set B 1–5 on five dimensions:</dd>
@@ -72,6 +72,7 @@
         <dt>actionability</dt><dd>a real to-do, not a vague wish or musing</dd>
         <dt>coverage</dt><dd>captures every distinct intention in the input</dd>
         <dt>nonRedundancy</dt><dd>no two tasks are the same intention</dd>
+        <dt>phrasing</dt><dd>matches Sonnet's style — capitalized, conversational, complete (keeps detail), not a terse lowercase fragment</dd>
       </dl>
       <div class="foot">Click any row to see what the experiment tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
     </details>

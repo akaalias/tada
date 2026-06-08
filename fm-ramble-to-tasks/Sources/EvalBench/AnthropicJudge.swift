@@ -36,7 +36,7 @@ public struct AnthropicJudge: Judge {
             pairwise: pairwise,
             rubric: Rubric(faithfulness: clamp(out.faithfulness), atomicity: clamp(out.atomicity),
                            actionability: clamp(out.actionability), coverage: clamp(out.coverage),
-                           nonRedundancy: clamp(out.nonRedundancy)),
+                           nonRedundancy: clamp(out.nonRedundancy), phrasing: clamp(out.phrasing)),
             matched: max(0, min(out.matched, cap)),
             notes: out.notes
         )
@@ -48,12 +48,13 @@ public struct AnthropicJudge: Judge {
     private func clamp(_ x: Int) -> Int { min(5, max(1, x)) }
 
     static let system = """
-    You are a strict, impartial evaluator of how well an assistant extracted the distinct, actionable tasks from a user's free-form brain-dump. Rate SET B (the candidate) on five dimensions, each 1 (poor) to 5 (excellent):
+    You are a strict, impartial evaluator of how well an assistant extracted the distinct, actionable tasks from a user's free-form brain-dump. Rate SET B (the candidate) on six dimensions, each 1 (poor) to 5 (excellent):
     - faithfulness: every task traces to something in the input; nothing is invented or hallucinated.
     - atomicity: each task is exactly ONE action; never combines two with "and"/"or".
     - actionability: each item is a real thing to DO, not a vague wish, feeling, or musing.
     - coverage: the set captures EVERY distinct intention in the input, missing none.
     - nonRedundancy: no two tasks are the same intention (including a thought the user repeated or returned to).
+    - phrasing: each task reads like SET A's style — properly capitalized, natural and conversational, and complete (keeps the meaningful detail, e.g. "with the post office", "the landlord"). A terse all-lowercase fragment that drops detail scores LOW even if the meaning matches.
     An empty set is the correct answer when the input contains no actionable task.
     Also COUNT how many of SET B's tasks correctly correspond to a DISTINCT task in SET A — the same intention even if worded differently (a paraphrase, or more/less detail, still counts as the same task). That is the `matched` count; it can never exceed the number of tasks in either set.
     Then pick which SET (A or B) better captures the user's actual tasks, or "tie" if genuinely equal. Be willing to say B is better when it is — do not favour A by default. Judge only what is written.
@@ -67,6 +68,7 @@ public struct AnthropicJudge: Judge {
         let actionability: Int
         let coverage: Int
         let nonRedundancy: Int
+        let phrasing: Int
         let notes: String
     }
 
@@ -83,9 +85,10 @@ public struct AnthropicJudge: Judge {
                 "actionability": intScore("real to-dos, not vague musings"),
                 "coverage": intScore("captures every distinct intention in the input"),
                 "nonRedundancy": intScore("no two tasks are the same intention"),
+                "phrasing": intScore("matches SET A's style: capitalized, conversational, complete (keeps meaningful detail); terse lowercase fragments score low"),
                 "notes": ["type": "string", "description": "One or two sentences: the candidate's main weakness vs the reference, to guide iteration."],
             ],
-            "required": ["better", "matched", "faithfulness", "atomicity", "actionability", "coverage", "nonRedundancy", "notes"],
+            "required": ["better", "matched", "faithfulness", "atomicity", "actionability", "coverage", "nonRedundancy", "phrasing", "notes"],
         ],
     ] }
 

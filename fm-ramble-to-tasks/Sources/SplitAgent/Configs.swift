@@ -29,6 +29,14 @@ public enum Configs {
         // buried among digressions that both base AND single-read audit dropped. The
         // forced enumerate-then-diff sweep aims to surface it without precision cost.
         "exp005": SplitConfig(topology: .extractAuditSweep, sampling: .greedy),
+        // exp006: OVER-GENERATE -> FILTER. exp004's only residual (long_monday) is a
+        // hedged task buried mid-ramble that the precise base drops and even exp005's
+        // audit sweep missed (grabbing the wrong "someday" garage). Per the exp005
+        // log, the fix must be EARLIER: call 1 over-lists exhaustively (grabbing the
+        // insurance call AND the someday-garage and split-dups), then call 2 filters
+        // to only genuinely-committed candidates and merges duplicates — separating
+        // the kept softly-hedged action from the dropped explicit deferral.
+        "exp006": SplitConfig(topology: .overGenerateFilter, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

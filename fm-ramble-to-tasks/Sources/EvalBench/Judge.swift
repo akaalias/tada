@@ -18,16 +18,17 @@ public enum Pairwise: String, Codable, Sendable {
 }
 
 /// 1-5 rubric scores on the dimensions that separate a good task extraction from
-/// a bad one. Diagnostic signal for the scientist — NOT the headline number.
+/// a bad one. Half of the headline quality (the other half is the set-match F1).
 public struct Rubric: Codable, Sendable, Equatable {
     public var faithfulness: Int   // every task traces to the input; nothing invented
     public var atomicity: Int      // each task is ONE action, no "and"/"or"
     public var actionability: Int  // real to-dos, not vague musings or feelings
     public var coverage: Int       // the set captures every distinct intention
     public var nonRedundancy: Int  // no two tasks are the same intention
+    public var phrasing: Int       // matches gold's style: capitalized, conversational, complete (keeps meaningful detail) — not a terse lowercase fragment
 
     public var mean: Double {
-        Double(faithfulness + atomicity + actionability + coverage + nonRedundancy) / 5.0
+        Double(faithfulness + atomicity + actionability + coverage + nonRedundancy + phrasing) / 6.0
     }
     /// 0-1 normalisation of a 1-5 mean.
     public var normalized: Double { (mean - 1.0) / 4.0 }
@@ -61,7 +62,7 @@ public struct StubJudge: Judge {
     public func judge(input: String, gold: RambleResult, candidate: RambleResult) async throws -> JudgeVerdict {
         JudgeVerdict(
             pairwise: .tie,
-            rubric: Rubric(faithfulness: 3, atomicity: 3, actionability: 3, coverage: 3, nonRedundancy: 3),
+            rubric: Rubric(faithfulness: 3, atomicity: 3, actionability: 3, coverage: 3, nonRedundancy: 3, phrasing: 3),
             matched: TaskSetMatcher.lexicalMatched(pred: candidate.tasks, gold: gold.tasks),
             notes: "stub judge — lexical match only"
         )

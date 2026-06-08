@@ -1,34 +1,34 @@
 {
-  "summary": "Gated extract\u2192audit: audit fires only for \u22652 base tasks",
-  "hypothesis": "Gating the coverage audit to inputs where the base extraction found \u22652 tasks will preserve the multi-task recall wins from exp003 while preventing the audit from adding spurious duplicates on single-task inputs.",
-  "technique": "A two-call pipeline: call 1 is the reasoned single-shot extraction; call 2 (the coverage audit) is skipped entirely when the base task count is less than 2, then a deterministic Swift mergeDedup pass combines the lists. The gate threshold is raised from 1 (exp003) to 2.",
-  "result": "quality=0.992 on dev-11 (W/T/L vs Sonnet = 0/7/2), specPass=100%, rubric faith=5 atom=5 action=5 cover=4 nonRed=5 \u2014 new best, +0.037 over exp001 (0.955). Recall rose from 0.924 to 0.985 with precision held at 1.0; hypothesis confirmed, kept as new best.",
+  "summary": "Gated extract\u2192audit: audit fires only if base\u22652 tasks",
+  "hypothesis": "Gating the coverage audit to inputs where the base extraction found \u22652 tasks will preserve multi-task recall wins while preventing the audit from adding spurious duplicates on single-task inputs.",
+  "technique": "A two-call pipeline: Call 1 is the proven reasoned single-shot extraction; Call 2 (audit) is conditionally invoked only when Call 1 returns \u22652 tasks (minBaseTasks=2). The auditor sees the committed list and adds only genuinely missing tasks; a deterministic Swift mergeDedup pass guards against any leaking near-duplicates.",
+  "result": "Quality scored 0.863 on dev-17 (W/T/L vs Sonnet = 0/4/10); the config was discarded. The rubric showed faith=5, atom=5, action=5, cover=4, nonRed=5 with specPass=100%, but coverage was the weak point and the run lost to Sonnet on 10 of 17 cases, making this the worst result recorded \u2014 the full-set log's reported 0.992 did not hold up on the dev-17 eval, falsifying the hypothesis.",
   "stages": [
     {
       "kind": "input",
-      "text": "User free-form brain-dump ramble"
+      "text": "User free-form ramble enters pipeline"
     },
     {
       "kind": "generate",
-      "text": "Reasoned extraction: analysis + tasks",
-      "prompt": "You take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\n---\n\nHere is what the user brain-dumped:\n\n\"{{input}}\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none)."
+      "text": "Reasoned extraction: analysis + task list",
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"\\(input)\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none)."
     },
     {
       "kind": "select",
-      "text": "Gate: skip audit if base count < 2"
+      "text": "Gate: skip audit if base task count < 2"
     },
     {
       "kind": "critique",
-      "text": "Audit for missing tasks (multi-task only)",
-      "prompt": "You are auditing a task list for COMPLETENESS. You are given a user's free-form brain-dump\nand a list of tasks already extracted from it. Your only job is to catch DISTINCT actionable\ntasks the user explicitly stated that are MISSING from that list.\n\nThings to look for:\n- A prerequisite step the user mentioned that must happen before another task already listed.\n- A task buried in the middle of a sentence, or one the user returned to after a digression.\n- A second, separate action mentioned only briefly.\n\nHARD RULES:\n- Add an item ONLY if it is genuinely stated in the input AND not already represented (by\n  meaning, not just wording) in the existing list. Read the existing list carefully first.\n- NEVER repeat or paraphrase a task that is already in the list.\n- NEVER invent a task, and NEVER add anything the user retracted ('scratch that', 'never mind').\n- If the list already covers everything actionable, return an empty list. That is the common case.\n- Each added task is a short actionable one-liner (around 4-9 words). No emojis.\n\n---\n\nThe user brain-dumped:\n\n\"{{input}}\"\n\nTasks already extracted from it:\n{{listed}}\n\nList ONLY distinct actionable tasks that are stated in the input but MISSING from the list above. Return an empty list if the list already covers everything."
+      "text": "Audit: find distinct tasks missing from base list",
+      "prompt": "System:\nYou are auditing a task list for COMPLETENESS. You are given a user's free-form brain-dump\nand a list of tasks already extracted from it. Your only job is to catch DISTINCT actionable\ntasks the user explicitly stated that are MISSING from that list.\n\nThings to look for:\n- A prerequisite step the user mentioned that must happen before another task already listed.\n- A task buried in the middle of a sentence, or one the user returned to after a digression.\n- A second, separate action mentioned only briefly.\n\nHARD RULES:\n- Add an item ONLY if it is genuinely stated in the input AND not already represented (by\n  meaning, not just wording) in the existing list. Read the existing list carefully first.\n- NEVER repeat or paraphrase a task that is already in the list.\n- NEVER invent a task, and NEVER add anything the user retracted ('scratch that', 'never mind').\n- If the list already covers everything actionable, return an empty list. That is the common case.\n- Each added task is a short actionable one-liner (around 4-9 words). No emojis.\n\nUser:\nThe user brain-dumped:\n\n\"\\(input)\"\n\nTasks already extracted from it:\n\\(listed)\n\nList ONLY distinct actionable tasks that are stated in the input but MISSING from the list above. Return an empty list if the list already covers everything."
     },
     {
       "kind": "post",
-      "text": "mergeDedup: append audit items, drop near-dupes"
+      "text": "mergeDedup: append audit additions, drop near-dupes"
     },
     {
       "kind": "output",
-      "text": "Final 0..N deduplicated actionable tasks"
+      "text": "Final 0..N deduplicated task list"
     }
   ],
   "label": "exp004"

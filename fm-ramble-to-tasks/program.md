@@ -1,18 +1,23 @@
+- exp006 OVER-GENERATE->FILTER (call 1 exhaustive over-list with zero-task gate, call 2 keeps only genuinely-committed candidates + merges dups) — quality 0.824 (full), DISCARDED (−0.168 vs exp004 0.992, far below noise). Replacing exp004's PRECISE reasoned base with an over-generate sweep poisons the whole pipeline: the filter cannot reconstruct the clean set. It dropped genuine tasks (multi_errands lost buy-coffee 1.0->0.8, multi_moving lost cancel-gym 1.0->0.89, interleaved_deck lost book-venue 1.0->loss), FAILED to dedup (dedup_groceries split "grab milk"/"pick up milk" 1.0->dup), and WRECKED a solved case (noisy_selfcorrect 1.0->0.00: over-generate grabbed the RETRACTED "call" and the filter fused it into "call landlord to email"). And it STILL missed long_monday's insurance call (0.91). Lesson: the precise single-shot reasoned base (exp001/exp004) is load-bearing; an over-generate base is strictly worse (confirms exp002 at greater cost) because a 2nd-pass filter over-drops real tasks AND under-merges paraphrase dups. The buried insurance task is NOT recoverable by louder generation — over-listing grabs the wrong "someday garage", not the hedged-but-pending insurance call. Next lever for that residual must DISCRIMINATE per-candidate urgency/commitment without sacrificing the clean base — e.g. keep exp004 intact and add a precision-safe targeted recall probe, or a trained adapter that learns the committed-vs-deferred line.
 - exp005 extractAuditGated but the gated audit ENUMERATES every action (hedged ones included) then DIFFS against the committed list — quality 0.939 (full), DISCARDED (−0.053 vs exp004 0.992). The forced enumerate-then-diff backfired: making the audit over-list first poisoned the diff. multi_errands 1.0->0.67 (split "call dentist to reschedule" into two items AND dropped the quarterly report), multi_moving 1.0->0.83 (triplicated "pack kitchen", even injecting my literal hedge example words "maybe"/"eventually" into outputs — schema example phrasing leaked), precision 1.0->0.929. And it STILL missed long_monday's buried insurance call (0.83). Lesson: an over-generate sweep needs a dedup the model can actually enforce; a same-call diff field can't — the model re-emits paraphrase/split dups of items it just listed. exp004's single read-and-diff audit (no pre-enumeration) is more precise. The hedged-buried task is dropped at BASE extraction, not just the audit, so recovering it needs a lever earlier in the pipeline, not a louder audit.
 # fm-ramble-to-tasks — experiment log
 
 Newest first. One line per experiment. The autonomous agent prepends here each run.
 
-**Current best:** `exp001` — singleShotReasoned, greedy, stock FM — **DEV 0.955 / TEST 1.000** (held-out validated; zero-task 100% on both, incl. fresh bait the config never had examples for).
+**Current best:** `exp002` — coverage-first (over-generate candidate intentions → final list), greedy, stock FM — **DEV 0.892 / TEST 0.931** (new metric: 0.5·F1 + 0.5·rubric).
 
 You are scored on the DEV split. The TEST split is held out — never tune toward it.
 
 **State of the gap:**
-- ZERO-TASK: SOLVED by exp001 (reasoning-first gate) and it GENERALIZES to held-out.
-- The gold set is now near-saturated (exp001 ≈ ceiling). Until it grows harder/larger,
-  only clear MULTI-case gains count — dev has 11 cases, one ≈ 0.09; ignore smaller wiggles.
-- Residual headroom is on the hardest inputs: long, heavily-interleaved, many-task
-  rambles where coverage/dedup are hardest. Prefer ideas that help THERE.
+- METRIC CHANGED: quality = 0.5·F1 + 0.5·rubric, and the rubric now includes PHRASING.
+  Old F1-only numbers in the log below are NOT comparable to new ones.
+- ZERO-TASK: solved (binary, 100%).
+- F1/coverage are already strong (~0.96 for the best). The dominant gap is now PHRASING:
+  every config scores phrasing 2-3/5 — terse, all-lowercase fragments that drop detail
+  ("book moving truck" vs "Book the moving truck"; "to reschedule"; "with the post office").
+  Matching Sonnet's capitalized, conversational, complete style is the #1 lever. Fix
+  phrasing WITHOUT losing F1 (prompt wording, the @Generable @Guide, or a light post-pass).
+- Gold set grew to 25 (17 dev / 8 test).
 
 ## Log
 - exp004 extractAudit GATED to multi-task (audit fires only when base extraction found >=2 tasks) — quality 0.992 (full), NEW BEST (+0.037 over exp001 0.955; dev). Exactly the fix the exp003 log called for: gating the recovery audit to base.count>=2 keeps both multi-task recall wins (interleaved_deck 0.8->1.0, multi_errands 0.8->1.0) while the two single-task cases the audit could only hurt (dedup_groceries, mixed_weekend) skip it and stay 1.0. Precision held 1.0, recall 0.924->0.985. Caveat: +0.037 is under the single-case noise floor (~0.09), so the win rests on TWO concrete recall recoveries with zero precision cost, not a wiggle — held-out TEST will confirm whether it generalizes. Residual: long_monday still 0.91 (audit didn't recover the insurance-call task buried among 6).

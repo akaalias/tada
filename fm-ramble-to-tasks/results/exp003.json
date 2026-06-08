@@ -1,6 +1,20 @@
 [
   {
+    "verdict" : {
+      "matched" : 1,
+      "pairwise" : "tie",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 3,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B's task is faithful and captures the same intention as SET A, but its phrasing is a terse, lowercase-style fragment (\"Host dinner party...\") that drops the article and reads less naturally compared to SET A's fuller, more conversational phrasing (\"Plan and host a dinner party for parents' anniversary\"). Neither set is meaningfully better in substance, but SET B's phrasing is slightly weaker in style."
+    },
     "input" : "I want to host a dinner party for my parents' anniversary sometime next month.",
+    "id" : "boundary_dinner",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -8,36 +22,37 @@
       ]
     },
     "match" : {
-      "goldCount" : 1,
       "predCount" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 1,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
         "Host dinner party for parents' anniversary"
       ]
-    },
-    "id" : "boundary_dinner",
+    }
+  },
+  {
     "verdict" : {
-      "notes" : "Both sets capture the single core intention faithfully and atomically. Set A's slight edge is including \"Plan\" alongside \"host,\" which reflects the implicit planning step the user would need to take; Set B omits this nuance but is otherwise equivalent. Neither set is meaningfully better given the minimal input.",
       "matched" : 1,
       "pairwise" : "tie",
       "rubric" : {
         "faithfulness" : 5,
-        "actionability" : 4,
-        "coverage" : 4,
+        "actionability" : 5,
         "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 5,
         "nonRedundancy" : 5
-      }
-    }
-  },
-  {
-    "input" : "We're basically out of milk so I need to grab some on the way home, and actually, you know what, definitely pick up milk, we finished the last carton this morning.",
+      },
+      "notes" : "SET B captures the correct single task faithfully and atomically, but its all-lowercase phrasing (\"reply to Dana's email about the contract\") falls short of SET A's properly capitalized, polished style. Content is identical; only formatting differentiates them."
+    },
+    "input" : "I need to reply to Dana's email about the contract. Yeah, definitely have to get back to Dana on that contract thing today.",
+    "id" : "dedup_email",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -45,37 +60,76 @@
       ]
     },
     "match" : {
-      "goldCount" : 1,
-      "predCount" : 2,
-      "precision" : 0.5,
-      "zeroTaskCorrect" : false,
-      "f1" : 0.6666666666666666,
-      "matched" : 1,
+      "predCount" : 1,
+      "goldEmpty" : false,
+      "f1" : 1,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+        "reply to Dana's email about the contract"
+      ]
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 1,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 4,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 4,
+        "coverage" : 3,
+        "nonRedundancy" : 1
+      },
+      "notes" : "SET B duplicates the single intention (buy milk on the way home) by treating the user's self-correction as two separate tasks; the user only ever expressed one distinct action, so the redundancy is the core flaw."
+    },
+    "input" : "We're basically out of milk so I need to grab some on the way home, and actually, you know what, definitely pick up milk, we finished the last carton this morning.",
+    "id" : "dedup_groceries",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 2,
+      "goldEmpty" : false,
+      "f1" : 0.6666666666666666,
+      "precision" : 0.5,
+      "recall" : 1,
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
         "Grab milk on the way home",
         "Pick up milk"
       ]
-    },
-    "id" : "dedup_groceries",
-    "verdict" : {
-      "notes" : "SET B incorrectly treats the user's repeated/reinforced intention as two separate tasks — the user only has one task (buy milk), stated twice for emphasis. This creates a redundant duplicate, which is the main weakness. SET A correctly collapses the repetition into a single, well-formed task.",
-      "matched" : 1,
-      "pairwise" : "goldBetter",
-      "rubric" : {
-        "faithfulness" : 4,
-        "actionability" : 5,
-        "coverage" : 3,
-        "atomicity" : 5,
-        "nonRedundancy" : 1
-      }
     }
   },
   {
+    "verdict" : {
+      "matched" : 3,
+      "pairwise" : "tie",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 3,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B's main weakness is inconsistent capitalization — tasks 1 and 2 are terse all-lowercase fragments (\"email Sarah the deck\", \"book the offsite venue\") rather than properly capitalized sentences matching SET A's style. Task 3 is well-phrased but the first two drag the phrasing score down."
+    },
     "input" : "I should email Sarah the deck... oh and I need to book the offsite venue... actually for that deck, make sure the Q3 numbers are in before it goes to Sarah.",
+    "id" : "interleaved_deck",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -83,14 +137,14 @@
       ]
     },
     "match" : {
-      "goldCount" : 3,
       "predCount" : 3,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 3,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 3,
+      "matched" : 3,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
@@ -98,23 +152,24 @@
         "book the offsite venue",
         "Ensure Q3 numbers are in before sending the deck to Sarah"
       ]
-    },
-    "id" : "interleaved_deck",
-    "verdict" : {
-      "notes" : "SET B is essentially identical to SET A in intent and quality — all three tasks are faithfully extracted, atomic, actionable, and non-redundant. The only minor difference is phrasing: SET B's task 3 (\"Ensure Q3 numbers are in before sending the deck to Sarah\") is slightly more passive/conditional compared to SET A's more direct \"Add Q3 numbers to the deck before sending,\" but both capture the same intention adequately.",
-      "matched" : 3,
-      "pairwise" : "tie",
-      "rubric" : {
-        "faithfulness" : 5,
-        "actionability" : 5,
-        "coverage" : 5,
-        "atomicity" : 5,
-        "nonRedundancy" : 5
-      }
     }
   },
   {
-    "input" : "Okay let me just think out loud for a sec because my head is all over the place this morning. So the big thing is the Henderson proposal, I really need to finish the draft and get it over to Mark by Thursday, he keeps asking about it. Ugh and the coffee machine at the office is broken again, so annoying. Anyway, I also told Lisa I would send her the updated budget spreadsheet, that's been sitting in my drafts for like a week now. Oh and at some point I need to book a dentist appointment, my tooth has been bugging me. The weather is supposed to be nice this weekend which would be great. Let me see, what else, I should probably call the insurance company about that claim, they never got back to me. And actually back to the Henderson thing, before I send it to Mark I need to double check the numbers in section three, I think there's a typo in there. I keep meaning to clean out the garage too but honestly that's more of a someday thing, not urgent at all. Oh, and I need to renew my passport, it expires in a couple months and we might travel. I think that's most of it. My brain feels a little less cluttered now.",
+    "verdict" : {
+      "matched" : 2,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 2,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B misses the clearly stated \"buy charcoal\" task entirely, which is a significant coverage failure. Additionally, both tasks are phrased as terse lowercase fragments rather than properly capitalized, complete sentences as seen in SET A."
+    },
+    "input" : "I should invite Tom to the barbecue this weekend, oh and I need to buy charcoal, and actually for the barbecue I have to text Tom the address too.",
+    "id" : "interleaved_party",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -122,14 +177,53 @@
       ]
     },
     "match" : {
-      "goldCount" : 6,
-      "predCount" : 5,
+      "predCount" : 2,
+      "goldEmpty" : false,
+      "f1" : 0.8,
       "precision" : 1,
-      "zeroTaskCorrect" : false,
-      "f1" : 0.9090909090909091,
+      "recall" : 0.6666666666666666,
+      "goldCount" : 3,
+      "matched" : 2,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+        "invite Tom to the barbecue",
+        "text Tom the address"
+      ]
+    }
+  },
+  {
+    "verdict" : {
       "matched" : 5,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 4,
+        "actionability" : 4,
+        "atomicity" : 3,
+        "phrasing" : 1,
+        "coverage" : 3,
+        "nonRedundancy" : 4
+      },
+      "notes" : "SET B misses two tasks entirely — calling the insurance company about the claim, and sending the draft to Mark by Thursday (it only captures \"finish\" without the send/deadline detail). All items are terse lowercase fragments that drop meaningful context (e.g., \"to Lisa\", \"by Thursday\", \"section three\"), scoring very low on phrasing."
+    },
+    "input" : "Okay let me just think out loud for a sec because my head is all over the place this morning. So the big thing is the Henderson proposal, I really need to finish the draft and get it over to Mark by Thursday, he keeps asking about it. Ugh and the coffee machine at the office is broken again, so annoying. Anyway, I also told Lisa I would send her the updated budget spreadsheet, that's been sitting in my drafts for like a week now. Oh and at some point I need to book a dentist appointment, my tooth has been bugging me. The weather is supposed to be nice this weekend which would be great. Let me see, what else, I should probably call the insurance company about that claim, they never got back to me. And actually back to the Henderson thing, before I send it to Mark I need to double check the numbers in section three, I think there's a typo in there. I keep meaning to clean out the garage too but honestly that's more of a someday thing, not urgent at all. Oh, and I need to renew my passport, it expires in a couple months and we might travel. I think that's most of it. My brain feels a little less cluttered now.",
+    "id" : "long_monday",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 5,
+      "goldEmpty" : false,
+      "f1" : 0.9090909090909091,
+      "precision" : 1,
       "recall" : 0.8333333333333334,
-      "goldEmpty" : false
+      "goldCount" : 6,
+      "matched" : 5,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
@@ -139,23 +233,11 @@
         "renew passport",
         "double-check Henderson draft numbers"
       ]
-    },
-    "id" : "long_monday",
-    "verdict" : {
-      "notes" : "SET B misses two distinct tasks: sending the draft to Mark by Thursday (it only says \"finish Henderson draft,\" omitting the delivery/deadline) and calling the insurance company about the claim. It also strips useful context like the recipient (Lisa) and the deadline (Thursday). The Henderson proposal is arguably split into two tasks in both sets, but SET B's task 1 conflates finishing with sending implicitly, while SET A correctly separates them.",
-      "matched" : 5,
-      "pairwise" : "goldBetter",
-      "rubric" : {
-        "faithfulness" : 5,
-        "actionability" : 5,
-        "coverage" : 3,
-        "atomicity" : 4,
-        "nonRedundancy" : 4
-      }
     }
   },
   {
-    "input" : "This weekend was pretty chill honestly, watched a couple of movies, slept in way too late. Oh, but I do need to return that Amazon package before the window closes on Tuesday. Other than that, just relaxing really.",
+    "input" : "Felt great after the gym today, honestly I need to keep that up. Anyway, I have to renew my car registration before it expires on Friday.",
+    "id" : "mixed_gym",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -163,37 +245,76 @@
       ]
     },
     "match" : {
+      "predCount" : 0,
+      "goldEmpty" : false,
+      "f1" : 0,
+      "precision" : 0,
+      "recall" : 0,
       "goldCount" : 1,
-      "predCount" : 2,
-      "precision" : 0.5,
-      "zeroTaskCorrect" : false,
-      "f1" : 0.6666666666666666,
+      "matched" : 0,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    }
+  },
+  {
+    "verdict" : {
       "matched" : 1,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 3,
+        "phrasing" : 4,
+        "coverage" : 5,
+        "nonRedundancy" : 1
+      },
+      "notes" : "SET B duplicates the single task — one entry omits the Tuesday deadline and the other includes it, making them redundant with each other. SET A captures the one task cleanly and completely in a single item."
+    },
+    "input" : "This weekend was pretty chill honestly, watched a couple of movies, slept in way too late. Oh, but I do need to return that Amazon package before the window closes on Tuesday. Other than that, just relaxing really.",
+    "id" : "mixed_weekend",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 2,
+      "goldEmpty" : false,
+      "f1" : 0.6666666666666666,
+      "precision" : 0.5,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
         "Return Amazon package",
         "Return Amazon package before Tuesday"
       ]
-    },
-    "id" : "mixed_weekend",
+    }
+  },
+  {
     "verdict" : {
-      "notes" : "SET B lists the same task twice — once without the deadline and once with it — making it directly redundant. The deadline is a critical part of the single task and should not be split into two entries; SET A captures it cleanly in one item.",
-      "matched" : 1,
+      "matched" : 3,
       "pairwise" : "goldBetter",
       "rubric" : {
         "faithfulness" : 5,
         "actionability" : 5,
-        "coverage" : 5,
         "atomicity" : 5,
-        "nonRedundancy" : 1
-      }
-    }
-  },
-  {
+        "phrasing" : 2,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B captures all three intentions correctly but loses meaningful detail in each — \"call dentist\" drops the purpose (\"to reschedule\"), \"grab coffee\" drops the quantity cue (\"more\"), and \"start quarterly report\" drops the qualifier (\"quarterly\"). All three items are terse, all-lowercase fragments rather than properly capitalized, natural, complete phrases, which is the main weakness versus SET A."
+    },
     "input" : "Let me think — I need to call the dentist to reschedule, we're out of coffee so grab some, and I should finally start the quarterly report.",
+    "id" : "multi_errands",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -201,14 +322,14 @@
       ]
     },
     "match" : {
-      "goldCount" : 3,
       "predCount" : 3,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 3,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 3,
+      "matched" : 3,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
@@ -216,23 +337,24 @@
         "grab coffee",
         "start quarterly report"
       ]
-    },
-    "id" : "multi_errands",
-    "verdict" : {
-      "notes" : "SET B captures all three tasks correctly but is slightly less descriptive — it omits the \"to reschedule\" qualifier for the dentist call and the \"from the store\" context for coffee, which are present in SET A. However, these omissions don't affect task identity or actionability in any meaningful way for this simple input, making the two sets functionally equivalent.",
-      "matched" : 3,
-      "pairwise" : "tie",
-      "rubric" : {
-        "faithfulness" : 5,
-        "actionability" : 5,
-        "coverage" : 5,
-        "atomicity" : 5,
-        "nonRedundancy" : 5
-      }
     }
   },
   {
-    "input" : "Okay the move is coming up fast. I need to book the moving truck, set up mail forwarding with the post office, cancel my gym membership here, give notice to the landlord, and I really should start packing the kitchen this weekend.",
+    "verdict" : {
+      "matched" : 3,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 4,
+        "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B captures all three intentions but suffers from poor phrasing: tasks are terse, all-lowercase fragments (e.g., \"pharmacy prescription\" is barely a sentence and drops the actionable verb \"pick up\"). SET A's properly capitalized, complete phrasing is clearly superior."
+    },
+    "input" : "This morning I need to drop the kids at school, pick up my dry cleaning, and swing by the pharmacy for my prescription.",
+    "id" : "multi_morning",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -240,14 +362,54 @@
       ]
     },
     "match" : {
-      "goldCount" : 5,
-      "predCount" : 5,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "predCount" : 3,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 5,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 3,
+      "matched" : 3,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+        "drop kids at school",
+        "pick up dry cleaning",
+        "pharmacy prescription"
+      ]
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 5,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 4,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B captures all five intentions but loses meaningful detail in every task — \"with the post office\" is dropped, \"the landlord\" loses its article, \"this weekend\" is omitted from the packing task, and nothing is capitalized. The terse, all-lowercase fragment style consistently strips context that the user explicitly provided."
+    },
+    "input" : "Okay the move is coming up fast. I need to book the moving truck, set up mail forwarding with the post office, cancel my gym membership here, give notice to the landlord, and I really should start packing the kitchen this weekend.",
+    "id" : "multi_moving",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 5,
+      "goldEmpty" : false,
+      "f1" : 1,
+      "precision" : 1,
+      "recall" : 1,
+      "goldCount" : 5,
+      "matched" : 5,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
@@ -257,23 +419,24 @@
         "give notice to landlord",
         "start packing kitchen"
       ]
-    },
-    "id" : "multi_moving",
+    }
+  },
+  {
     "verdict" : {
-      "notes" : "SET B captures all five tasks faithfully and atomically, but omits minor specificity details present in the input — \"with the post office\" for mail forwarding and \"this weekend\" for packing the kitchen — which SET A preserves. These details are minor but useful context; neither set is meaningfully better overall.",
-      "matched" : 5,
+      "matched" : 1,
       "pairwise" : "tie",
       "rubric" : {
         "faithfulness" : 5,
         "actionability" : 5,
-        "coverage" : 5,
         "atomicity" : 5,
+        "phrasing" : 4,
+        "coverage" : 4,
         "nonRedundancy" : 5
-      }
-    }
-  },
-  {
-    "input" : "Okay so I need to call the, um, no wait, I should just email the landlord about the leaking faucet, yeah email is better because I want it in writing.",
+      },
+      "notes" : "SET B drops the word \"annual\" from the task, which is a meaningful detail the user explicitly mentioned (\"annual eye exam\"); otherwise the phrasing is clean and properly capitalized. Coverage is very slightly reduced by omitting that qualifier."
+    },
+    "input" : "So um, I guess I should, like, finally schedule the annual eye exam, my prescription is pretty old at this point.",
+    "id" : "noisy_filler",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -281,36 +444,37 @@
       ]
     },
     "match" : {
-      "goldCount" : 1,
       "predCount" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 1,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
-        "email landlord"
+        "Schedule eye exam"
       ]
-    },
-    "id" : "noisy_selfcorrect",
+    }
+  },
+  {
     "verdict" : {
-      "notes" : "SET B captures the correct action and recipient but omits the critical subject/reason — the leaking faucet — which is explicitly stated in the input and is essential context for the task. SET A is more complete and faithful to the full intention.",
       "matched" : 1,
       "pairwise" : "goldBetter",
       "rubric" : {
         "faithfulness" : 5,
         "actionability" : 5,
-        "coverage" : 3,
         "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 4,
         "nonRedundancy" : 5
-      }
-    }
-  },
-  {
-    "input" : "I really need to finally book the flights for the Paris trip sometime this week.",
+      },
+      "notes" : "SET B drops the key detail \"about the leaking faucet,\" which is the entire reason for the email and meaningful context the user explicitly stated. It is also written in terse all-lowercase rather than the properly capitalized, complete style of SET A."
+    },
+    "input" : "Okay so I need to call the, um, no wait, I should just email the landlord about the leaking faucet, yeah email is better because I want it in writing.",
+    "id" : "noisy_selfcorrect",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -318,36 +482,100 @@
       ]
     },
     "match" : {
-      "goldCount" : 1,
       "predCount" : 1,
-      "precision" : 1,
-      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
       "f1" : 1,
-      "matched" : 1,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : false
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+        "email landlord"
+      ]
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 1,
+      "pairwise" : "goldBetter",
+      "rubric" : {
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "notes" : "SET B captures the correct intention but loses meaningful detail (\"the trip\" context) and uses terse all-lowercase phrasing instead of a properly capitalized, natural sentence like SET A's \"Book flights for the Paris trip.\""
+    },
+    "input" : "I really need to finally book the flights for the Paris trip sometime this week.",
+    "id" : "single_paris",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 1,
+      "goldEmpty" : false,
+      "f1" : 1,
+      "precision" : 1,
+      "recall" : 1,
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
     },
     "candidate" : {
       "tasks" : [
         "book flights for Paris"
       ]
-    },
-    "id" : "single_paris",
+    }
+  },
+  {
     "verdict" : {
-      "notes" : "SET B captures the sole task correctly and faithfully; the only minor difference is the slight omission of \"trip\" (i.e., \"Paris trip\" vs. \"Paris\"), but this does not meaningfully change the intention. Both sets are effectively equivalent for this simple, single-task input.",
       "matched" : 1,
-      "pairwise" : "tie",
+      "pairwise" : "goldBetter",
       "rubric" : {
         "faithfulness" : 5,
         "actionability" : 5,
-        "coverage" : 5,
         "atomicity" : 5,
+        "phrasing" : 2,
+        "coverage" : 4,
         "nonRedundancy" : 5
-      }
+      },
+      "notes" : "SET B captures the core action but drops the meaningful context \"about the kitchen sink,\" which the user explicitly stated. It is also written as a terse all-lowercase fragment rather than a properly capitalized, conversational task like SET A's style."
+    },
+    "input" : "I really have to call a plumber about the kitchen sink, it has been dripping for days now.",
+    "id" : "single_plumber",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 1,
+      "goldEmpty" : false,
+      "f1" : 1,
+      "precision" : 1,
+      "recall" : 1,
+      "goldCount" : 1,
+      "matched" : 1,
+      "zeroTaskCorrect" : false
+    },
+    "candidate" : {
+      "tasks" : [
+        "call plumber"
+      ]
     }
   },
   {
     "input" : "Man, the weather has been wild lately, gray and rainy basically all week. My back is a bit stiff from sitting too much. Just thinking out loud here, nothing major going on really.",
+    "id" : "zero_chitchat",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -355,24 +583,24 @@
       ]
     },
     "match" : {
-      "goldCount" : 0,
       "predCount" : 0,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
+      "goldEmpty" : true,
       "f1" : 1,
-      "matched" : 0,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : true
+      "goldCount" : 0,
+      "matched" : 0,
+      "zeroTaskCorrect" : true
     },
     "candidate" : {
       "tasks" : [
 
       ]
-    },
-    "id" : "zero_chitchat"
+    }
   },
   {
     "input" : "Ugh today just dragged on forever, the traffic this morning was insane and I'm completely wiped out. Anyway.",
+    "id" : "zero_venting",
     "spec" : {
       "passed" : true,
       "violations" : [
@@ -380,20 +608,19 @@
       ]
     },
     "match" : {
-      "goldCount" : 0,
       "predCount" : 0,
-      "precision" : 1,
-      "zeroTaskCorrect" : true,
+      "goldEmpty" : true,
       "f1" : 1,
-      "matched" : 0,
+      "precision" : 1,
       "recall" : 1,
-      "goldEmpty" : true
+      "goldCount" : 0,
+      "matched" : 0,
+      "zeroTaskCorrect" : true
     },
     "candidate" : {
       "tasks" : [
 
       ]
-    },
-    "id" : "zero_venting"
+    }
   }
 ]

@@ -59,15 +59,16 @@ export const callLabels = s => {
 
 // Pairwise verdict → [css class, label].
 export const pw = p => p === 'fmBetter' ? ['b-win', 'WIN'] : p === 'tie' ? ['b-tie', 'TIE'] : ['b-loss', 'LOSS'];
-export const rmean = rb => ((rb.faithfulness + rb.atomicity + rb.actionability + rb.coverage + rb.nonRedundancy) / 5).toFixed(1);
+export const rmean = rb => ((rb.faithfulness + rb.atomicity + rb.actionability + rb.coverage + rb.nonRedundancy + rb.phrasing) / 6).toFixed(1);
 
-export const RUBRIC = [['faithfulness', 'faith'], ['atomicity', 'atom'], ['actionability', 'action'], ['coverage', 'cover'], ['nonRedundancy', 'nonRed']];
+export const RUBRIC = [['faithfulness', 'faith'], ['atomicity', 'atom'], ['actionability', 'action'], ['coverage', 'cover'], ['nonRedundancy', 'nonRed'], ['phrasing', 'phras']];
 export const RUBRIC_DESC = {
   faithfulness: 'every task traces to the input; nothing invented',
   atomicity: 'each task is exactly one action (no "and"/"or")',
   actionability: 'a real to-do, not a vague wish or musing',
   coverage: 'captures every distinct intention in the input',
   nonRedundancy: 'no two tasks are the same intention',
+  phrasing: 'matches gold style: capitalized, conversational, complete',
 };
 export const rubricChips = rb => RUBRIC.map(([k, short]) =>
   `<span class="chip" title="${cap(k)}: ${RUBRIC_DESC[k]}. 1=poor … 5=excellent">${short} ${rb[k]}</span>`).join('');
