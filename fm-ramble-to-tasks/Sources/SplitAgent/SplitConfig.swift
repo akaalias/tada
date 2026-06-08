@@ -11,6 +11,7 @@ public struct SplitConfig: Sendable {
         case singleShotCoveragePhrased // singleShotCoverage + explicit phrasing/style contract (exp007)
         case singleShotCoverageRestyle // exp002 base + a DECOUPLED 1:1 style-only rewrite pass (exp008)
         case singleShotCoverageRestyleGuarded // exp008 restyle + per-task token-subset anti-hallucination guard (exp009)
+        case singleShotCoverageRestyleVerbatim // exp009 guard + verbatim-detail restyle + deterministic proper-noun recasing (exp010)
         case extractAudit        // 2 calls: reasoned extract, then coverage-audit adds missing tasks
         case extractAuditGated   // extractAudit, but audit ONLY fires when base found >=2 tasks
         case extractAuditSweep   // extractAuditGated, but audit enumerates-then-diffs (exp005)

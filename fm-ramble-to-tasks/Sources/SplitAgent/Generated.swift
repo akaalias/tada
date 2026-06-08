@@ -115,6 +115,19 @@ struct FMRambleRestyle {
     var styled: [String]
 }
 
+/// Verbatim-detail restyle pass (second call of singleShotCoverageRestyleVerbatim,
+/// exp010). Same 1:1 style-only contract as FMRambleRestyle, but the guide stresses
+/// that any restored detail must be copied from the user's EXACT words. exp009's
+/// anti-hallucination guard rejects a restyle on any content word not present in the
+/// input, so paraphrased detail gets the whole task thrown back to its terse base;
+/// pulling the detail verbatim keeps the restyle inside the guard so genuine
+/// completeness restores actually survive.
+@Generable
+struct FMRambleRestyleVerbatim {
+    @Guide(description: "Rewrite each task from the given list, IN THE SAME ORDER, returning EXACTLY one rewritten task per input task — never add, drop, split, merge, or reorder. For each task: start with a CAPITAL letter and an action verb, write a COMPLETE natural one-liner (never an all-lowercase fragment), and RE-ATTACH the meaningful detail a terse note dropped — the deadline, the subject the task is about, the recipient it is for, and the location. CRITICAL: copy that detail using the user's OWN EXACT WORDS from the brain-dump — do not paraphrase it and do not invent any word that is not in the input. Drop only true filler ('sometime', 'at some point'). Around 4-9 words.")
+    var styled: [String]
+}
+
 /// Coverage-first + PHRASING variant (exp007). Identical pipeline to
 /// FMRambleSplitCoverage (analysis gate -> exhaustive candidate sweep -> merged
 /// final list), but the final `tasks` @Guide carries an explicit STYLE contract so

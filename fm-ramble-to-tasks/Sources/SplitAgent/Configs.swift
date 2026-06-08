@@ -66,6 +66,16 @@ public enum Configs {
         // capitalized, so output is never all-lowercase. Set membership identical to exp002 by
         // construction -> F1 cannot regress; only the phrasing rubric can move.
         "exp009": SplitConfig(topology: .singleShotCoverageRestyleGuarded, sampling: .greedy),
+        // exp010: build on exp009 (current best, guarded restyle). Attacks the two residuals
+        // the exp009 log named — COMPLETENESS and PROPER-NOUN CASING — without touching F1.
+        // (1) The restyle prompt+schema now demand the model restore dropped detail (deadline/
+        // subject/recipient/location) using the user's EXACT words, so the fuller rewrite stays
+        // inside exp009's token-subset guard instead of being rejected back to a terse fragment
+        // (the over-suppression the log flagged). (2) A deterministic proper-noun re-casing pass
+        // recases task tokens to the input's mid-sentence capitalization ("dana's" -> "Dana's").
+        // 1:1 index mapping + subset guard unchanged -> set membership identical to exp002, F1
+        // protected by construction; only the phrasing rubric can move.
+        "exp010": SplitConfig(topology: .singleShotCoverageRestyleVerbatim, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

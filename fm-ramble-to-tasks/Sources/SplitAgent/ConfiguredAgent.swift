@@ -17,6 +17,7 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
         case .singleShotCoverageRestyleGuarded: return try await singleShotCoverageRestyleGuarded(input)
+        case .singleShotCoverageRestyleVerbatim: return try await singleShotCoverageRestyleVerbatim(input)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
@@ -182,6 +183,107 @@ public struct ConfiguredAgent: Sendable {
             if seen.insert(key).inserted { out.append(trimmed) }
         }
         return out
+    }
+
+    /// exp010: exp009's guarded restyle, sharpened at the two residuals the exp009 log
+    /// named — COMPLETENESS (re-attaching input-present detail the guard over-suppressed)
+    /// and PROPER-NOUN CASING ("dana's" should be "Dana's"). Two targeted, F1-safe moves:
+    ///   (1) The restyle prompt/schema now demands the model restore dropped detail using
+    ///       the user's EXACT words (deadlines / subjects / recipients / locations). exp009's
+    ///       guard rejects a restyle on ANY novel content word, so a paraphrased detail word
+    ///       gets the whole task thrown back to its terse base — over-suppression. Pulling the
+    ///       detail VERBATIM from the input keeps the restyle INSIDE the subset guard (its
+    ///       content words are, by construction, input words), so genuine restores survive
+    ///       instead of being rejected.
+    ///   (2) A deterministic proper-noun re-casing pass: any task token whose lowercase form
+    ///       appears capitalized MID-SENTENCE in the input (a strong proper-noun signal;
+    ///       sentence-initial capitals are ignored so ordinary leading words aren't caught)
+    ///       is recased to the input's form. Applied to BOTH accepted restyles and rejected
+    ///       fallbacks, after capitalizeFirst.
+    /// The 1:1 index mapping + token-subset guard are unchanged, so set membership stays
+    /// identical to exp002 -> F1 cannot regress; only the phrasing rubric can move.
+    private func singleShotCoverageRestyleVerbatim(_ input: String) async throws -> RambleResult {
+        let base = try await singleShotCoverage(input)
+        guard !base.tasks.isEmpty else { return base }
+
+        let nouns = properNouns(in: input)
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyleVerbatim }
+        let prompt = """
+        The user's original brain-dump:
+
+        "\(input)"
+
+        Tasks extracted from it (rewrite each one, same order, same set):
+        \(listed)
+
+        Return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that re-attaches the user's own words for any deadline, subject, recipient, or location that the terse task dropped.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleRestyleVerbatim.self,
+            options: config.options()
+        )
+        let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        // 1:1 mapping guard: any count mismatch -> keep the base set (recased/capitalized).
+        guard styled.count == base.tasks.count else {
+            return RambleResult(tasks: base.tasks.map { recaseProperNouns(capitalizeFirst($0), using: nouns) })
+        }
+        let inputVocab = vocab(input)
+        let merged = zip(base.tasks, styled).map { original, restyled -> String in
+            // Accept the restyle ONLY if it adds no new content word (anti-hallucination).
+            let allowed = inputVocab.union(vocab(original))
+            let chosen = (!restyled.isEmpty && contentTokensSubset(restyled, of: allowed)) ? restyled : original
+            return recaseProperNouns(capitalizeFirst(chosen), using: nouns)
+        }
+        return RambleResult(tasks: merged)
+    }
+
+    /// Map a lowercased word -> its capitalized form as it appears MID-SENTENCE in the
+    /// input. A capital that is NOT at the start of a sentence is a strong proper-noun
+    /// signal (names, brands, places, weekdays); sentence-initial capitals are skipped so
+    /// ordinary leading words ("Call", "I") are never treated as proper nouns.
+    private func properNouns(in input: String) -> [String: String] {
+        var map: [String: String] = [:]
+        let sentences = input.split(whereSeparator: { ".!?\n".contains($0) })
+        for sentence in sentences {
+            let words = sentence.split(whereSeparator: { " ,;:()\"".contains($0) })
+            for (i, raw) in words.enumerated() {
+                guard i > 0 else { continue }  // skip the sentence-initial word
+                // The leading run of letters (handles possessives like "Dana's").
+                let core = raw.prefix { $0.isLetter }
+                guard core.count >= 2, let first = core.first, first.isUppercase else { continue }
+                let key = core.lowercased()
+                if map[key] == nil { map[key] = String(core) }
+            }
+        }
+        return map
+    }
+
+    /// Re-case proper-noun tokens in a task to match the input's capitalization.
+    /// Only whole alphabetic tokens are replaced; surrounding punctuation/possessives
+    /// ("'s") are preserved untouched.
+    private func recaseProperNouns(_ task: String, using map: [String: String]) -> String {
+        guard !map.isEmpty else { return task }
+        var result = ""
+        var current = ""
+        func flush() {
+            guard !current.isEmpty else { return }
+            result += map[current.lowercased()] ?? current
+            current = ""
+        }
+        for ch in task {
+            if ch.isLetter {
+                current.append(ch)
+            } else {
+                flush()
+                result.append(ch)
+            }
+        }
+        flush()
+        return result
     }
 
     /// exp009: exp008's DECOUPLED restyle pass, hardened against the failure that sank
