@@ -1,0 +1,31 @@
+{
+  "summary": "Coverage extract + decoupled style-only restyle pass",
+  "hypothesis": "Adding a decoupled 1:1 restyle pass after the proven exp002 extractor should improve phrasing (rubric score) without risking F1, because a deterministic count/order guard prevents the rewrite from changing which tasks exist.",
+  "technique": "Two sequential FM calls: call 1 is the unchanged exp002 `singleShotCoverage` extractor; call 2 (restyle) receives the original input plus the extracted task list and rewrites each task into capitalized, complete Sonnet-style phrasing. A deterministic Swift guard enforces strict 1:1 count/index mapping \u2014 a count mismatch falls back to the base list entirely, and empty slots fall back to the original task.",
+  "result": "Quality 0.826 on dev-17 (W/T/L vs Sonnet = 0/2/13), discarded \u2014 a \u22120.066 regression vs exp002 (0.892). The \"restore detail\" instruction caused the restyle model to hallucinate plausible-but-absent specifics (invented names, times, rationale), collapsing F1 on multiple cases (e.g. dedup_groceries F1 \u2192 ~0). The 1:1 count guard preserved cardinality but not semantics; phrasing rubric stayed at 3 because hallucinated padding reads as editorialized. Hypothesis falsified: the lever must forbid free generation, not merely constrain count.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User free-form ramble enters pipeline"
+    },
+    {
+      "kind": "generate",
+      "text": "Coverage extraction: analysis + sweep + merge",
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks. Crucially, tasks are often INTERLEAVED: the user starts one thought,\ndrifts into a digression or a second topic, then jumps BACK to finish the first. A task can also\nbe buried in the middle of a sentence. Read the WHOLE input before deciding \u2014 do not stop early.\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. candidateIntentions: sweep the entire input start to finish and list EVERY distinct action,\n   in order of appearance, including brief or buried ones and ones the user returned to after a\n   digression. Be exhaustive \u2014 over-list rather than miss something.\n4. tasks: merge candidates that mean the same thing into one; keep every genuinely distinct one.\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"\\(input)\"\n\nFirst analyze what is and isn't actionable and decide whether any real task remains. Then sweep the whole input and list every distinct intention you find, even ones buried mid-sentence or returned to after a digression. Finally merge duplicates into the final task list (empty if none)."
+    },
+    {
+      "kind": "critique",
+      "text": "Style-only restyle: capitalize, complete, no invention",
+      "prompt": "System:\nYou are a copy-editor for a to-do list. You are given a user's original free-form brain-dump\nand a list of tasks already extracted from it. The tasks were captured as terse, often all-\nlowercase fragments. Your ONLY job is to REWRITE each task so it reads the way a thoughtful\nhuman assistant would write a to-do \u2014 without changing WHICH tasks are on the list.\n\nFor each task, in the same order, produce exactly one rewritten task:\n- Start with a CAPITAL letter and an action verb (\"Book the...\", \"Call the...\", \"Reply to...\").\n- Write a COMPLETE, natural one-liner \u2014 never an all-lowercase fragment, never a bare phrase.\n- RESTORE the meaningful detail the user actually gave that a terse note tends to drop: WHO the\n  task is for, WHAT it is about, its PURPOSE, and any concrete DEADLINE. Recover that detail from\n  the original brain-dump \u2014 it is the substance of the task.\n- DROP only true filler: vague timing musings (\"sometime\", \"at some point\", \"one of these days\").\n- Keep the user's own words and meaning. Do NOT invent any detail that is not in the input.\n\nHARD RULES \u2014 these protect the list:\n- Return EXACTLY one rewritten task for each input task, in the SAME order.\n- NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.\n- You are only changing wording, not which tasks exist.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nThe user's original brain-dump:\n\n\"\\(input)\"\n\nTasks extracted from it (rewrite each one, same order, same set):\n\\(listed)\n\nReturn the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that keeps the meaningful detail."
+    },
+    {
+      "kind": "post",
+      "text": "1:1 count guard; fall back to base on mismatch"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N styled tasks emitted"
+    }
+  ],
+  "label": "exp008"
+}
