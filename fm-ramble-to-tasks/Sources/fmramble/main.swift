@@ -118,7 +118,10 @@ case "evaluate":
         print("\nwrote results/\(label).json")
     }
 
-    let runsURL = resultsDir.appendingPathComponent("runs.jsonl")
+    // Held-out TEST runs go to a separate log so they never appear as experiments
+    // in the dashboard's run table; real experiments (dev/full) go to runs.jsonl.
+    let logName = subset == "test" ? "heldout.jsonl" : "runs.jsonl"
+    let runsURL = resultsDir.appendingPathComponent(logName)
     let prior = (try? String(contentsOf: runsURL, encoding: .utf8))?
         .split(separator: "\n")
         .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? []
@@ -139,7 +142,7 @@ case "evaluate":
        let s = String(data: line, encoding: .utf8) {
         let existing = (try? String(contentsOf: runsURL, encoding: .utf8)) ?? ""
         try? (existing + s + "\n").write(to: runsURL, atomically: true, encoding: .utf8)
-        print("logged run #\(prior.count) to results/runs.jsonl  (kept: \(metric.quality > bestBefore))")
+        print("logged run #\(prior.count) to results/\(logName)  (kept: \(metric.quality > bestBefore))")
     }
 
 default:

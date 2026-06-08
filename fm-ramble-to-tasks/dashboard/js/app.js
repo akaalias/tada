@@ -49,7 +49,7 @@ async function load() {
   const kept = runs.filter(r => r.kept).length;
   const hasDev = runs.some(r => (r.subset || 'full') === 'dev');
   const hasFull = runs.some(r => (r.subset || 'full') === 'full');
-  const denom = hasDev && hasFull ? 'dev-10 proxy + full-30 gate' : hasDev ? 'dev-10 proxy' : 'full-30 gate';
+  const denom = hasDev && hasFull ? 'dev + full' : hasDev ? 'dev gate' : 'full set';
   document.getElementById('title').textContent =
     `Autoresearch Progress: ${runs.length} Experiment${runs.length === 1 ? '' : 's'}, ${kept} Kept (${denom})`;
 
