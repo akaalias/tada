@@ -76,6 +76,27 @@ public enum Configs {
         // 1:1 index mapping + subset guard unchanged -> set membership identical to exp002, F1
         // protected by construction; only the phrasing rubric can move.
         "exp010": SplitConfig(topology: .singleShotCoverageRestyleVerbatim, sampling: .greedy),
+        // exp011: build on exp010 (current best, verbatim restyle). exp010's ONLY new
+        // regression was long_monday (phrasing 2): the model returned the whole restyle in
+        // ALL-CAPS and capitalizeFirst fixed only the first char, so it read as jarring
+        // shouting. Add a deterministic SHOUTING down-caser that lowercases any all-caps
+        // word (length>=2) BEFORE capitalizeFirst+recase, so the sentence-initial cap and
+        // proper-noun casing are restored cleanly. Pure deterministic string normalization
+        // on the already-chosen task -> set membership unchanged, F1 protected by
+        // construction; only the phrasing rubric can move.
+        "exp011": SplitConfig(topology: .singleShotCoverageRestyleDowncased, sampling: .greedy),
+        // exp012: build on exp010 (champion, verbatim restyle) + exp011 (the prescribed
+        // deterministic SHOUTING down-caser, never run). Folds the down-caser in AND attacks
+        // exp010's dominant residual: the restyle restored dropped detail on LONG rambles but
+        // echoed terse fragments on SHORT single-task lists (single_plumber dropped "about ...",
+        // mixed_gym dropped a deadline, multi_errands dropped "to reschedule"/"more",
+        // dedup_groceries dropped "on the way home") — all phrasing 2-3. The restyle prompt now
+        // (a) forces per-task detail restoration EVEN on the shortest tasks, and (b) bans
+        // appending blanket context already implied by the brain-dump's overall topic (the
+        // "for the upcoming move" redundancy on every multi_moving item). The token-subset
+        // anti-hallucination guard + 1:1 index map are unchanged -> set membership identical to
+        // exp002, F1 protected by construction; only the phrasing/nonRedundancy rubric can move.
+        "exp012": SplitConfig(topology: .singleShotCoverageRestyleComplete, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

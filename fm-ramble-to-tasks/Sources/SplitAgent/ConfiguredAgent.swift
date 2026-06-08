@@ -18,6 +18,8 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
         case .singleShotCoverageRestyleGuarded: return try await singleShotCoverageRestyleGuarded(input)
         case .singleShotCoverageRestyleVerbatim: return try await singleShotCoverageRestyleVerbatim(input)
+        case .singleShotCoverageRestyleDowncased: return try await singleShotCoverageRestyleVerbatim(input, downcaseShouts: true)
+        case .singleShotCoverageRestyleComplete: return try await singleShotCoverageRestyleVerbatim(input, downcaseShouts: true, instructions: Prompts.restyleComplete)
         case .extractAudit: return try await extractAudit(input)
         case .extractAuditGated: return try await extractAudit(input, minBaseTasks: 2)
         case .extractAuditSweep: return try await extractAuditSweep(input, minBaseTasks: 2)
@@ -202,15 +204,29 @@ public struct ConfiguredAgent: Sendable {
     ///       fallbacks, after capitalizeFirst.
     /// The 1:1 index mapping + token-subset guard are unchanged, so set membership stays
     /// identical to exp002 -> F1 cannot regress; only the phrasing rubric can move.
-    private func singleShotCoverageRestyleVerbatim(_ input: String) async throws -> RambleResult {
+    ///
+    /// exp011: same pipeline, but with `downcaseShouts: true` a deterministic SHOUTING
+    /// down-caser runs BEFORE capitalizeFirst+recase. exp010's only NEW regression was
+    /// long_monday: the model returned the whole restyle in ALL-CAPS and capitalizeFirst
+    /// only fixed the first char, so it read as jarring shouting (phrasing dinged to 2).
+    /// The down-caser lowercases any all-caps alphabetic run (length>=2) per word; then
+    /// capitalizeFirst restores the sentence-initial capital and recaseProperNouns restores
+    /// proper-noun casing from the input. Set membership is UNTOUCHED (deterministic string
+    /// normalization on the already-chosen task), so F1 cannot move — only phrasing can.
+    private func singleShotCoverageRestyleVerbatim(_ input: String, downcaseShouts: Bool = false, instructions: String = Prompts.restyleVerbatim) async throws -> RambleResult {
         let base = try await singleShotCoverage(input)
         guard !base.tasks.isEmpty else { return base }
 
         let nouns = properNouns(in: input)
+        // Deterministic finisher: optional shout-downcase, then capitalize, then recase.
+        func finish(_ s: String) -> String {
+            let cleaned = downcaseShouts ? downcaseShouting(s) : s
+            return recaseProperNouns(capitalizeFirst(cleaned), using: nouns)
+        }
         let listed = base.tasks.enumerated()
             .map { "\($0.offset + 1). \($0.element)" }
             .joined(separator: "\n")
-        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyleVerbatim }
+        let session = LanguageModelSession(model: try resolveModel()) { instructions }
         let prompt = """
         The user's original brain-dump:
 
@@ -229,16 +245,40 @@ public struct ConfiguredAgent: Sendable {
         let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         // 1:1 mapping guard: any count mismatch -> keep the base set (recased/capitalized).
         guard styled.count == base.tasks.count else {
-            return RambleResult(tasks: base.tasks.map { recaseProperNouns(capitalizeFirst($0), using: nouns) })
+            return RambleResult(tasks: base.tasks.map(finish))
         }
         let inputVocab = vocab(input)
         let merged = zip(base.tasks, styled).map { original, restyled -> String in
             // Accept the restyle ONLY if it adds no new content word (anti-hallucination).
             let allowed = inputVocab.union(vocab(original))
             let chosen = (!restyled.isEmpty && contentTokensSubset(restyled, of: allowed)) ? restyled : original
-            return recaseProperNouns(capitalizeFirst(chosen), using: nouns)
+            return finish(chosen)
         }
         return RambleResult(tasks: merged)
+    }
+
+    /// Lowercase any all-caps alphabetic run of length >= 2 ("FINISH", "THE", "DRAFT")
+    /// so a model "shouting" restyle becomes ordinary text; capitalizeFirst +
+    /// recaseProperNouns afterward restore the sentence-initial capital and proper-noun
+    /// casing from the input. Single letters ("I") and mixed-case tokens are untouched.
+    private func downcaseShouting(_ s: String) -> String {
+        var result = ""
+        var current = ""
+        func flush() {
+            guard !current.isEmpty else { return }
+            if current.count >= 2 && current.allSatisfy({ $0.isUppercase }) {
+                result += current.lowercased()
+            } else {
+                result += current
+            }
+            current = ""
+        }
+        for ch in s {
+            if ch.isLetter { current.append(ch) }
+            else { flush(); result.append(ch) }
+        }
+        flush()
+        return result
     }
 
     /// Map a lowercased word -> its capitalized form as it appears MID-SENTENCE in the

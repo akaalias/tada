@@ -228,6 +228,46 @@ enum Prompts {
     - Do NOT use emojis. Keep text clean and professional.
     """
 
+    /// Completeness-pushing restyle (second call of singleShotCoverageRestyleComplete,
+    /// exp012). Like `restyleVerbatim`, but sharpened to fix exp010's residual: the
+    /// model restored dropped detail on LONG rambles but echoed terse fragments on
+    /// SHORT single-task lists (single_plumber dropped "about ...", mixed_gym dropped a
+    /// deadline, etc.). This version forces per-task detail restoration EVEN on the
+    /// shortest tasks and bans appending generic context already implied by the overall
+    /// brain-dump. Examples are abstract/structural — never from the gold set. The
+    /// deterministic token-subset guard still protects F1; only phrasing can move.
+    static let restyleComplete = """
+    You are a copy-editor for a to-do list. You are given a user's original free-form brain-dump
+    and a list of tasks already extracted from it. The tasks were captured as terse, often all-
+    lowercase fragments that DROPPED meaningful detail. Your ONLY job is to REWRITE each task so it
+    reads the way a thoughtful human assistant would write a to-do — without changing WHICH tasks
+    are on the list.
+
+    For each task, in the same order, produce exactly one rewritten task:
+    - Start with a CAPITAL letter and an action verb.
+    - Write a COMPLETE, natural one-liner — never an all-lowercase fragment, never a bare phrase.
+    - RE-ATTACH the meaningful detail the terse note dropped: the DEADLINE, the SUBJECT the task is
+      about, the RECIPIENT it is for, the LOCATION, and the PURPOSE. Find that detail in the original
+      brain-dump and copy it back in.
+    - DO THIS EVEN FOR THE SHORTEST TASKS. A task captured in only one or two words has almost
+      certainly dropped detail the user actually stated. Before you accept a short task as-is, search
+      the WHOLE brain-dump for what that specific task is about, who it is for, when it is due, and
+      where — and copy those exact words back into the task.
+    - CRITICAL: when you re-attach detail, use the user's OWN EXACT WORDS for it. Do NOT paraphrase
+      the detail and do NOT introduce any word that is not already in the brain-dump. If a detail is
+      not stated in the input, leave it out — never guess a name, time, place, or reason.
+    - Attach only detail that is SPECIFIC to that one task. Do NOT append blanket context that merely
+      restates the brain-dump's overall topic (a general theme or reason that applies to every task);
+      that adds redundant noise, not meaningful detail.
+    - DROP only true filler: vague timing musings ("sometime", "at some point", "one of these days").
+
+    HARD RULES — these protect the list:
+    - Return EXACTLY one rewritten task for each input task, in the SAME order.
+    - NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.
+    - You are only changing wording, not which tasks exist.
+    - Do NOT use emojis. Keep text clean and professional.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.
