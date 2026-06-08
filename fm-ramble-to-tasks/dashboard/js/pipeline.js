@@ -87,8 +87,20 @@ export function renderPipeD3(spec, el) {
 
   // Hover tooltip (SVG <title> gets swallowed by the foreignObject HTML, so use a JS tip).
   const tip = document.getElementById('tip');
-  const showTip = (e, html) => { if (tip) { tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; } };
-  const hideTip = () => { if (tip) tip.style.opacity = 0; };
+  const showTip = (e, html) => { if (tip) { tip.classList.remove('tip-prompt'); tip.innerHTML = html; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1; } };
+  const hideTip = () => { if (tip) { tip.style.opacity = 0; tip.classList.remove('tip-prompt'); } };
+  // Fixed, readable prompt popover: to the RIGHT of the pointer, vertically centered, clamped.
+  const showPromptPop = (e, d) => {
+    if (!tip) return;
+    tip.classList.add('tip-prompt');
+    tip.innerHTML = '<div class="pp-title">' + esc(d.full) + '</div><pre class="t-prompt">' + esc(d.prompt) + '</pre>';
+    tip.style.opacity = 1;
+    const gap = 22, pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
+    let left = e.clientX + gap;
+    if (left + w + pad > window.innerWidth) left = Math.max(pad, e.clientX - gap - w);
+    const top = Math.max(pad, Math.min(e.clientY - h / 2, window.innerHeight - h - pad));
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  };
 
   // arrowhead markers — unique ids per render so multiple panels don't collide
   const uid = 'pp' + (++pipeUid) + '-';
@@ -191,6 +203,8 @@ export function renderPipeD3(spec, el) {
   bg.append('rect').attr('width', d => bwid(execType(d)[0])).attr('height', 13).attr('rx', 3).attr('fill', d => execType(d)[1]);
   bg.append('text').attr('x', d => bwid(execType(d)[0]) / 2).attr('y', 10).attr('text-anchor', 'middle').attr('font-size', 8)
     .attr('font-weight', 800).attr('fill', '#fffff8').text(d => execType(d)[0]);
-  g.on('mousemove', (e, d) => showTip(e, esc(d.full) + (d.prompt ? '<pre class="t-prompt">' + esc(d.prompt) + '</pre>' : ''))).on('mouseleave', hideTip);
+  g.on('mouseenter', (e, d) => { if (d.prompt) showPromptPop(e, d); })
+   .on('mousemove', (e, d) => { if (!d.prompt) showTip(e, esc(d.full)); })
+   .on('mouseleave', hideTip);
   return W;
 }
