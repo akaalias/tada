@@ -1,0 +1,397 @@
+[
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 4,
+        "actionability" : 4,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B captures the core intention faithfully and atomically, but omits the \"plan\" component that SET A includes — the user's input implies both planning and hosting. Neither set captures the implicit scheduling task (\"sometime next month\"), though that is a minor omission shared by both.",
+      "matched" : 1,
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "host dinner party for parents' anniversary"
+      ]
+    },
+    "id" : "boundary_dinner",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 1,
+      "precision" : 1,
+      "predCount" : 1
+    },
+    "input" : "I want to host a dinner party for my parents' anniversary sometime next month."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "actionability" : 5,
+        "nonRedundancy" : 1,
+        "faithfulness" : 4,
+        "atomicity" : 5
+      },
+      "notes" : "SET B duplicates the same intention twice — the user's second mention of milk is a self-correction/emphasis, not a second distinct task. SET A correctly collapses these into one task and also preserves the important \"on the way home\" context that SET B drops entirely.",
+      "matched" : 1,
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "grab milk",
+        "pick up milk"
+      ]
+    },
+    "id" : "dedup_groceries",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 0.6666666666666666,
+      "matched" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 1,
+      "precision" : 0.5,
+      "predCount" : 2
+    },
+    "input" : "We're basically out of milk so I need to grab some on the way home, and actually, you know what, definitely pick up milk, we finished the last carton this morning."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B misses the critical prerequisite task of adding Q3 numbers to the deck before sending it to Sarah — a distinct, explicit intention in the input. Everything it does include is correct, but the omission is significant.",
+      "matched" : 2,
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "book the offsite venue",
+        "email Sarah the deck"
+      ]
+    },
+    "id" : "interleaved_deck",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 0.6666666666666666,
+      "f1" : 0.8,
+      "matched" : 2,
+      "goldEmpty" : false,
+      "goldCount" : 3,
+      "precision" : 1,
+      "predCount" : 2
+    },
+    "input" : "I should email Sarah the deck... oh and I need to book the offsite venue... actually for that deck, make sure the Q3 numbers are in before it goes to Sarah."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 4
+      },
+      "notes" : "SET B misses two distinct tasks: sending the Henderson proposal to Mark by Thursday (it only captures finishing the draft, not the delivery step with the deadline) and calling the insurance company about the claim. These are clear, actionable intentions in the input that SET B omits entirely.",
+      "matched" : 5,
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "finish draft for Henderson",
+        "send updated budget spreadsheet to Lisa",
+        "book dentist appointment",
+        "renew passport",
+        "double-check numbers in draft for Henderson"
+      ]
+    },
+    "id" : "long_monday",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 0.8333333333333334,
+      "f1" : 0.9090909090909091,
+      "matched" : 5,
+      "goldEmpty" : false,
+      "goldCount" : 6,
+      "precision" : 1,
+      "predCount" : 5
+    },
+    "input" : "Okay let me just think out loud for a sec because my head is all over the place this morning. So the big thing is the Henderson proposal, I really need to finish the draft and get it over to Mark by Thursday, he keeps asking about it. Ugh and the coffee machine at the office is broken again, so annoying. Anyway, I also told Lisa I would send her the updated budget spreadsheet, that's been sitting in my drafts for like a week now. Oh and at some point I need to book a dentist appointment, my tooth has been bugging me. The weather is supposed to be nice this weekend which would be great. Let me see, what else, I should probably call the insurance company about that claim, they never got back to me. And actually back to the Henderson thing, before I send it to Mark I need to double check the numbers in section three, I think there's a typo in there. I keep meaning to clean out the garage too but honestly that's more of a someday thing, not urgent at all. Oh, and I need to renew my passport, it expires in a couple months and we might travel. I think that's most of it. My brain feels a little less cluttered now."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 4,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B captures the core task correctly but omits the time-sensitive deadline (\"before Tuesday\"), which is an important detail the user explicitly stressed. Otherwise it is faithful, atomic, and actionable.",
+      "matched" : 1,
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "return Amazon package"
+      ]
+    },
+    "id" : "mixed_weekend",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 1,
+      "precision" : 1,
+      "predCount" : 1
+    },
+    "input" : "This weekend was pretty chill honestly, watched a couple of movies, slept in way too late. Oh, but I do need to return that Amazon package before the window closes on Tuesday. Other than that, just relaxing really."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 5,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B captures all three intentions correctly but is slightly less precise than SET A — it omits the \"to reschedule\" purpose of the dentist call and the implicit \"from the store\" context for coffee, though neither omission meaningfully changes the actionability or coverage for this simple input. Both sets are functionally equivalent for practical task-tracking purposes.",
+      "matched" : 3,
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "call dentist",
+        "grab coffee",
+        "start quarterly report"
+      ]
+    },
+    "id" : "multi_errands",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 3,
+      "goldEmpty" : false,
+      "goldCount" : 3,
+      "precision" : 1,
+      "predCount" : 3
+    },
+    "input" : "Let me think — I need to call the dentist to reschedule, we're out of coffee so grab some, and I should finally start the quarterly report."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 5,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B captures all five distinct tasks faithfully and atomically, but omits minor contextual details present in SET A — specifically \"with the post office\" for mail forwarding and \"this weekend\" for packing the kitchen. These details add useful specificity but their absence doesn't constitute a meaningful failure in task extraction.",
+      "matched" : 5,
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "book moving truck",
+        "set up mail forwarding",
+        "cancel gym membership",
+        "give notice to landlord",
+        "start packing kitchen"
+      ]
+    },
+    "id" : "multi_moving",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 5,
+      "goldEmpty" : false,
+      "goldCount" : 5,
+      "precision" : 1,
+      "predCount" : 5
+    },
+    "input" : "Okay the move is coming up fast. I need to book the moving truck, set up mail forwarding with the post office, cancel my gym membership here, give notice to the landlord, and I really should start packing the kitchen this weekend."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 3,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B captures the correct action and recipient but omits the critical subject/reason — the leaking faucet — which is an explicit and important detail the user stated. SET A is more complete and faithful to the full intention expressed.",
+      "matched" : 1,
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "email landlord"
+      ]
+    },
+    "id" : "noisy_selfcorrect",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 1,
+      "precision" : 1,
+      "predCount" : 1
+    },
+    "input" : "Okay so I need to call the, um, no wait, I should just email the landlord about the leaking faucet, yeah email is better because I want it in writing."
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "coverage" : 5,
+        "actionability" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5
+      },
+      "notes" : "SET B is functionally identical to SET A — it captures the one and only task faithfully and atomically. The minor difference is that B retains the user's time qualifier (\"sometime this week\"), which is a small bonus for context but not a meaningful distinction in quality.",
+      "matched" : 1,
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "book the flights for the Paris trip sometime this week"
+      ]
+    },
+    "id" : "single_paris",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 1,
+      "precision" : 1,
+      "predCount" : 1
+    },
+    "input" : "I really need to finally book the flights for the Paris trip sometime this week."
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "zero_chitchat",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "precision" : 1,
+      "predCount" : 0
+    },
+    "input" : "Man, the weather has been wild lately, gray and rainy basically all week. My back is a bit stiff from sitting too much. Just thinking out loud here, nothing major going on really."
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "zero_venting",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "precision" : 1,
+      "predCount" : 0
+    },
+    "input" : "Ugh today just dragged on forever, the traffic this morning was insane and I'm completely wiped out. Anyway."
+  }
+]

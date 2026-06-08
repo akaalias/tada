@@ -13,7 +13,25 @@ public struct ConfiguredAgent: Sendable {
         switch config.topology {
         case .singleShot: return try await singleShot(input)
         case .singleShotReasoned: return try await singleShotReasoned(input)
+        case .singleShotCoverage: return try await singleShotCoverage(input)
         }
+    }
+
+    private func singleShotCoverage(_ input: String) async throws -> RambleResult {
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.coverage }
+        let prompt = """
+        Here is what the user brain-dumped:
+
+        "\(input)"
+
+        First analyze what is and isn't actionable and decide whether any real task remains. Then sweep the whole input and list every distinct intention you find, even ones buried mid-sentence or returned to after a digression. Finally merge duplicates into the final task list (empty if none).
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleSplitCoverage.self,
+            options: config.options()
+        )
+        return r.content.toContract()
     }
 
     private func singleShotReasoned(_ input: String) async throws -> RambleResult {
