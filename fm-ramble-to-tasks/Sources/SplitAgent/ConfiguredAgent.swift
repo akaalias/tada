@@ -12,7 +12,25 @@ public struct ConfiguredAgent: Sendable {
     public func generate(_ input: String) async throws -> RambleResult {
         switch config.topology {
         case .singleShot: return try await singleShot(input)
+        case .singleShotReasoned: return try await singleShotReasoned(input)
         }
+    }
+
+    private func singleShotReasoned(_ input: String) async throws -> RambleResult {
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.reasoned }
+        let prompt = """
+        Here is what the user brain-dumped:
+
+        "\(input)"
+
+        First analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none).
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleSplitReasoned.self,
+            options: config.options()
+        )
+        return r.content.toContract()
     }
 
     private func singleShot(_ input: String) async throws -> RambleResult {
