@@ -1,0 +1,250 @@
+[
+  {
+    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 0,
+      "matched" : 0,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true
+    },
+    "id" : "bait_journal"
+  },
+  {
+    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 0,
+      "matched" : 0,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true
+    },
+    "id" : "bait_ocean"
+  },
+  {
+    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 0,
+      "matched" : 0,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true
+    },
+    "id" : "bait_someday"
+  },
+  {
+    "input" : "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there.",
+    "candidate" : {
+      "tasks" : [
+        "Book dishwasher repair",
+        "Fill out school form",
+        "Water houseplants",
+        "Order dog food",
+        "Send the photos from the trip to my sister as promised."
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 0.8,
+      "goldEmpty" : false,
+      "recall" : 0.8,
+      "f1" : 0.8000000000000002,
+      "predCount" : 5,
+      "matched" : 4,
+      "goldCount" : 5,
+      "zeroTaskCorrect" : false
+    },
+    "id" : "long_household",
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "actionability" : 3,
+        "faithfulness" : 3,
+        "coverage" : 3,
+        "nonRedundancy" : 5,
+        "phrasing" : 3
+      },
+      "matched" : 4,
+      "pairwise" : "goldBetter",
+      "notes" : "SET B includes watering the houseplants, which the user explicitly dismissed as \"not really a task,\" while omitting the electricity bill payment — a clear, time-sensitive task the user flagged. Phrasing is also inconsistent: some items are terse lowercase fragments (e.g. \"Book dishwasher repair\") while others are more complete, and the school form task drops the critical Wednesday deadline."
+    }
+  },
+  {
+    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "candidate" : {
+      "tasks" : [
+        "Book flights for the Portugal trip in the fall to secure the best prices.",
+        "Find an Airbnb in Lisbon for the first few nights of our trip.",
+        "Set an out-of-office message for work before leaving for the trip.",
+        "Ask my neighbor to water the plants while we're away on our trip."
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : false,
+      "recall" : 0.8,
+      "f1" : 0.888888888888889,
+      "predCount" : 4,
+      "matched" : 4,
+      "goldCount" : 5,
+      "zeroTaskCorrect" : false
+    },
+    "id" : "long_portugal",
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "actionability" : 5,
+        "faithfulness" : 5,
+        "coverage" : 3,
+        "nonRedundancy" : 5,
+        "phrasing" : 5
+      },
+      "matched" : 4,
+      "pairwise" : "goldBetter",
+      "notes" : "SET B misses the distinct task of making a list of towns to visit in Portugal, which the user explicitly mentioned. All four tasks it does include are accurate, well-phrased, and faithfully traced to the input, but the omission of that fifth task makes coverage incomplete."
+    }
+  },
+  {
+    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
+    "candidate" : {
+      "tasks" : [
+        "Review the 2024 tax document with Franziska.",
+        "Talk to her about August",
+        "Bring out the trash"
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : false,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 3,
+      "matched" : 3,
+      "goldCount" : 3,
+      "zeroTaskCorrect" : false
+    },
+    "id" : "real_franziska",
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "actionability" : 5,
+        "faithfulness" : 5,
+        "coverage" : 5,
+        "nonRedundancy" : 5,
+        "phrasing" : 4
+      },
+      "matched" : 3,
+      "pairwise" : "tie",
+      "notes" : "SET B's task 2 uses the pronoun \"her\" instead of resolving it to \"Franziska,\" which loses a small but meaningful detail that SET A preserves; otherwise the sets are functionally equivalent."
+    }
+  },
+  {
+    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 0,
+      "matched" : 0,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true
+    },
+    "id" : "zero_frustrated"
+  },
+  {
+    "input" : "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh.",
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "precision" : 1,
+      "goldEmpty" : true,
+      "recall" : 1,
+      "f1" : 1,
+      "predCount" : 0,
+      "matched" : 0,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true
+    },
+    "id" : "zero_reflect"
+  }
+]
