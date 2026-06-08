@@ -1,0 +1,250 @@
+[
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_journal",
+    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 0,
+      "f1" : 1,
+      "matched" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_ocean",
+    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 0,
+      "f1" : 1,
+      "matched" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_someday",
+    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 0,
+      "f1" : 1,
+      "matched" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 3,
+      "notes" : "SET B makes two hallucination/distortion errors: it invents a \"by Wednesday\" deadline for the dishwasher repair (the input gives no such deadline for that task) and it includes watering the houseplants, which the user explicitly dismissed as a daily routine rather than a task. It also omits paying the electricity bill entirely, losing a clear actionable item.",
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "phrasing" : 4,
+        "faithfulness" : 2,
+        "actionability" : 3,
+        "coverage" : 3
+      },
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "Book the dishwasher repair by Wednesday.",
+        "Fill out and send the school form by Wednesday.",
+        "Water the houseplants by Wednesday.",
+        "Order more dog food.",
+        "Send the photos from the trip to my sister."
+      ]
+    },
+    "id" : "long_household",
+    "input" : "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 5,
+      "f1" : 0.6,
+      "matched" : 3,
+      "goldCount" : 5,
+      "precision" : 0.6,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 0.6
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 4,
+      "notes" : "SET B misses the distinct task of making a list of towns to visit in Portugal, which the user explicitly mentioned. Additionally, phrasing is inconsistent — items 1 and 3 are terse lowercase fragments lacking meaningful detail (e.g., \"Book flights\" drops \"to Portugal\"; \"Set out-of-office\" drops \"before leaving\"), while items 2 and 4 are fuller and more conversational.",
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "phrasing" : 3,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 3
+      },
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "Book flights",
+        "Find an Airbnb in Lisbon for the first few nights of our trip.",
+        "Set out-of-office",
+        "Ask my neighbor to water the plants while we're away on our Portugal trip."
+      ]
+    },
+    "id" : "long_portugal",
+    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 4,
+      "f1" : 0.888888888888889,
+      "matched" : 4,
+      "goldCount" : 5,
+      "precision" : 1,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 0.8
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 3,
+      "notes" : "SET B's task 2 uses \"her\" instead of resolving the pronoun to \"Franziska,\" which is slightly less clear, and \"Bring out the trash\" vs \"Take out the trash\" is a minor but acceptable phrasing variant. Overall quality is essentially equal to SET A.",
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "phrasing" : 4,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 5
+      },
+      "pairwise" : "tie"
+    },
+    "candidate" : {
+      "tasks" : [
+        "Review the 2024 tax document with Franziska",
+        "Talk to her about August",
+        "Bring out the trash"
+      ]
+    },
+    "id" : "real_franziska",
+    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 3,
+      "f1" : 1,
+      "matched" : 3,
+      "goldCount" : 3,
+      "precision" : 1,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 1
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "zero_frustrated",
+    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 0,
+      "f1" : 1,
+      "matched" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "zero_reflect",
+    "input" : "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "match" : {
+      "predCount" : 0,
+      "f1" : 1,
+      "matched" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1
+    }
+  }
+]
