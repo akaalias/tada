@@ -17,3 +17,4 @@ The rubric includes PHRASING. Gold: 35 cases (27 dev / 8 test).
   complete style (keep detail) rather than terse all-lowercase fragments — without losing F1.
 
 ## Log
+- exp001 baseline single-shot + reasoning/gate field (analysis + hasActionableTasks → deterministic empty gate), greedy — quality 0.691 (full), NEW BEST (first run), zero-task 100% & F1 0.882 solid; the two open gaps are PHRASING (2/5 — terse all-lowercase fragments dropping detail like "this weekend"/"about the kitchen sink") and coverage misses on interleaved/multi rambles (interleaved_deck/report, multi_errands drop a buried prereq/third task).
