@@ -122,6 +122,7 @@ while [ "$(count)" -lt "$TARGET" ]; do
   rc=$?
 
   cost=$(printf '%s' "$result" | jq -r '.total_cost_usd // 0' 2>/dev/null || echo 0)
+  durms=$(printf '%s' "$result" | jq -r '.duration_ms // empty' 2>/dev/null || echo "")
   iserr=$(printf '%s' "$result" | jq -r '.is_error // "?"' 2>/dev/null || echo "?")
   printf '%s\n' "$result" >> "$AR/iterations.log"
   echo "[autoresearch] coder: rc=$rc cost=\$$cost is_error=$iserr $([ "$rc" = 124 ] && echo '(TIMEOUT)')"
@@ -147,6 +148,11 @@ while [ "$(count)" -lt "$TARGET" ]; do
     fi
     OPF="$PKG/results/operators.json"; [ -f "$OPF" ] || echo '{}' > "$OPF"
     tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"
+    # duration of this experiment (coder iteration: code + build + eval), in ms
+    DURF="$PKG/results/durations.json"; [ -f "$DURF" ] || echo '{}' > "$DURF"
+    if [ -n "$durms" ]; then
+      tmp=$(jq --arg l "$NEWLABEL" --argjson d "$durms" '.[$l]=$d' "$DURF" 2>/dev/null) && printf '%s\n' "$tmp" > "$DURF"
+    fi
     python3 "$AR/gen_pipeline.py" "$NEWLABEL" 2>/dev/null || true
     python3 "$AR/record_lineage.py" "$NEWLABEL" "$CHAMP" "$PREV" "$PIVOT" 2>/dev/null || true
     python3 "$AR/gen_costs.py" 2>/dev/null || true

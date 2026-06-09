@@ -24,7 +24,7 @@
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/glossary.js"></script>
 </head>
-<body data-glossary-root=".help">
+<body class="log-page" data-glossary-root=".help">
 <div data-nav="dashboard"></div>
 <header class="page-head">
   <div class="eyebrow">Alexis Rondeau · live research log</div>
@@ -48,12 +48,15 @@
     <table id="tbl">
       <thead><tr>
         <th>#</th><th>Label</th>
+        <th title="Parent experiments this one built on — the champion (builds-on) and the previous run (warm-start). Click a name to open that row.">Lineage</th>
         <th title="Who ran the experiment. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one experiment per iteration.">Operator</th>
         <th title="Which lever the experiment uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>
-        <th>Set</th><th>Quality</th>
+        <th>Set</th>
         <th title="Share of cases that pass the hard technical-spec gate: non-empty atomic tasks, no emojis, at most 12. Quality is forced to 0 for any case that fails.">Spec</th>
         <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
         <th title="Cost of the code-writing agent for this experiment (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>
+        <th title="Wall-clock for the experiment — the coder iteration: writing the config, building, and running the eval.">Duration</th>
+        <th>Quality</th>
         <th>Move</th>
       </tr></thead>
       <tbody></tbody>

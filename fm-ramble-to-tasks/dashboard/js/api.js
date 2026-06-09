@@ -25,6 +25,20 @@ export async function fetchTypes() {
   catch (e) { return {}; }
 }
 
+// Two-parent lineage per experiment: { label: { parents: [...], pivot } }.
+// Written by record_lineage.py each loop iteration.
+export async function fetchLineageMeta() {
+  try { return await (await fetch('../results/lineage_meta.json' + bust())).json(); }
+  catch (e) { return {}; }
+}
+
+// Wall-clock per experiment (the coder iteration: code + build + eval), in ms,
+// keyed by label. Written by run.sh from the coder's duration_ms.
+export async function fetchDurations() {
+  try { return await (await fetch('../results/durations.json' + bust())).json(); }
+  catch (e) { return {}; }
+}
+
 export async function fetchAnalyses() {
   try { return (await (await fetch('../results/analyses.json' + bust())).json()).analyses || []; }
   catch (e) { return []; }
