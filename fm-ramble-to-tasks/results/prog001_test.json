@@ -1,0 +1,252 @@
+[
+  {
+    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_journal",
+    "match" : {
+      "f1" : 1,
+      "goldCount" : 0,
+      "precision" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "predCount" : 0
+    }
+  },
+  {
+    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_ocean",
+    "match" : {
+      "f1" : 1,
+      "goldCount" : 0,
+      "precision" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "predCount" : 0
+    }
+  },
+  {
+    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "id" : "bait_someday",
+    "match" : {
+      "f1" : 1,
+      "goldCount" : 0,
+      "precision" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "predCount" : 0
+    }
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "actionability" : 4,
+        "atomicity" : 5,
+        "coverage" : 4,
+        "phrasing" : 1,
+        "nonRedundancy" : 5,
+        "faithfulness" : 4
+      },
+      "notes" : "SET B includes watering the plants, which the user explicitly dismissed as \"not really a task,\" hurting faithfulness and actionability. More critically, every item is a terse all-lowercase fragment that drops meaningful detail (e.g., \"fill school form\" loses \"send back by Wednesday\"; \"send photos\" loses \"to sister\" and \"from the trip\"; \"book dishwasher repair\" loses the context of the recurring noise), making phrasing the weakest dimension overall.",
+      "pairwise" : "goldBetter",
+      "matched" : 5
+    },
+    "input" : "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "book dishwasher repair",
+        "fill school form",
+        "water plants",
+        "order dog food",
+        "send photos",
+        "pay electricity bill"
+      ]
+    },
+    "id" : "long_household",
+    "match" : {
+      "f1" : 0.9090909090909091,
+      "goldCount" : 5,
+      "precision" : 0.8333333333333334,
+      "matched" : 5,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "predCount" : 6
+    }
+  },
+  {
+    "verdict" : {
+      "pairwise" : "goldBetter",
+      "matched" : 5,
+      "notes" : "SET B drops meaningful detail throughout — \"book flights\" loses \"to Portugal,\" \"find accommodation\" loses \"Airbnb in Lisbon for the first few nights,\" and \"make travel list\" loses \"towns to visit in Portugal.\" All items are terse, all-lowercase fragments that strip the context the user explicitly provided, making them feel generic rather than tied to this specific trip.",
+      "rubric" : {
+        "faithfulness" : 5,
+        "atomicity" : 5,
+        "actionability" : 4,
+        "coverage" : 4,
+        "nonRedundancy" : 5,
+        "phrasing" : 1
+      }
+    },
+    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "candidate" : {
+      "tasks" : [
+        "book flights",
+        "find accommodation",
+        "make travel list",
+        "ask neighbor to water plants",
+        "set out of office"
+      ]
+    },
+    "id" : "long_portugal",
+    "match" : {
+      "predCount" : 5,
+      "goldCount" : 5,
+      "precision" : 1,
+      "matched" : 5,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "f1" : 1
+    }
+  },
+  {
+    "verdict" : {
+      "rubric" : {
+        "phrasing" : 3,
+        "actionability" : 5,
+        "faithfulness" : 5,
+        "atomicity" : 5,
+        "coverage" : 5,
+        "nonRedundancy" : 5
+      },
+      "pairwise" : "goldBetter",
+      "notes" : "SET B drops meaningful detail — \"2024\" from the tax document and \"the\" before \"trash\" — making the phrasing slightly terser and less faithful to the user's exact wording compared to SET A, which preserves all specifics.",
+      "matched" : 3
+    },
+    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "Review tax document with Franziska",
+        "Talk to Franziska about August",
+        "Bring out trash"
+      ]
+    },
+    "id" : "real_franziska",
+    "match" : {
+      "f1" : 1,
+      "goldCount" : 3,
+      "precision" : 1,
+      "matched" : 3,
+      "goldEmpty" : false,
+      "zeroTaskCorrect" : false,
+      "recall" : 1,
+      "predCount" : 3
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "f1" : 1
+    },
+    "id" : "zero_frustrated",
+    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "match" : {
+      "predCount" : 0,
+      "goldCount" : 0,
+      "precision" : 1,
+      "matched" : 0,
+      "goldEmpty" : true,
+      "zeroTaskCorrect" : true,
+      "recall" : 1,
+      "f1" : 1
+    },
+    "id" : "zero_reflect",
+    "input" : "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh.",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    }
+  }
+]
