@@ -33,8 +33,8 @@
   <section class="s-intro">
     <p>One shared language across the code, the logs, and this dashboard (the full landscape and sources live in <code>docs/vocabulary.md</code>):</p>
     <dl class="gloss">
-      <dt>evolutionary run</dt><dd>one campaign — a single <code>run.sh</code> invocation that keeps producing programs until it hits its target count. Resumable.</dd>
-      <dt>program</dt><dd>the unit of progress: one agent variant that was built and evaluated. One row in the run log; labelled <code>progNNN</code>.</dd>
+      <dt>evolutionary run</dt><dd>one campaign — a single <code>run.sh</code> invocation, with its own meta-params (target / patience / model). Recorded in <code>results/runs.jsonl</code>; you can launch several, each with different settings.</dd>
+      <dt>program</dt><dd>the unit of progress: one agent variant that was built and evaluated. One row in the log; labelled <code>progNNN</code> and stamped with the run that produced it.</dd>
       <dt>sample</dt><dd>one turn of the loop — one call to the mutation operator. A sample may fail to produce a program (a <em>failed sample</em>).</dd>
       <dt>mutation operator</dt><dd>the coder LLM (a headless Claude) that writes the next program.</dd>
       <dt>mutation / crossover</dt><dd>deriving a program from one parent (mutation) or combining two (crossover).</dd>

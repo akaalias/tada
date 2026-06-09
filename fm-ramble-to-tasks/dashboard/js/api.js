@@ -25,6 +25,17 @@ export async function fetchTypes() {
   catch (e) { return {}; }
 }
 
+// Evolutionary-runs registry: { id: { id, started, target, patience, model } }.
+// One line per run.sh invocation; each program carries its run id.
+export async function fetchRunsMeta() {
+  try {
+    const t = await (await fetch('../results/runs.jsonl' + bust())).text();
+    const m = {};
+    t.trim().split('\n').filter(Boolean).forEach(l => { const r = JSON.parse(l); m[r.id] = r; });
+    return m;
+  } catch (e) { return {}; }
+}
+
 // Two-parent lineage per program: { label: { parents: [...], pivot } }.
 // Written by record_lineage.py each loop sample.
 export async function fetchLineageMeta() {

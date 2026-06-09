@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=1280">
-<title>Evolutionary run — Ramble → Tasks</title>
+<title>Program log — Ramble → Tasks</title>
 <meta name="description" content="Across 77 programs — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every fitness dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
@@ -28,8 +28,8 @@
 <div data-nav="dashboard"></div>
 <header class="page-head">
   <div class="eyebrow">Alexis Rondeau · live research log</div>
-  <h1>Evolutionary run</h1>
-  <p class="sub">Every program in this evolutionary run, teaching the on-device model the <a href="samples.html">ramble&rarr;tasks</a> task — scored against Sonnet, newest first, with the running best (elite) charted over time.</p>
+  <h1>Program log</h1>
+  <p class="sub">Every program across all evolutionary runs, teaching the on-device model the <a href="samples.html">ramble&rarr;tasks</a> task — newest first; each row shows the run (and its config) that produced it, with the running best (elite) charted over time.</p>
   <p class="page-status" id="title">Loading the program record&hellip;</p>
   <div class="dash-meta">
     <div class="dash-legend">
@@ -48,6 +48,7 @@
     <table id="tbl">
       <thead><tr>
         <th>#</th><th>Label</th>
+        <th title="Which evolutionary run (run.sh campaign) produced this program — with that run's target (max programs), patience, and model.">Run</th>
         <th title="Parent programs this one built on — the elite it mutated from, and the inspiration program it warm-started from. Click a name to open that row.">Lineage</th>
         <th title="Who ran the program. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one program per sample.">Operator</th>
         <th title="Which lever the program uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>

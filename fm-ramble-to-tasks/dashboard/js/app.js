@@ -1,11 +1,11 @@
 // Entry point: poll the run log every 3s, update the header + chart, and rebuild
 // the table only when the data changed (so open detail panels survive refreshes).
 
-import { fetchRuns, fetchCosts, fetchOperators, fetchTypes, fetchAnalyses, fetchLineageMeta, fetchDurations } from './api.js';
+import { fetchRuns, fetchCosts, fetchOperators, fetchTypes, fetchAnalyses, fetchLineageMeta, fetchDurations, fetchRunsMeta } from './api.js';
 import { drawChart, initChartHover } from './chart.js';
 import { fillTable } from './table.js';
 
-const state = { lastSig: '', expanded: new Set(), costs: {}, operators: {}, types: {}, lineage: {}, durations: {}, analysesSig: '' };
+const state = { lastSig: '', expanded: new Set(), costs: {}, operators: {}, types: {}, lineage: {}, durations: {}, runsMeta: {}, analysesSig: '' };
 
 // When opened from the report tapestry (index.html#<label>), open that row and jump to it.
 const hashTarget = decodeURIComponent((location.hash || '').replace(/^#/, ''));
@@ -61,8 +61,9 @@ async function load() {
   state.types = await fetchTypes();
   state.lineage = await fetchLineageMeta();
   state.durations = await fetchDurations();
-  const sig = runs.map(r => r.label + ':' + r.fitness + ':' + r.kept + ':' + (state.costs[r.label] ?? '') + ':' + (state.operators[r.label] ?? '') + ':' + (state.types[r.label] ?? '') + ':' + ((state.lineage[r.label] && state.lineage[r.label].parents || []).join(',')) + ':' + (state.durations[r.label] ?? '')).join('|');
-  if (sig !== state.lastSig) { state.lastSig = sig; fillTable(runs, state.expanded, state.costs, state.operators, state.types, state.lineage, state.durations); }
+  state.runsMeta = await fetchRunsMeta();
+  const sig = runs.map(r => r.label + ':' + r.fitness + ':' + r.kept + ':' + (state.costs[r.label] ?? '') + ':' + (state.operators[r.label] ?? '') + ':' + (state.types[r.label] ?? '') + ':' + ((state.lineage[r.label] && state.lineage[r.label].parents || []).join(',')) + ':' + (state.durations[r.label] ?? '') + ':' + (r.run ?? '')).join('|');
+  if (sig !== state.lastSig) { state.lastSig = sig; fillTable(runs, state.expanded, state.costs, state.operators, state.types, state.lineage, state.durations, state.runsMeta); }
   focusHashRow();
 
   const asig = analyses.map(a => a.id + ':' + a.result).join('|');

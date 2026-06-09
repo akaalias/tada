@@ -55,6 +55,18 @@ count() {
 echo "[autoresearch] start: $(count)/$TARGET programs | coder=$CODER_MODEL | budget=${PER_ITER_BUDGET:-none} | timeout=${PER_ITER_TIMEOUT:-none}s"
 mkdir -p "$AR" "$PKG/results/pipelines"
 
+# --- Evolutionary-run record -------------------------------------------------
+# Each run.sh invocation is one EVOLUTIONARY RUN with its own meta-params (target /
+# patience / model). We register it in results/runs.jsonl and stamp every program
+# this invocation produces with RUN_ID, so the dashboard can show which run each
+# program came from (and its config).
+RUNS_REG="$PKG/results/runs.jsonl"
+RUN_ID=$(( $(wc -l < "$RUNS_REG" 2>/dev/null || echo 0) + 1 ))
+printf '{"id":%d,"started":"%s","target":%s,"patience":%s,"model":"%s"}\n' \
+  "$RUN_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$TARGET" "$PATIENCE" "$CODER_MODEL" >> "$RUNS_REG"
+git -C "$REPO" add "$RUNS_REG" 2>/dev/null; git -C "$REPO" commit -q -m "autoresearch: start evolutionary run #$RUN_ID (target=$TARGET, patience=$PATIENCE, model=$CODER_MODEL)" 2>/dev/null || true
+echo "[autoresearch] evolutionary run #$RUN_ID (target=$TARGET, patience=$PATIENCE, model=$CODER_MODEL)"
+
 # Backfill dashboard sidecars for any existing runs (best-effort, idempotent).
 for L in $(jq -r '.label' "$PKG/results/programs.jsonl" 2>/dev/null | sort -u); do
   [ -f "$PKG/results/pipelines/$L.json" ] || python3 "$AR/gen_pipeline.py" "$L" 2>/dev/null || true
@@ -141,10 +153,11 @@ while [ "$(count)" -lt "$TARGET" ]; do
     # the run row AND every dashboard sidecar (operator, type, cost, pipeline diagram,
     # two-parent lineage, samples) are produced together, then committed once — instead
     # of the old "row now, sidecars a couple seconds later" split that flashed "—" cells.
-    if [ "$PIVOT" = "1" ] && [ -n "$NEWLABEL" ]; then
-      # stamp pivot onto the run's own record (amber ring + "Pivot" badge)
-      tmp=$(jq -c --arg l "$NEWLABEL" 'if .label==$l and (.subset//"full")!="test" then .pivot=true else . end' "$PKG/results/programs.jsonl") \
-        && printf '%s\n' "$tmp" > "$PKG/results/programs.jsonl"
+    # stamp this program with its evolutionary run id (and pivot flag, if any)
+    if [ -n "$NEWLABEL" ]; then
+      tmp=$(jq -c --arg l "$NEWLABEL" --argjson r "$RUN_ID" --argjson pv "$PIVOT" \
+        'if .label==$l and (.subset//"full")!="test" then .run=$r | (if $pv==1 then .pivot=true else . end) else . end' \
+        "$PKG/results/programs.jsonl") && printf '%s\n' "$tmp" > "$PKG/results/programs.jsonl"
     fi
     OPF="$PKG/results/operators.json"; [ -f "$OPF" ] || echo '{}' > "$OPF"
     tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"

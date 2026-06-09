@@ -42,7 +42,16 @@ const fmtDur = ms => {
   return `${h}h${String(rm).padStart(2, '0')}m`;
 };
 
-// Clickable parent labels ("exp002 · exp003") or "root". Each opens that row.
+// Which evolutionary run produced this program, with that run's config.
+const runCell = (runId, runsMeta) => {
+  if (runId == null) return '<span class="disc">—</span>';
+  const m = runsMeta[runId];
+  const title = m ? `Run ${runId} — target ${m.target} programs · patience ${m.patience} · ${m.model}${m.started ? ' · started ' + m.started : ''}` : `Run ${runId}`;
+  const meta = m ? `<span class="run-meta">max ${m.target} · pat ${m.patience}</span>` : '';
+  return `<span class="run-id" title="${title}">run ${runId}</span>${meta}`;
+};
+
+// Clickable parent labels ("prog002 · prog003") or "root". Each opens that row.
 const lineageCell = parents =>
   (parents && parents.length)
     ? parents.map(p => `<a class="lin-link" href="#exp-${esc(p)}" data-target="${esc(p)}" title="Open ${esc(p)}">${esc(p)}</a>`).join('<span class="lin-sep">·</span>')
@@ -64,7 +73,7 @@ function openRow(label, expanded) {
   tr.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export function fillTable(runs, expanded, costs, operators = {}, types = {}, lineage = {}, durations = {}) {
+export function fillTable(runs, expanded, costs, operators = {}, types = {}, lineage = {}, durations = {}, runsMeta = {}) {
   const tb = document.querySelector('#tbl tbody');
   tb.innerHTML = '';
   [...runs].reverse().forEach(r => {
@@ -73,6 +82,7 @@ export function fillTable(runs, expanded, costs, operators = {}, types = {}, lin
     tr.className = 'row-main' + (expanded.has(r.label) ? ' open' : '') + (r.kept ? ' kept-row' : '');
     const parents = (lineage[r.label] && lineage[r.label].parents) || [];
     tr.innerHTML = `<td>${r.index}</td><td><span class="caret">▸</span> ${r.label}</td>`
+      + `<td class="run-cell">${runCell(r.run, runsMeta)}</td>`
       + `<td class="lin-cell">${lineageCell(parents)}</td>`
       + `<td>${opBadge(operators[r.label])}</td>`
       + `<td>${typeBadge(types[r.label])}</td>`
@@ -86,7 +96,7 @@ export function fillTable(runs, expanded, costs, operators = {}, types = {}, lin
       + (r.pivot ? '<span class="status-badge sb-pivot" title="Patience-driven pivot — a fresh direction taken after a no-improvement streak (elite dropped).">Pivot</span>' : '')
       + `<span class="status-badge ${r.infeasible ? 'sb-invalid' : r.kept ? 'sb-kept' : 'sb-disc'}">${r.infeasible ? 'Infeasible' : r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
     const det = document.createElement('tr'); det.className = 'detail';
-    const cell = document.createElement('td'); cell.colSpan = 12;
+    const cell = document.createElement('td'); cell.colSpan = 13;
     det.appendChild(cell);
     det.style.display = expanded.has(r.label) ? '' : 'none';
     if (expanded.has(r.label)) renderDetail(r.label, cell);
