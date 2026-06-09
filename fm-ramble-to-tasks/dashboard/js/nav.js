@@ -4,9 +4,10 @@
 // active item (rendered as a non-link so it stays visible). Change a label, href,
 // or the page set HERE and every page updates — do not hand-write nav anywhere.
 const NAV = [
-  { key: 'dashboard', href: 'index.html',   label: 'Programs' },
   { key: 'problem',   href: 'samples.html', label: 'The problem' },
   { key: 'solution',  href: 'solution.html', label: 'The solution' },
+  // live-research views (after the divider)
+  { key: 'dashboard', href: 'index.html',   label: 'Programs', sub: true },
   { key: 'lineage',   href: 'lineage.html', label: 'Program lineage', sub: true },
 ];
 
