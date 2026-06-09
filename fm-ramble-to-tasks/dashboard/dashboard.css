@@ -6,14 +6,10 @@
    small-caps tags instead of coloured pills, rules instead of boxes.
    ========================================================================== */
 
-/* ---- wide layout (overrides tufte's centred reading column) -------------- */
+/* ---- shared centered column (matches every page via --col) --------------- */
 body{overflow-x:auto;}
-/* a centered 90%-viewport column — wide enough for the full experiment table */
-.dash-head{max-width:90vw;margin:0 auto;padding:40px 0 6px;}
-.dash-head h1{font-size:34px;margin:0 0 8px;}
-.dash-head .sub{margin:0 0 14px;}
-.dash-wrap{max-width:90vw;margin:0 auto;padding:4px 0 64px;}
-@media(max-width:1100px){ .dash-head,.dash-wrap{max-width:none;padding-left:32px;padding-right:32px;} }
+.dash-wrap{max-width:var(--col);margin:0 auto;padding:4px 0 64px;}
+@media(max-width:1100px){ .dash-wrap{max-width:none;padding-left:32px;padding-right:32px;} }
 
 /* ---- header legend + meta ------------------------------------------------ */
 .dash-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 26px;font-size:14px;color:var(--muted);}
@@ -205,3 +201,45 @@ details.trywrap > summary{cursor:pointer;color:var(--muted);font-weight:600;font
 .help code{background:transparent;border-bottom:1px solid var(--rule);padding:0 1px;font-size:12px;}
 .help .foot{margin-top:10px;color:var(--muted);font-style:italic;}
 .legend-kinds{margin-top:2px;}
+
+/* ---- shared header width: matches each page's content column (no indent) --- */
+/* ---- sample index (samples.html) ----------------------------------------- */
+/* the once-per-page section heading that introduces the grouped samples */
+.s-section{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+           text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:42px 0 0;}
+.catnav{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font:13px/1.4 "Palatino",Georgia,serif;}
+.catnav a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-soft);}
+.catnav a:hover{color:var(--ink);border-bottom-color:var(--ink);}
+.s-cat{border-top:1.5px solid var(--ink);margin-top:34px;padding-top:6px;}
+#samples .s-cat:first-child{margin-top:14px;}   /* sit close under the section heading */
+.s-cat-h{font:600 19px/1.2 "Palatino",Georgia,serif;margin:0 0 2px;}
+.s-count{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;color:var(--faint);margin-left:6px;}
+
+/* each sample as an input → tasks flow, in the project-overview vocabulary:
+   italic serif input, numbered task list. The two column tags show ONCE per
+   category as a header row (.s-flow-head); item rows carry no tags. */
+.s-flow{display:flex;align-items:stretch;gap:22px;border-top:1px solid var(--rule);padding:14px 0;}
+.s-flow-head{border-top:none;padding:0 0 6px;}     /* the once-per-column header row */
+.s-tag{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+       text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.s-in{flex:0 0 auto;align-self:flex-start;max-width:42%;}
+.s-quote{font-size:18px;font-style:italic;margin:0;color:#33312b;line-height:1.5;}
+.s-arrow{flex:0 0 28px;text-align:center;align-self:center;color:var(--faint);font-size:24px;}
+.s-out{flex:1 1 320px;}
+.s-out ol{margin:0;padding-left:22px;font-size:16px;line-height:1.5;color:#33312b;}
+.s-out ol li{margin:3px 0;}
+.s-empty{margin:0;font-size:16px;font-style:italic;color:var(--faint);}
+@media(max-width:760px){
+  .s-flow{flex-direction:column;gap:6px;}
+  .s-flow-head{display:none;}                       /* tags don't align once stacked — drop them */
+  .s-arrow{transform:rotate(90deg);align-self:flex-start;}
+}
+
+/* sample index: half-viewport reading column (narrower than the wide dashboard) */
+/* (samples uses the shared --col width like every page — no per-page override) */
+
+/* the problem page: lead-in describing the challenge before the samples */
+.s-intro{max-width:60ch;margin:6px 0 8px;}
+.s-intro p{margin:0 0 12px;font:16px/1.6 "Palatino",Georgia,serif;color:#33312b;text-wrap:pretty;}
+.s-intro p:last-child{margin-bottom:0;}
+.s-intro .lead{font-style:italic;color:var(--muted);}

@@ -1,97 +1,162 @@
 [
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "boundary_dinner",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
-      "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
-      "zeroTaskCorrect" : false,
-      "matched" : 1
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "host dinner party for parents' anniversary"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B's task is an all-lowercase terse fragment that drops the \"Plan and\" planning dimension implied by the input; it also lacks proper capitalization and reads more like a label than a natural, complete task statement in the style of SET A.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 4
-      }
+        "actionability" : 4,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B's task is an all-lowercase terse fragment that drops the \"Plan and\" planning dimension implied by the input; it also lacks proper capitalization and reads more like a label than a natural, complete task statement in the style of SET A.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "boundary_dinner",
     "input" : "I want to host a dinner party for my parents' anniversary sometime next month."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "build a simple website for photography portfolio"
       ]
     },
-    "id" : "dedup_email",
     "match" : {
+      "matched" : 1,
       "recall" : 1,
-      "goldEmpty" : false,
+      "predCount" : 1,
       "precision" : 1,
       "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
       "zeroTaskCorrect" : false,
-      "matched" : 1
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the exact same intention faithfully and atomically, but its phrasing is a terse all-lowercase fragment (\"build a simple website for photography portfolio\") that drops the natural capitalization and conversational completeness of SET A's style (\"Build a simple photography portfolio website\"). The only meaningful weakness is stylistic/formatting.",
+      "pairwise" : "tie"
+    },
+    "id" : "boundary_website",
+    "input" : "I want to build a simple website for my photography portfolio."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "call grandma"
+      ]
+    },
+    "match" : {
+      "matched" : 1,
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B correctly identifies the one task but drops the meaningful time detail \"this weekend\" that the user explicitly stated, and uses a terse all-lowercase fragment instead of a properly capitalized, complete sentence like SET A.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "dedup_call",
+    "input" : "I should call grandma this weekend, it has been way too long. Yeah, I really need to give grandma a ring."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "reply to dana's email about the contract"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "Set B captures the correct task but uses terse all-lowercase phrasing, lacking proper capitalization and the polished, conversational style of Set A. The content is identical, but the presentation falls short of the expected standard.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 5,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the correct task but uses terse all-lowercase phrasing, lacking proper capitalization and the polished, conversational style of SET A. The content is identical, but the formatting falls short of the expected standard.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "dedup_email",
     "input" : "I need to reply to Dana's email about the contract. Yeah, definitely have to get back to Dana on that contract thing today."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "dedup_groceries",
-    "match" : {
-      "recall" : 0,
-      "goldEmpty" : false,
-      "precision" : 0,
-      "goldCount" : 1,
-      "f1" : 0,
-      "predCount" : 2,
-      "zeroTaskCorrect" : false,
-      "matched" : 0
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -99,38 +164,38 @@
         "Call the milk supplier to confirm the delivery time for the next shipment."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 0,
-      "notes" : "SET B completely fabricates details not present in the input — \"Sarah,\" \"3 PM,\" \"milk supplier,\" and \"delivery shipment\" are all hallucinated. Neither task corresponds to the user's simple intention of picking up milk on the way home, resulting in zero matched tasks and a catastrophic faithfulness failure.",
-      "pairwise" : "goldBetter",
-      "rubric" : {
-        "coverage" : 1,
-        "atomicity" : 3,
-        "nonRedundancy" : 3,
-        "phrasing" : 2,
-        "faithfulness" : 1,
-        "actionability" : 3
-      }
+      "recall" : 0,
+      "predCount" : 2,
+      "precision" : 0,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 0
     },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 3,
+        "nonRedundancy" : 4,
+        "faithfulness" : 1,
+        "actionability" : 3,
+        "coverage" : 1,
+        "phrasing" : 2
+      },
+      "matched" : 0,
+      "notes" : "SET B completely fabricates details not present in the input — \"Sarah,\" \"3 PM,\" \"milk supplier,\" and \"delivery shipment\" are all hallucinated. Neither task corresponds to the user's simple intention of picking up milk on the way home, so matched is 0.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "dedup_groceries",
     "input" : "We're basically out of milk so I need to grab some on the way home, and actually, you know what, definitely pick up milk, we finished the last carton this morning."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "interleaved_deck",
-    "match" : {
-      "recall" : 0.3333333333333333,
-      "goldEmpty" : false,
-      "precision" : 0.5,
-      "goldCount" : 3,
-      "f1" : 0.4,
-      "predCount" : 2,
-      "zeroTaskCorrect" : false,
-      "matched" : 1
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -138,38 +203,38 @@
         "Email Sarah the deck for the upcoming event."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B collapses three distinct tasks into two and badly conflates them — task 1 incorrectly ties \"book the offsite venue\" to the Q3 numbers condition (a hallucinated connection), and task 2 adds \"for the upcoming event\" which is invented. The critical standalone task of adding Q3 numbers to the deck before sending is entirely lost.",
-      "pairwise" : "goldBetter",
+      "recall" : 0.3333333333333333,
+      "predCount" : 2,
+      "precision" : 0.5,
+      "goldCount" : 3,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 0.4
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 2,
         "atomicity" : 2,
         "nonRedundancy" : 4,
-        "phrasing" : 2,
         "faithfulness" : 2,
-        "actionability" : 3
-      }
+        "actionability" : 3,
+        "coverage" : 2,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B collapses three distinct tasks into two and badly conflates them — task 1 incorrectly merges \"book the offsite venue\" with the Q3 numbers/deck condition, which is a hallucinated connection not in the input. The \"upcoming event\" detail in task 2 is also invented. The separate, critical task of adding Q3 numbers to the deck before sending is entirely lost.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "interleaved_deck",
     "input" : "I should email Sarah the deck... oh and I need to book the offsite venue... actually for that deck, make sure the Q3 numbers are in before it goes to Sarah."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "interleaved_party",
-    "match" : {
-      "recall" : 0.6666666666666666,
-      "goldEmpty" : false,
-      "precision" : 0.6666666666666666,
-      "goldCount" : 3,
-      "f1" : 0.6666666666666666,
-      "predCount" : 3,
-      "zeroTaskCorrect" : false,
-      "matched" : 2
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -178,38 +243,78 @@
         "Text Tom with the barbecue address."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 2,
-      "notes" : "Task 1 is a hallucination — the user said \"invite Tom,\" not \"book the barbecue for Tom,\" which changes the meaning entirely and invents an action not in the input. Tasks 2 and 3 are reasonable paraphrases, though task 3 correctly captures the intention.",
-      "pairwise" : "goldBetter",
+      "recall" : 0.6666666666666666,
+      "predCount" : 3,
+      "precision" : 0.6666666666666666,
+      "goldCount" : 3,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 0.6666666666666666
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 3,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 4,
         "faithfulness" : 2,
-        "actionability" : 4
-      }
+        "actionability" : 4,
+        "coverage" : 3,
+        "phrasing" : 3
+      },
+      "matched" : 2,
+      "notes" : "SET B's first task says \"Book the barbecue for Tom\" which is a hallucination — the user said \"invite Tom,\" not book anything on his behalf. This faithfulness error also means the core task (inviting Tom) is missed. Tasks 2 and 3 are reasonable paraphrases but add minor extra detail (\"for the barbecue,\" \"with the barbecue address\") that slightly over-specifies without being wrong.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "interleaved_party",
     "input" : "I should invite Tom to the barbecue this weekend, oh and I need to buy charcoal, and actually for the barbecue I have to text Tom the address too."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "Book the quarterly report to my manager.",
+        "Schedule the team review for next week.",
+        "Double-check the figures for the quarterly report before it goes out."
       ]
     },
-    "id" : "long_monday",
     "match" : {
+      "matched" : 2,
       "recall" : 0.6666666666666666,
-      "goldEmpty" : false,
-      "precision" : 0.8,
-      "goldCount" : 6,
-      "f1" : 0.7272727272727272,
-      "predCount" : 5,
+      "predCount" : 3,
+      "precision" : 0.6666666666666666,
+      "goldCount" : 3,
       "zeroTaskCorrect" : false,
-      "matched" : 4
+      "goldEmpty" : false,
+      "f1" : 0.6666666666666666
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 3,
+        "actionability" : 4,
+        "coverage" : 4,
+        "phrasing" : 3
+      },
+      "matched" : 2,
+      "notes" : "Task 1 uses \"Book\" instead of \"Send,\" which misrepresents the user's intention (sending a report is not booking it). Task 2 adds \"for next week,\" which is invented detail not present in the input. These two faithfulness issues drag down the overall quality compared to Set A's accurate, clean phrasing.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "interleaved_report",
+    "input" : "I need to send the quarterly report to my manager, oh and schedule the team review, and for that report I have to double-check the figures before it goes out."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -220,114 +325,192 @@
         "Double-check the numbers in the Henderson proposal draft for any typos before sending it to Mark."
       ]
     },
+    "match" : {
+      "matched" : 5,
+      "recall" : 0.8333333333333334,
+      "predCount" : 5,
+      "precision" : 1,
+      "goldCount" : 6,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 0.9090909090909091
+    },
     "verdict" : {
-      "matched" : 4,
-      "notes" : "SET B misses the \"call the insurance company about the claim\" task entirely, which is a meaningful coverage gap. Additionally, task 1 appears to be a garbled version of \"finish and send the Henderson proposal draft to Mark\" — the word \"Book\" is nonsensical in context — and the phrasing across tasks is overly verbose and formal rather than natural and conversational. The atomicity of task 1 is also questionable since finishing the draft and sending it are arguably two steps, though SET A combines them similarly.",
-      "pairwise" : "goldBetter",
       "rubric" : {
-        "coverage" : 3,
         "atomicity" : 3,
         "nonRedundancy" : 4,
-        "phrasing" : 3,
         "faithfulness" : 4,
-        "actionability" : 4
-      }
+        "actionability" : 4,
+        "coverage" : 3,
+        "phrasing" : 3
+      },
+      "matched" : 5,
+      "notes" : "SET B misses the \"call the insurance company about the claim\" task entirely, which is a meaningful coverage gap. Additionally, task 1 garbles the action verb (\"Book the Henderson proposal draft\" is nonsensical — likely a corruption of \"Finish/send\"), and the verbose, clause-heavy phrasing diverges from SET A's clean, conversational style.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "long_monday",
     "input" : "Okay let me just think out loud for a sec because my head is all over the place this morning. So the big thing is the Henderson proposal, I really need to finish the draft and get it over to Mark by Thursday, he keeps asking about it. Ugh and the coffee machine at the office is broken again, so annoying. Anyway, I also told Lisa I would send her the updated budget spreadsheet, that's been sitting in my drafts for like a week now. Oh and at some point I need to book a dentist appointment, my tooth has been bugging me. The weather is supposed to be nice this weekend which would be great. Let me see, what else, I should probably call the insurance company about that claim, they never got back to me. And actually back to the Henderson thing, before I send it to Mark I need to double check the numbers in section three, I think there's a typo in there. I keep meaning to clean out the garage too but honestly that's more of a someday thing, not urgent at all. Oh, and I need to renew my passport, it expires in a couple months and we might travel. I think that's most of it. My brain feels a little less cluttered now."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "mixed_gym",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
-      "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
-      "zeroTaskCorrect" : false,
-      "matched" : 1
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "renew car registration"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B correctly identifies the one actionable task but drops the critical deadline detail (\"before Friday\") and uses a terse all-lowercase fragment instead of a properly capitalized, complete sentence. The deadline is meaningful context explicitly stated by the user and should be preserved.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B correctly identifies the one actionable task but drops the critical deadline detail (\"before Friday\") and uses a terse, all-lowercase fragment instead of a properly capitalized, complete sentence — losing meaningful context the user explicitly provided.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "mixed_gym",
     "input" : "Felt great after the gym today, honestly I need to keep that up. Anyway, I have to renew my car registration before it expires on Friday."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "reorder coffee beans"
       ]
     },
-    "id" : "mixed_weekend",
     "match" : {
+      "matched" : 1,
       "recall" : 1,
-      "goldEmpty" : false,
+      "predCount" : 1,
       "precision" : 1,
       "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
       "zeroTaskCorrect" : false,
-      "matched" : 1
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "Set B captures the only actionable task correctly but uses a terse all-lowercase fragment (\"reorder coffee beans\") instead of the properly capitalized, complete phrasing of Set A (\"Reorder coffee beans\"). The content is identical, but the style falls short of the reference standard.",
+      "pairwise" : "tie"
+    },
+    "id" : "mixed_news",
+    "input" : "Been doom-scrolling the news way too much lately, not great for my mood honestly. Oh, I do need to reorder coffee beans, we're almost out."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "return Amazon package"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B drops the critical deadline detail (\"before Tuesday\") that the user explicitly stressed, and uses a terse all-lowercase fragment instead of a properly capitalized, complete sentence. The deadline is meaningful context that distinguishes this as time-sensitive.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the correct task but drops the critical deadline detail (\"before Tuesday\") and uses a terse, all-lowercase fragment rather than a properly capitalized, complete sentence. The deadline is meaningful context the user explicitly stressed, so its omission is a notable weakness.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "mixed_weekend",
     "input" : "This weekend was pretty chill honestly, watched a couple of movies, slept in way too late. Oh, but I do need to return that Amazon package before the window closes on Tuesday. Other than that, just relaxing really."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "Book the oil change for Sarah at the local mechanic.",
+        "Renew Sarah's car insurance for the upcoming year.",
+        "Find a professional to repair the dent in the bumper on Sarah's car."
       ]
     },
-    "id" : "multi_errands",
     "match" : {
+      "matched" : 3,
       "recall" : 1,
-      "goldEmpty" : false,
+      "predCount" : 3,
       "precision" : 1,
       "goldCount" : 3,
-      "f1" : 1,
-      "predCount" : 3,
       "zeroTaskCorrect" : false,
-      "matched" : 3
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 1,
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 3
+      },
+      "matched" : 3,
+      "notes" : "SET B halluccinates a person named \"Sarah\" and a specific \"local mechanic\" that appear nowhere in the input, which is a critical faithfulness failure. While all three intentions are matched and the phrasing is otherwise complete and natural, the invented details make SET A the clearly superior and trustworthy extraction.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "multi_car",
+    "input" : "Car stuff: get the oil changed, renew the insurance, and find someone to fix that dent in the bumper."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -336,38 +519,78 @@
         "Begin working on the quarterly report."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 3,
-      "notes" : "SET B hallucinated specific details not present in the input — \"Dr. Smith\" (no name was given), \"our dental appointment\" (no possessive implied), and \"for the meeting\" (no meeting was mentioned). The user said they're out of coffee and need to grab some (i.e., buy/get more), not grab a cup for a meeting. These invented details hurt faithfulness significantly.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 3,
+      "precision" : 1,
+      "goldCount" : 3,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 5,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 4,
         "faithfulness" : 2,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 4
+      },
+      "matched" : 3,
+      "notes" : "SET B halluccinates specific details not present in the input — \"Dr. Smith\" (no name was given), \"our dental appointment\" (no possessive implied), and \"for the meeting\" (coffee was needed because they ran out, not for a meeting). These invented details hurt faithfulness significantly. SET A stays faithful to exactly what the user said.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "multi_errands",
     "input" : "Let me think — I need to call the dentist to reschedule, we're out of coffee so grab some, and I should finally start the quarterly report."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "Buy gifts for the kids.",
+        "Book train tickets home.",
+        "Wrap up at work."
       ]
     },
-    "id" : "multi_morning",
     "match" : {
+      "matched" : 3,
       "recall" : 1,
-      "goldEmpty" : false,
+      "predCount" : 3,
       "precision" : 1,
       "goldCount" : 3,
-      "f1" : 1,
-      "predCount" : 3,
       "zeroTaskCorrect" : false,
-      "matched" : 3
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 4
+      },
+      "matched" : 3,
+      "notes" : "SET B drops the word \"the\" before \"train tickets\" and shortens \"Wrap everything up at work\" to \"Wrap up at work,\" losing a small but meaningful detail (\"everything\") that conveys the sense of fully closing out work tasks. Otherwise the tasks are accurate and well-phrased.",
+      "pairwise" : "tie"
+    },
+    "id" : "multi_holidays",
+    "input" : "Before the holidays I have to buy gifts for the kids, book the train tickets home, and wrap everything up at work."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -376,38 +599,38 @@
         "Visit the pharmacy for my prescription."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 3,
-      "notes" : "SET B is nearly identical to SET A in quality; the only minor difference is that task 3 uses \"Visit the pharmacy for my prescription\" rather than the slightly more direct \"Pick up prescription from pharmacy,\" and the possessive \"my\" is retained throughout (matching the user's voice). No meaningful weaknesses.",
-      "pairwise" : "tie",
+      "recall" : 1,
+      "predCount" : 3,
+      "precision" : 1,
+      "goldCount" : 3,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 5,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 4,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 4
+      },
+      "matched" : 3,
+      "notes" : "SET B retains the user's first-person \"my\" which adds a slightly informal but faithful touch; \"Visit the pharmacy for my prescription\" is marginally less crisp than \"Pick up prescription from pharmacy\" but still fully actionable and clear. No meaningful weaknesses overall.",
+      "pairwise" : "tie"
     },
+    "id" : "multi_morning",
     "input" : "This morning I need to drop the kids at school, pick up my dry cleaning, and swing by the pharmacy for my prescription."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "multi_moving",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
-      "goldCount" : 5,
-      "f1" : 1,
-      "predCount" : 5,
-      "zeroTaskCorrect" : false,
-      "matched" : 5
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
@@ -418,221 +641,358 @@
         "Start packing the kitchen this weekend to make the transition smoother."
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 5,
-      "notes" : "SET B invents rationale and detail not present in the input (e.g., \"to save money,\" \"to avoid any issues,\" \"to make the transition smoother,\" \"for my new home\"), which hurts faithfulness. The appended justifications make each task feel padded and editorialized rather than cleanly extracted, lowering phrasing quality compared to SET A's concise, faithful style.",
-      "pairwise" : "tie",
+      "recall" : 1,
+      "predCount" : 5,
+      "precision" : 1,
+      "goldCount" : 5,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 5,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 3,
         "faithfulness" : 2,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 3
+      },
+      "matched" : 5,
+      "notes" : "SET B invents rationale and detail not present in the input — \"to save money,\" \"to avoid any issues,\" \"to make the transition smoother,\" \"for my new home,\" and \"to ensure my mail arrives at my new address\" are all hallucinated motivations or details. This hurts faithfulness significantly. The phrasing is also over-padded compared to SET A's clean, concise style, though it is at least properly capitalized and complete on the core task.",
+      "pairwise" : "tie"
     },
+    "id" : "multi_moving",
     "input" : "Okay the move is coming up fast. I need to book the moving truck, set up mail forwarding with the post office, cancel my gym membership here, give notice to the landlord, and I really should start packing the kitchen this weekend."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "noisy_filler",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
-      "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
-      "zeroTaskCorrect" : false,
-      "matched" : 1
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "schedule eye exam"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B's task is all-lowercase and drops the meaningful qualifier \"annual,\" which the user explicitly mentioned; the phrasing feels like a terse fragment rather than a properly capitalized, complete task in the style of SET A.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B's task is all-lowercase and drops the meaningful qualifier \"annual,\" which the user explicitly mentioned. The phrasing feels like a terse fragment rather than a properly capitalized, complete task in the style of SET A.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "noisy_filler",
     "input" : "So um, I guess I should, like, finally schedule the annual eye exam, my prescription is pretty old at this point."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
 
       ]
     },
-    "id" : "noisy_selfcorrect",
     "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
+      "matched" : 0,
+      "recall" : 0,
+      "predCount" : 0,
+      "precision" : 0,
       "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
       "zeroTaskCorrect" : false,
-      "matched" : 1
+      "goldEmpty" : false,
+      "f1" : 0
+    },
+    "id" : "noisy_restart",
+    "input" : "Let me, hmm, I need to book a, no actually I need to cancel the hotel reservation, our plans changed."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "email landlord"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B drops the key subject detail (\"about the leaking faucet\") that makes the task meaningful and specific, and uses terse all-lowercase phrasing rather than a properly capitalized, complete sentence like SET A.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the correct task but drops the critical detail \"about the leaking faucet,\" which is the whole reason for the email; it is also an all-lowercase terse fragment rather than a properly capitalized, complete sentence matching SET A's style.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "noisy_selfcorrect",
     "input" : "Okay so I need to call the, um, no wait, I should just email the landlord about the leaking faucet, yeah email is better because I want it in writing."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "pick up mom's prescription"
       ]
     },
-    "id" : "single_paris",
     "match" : {
+      "matched" : 1,
       "recall" : 1,
-      "goldEmpty" : false,
+      "predCount" : 1,
       "precision" : 1,
       "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
       "zeroTaskCorrect" : false,
-      "matched" : 1
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 5,
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B drops two meaningful details from the input — \"from the pharmacy\" and the time-sensitive \"before they close today\" — and uses a terse all-lowercase fragment instead of a properly capitalized, complete sentence. SET A preserves the urgency (\"today\") and reads more naturally.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "single_meds",
+    "input" : "I have to pick up my mom's prescription from the pharmacy before they close today."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "book the flights for the Paris trip sometime this week"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B captures the correct task but fails on phrasing: it is written in all-lowercase and retains the filler phrase \"sometime this week,\" which is a vague timing musing rather than meaningful detail. SET A's properly capitalized, clean phrasing is the better style.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 5,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 5,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the correct task but fails on phrasing: it is all-lowercase and reads like a terse fragment rather than a properly capitalized, clean task statement. The trailing \"sometime this week\" is filler from the user's hedging language and adds noise rather than meaningful detail, whereas SET A trims it cleanly.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "single_paris",
     "input" : "I really need to finally book the flights for the Paris trip sometime this week."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "single_plumber",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : false,
-      "precision" : 1,
-      "goldCount" : 1,
-      "f1" : 1,
-      "predCount" : 1,
-      "zeroTaskCorrect" : false,
-      "matched" : 1
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
         "call plumber"
       ]
     },
-    "verdict" : {
+    "match" : {
       "matched" : 1,
-      "notes" : "SET B captures the core action but drops the meaningful context \"about the kitchen sink,\" which the user explicitly mentioned. It is also written as a terse all-lowercase fragment rather than a properly capitalized, conversational task like SET A's style.",
-      "pairwise" : "goldBetter",
+      "recall" : 1,
+      "predCount" : 1,
+      "precision" : 1,
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
       "rubric" : {
-        "coverage" : 4,
         "atomicity" : 5,
         "nonRedundancy" : 5,
-        "phrasing" : 2,
         "faithfulness" : 5,
-        "actionability" : 5
-      }
+        "actionability" : 5,
+        "coverage" : 4,
+        "phrasing" : 2
+      },
+      "matched" : 1,
+      "notes" : "SET B captures the core action but drops the meaningful context \"about the kitchen sink,\" which the user explicitly stated. The phrasing is also a terse all-lowercase fragment rather than a properly capitalized, complete sentence matching SET A's style.",
+      "pairwise" : "goldBetter"
     },
+    "id" : "single_plumber",
     "input" : "I really have to call a plumber about the kitchen sink, it has been dripping for days now."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+        "Book the visa for Sarah before the trip, as the deadline is tighter than I thought."
       ]
     },
-    "id" : "zero_chitchat",
     "match" : {
+      "matched" : 1,
       "recall" : 1,
-      "goldEmpty" : true,
+      "predCount" : 1,
       "precision" : 1,
-      "goldCount" : 0,
-      "f1" : 1,
-      "predCount" : 0,
-      "zeroTaskCorrect" : true,
-      "matched" : 0
+      "goldCount" : 1,
+      "zeroTaskCorrect" : false,
+      "goldEmpty" : false,
+      "f1" : 1
+    },
+    "verdict" : {
+      "rubric" : {
+        "atomicity" : 5,
+        "nonRedundancy" : 5,
+        "faithfulness" : 1,
+        "actionability" : 4,
+        "coverage" : 4,
+        "phrasing" : 3
+      },
+      "matched" : 1,
+      "notes" : "SET B hallucinated \"Sarah\" — no person is mentioned in the input — which is a clear faithfulness violation. It also says \"Book the visa\" rather than \"Apply for the visa,\" which misrepresents the action described by the user.",
+      "pairwise" : "goldBetter"
+    },
+    "id" : "single_visa",
+    "input" : "I need to apply for my travel visa before the trip, the deadline is tighter than I thought."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
 
       ]
     },
+    "match" : {
+      "matched" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true,
+      "goldEmpty" : true,
+      "f1" : 1
+    },
+    "id" : "zero_chitchat",
     "input" : "Man, the weather has been wild lately, gray and rainy basically all week. My back is a bit stiff from sitting too much. Just thinking out loud here, nothing major going on really."
   },
   {
     "spec" : {
-      "passed" : true,
       "violations" : [
 
-      ]
-    },
-    "id" : "zero_venting",
-    "match" : {
-      "recall" : 1,
-      "goldEmpty" : true,
-      "precision" : 1,
-      "goldCount" : 0,
-      "f1" : 1,
-      "predCount" : 0,
-      "zeroTaskCorrect" : true,
-      "matched" : 0
+      ],
+      "passed" : true
     },
     "candidate" : {
       "tasks" : [
 
       ]
     },
+    "match" : {
+      "matched" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true,
+      "goldEmpty" : true,
+      "f1" : 1
+    },
+    "id" : "zero_grateful",
+    "input" : "Honestly just feeling really grateful today, the sun is out and things are looking up. Good vibes all around."
+  },
+  {
+    "spec" : {
+      "violations" : [
+
+      ],
+      "passed" : true
+    },
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "recall" : 1,
+      "predCount" : 0,
+      "precision" : 1,
+      "goldCount" : 0,
+      "zeroTaskCorrect" : true,
+      "goldEmpty" : true,
+      "f1" : 1
+    },
+    "id" : "zero_venting",
     "input" : "Ugh today just dragged on forever, the traffic this morning was insane and I'm completely wiped out. Anyway."
   }
 ]

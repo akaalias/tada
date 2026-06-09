@@ -62,6 +62,7 @@ done
 python3 "$AR/gen_costs.py" 2>/dev/null || true
 python3 "$AR/gen_types.py" 2>/dev/null || true
 python3 "$AR/build_lineage_auto.py" 2>/dev/null || true
+python3 "$AR/gen_samples.py" 2>/dev/null || true
 
 while [ "$(count)" -lt "$TARGET" ]; do
   # --- Training-track gate ---------------------------------------------------

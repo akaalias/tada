@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The problem — Ramble → Tasks</title>
+<meta name="description" content="The problem we're solving: turn a free-form, dictated ramble into 0..N clean tasks, on-device, as well as a frontier cloud model does. Each sample pairs a ramble with the gold task list — the bar the autoresearch loop is trying to clear.">
+<link rel="stylesheet" href="tufte.css">
+<link rel="stylesheet" href="dashboard.css">
+<script type="module" src="js/nav.js"></script>
+</head>
+<body class="samples-page">
+<div data-nav="problem"></div>
+<header class="page-head">
+  <div class="eyebrow">Alexis Rondeau · live research log</div>
+  <h1>The problem</h1>
+  <p class="page-status" id="title">Loading samples&hellip;</p>
+</header>
+<div class="dash-wrap">
+  <section class="s-intro">
+    <p class="lead">A person talks — often rambling, sometimes correcting themselves mid-sentence — and the app has to turn that into a clean list of tasks: zero, one, or many. When nothing in the ramble is actionable, an empty list is the right answer.</p>
+    <p>A frontier cloud model (Claude Sonnet) already does this well. The goal of this research is to do it just as well with the small Foundation Model that ships <em>on-device</em> — no network, no cloud. The samples below <em>are</em> the target: each pairs a real-style ramble with the gold task list Sonnet produces. The <a href="index.html">autoresearch loop</a> keeps tuning the on-device model until its output matches these golds on our quality metric.</p>
+    <p>So this page is the problem statement made concrete — the bar we're trying to clear, case by case, grouped by what each one stresses.</p>
+  </section>
+  <nav class="catnav" id="catnav"></nav>
+  <h2 class="s-section">Samples by category</h2>
+  <div id="samples"></div>
+</div>
+<script type="module" src="js/samples.js"></script>
+</body>
+</html>

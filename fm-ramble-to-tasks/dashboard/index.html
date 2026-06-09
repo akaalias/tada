@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=1280">
-<title>Ramble → Tasks — Autoresearch Progress</title>
+<title>Autoresearch log — Ramble → Tasks</title>
 <meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
@@ -20,19 +20,17 @@
 <link rel="stylesheet" href="dashboard.css">
 <link rel="stylesheet" href="glossary.css">
 <script src="d3.v7.min.js"></script>
+<script type="module" src="js/nav.js"></script>
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/glossary.js"></script>
 </head>
 <body data-glossary-root=".help">
-<header class="hero dash-head">
+<div data-nav="dashboard"></div>
+<header class="page-head">
   <div class="eyebrow">Alexis Rondeau · live research log</div>
-  <h1>Autoresearch progress</h1>
-  <p class="sub" id="title">Loading the experiment record&hellip;</p>
-  <div class="nav">
-    <a href="onboarding.html">Project overview</a>
-    <a href="report.html">Final report</a>
-    <a href="lineage.html">Experiment Lineage</a>
-  </div>
+  <h1>Autoresearch log</h1>
+  <p class="sub">Every experiment the autoresearch loop has run to teach the on-device model the <a href="samples.html">ramble&rarr;tasks</a> task — scored against Sonnet, newest first, with the running best charted over time.</p>
+  <p class="page-status" id="title">Loading the experiment record&hellip;</p>
   <div class="dash-meta">
     <div class="dash-legend">
       <span class="k"><span class="dot" style="background:var(--disc)"></span>Discarded</span>
@@ -63,7 +61,7 @@
       <summary>What do the columns &amp; rubric mean?</summary>
       <dl class="help-grid">
         <dt>Type</dt><dd>The lever group. <b>Inference</b> = inference-time only (prompt / decoding / RAG / topology, no weight change). <b>SFT</b> = runs on a LoRA adapter trained by imitation on Sonnet gold. <b>ORPO</b> = runs on an adapter trained on chosen/rejected preference pairs.</dd>
-        <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × F1 + 0.5 × rubric</code> for judged cases (zero-task cases score 1 if correctly empty, else 0). F1 = did we get the right tasks; rubric = how well (incl. phrasing). Target 1.00 = matches Sonnet.</dd>
+        <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × F1 + 0.25 × rubric + 0.25 × pairwise</code> for judged cases (zero-task cases score 1 if correctly empty, else 0). F1 = right tasks; rubric = how well (incl. phrasing); pairwise = head-to-head vs Sonnet (loss / tie / win). Target 1.00 = matches Sonnet.</dd>
         <dt>Spec</dt><dd>% of cases passing the hard technical gate: non-empty atomic tasks, no emojis, at most 12. A failed case scores 0.</dd>
         <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device task set was judged <i>better</i> than Sonnet's.</dd>
         <dt>The two sets</dt><dd><span class="gold">Set A = Gold (Sonnet)</span> &nbsp;vs&nbsp; <span class="fm">Set B = On-device</span>. The judge picks which is better and scores Set B 1–5 on five dimensions:</dd>
@@ -76,15 +74,6 @@
       </dl>
       <div class="foot">Click any row to see what the experiment tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
     </details>
-  </div>
-
-  <div class="tbl-card" id="analyses-card" style="margin-top:26px">
-    <h2 style="font:600 18px/1.2 'Palatino',Georgia,serif;margin:0 0 4px">Reference analyses</h2>
-    <p class="sub" style="margin:0 0 12px">Controlled probes and diagnostics — not scored on the frozen ruler, so they never enter the run log above, but they are part of the experiment record. Each closes or reframes a question.</p>
-    <table id="analyses-tbl">
-      <thead><tr><th>#</th><th>Analysis</th><th>Question</th><th>Result</th><th>Verdict</th></tr></thead>
-      <tbody></tbody>
-    </table>
   </div>
 </div>
 <div id="tip"></div>

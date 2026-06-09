@@ -14,14 +14,17 @@ list is the correct, expected answer when nothing in the input is actionable.
 
 ## The artifact and the metric
 - The MUTABLE artifact you improve: `fm-ramble-to-tasks/Sources/SplitAgent/**` ONLY.
-- Headline metric: `quality` (0-1) = **0.5·F1 + 0.5·rubric** for judged cases (zero-task
-  cases scored binary: correctly empty = 1, else 0). F1 is the paraphrase-aware set match
-  (did you extract the RIGHT tasks); the 1-5 Sonnet rubric is the other half — faithfulness /
-  atomicity / actionability / coverage / nonRedundancy / **phrasing**. PHRASING counts:
-  match gold's STYLE — capitalized, conversational, complete (keep meaningful detail like
-  "with the post office") — a terse all-lowercase fragment scores low even if the meaning
-  matches. So getting the right tasks is not enough; phrase them like Sonnet. Gate on the
-  DEV split (the default of `evaluate`); a held-out TEST split is checked by the operator.
+- Headline metric: `quality` (0-1) = **0.5·F1 + 0.25·rubric + 0.25·pairwise** for judged
+  cases (zero-task cases scored binary: correctly empty = 1, else 0). F1 = paraphrase-aware
+  set match (did you extract the RIGHT tasks). rubric = the 1-5 Sonnet rubric (faithfulness /
+  atomicity / actionability / coverage / nonRedundancy / **phrasing**). pairwise = the
+  head-to-head verdict vs Sonnet (loss 0 / tie 0.5 / win 1) — the truest "did we match Sonnet"
+  signal; it stops the score saturating while we still LOSE every head-to-head. PHRASING is
+  the current gap: match gold's STYLE — capitalized, conversational, complete (keep detail
+  like "with the post office"); a terse all-lowercase fragment scores low even if the meaning
+  matches, and it LOSES the pairwise. Getting the right tasks is not enough — phrase them like
+  Sonnet to TIE or BEAT it. Gate on the DEV split (the default of `evaluate`); a held-out
+  TEST split is checked by the operator.
 - Decoding: prefer GREEDY (`sampling: .greedy`, temp 0) for the final generation
   unless the technique inherently needs diverse samples (best-of-N / self-consistency),
   in which case the aggregation must supply stability. With ~11 dev cases one case is

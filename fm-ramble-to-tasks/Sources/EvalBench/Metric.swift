@@ -12,13 +12,15 @@ public struct CaseScore: Sendable, Codable {
     public let error: String?
 
     /// 0-1 quality: 0 if spec fails or generation errored. Zero-task (empty-gold) cases
-    /// are scored binary (no rubric — no content to phrase). For non-empty cases that were
-    /// judged, quality blends WHAT (set-match F1) with HOW WELL (rubric, incl. phrasing):
-    /// 0.5·F1 + 0.5·rubric — so a correct-but-terse/lowercase set no longer scores 1.0.
+    /// are scored binary (no rubric — no content to phrase). For non-empty judged cases,
+    /// quality blends WHAT (set-match F1), HOW WELL (rubric, incl. phrasing), and the
+    /// head-to-head verdict vs Sonnet (pairwise): 0.5·F1 + 0.25·rubric + 0.25·pairwise.
+    /// The pairwise term stops the score saturating while the candidate still loses every
+    /// head-to-head — matching Sonnet means tying/beating it, not just high sub-scores.
     public var quality: Double {
         guard error == nil, spec.passed, let m = match else { return 0 }
         if m.goldEmpty { return m.quality }
-        if let v = verdict { return 0.5 * m.f1 + 0.5 * v.rubric.normalized }
+        if let v = verdict { return 0.5 * m.f1 + 0.25 * v.rubric.normalized + 0.25 * v.pairwise.score }
         return m.quality
     }
 }
@@ -72,7 +74,7 @@ public struct Metric: Sendable {
         return """
         ── metric ──────────────────────────────────────────
         cases:        \(count)  (answered \(answered), refused \(refused))
-        QUALITY:      \(String(format: "%.3f", quality))   (headline = 0.5·F1 + 0.5·rubric; zero-task binary)
+        QUALITY:      \(String(format: "%.3f", quality))   (headline = 0.5·F1 + 0.25·rubric + 0.25·pairwise; zero-task binary)
         F1:           \(String(format: "%.3f", f1))   precision: \(String(format: "%.3f", precision))   recall: \(String(format: "%.3f", recall))
         zero-task:    \(String(format: "%.0f%%", zeroTaskAccuracy * 100))   (correct empties)
         spec pass:    \(String(format: "%.0f%%", specPassRate * 100))   (of answered)

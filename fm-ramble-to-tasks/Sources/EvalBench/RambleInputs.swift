@@ -89,6 +89,28 @@ public enum RambleInputs {
             input: "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh."),
         RambleInput(id: "long_household", kind: "long", heldOutReal: false,
             input: "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there."),
+
+        // ── Round 3 (dev): more variety to stabilize the now-load-bearing pairwise ──
+        RambleInput(id: "single_visa", kind: "single", heldOutReal: false,
+            input: "I need to apply for my travel visa before the trip, the deadline is tighter than I thought."),
+        RambleInput(id: "multi_holidays", kind: "multi", heldOutReal: false,
+            input: "Before the holidays I have to buy gifts for the kids, book the train tickets home, and wrap everything up at work."),
+        RambleInput(id: "interleaved_report", kind: "interleaved", heldOutReal: false,
+            input: "I need to send the quarterly report to my manager, oh and schedule the team review, and for that report I have to double-check the figures before it goes out."),
+        RambleInput(id: "mixed_news", kind: "mixed", heldOutReal: false,
+            input: "Been doom-scrolling the news way too much lately, not great for my mood honestly. Oh, I do need to reorder coffee beans, we're almost out."),
+        RambleInput(id: "dedup_call", kind: "dedup", heldOutReal: false,
+            input: "I should call grandma this weekend, it has been way too long. Yeah, I really need to give grandma a ring."),
+        RambleInput(id: "noisy_restart", kind: "noisy", heldOutReal: false,
+            input: "Let me, hmm, I need to book a, no actually I need to cancel the hotel reservation, our plans changed."),
+        RambleInput(id: "multi_car", kind: "multi", heldOutReal: false,
+            input: "Car stuff: get the oil changed, renew the insurance, and find someone to fix that dent in the bumper."),
+        RambleInput(id: "single_meds", kind: "single", heldOutReal: false,
+            input: "I have to pick up my mom's prescription from the pharmacy before they close today."),
+        RambleInput(id: "boundary_website", kind: "single", heldOutReal: false,
+            input: "I want to build a simple website for my photography portfolio."),
+        RambleInput(id: "zero_grateful", kind: "zero", heldOutReal: false,
+            input: "Honestly just feeling really grateful today, the sun is out and things are looking up. Good vibes all around."),
     ]
 
     /// Held-out TEST split — the honest gate. The autoresearch agent never optimizes
