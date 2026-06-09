@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=1280">
-<title>The wall that wasn't coverage — A post-training study on small-model specialization</title>
+<title>"Which city in Paris are you staying in?" - Can a phone-sized model learn to ask frontier-quality questions? Can they? Do they? Let's find out!</title>
 <meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
@@ -20,6 +20,11 @@
 <link rel="stylesheet" href="glossary.css">
 <style>
 /* report-only table styling — kept here so onboarding.css stays untouched */
+.hl{background:#faf2db;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+/* highlight a whole list item including its "4." marker (marker must be inside) */
+.ex-list li.hl-li{list-style-position:inside;margin-left:-18px;padding:1px 8px 1px 4px;background:#faf2db;border-radius:3px;}
+/* highlight the Coverage column (4th) of the "Everything we tried" table, lighter still */
+#tried-tbl th:nth-child(4),#tried-tbl td:nth-child(4){background:#fcf6e6;}
 .rpt-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px;
          border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);}
 .rpt-tbl th{text-align:left;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
@@ -71,9 +76,9 @@ a.tap-cell:hover{background:#ece4d4;}
 
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
-  <h1>The wall that wasn't coverage</h1>
+  <h1><em>"Which city in Paris are you staying in?"</em> - Can a phone-sized model learn to ask frontier-quality questions? Can they? Do they? Let's find out!</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board. This is the record of how far it got: we applied the current post-training playbook — from established fine-tuning to 2025's rubric-grounded RL — and none of it closed the last notch. The controlled tests then show the gap is a broad capability limit, not a single missing skill. <a href="#references">The methods we drew on are referenced in §8.</a></p>
+  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -111,6 +116,59 @@ a.tap-cell:hover{background:#ece4d4;}
   <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
 
   <p>To answer it honestly I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>): a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
+
+  <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from our test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
+  <div class="fullbleed">
+  <div class="ex-grid">
+    <div class="ex-col">
+      <div class="ex-head ex-h-user">User input</div>
+      <div class="ex-model">what the user types</div>
+      <p class="ex-input">"Plan a trip to Paris"</p>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-gold">Gold standard</div>
+      <div class="ex-model">claude-sonnet-4-6 &middot; cloud</div>
+      <ol class="ex-list">
+        <li>What city are you departing from?</li>
+        <li>When are you planning to travel?</li>
+        <li>How many people are going on this trip?</li>
+        <li>How long do you plan to stay in Paris?</li>
+        <li>What is your total budget for this trip?</li>
+        <li>What type of accommodation do you prefer?</li>
+        <li>What is the main purpose of your visit?</li>
+      </ol>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-fm">On-device candidate</div>
+      <div class="ex-model">Apple FM ~3B &middot; on device</div>
+      <ol class="ex-list">
+        <li>What is your travel date or timeframe?</li>
+        <li>How many nights will you stay in Paris?</li>
+        <li>What is your total budget for the trip?</li>
+        <li class="bad hl-li"><strong>Which city in Paris are you staying in?</strong></li>
+        <li>Do you prefer a guided tour or self-guided exploration?</li>
+        <li>Is this trip for a specific occasion or purpose?</li>
+        <li>Do you have any travel restrictions or mobility needs?</li>
+      </ol>
+    </div>
+    <div class="ex-col">
+      <div class="ex-head ex-h-judge">Judgement</div>
+      <div class="ex-model">claude-sonnet-4-6</div>
+      <p><span class="verdict-badge">Gold better</span></p>
+      <div class="ex-rubric">
+        <span class="rchip">Atomicity 4</span>
+        <span class="rchip lo">Specificity 3</span>
+        <span class="rchip lo">Coverage 3</span>
+        <span class="rchip lo">Naturalness 3</span>
+        <span class="rchip">Non-redundancy 4</span>
+      </div>
+      <p class="rscale">each scored 1&ndash;5</p>
+      <p class="ex-note">The on-device set <span class="hl">asks a nonsensical question ("Which city in Paris are you staying in?" &mdash; Paris is a city)</span> and omits two critical unknowns &mdash; the <strong>departure city</strong> and the <strong>party size</strong> &mdash; making it less useful for planning than the gold set.</p>
+    </div>
+  </div>
+  </div>
+  <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
+
   <p>The loop itself is run by <strong>Claude Code</strong>, Anthropic's coding agent. Each iteration it reads the running log of what's already been tried, proposes the next experiment, writes and runs the code against the ruler, and records the result — one experiment at a time. I worked alongside it as <strong>supervisor</strong>: steering which levers to pursue next, giving continuous feedback on its hypotheses, and triggering the manual fine-tuning runs. So throughout this report, <em>"we"</em> means that pairing — an AI agent generating and running the experiments under human direction.</p>
   <figure style="margin:28px 0 6px">
     <div class="autoresearch-loop"></div>
@@ -164,7 +222,7 @@ a.tap-cell:hover{background:#ece4d4;}
 <section id="levers">
   <h2><span class="num">3</span>Everything we tried</h2>
   <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
-  <table class="rpt-tbl rpt-wide">
+  <table class="rpt-tbl rpt-wide" id="tried-tbl">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
       <tr><td>Stock baseline</td><td class="num">1</td><td class="num">0.28</td><td class="num">3</td><td>full-30</td></tr>
