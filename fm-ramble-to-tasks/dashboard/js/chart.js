@@ -12,6 +12,7 @@
 // gray for discarded, rust for invalid, warm hairline gridlines, cream "halo".
 const GREEN = '#111111', GREY = '#b9b6a6', MUTED = '#6b6a60', LINE = '#ece9da';
 const INVALID = '#8c2f1f', PAPER = '#fffff8', DIAG = '#6b4fa0';   // violet = reference analyses
+const PIVOT = '#c8861a';   // amber ring = a patience-driven pivot (fresh direction after a no-improvement streak)
 const FONT = '12px "Palatino","Palatino Linotype",Georgia,serif';
 const SMALL = '10.5px "Palatino","Palatino Linotype",Georgia,serif';
 let chartPoints = [];   // {x, y, r} (run) or {x, y, a} (analysis) in CSS px, for hover hit-testing
@@ -77,9 +78,14 @@ export function drawChart(runs, analyses = []) {
       ctx.fillStyle = INVALID; ctx.font = FONT; ctx.fillText(r.label + ' (invalid)', x + 9, y - 9);
       return;
     }
-    ctx.beginPath(); ctx.arc(x, y, r.kept ? 6 : 5, 0, 7);
+    const rad = r.kept ? 6 : 5;
+    ctx.beginPath(); ctx.arc(x, y, rad, 0, 7);
     ctx.fillStyle = r.kept ? GREEN : GREY; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = PAPER; ctx.stroke();
+    if (r.pivot) {                            // pivot: an amber ring outside the paper stroke
+      ctx.beginPath(); ctx.arc(x, y, rad + 3, 0, 7);
+      ctx.lineWidth = 2; ctx.strokeStyle = PIVOT; ctx.stroke();
+    }
     if (r.kept) { ctx.fillStyle = GREEN; ctx.font = FONT; ctx.fillText(r.label, x + 9, y - 9); }
   });
 
@@ -124,7 +130,7 @@ export function initChartHover() {
       tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;
     } else if (hit) {
       const r = hit.r;
-      tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.invalid ? 'INVALID' : r.kept ? 'kept' : 'discarded'}`
+      tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.invalid ? 'INVALID' : r.kept ? 'kept' : 'discarded'}${r.pivot ? ' · pivot' : ''}`
         + (r.invalid && r.invalidReason ? `<span class="t-note">⚠ ${r.invalidReason}</span>` : '')
         + (r.note ? `<span class="t-note">${r.note}</span>` : '');
       tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;

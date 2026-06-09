@@ -132,6 +132,12 @@ while [ "$(count)" -lt "$TARGET" ]; do
     # A run was logged => the build was green (swift run requires it). Commit progress.
     NEWLABEL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.label // empty' 2>/dev/null)
     KEPT=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.kept // false' 2>/dev/null)
+    # Stamp the pivot flag onto the experiment's own record so the dashboard chart +
+    # table can mark it (the lineage graph reads it from lineage_meta.json via record_lineage).
+    if [ "$PIVOT" = "1" ] && [ -n "$NEWLABEL" ]; then
+      tmp=$(jq -c --arg l "$NEWLABEL" 'if .label==$l and (.subset//"full")!="test" then .pivot=true else . end' "$PKG/results/runs.jsonl") \
+        && printf '%s\n' "$tmp" > "$PKG/results/runs.jsonl"
+    fi
     git add -A "$PKG" 2>/dev/null
     git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
     echo "[autoresearch] OK: new experiment logged (total=$AFTER, coder \$$cost)"

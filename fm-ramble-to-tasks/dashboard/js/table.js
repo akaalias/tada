@@ -47,6 +47,7 @@ export function fillTable(runs, expanded, costs, operators = {}, types = {}) {
       + `<td>${r.wins}/${r.ties}/${r.losses}</td>`
       + `<td class="q">${costs[r.label] != null ? '$' + costs[r.label].toFixed(2) : '<span class="disc">—</span>'}</td>`
       + `<td><div class="move-cell"><span class="move-note">${esc(r.note || '')}${r.invalid && r.invalidReason ? ` <span class="invalid-why" title="${esc(r.invalidReason)}">⚠ ${esc(r.invalidReason)}</span>` : ''}</span>`
+      + (r.pivot ? '<span class="status-badge sb-pivot" title="Patience-driven pivot — a fresh direction taken after a no-improvement streak (champion dropped).">Pivot</span>' : '')
       + `<span class="status-badge ${r.invalid ? 'sb-invalid' : r.kept ? 'sb-kept' : 'sb-disc'}">${r.invalid ? 'Invalid' : r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
     const det = document.createElement('tr'); det.className = 'detail';
     const cell = document.createElement('td'); cell.colSpan = 10;

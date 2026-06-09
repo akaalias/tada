@@ -16,6 +16,7 @@ const REL = {                                  // relation → [colour, dash, wi
   'uses-adapter': ['#8a6a1e', '4 3', 1.0, 0.32],   // the bulk; dimmed so structure shows
   'compares-to':  ['#bdb8a6', '2 4', 1.0, 0.45],
 };
+const PIVOT = '#c8861a';   // amber ring = a patience-driven pivot (fresh direction after a no-improvement streak)
 const bust = () => '?t=' + (window.__t || (window.__t = String(performance.now() | 0)));
 
 async function load() {
@@ -41,7 +42,8 @@ function render({ auto, prose, prov }) {
     Object.entries(KIND).map(([k, c]) => `<span><i style="background:${c}"></i>${k}</span>`).join('') +
     ' &nbsp; ' +
     Object.entries(REL).map(([k, [c, d]]) =>
-      `<span><i class="line" style="border-top-style:${d ? 'dashed' : 'solid'};border-top-color:${c}"></i>${k}</span>`).join('');
+      `<span><i class="line" style="border-top-style:${d ? 'dashed' : 'solid'};border-top-color:${c}"></i>${k}</span>`).join('') +
+    ` &nbsp; <span><i style="background:none;box-shadow:0 0 0 1.6px ${PIVOT} inset;border-radius:50%"></i>pivot</span>`;
 
   // ---- diagram (horizontal: run order left→right, arcs above, scroll sideways) ----
   const MX = 40, COL = 26, TOP = 18, ARCH = 360, AXIS = TOP + ARCH, LABELH = 150;
@@ -115,6 +117,9 @@ function render({ auto, prose, prov }) {
   const gN = svg.append('g').selectAll('g').data(nodes).join('g').attr('transform', (d, i) => `translate(${x(i)},${AXIS})`);
   gN.append('circle').attr('r', d => d.kept ? 4.5 : 3.5).attr('fill', d => KIND[d.kind] || '#9b998c')
     .attr('stroke', d => d.kept ? '#111111' : 'none').attr('stroke-width', 1);
+  // pivot: an amber ring outside the node (a fresh direction after a no-improvement streak)
+  gN.filter(d => d.pivot).append('circle').attr('r', d => (d.kept ? 4.5 : 3.5) + 3)
+    .attr('fill', 'none').attr('stroke', PIVOT).attr('stroke-width', 1.6);
   const lbl = gN.append('text').attr('transform', 'rotate(90)').attr('x', 12).attr('y', 4)
     .attr('font-size', 11.5).attr('fill', '#111111').text(d => d.label);
 
