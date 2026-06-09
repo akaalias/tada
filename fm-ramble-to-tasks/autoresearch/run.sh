@@ -91,7 +91,9 @@ while [ "$(count)" -lt "$TARGET" ]; do
   eval "$(python3 "$AR/loop_state.py" "$PATIENCE" 2>/dev/null)"
   echo "[autoresearch] champion=$CHAMP ($CHAMPQ) | previous=$PREV | no-improve streak=$PATIENCE_CNT/$PATIENCE$([ "$PIVOT" = "1" ] && echo '  -> PIVOT')"
 
-  if [ "$PIVOT" = "1" ]; then
+  if [ -z "$CHAMP" ]; then
+    DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. This is the FIRST experiment — no runs exist yet. Create 'exp001' from the stock 'baseline' (single-shot, greedy): one focused, well-reasoned first config. End with a green build and exactly one new logged run for your new config."
+  elif [ "$PIVOT" = "1" ]; then
     DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. Experiments completed so far: $N. *** PIVOT ***: the last $PATIENCE_CNT experiments did NOT beat the champion ($CHAMP, quality $CHAMPQ). Take a step back — DROP the champion approach entirely and try something FUNDAMENTALLY different, continuing ONLY from the previous experiment ($PREV). Begin your program.md log line and your evaluate --note with 'PIVOT: '. End with a green build and exactly one new logged run for your new config."
   else
     DIRECTIVE="Run ONE autoresearch iteration now, following AUTORESEARCH_RULES exactly. Experiments completed so far: $N. Build your new config on TWO parents — the current champion ($CHAMP, quality $CHAMPQ) and the previous experiment ($PREV): combine the best-known approach with what the latest attempt learned. End with a green build and exactly one new logged run for your new config."
