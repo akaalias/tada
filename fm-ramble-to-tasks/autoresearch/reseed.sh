@@ -7,24 +7,24 @@ cd "$(dirname "$0")/.."
 REPO="/Users/alexisrondeau/Workshop/tada"
 [ -f "$REPO/.env" ] && { set -a; source "$REPO/.env"; set +a; }
 AR="autoresearch"
-CONFIGS="baseline exp001 exp002 exp003 exp004 exp005 exp006 exp007 exp008 exp009 exp010 exp011 exp012"
+CONFIGS="baseline prog001 prog002 prog003 prog004 prog005 prog006 prog007 prog008 prog009 prog010 prog011 prog012"
 
 echo "=== gold: $(ls gold/*.json | wc -l | tr -d ' ') cases ==="
 echo "=== dev evals (new metric) ==="
 for A in $CONFIGS; do
   echo ">>> $A"
-  if ! swift run fmramble evaluate --agent "$A" --subset dev --label "$A" 2>&1 | grep -E "QUALITY|ERROR|error:|logged run|fatal"; then
+  if ! swift run fmramble evaluate --agent "$A" --subset dev --label "$A" 2>&1 | grep -E "QUALITY|ERROR|error:|logged program|fatal"; then
     echo "!!! $A FAILED"
   fi
 done
 
 echo "=== leaderboard (dev) ==="
-jq -r 'select(.subset!="test") | [.quality, .label] | @tsv' results/runs.jsonl | sort -rn
-BEST=$(jq -r 'select(.subset!="test") | [.quality, .label] | @tsv' results/runs.jsonl | sort -rn | head -1 | cut -f2)
+jq -r 'select(.subset!="test") | [.fitness, .label] | @tsv' results/programs.jsonl | sort -rn
+BEST=$(jq -r 'select(.subset!="test") | [.fitness, .label] | @tsv' results/programs.jsonl | sort -rn | head -1 | cut -f2)
 echo "best dev = $BEST"
 
 echo "=== held-out TEST for $BEST ==="
-swift run fmramble evaluate --agent "$BEST" --subset test --label "${BEST}_test" 2>&1 | grep -E "QUALITY|logged run" || echo "!!! held-out FAILED"
+swift run fmramble evaluate --agent "$BEST" --subset test --label "${BEST}_test" 2>&1 | grep -E "QUALITY|logged program" || echo "!!! held-out FAILED"
 
 echo "=== sidecars ==="
 for A in $CONFIGS; do python3 "$AR/gen_pipeline.py" "$A" 2>&1 | tail -1; done

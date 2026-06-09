@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Rebuild results/costs.json {label: coderCostUSD} from the loop's commit
-messages ("autoresearch: experiment logged (total=K, coder $C)"). total=K means
-the experiment at index K-1. No API calls; idempotent; best-effort.
+messages ("autoresearch: program logged (total=K, coder $C)"). total=K means
+the program at index K-1. No API calls; idempotent; best-effort.
 
-Experiments whose coder cost was never logged (early agent runs, and the
+Programs whose coder cost was never logged (early agent runs, and the
 manual/interactive track) are backfilled with a deterministic placeholder in the
 typical $1-2 range so the cost column and totals are complete. The estimate is
 hash-derived from the label, so it is stable across regenerations."""
 import json, re, subprocess, pathlib, hashlib
 
 PKG = pathlib.Path(__file__).resolve().parent.parent
-runs = PKG / "results" / "runs.jsonl"
+runs = PKG / "results" / "programs.jsonl"
 
 idx2label = {}
 if runs.exists():

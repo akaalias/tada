@@ -28,7 +28,7 @@ export function drawChart(runs, analyses = []) {
   if (!runs.length) { ctx.fillStyle = MUTED; ctx.fillText('No runs yet — run: ./autoresearch/run.sh', 20, 40); return; }
 
   const pad = { l: 64, r: 40, t: 24, b: 48 };
-  const qs = runs.map(r => r.quality);
+  const qs = runs.map(r => r.fitness);
   let lo = Math.min(...qs), hi = Math.max(...qs);
   const span = Math.max(0.05, hi - lo); lo = Math.max(0, lo - span * 0.25); hi = Math.min(1, hi + span * 0.35);
   hi = 1;   // always keep the 1.00 target (Sonnet parity) line in view
@@ -49,13 +49,13 @@ export function drawChart(runs, analyses = []) {
     ctx.setLineDash([]); ctx.fillStyle = INVALID; ctx.font = FONT;
     ctx.fillText('1.00 · Sonnet (target) — matches the gold set', pad.l + 6, yp + 14); ctx.restore(); }
 
-  ctx.fillText('Experiment #', W / 2 - 30, H - 12);
-  ctx.save(); ctx.translate(16, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Quality (higher is better)', -70, -44); ctx.restore();
+  ctx.fillText('Program #', W / 2 - 30, H - 12);
+  ctx.save(); ctx.translate(16, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Fitness (higher is better)', -70, -44); ctx.restore();
 
   // running-best step line, computed independently PER subset (no cross-denominator line)
   const drawBest = (subset, color, width, dash) => {
     let best = -1; const pts = [];
-    runs.forEach((r, i) => { if ((r.subset || 'full') !== subset) return; if (r.invalid) return; if (r.quality > best) best = r.quality; pts.push([i, best]); });
+    runs.forEach((r, i) => { if ((r.subset || 'full') !== subset) return; if (r.infeasible) return; if (r.fitness > best) best = r.fitness; pts.push([i, best]); });
     if (!pts.length) return;
     ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash); ctx.beginPath();
     pts.forEach(([i, b], k) => {
@@ -70,12 +70,12 @@ export function drawChart(runs, analyses = []) {
 
   // points (discarded = grey, kept = green, invalid = red ✕; labelled when kept/invalid)
   runs.forEach((r, i) => {
-    const x = X(i), y = Y(r.quality);
+    const x = X(i), y = Y(r.fitness);
     chartPoints.push({ x, y, r });
-    if (r.invalid) {                          // invalid (e.g. gold leak): rust ✕, excluded from best-line
+    if (r.infeasible) {                          // invalid (e.g. gold leak): rust ✕, excluded from best-line
       ctx.strokeStyle = INVALID; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
-      ctx.fillStyle = INVALID; ctx.font = FONT; ctx.fillText(r.label + ' (invalid)', x + 9, y - 9);
+      ctx.fillStyle = INVALID; ctx.font = FONT; ctx.fillText(r.label + ' (infeasible)', x + 9, y - 9);
       return;
     }
     const rad = r.kept ? 6 : 5;
@@ -90,7 +90,7 @@ export function drawChart(runs, analyses = []) {
   });
 
   // Reference analyses (probes/gates): no ruler score, so they sit on the BASELINE
-  // (quality-0 floor) as violet diamonds at roughly the experiment index they followed.
+  // (fitness-0 floor) as violet diamonds at roughly the program index they followed.
   if (analyses.length) {
     const yBase = H - pad.b;                                  // the chart floor
     const groups = {};                                        // jitter dots that share an x
@@ -110,7 +110,7 @@ export function drawChart(runs, analyses = []) {
     // legend sits just LEFT of the first diamond, right-aligned, leading into the cluster
     const firstX = X(Math.max(0, Math.min(nn - 1, Math.min(...analyses.map(a => a.afterIndex)))));
     ctx.fillStyle = DIAG; ctx.font = LBL; ctx.textAlign = 'right';
-    ctx.fillText('reference analyses — no ruler score, at quality 0 by when they ran  ◆', firstX - 9, yBase - 3);
+    ctx.fillText('reference analyses — no ruler score, at fitness 0 by when they ran  ◆', firstX - 9, yBase - 3);
     ctx.textAlign = 'left';
   }
 }
@@ -130,8 +130,8 @@ export function initChartHover() {
       tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;
     } else if (hit) {
       const r = hit.r;
-      tip.innerHTML = `<b>${r.label}</b> · ${r.quality.toFixed(3)} · ${r.invalid ? 'INVALID' : r.kept ? 'kept' : 'discarded'}${r.pivot ? ' · pivot' : ''}`
-        + (r.invalid && r.invalidReason ? `<span class="t-note">⚠ ${r.invalidReason}</span>` : '')
+      tip.innerHTML = `<b>${r.label}</b> · ${r.fitness.toFixed(3)} · ${r.infeasible ? 'INFEASIBLE' : r.kept ? 'kept' : 'discarded'}${r.pivot ? ' · pivot' : ''}`
+        + (r.infeasible && r.infeasibleReason ? `<span class="t-note">⚠ ${r.infeasibleReason}</span>` : '')
         + (r.note ? `<span class="t-note">${r.note}</span>` : '');
       tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; tip.style.opacity = 1;
     } else tip.style.opacity = 0;

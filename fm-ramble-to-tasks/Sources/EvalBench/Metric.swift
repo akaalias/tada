@@ -11,30 +11,30 @@ public struct CaseScore: Sendable, Codable {
     public let candidate: RambleResult?
     public let error: String?
 
-    /// 0-1 quality: 0 if spec fails or generation errored. Zero-task (empty-gold) cases
+    /// 0-1 fitness: 0 if spec fails or generation errored. Zero-task (empty-gold) cases
     /// are scored binary (no rubric — no content to phrase). For non-empty judged cases,
-    /// quality blends WHAT (set-match F1), HOW WELL (rubric, incl. phrasing), and the
+    /// fitness blends WHAT (set-match F1), HOW WELL (rubric, incl. phrasing), and the
     /// head-to-head verdict vs Sonnet (pairwise): 0.5·F1 + 0.25·rubric + 0.25·pairwise.
     /// The pairwise term stops the score saturating while the candidate still loses every
     /// head-to-head — matching Sonnet means tying/beating it, not just high sub-scores.
-    public var quality: Double {
+    public var fitness: Double {
         guard error == nil, spec.passed, let m = match else { return 0 }
-        if m.goldEmpty { return m.quality }
+        if m.goldEmpty { return m.fitness }
         if let v = verdict { return 0.5 * m.f1 + 0.25 * v.rubric.normalized + 0.25 * v.pairwise.score }
-        return m.quality
+        return m.fitness
     }
 }
 
-/// Aggregate metric over all cases. The headline is `quality` (mean set-match F1,
+/// Aggregate metric over all cases. The headline is `fitness` (mean set-match F1,
 /// with zero-task cases scored binary).
 public struct Metric: Sendable {
     public let scores: [CaseScore]
 
     public var count: Int { scores.count }
-    // Quality is averaged ONLY over cases that produced output. An FM content-moderation
-    // refusal / generation error yields nothing, so it is excluded here (not a quality-0)
-    // and surfaced separately as `refused` — a product signal, not a quality signal.
-    public var quality: Double { mean(scores.filter { $0.error == nil }.map(\.quality)) }
+    // Fitness is averaged ONLY over cases that produced output. An FM content-moderation
+    // refusal / generation error yields nothing, so it is excluded here (not a fitness-0)
+    // and surfaced separately as `refused` — a product signal, not a fitness signal.
+    public var fitness: Double { mean(scores.filter { $0.error == nil }.map(\.fitness)) }
     public var refused: Int { scores.filter { $0.error != nil }.count }
     public var answered: Int { scores.filter { $0.error == nil }.count }
     public var specPassRate: Double {
@@ -74,11 +74,11 @@ public struct Metric: Sendable {
         return """
         ── metric ──────────────────────────────────────────
         cases:        \(count)  (answered \(answered), refused \(refused))
-        QUALITY:      \(String(format: "%.3f", quality))   (headline = 0.5·F1 + 0.25·rubric + 0.25·pairwise; zero-task binary)
+        FITNESS:      \(String(format: "%.3f", fitness))   (headline = 0.5·F1 + 0.25·rubric + 0.25·pairwise; zero-task binary)
         F1:           \(String(format: "%.3f", f1))   precision: \(String(format: "%.3f", precision))   recall: \(String(format: "%.3f", recall))
         zero-task:    \(String(format: "%.0f%%", zeroTaskAccuracy * 100))   (correct empties)
         spec pass:    \(String(format: "%.0f%%", specPassRate * 100))   (of answered)
-        refused:      \(refused)   (FM content moderation — excluded from quality)
+        refused:      \(refused)   (FM content moderation — excluded from fitness)
         vs gold:      \(wins) win / \(ties) tie / \(losses) loss   (diagnostic)
         rubric means: faithfulness \(rm.faithfulness)  atomicity \(rm.atomicity)  actionability \(rm.actionability)  coverage \(rm.coverage)  nonRedundancy \(rm.nonRedundancy)  phrasing \(rm.phrasing)
         ─────────────────────────────────────────────────────

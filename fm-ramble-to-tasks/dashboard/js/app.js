@@ -51,7 +51,7 @@ async function load() {
   const hasFull = runs.some(r => (r.subset || 'full') === 'full');
   const denom = hasDev && hasFull ? 'dev + full' : hasDev ? 'dev gate' : 'full set';
   document.getElementById('title').textContent =
-    `Autoresearch Progress: ${runs.length} Experiment${runs.length === 1 ? '' : 's'}, ${kept} Kept (${denom})`;
+    `Evolutionary run: ${runs.length} program${runs.length === 1 ? '' : 's'}, ${kept} kept (${denom})`;
 
   const analyses = await fetchAnalyses();
   drawChart(runs, analyses);
@@ -61,7 +61,7 @@ async function load() {
   state.types = await fetchTypes();
   state.lineage = await fetchLineageMeta();
   state.durations = await fetchDurations();
-  const sig = runs.map(r => r.label + ':' + r.quality + ':' + r.kept + ':' + (state.costs[r.label] ?? '') + ':' + (state.operators[r.label] ?? '') + ':' + (state.types[r.label] ?? '') + ':' + ((state.lineage[r.label] && state.lineage[r.label].parents || []).join(',')) + ':' + (state.durations[r.label] ?? '')).join('|');
+  const sig = runs.map(r => r.label + ':' + r.fitness + ':' + r.kept + ':' + (state.costs[r.label] ?? '') + ':' + (state.operators[r.label] ?? '') + ':' + (state.types[r.label] ?? '') + ':' + ((state.lineage[r.label] && state.lineage[r.label].parents || []).join(',')) + ':' + (state.durations[r.label] ?? '')).join('|');
   if (sig !== state.lastSig) { state.lastSig = sig; fillTable(runs, state.expanded, state.costs, state.operators, state.types, state.lineage, state.durations); }
   focusHashRow();
 

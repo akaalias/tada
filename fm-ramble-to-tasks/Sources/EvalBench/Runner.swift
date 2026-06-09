@@ -36,10 +36,10 @@ public struct Runner {
                 } else {
                     match = TaskSetMatcher.match(pred: candidate.tasks, gold: c.gold.tasks)
                 }
-                log?("    F1 \(String(format: "%.2f", match.quality))  (p \(String(format: "%.2f", match.precision)) / r \(String(format: "%.2f", match.recall)))")
+                log?("    F1 \(String(format: "%.2f", match.fitness))  (p \(String(format: "%.2f", match.precision)) / r \(String(format: "%.2f", match.recall)))")
                 scores.append(CaseScore(id: c.id, input: c.input, spec: spec, match: match, verdict: verdict, candidate: candidate, error: nil))
             } catch {
-                // Distinguish an FM content-moderation refusal (no output, not a quality
+                // Distinguish an FM content-moderation refusal (no output, not a fitness
                 // failure) from any other generation error, so the metric can exclude it.
                 let desc = "\(error)"
                 let moderated = desc.range(of: "guardrail|safety|moderat|unsafe|sensitive|content polic", options: [.regularExpression, .caseInsensitive]) != nil

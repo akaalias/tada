@@ -14,8 +14,8 @@ public struct SetMatch: Sendable, Codable {
     public let goldEmpty: Bool
     public let zeroTaskCorrect: Bool
 
-    /// Per-case headline quality (0-1). Zero-task is binary; otherwise F1.
-    public var quality: Double {
+    /// Per-case headline fitness (0-1). Zero-task is binary; otherwise F1.
+    public var fitness: Double {
         if goldEmpty { return zeroTaskCorrect ? 1.0 : 0.0 }
         return f1
     }

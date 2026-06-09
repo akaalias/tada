@@ -18,7 +18,7 @@ public enum Pairwise: String, Codable, Sendable {
 }
 
 /// 1-5 rubric scores on the dimensions that separate a good task extraction from
-/// a bad one. Half of the headline quality (the other half is the set-match F1).
+/// a bad one. Half of the headline fitness (the other half is the set-match F1).
 public struct Rubric: Codable, Sendable, Equatable {
     public var faithfulness: Int   // every task traces to the input; nothing invented
     public var atomicity: Int      // each task is ONE action, no "and"/"or"

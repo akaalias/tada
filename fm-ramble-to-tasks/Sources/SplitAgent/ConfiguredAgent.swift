@@ -4,7 +4,7 @@ import Contract
 
 /// The single mutable artifact: a ramble-split agent driven entirely by a
 /// SplitConfig. Topology, decoding, and (later) retrieval / post-processing are
-/// all config. New experiments add named configs in Configs.swift.
+/// all config. New programs add named configs in Configs.swift.
 public struct ConfiguredAgent: Sendable {
     let config: SplitConfig
     public init(_ config: SplitConfig) { self.config = config }

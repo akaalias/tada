@@ -5,7 +5,7 @@ const bust = () => '?t=' + Date.now();
 
 export async function fetchRuns() {
   try {
-    const t = await (await fetch('../results/runs.jsonl' + bust())).text();
+    const t = await (await fetch('../results/programs.jsonl' + bust())).text();
     return t.trim().split('\n').filter(Boolean).map(JSON.parse);
   } catch (e) { return []; }
 }
@@ -25,14 +25,14 @@ export async function fetchTypes() {
   catch (e) { return {}; }
 }
 
-// Two-parent lineage per experiment: { label: { parents: [...], pivot } }.
-// Written by record_lineage.py each loop iteration.
+// Two-parent lineage per program: { label: { parents: [...], pivot } }.
+// Written by record_lineage.py each loop sample.
 export async function fetchLineageMeta() {
   try { return await (await fetch('../results/lineage_meta.json' + bust())).json(); }
   catch (e) { return {}; }
 }
 
-// Wall-clock per experiment (the coder iteration: code + build + eval), in ms,
+// Wall-clock per program (the coder sample: code + build + eval), in ms,
 // keyed by label. Written by run.sh from the coder's duration_ms.
 export async function fetchDurations() {
   try { return await (await fetch('../results/durations.json' + bust())).json(); }

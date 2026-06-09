@@ -1,7 +1,7 @@
-// Mined experiment lineage: the hand-mined parent→child edges (lineage_prose.json)
+// Mined program lineage: the hand-mined parent→child edges (lineage_prose.json)
 // over the 96 runs, on a horizontal run-order axis with arcs above. Node facts
-// (index / quality / kept / kind) come from lineage_auto.json — it doubles as the
-// experiment table; only its EDGES are ignored here. Hover a node to isolate its
+// (index / fitness / kept / kind) come from lineage_auto.json — it doubles as the
+// program table; only its EDGES are ignored here. Hover a node to isolate its
 // ancestry (every parent back to the root) and pop a card (title + hypothesis/
 // method/result) anchored at the node, lazy-loaded from its pipeline spec.
 
@@ -11,8 +11,8 @@ import { diagramSVG } from '../report-tapestry.js';   // the bare-dots §3 tile 
 
 const KIND = { inference: '#9b998c', sft: '#8a6a1e', orpo: '#8c2f1f', grpo: '#3f6e6e', gad: '#5a4b8a' };
 const REL = {                                  // relation → [colour, dash, width, baseOpacity]
-  'warm-start':   ['#8a6a1e', null,  2.2, 0.95],
-  'builds-on':    ['#6b6a60', null,  1.4, 0.75],
+  'inspiration':   ['#8a6a1e', null,  2.2, 0.95],
+  'parent':    ['#6b6a60', null,  1.4, 0.75],
   'uses-adapter': ['#8a6a1e', '4 3', 1.0, 0.32],   // the bulk; dimmed so structure shows
   'compares-to':  ['#bdb8a6', '2 4', 1.0, 0.45],
 };
@@ -53,7 +53,7 @@ function render({ auto, prose, prov }) {
   const hideTip = () => { tip.style.opacity = 0; };
   const x = i => MX + i * COL;
 
-  // per-experiment pipeline spec (lazy, cached) → the popover's title + hypothesis/method/result
+  // per-program pipeline spec (lazy, cached) → the popover's title + hypothesis/method/result
   const specCache = {};
   const getSpec = async label => {
     if (!(label in specCache)) {
@@ -63,7 +63,7 @@ function render({ auto, prose, prov }) {
     return specCache[label];
   };
   const popTitle = (d, spec) => {
-    if (!spec) return `${esc(d.label)} · quality ${d.quality.toFixed(3)}${d.kept ? ' · kept ★' : ''}`;
+    if (!spec) return `${esc(d.label)} · fitness ${d.fitness.toFixed(3)}${d.kept ? ' · kept ★' : ''}`;
     const fm = spec.stages.reduce((a, s) => a + callCount(s), 0), ad = spec.stages.some(isAdapter);
     return esc((spec.summary || d.label) + ' · ' + fm + ' on-device model call' + (fm === 1 ? '' : 's') + (ad ? ' · LoRA adapter' : ''));
   };
@@ -154,7 +154,7 @@ function render({ auto, prose, prov }) {
     paths.forEach(({ p, base, e }) => p.attr('opacity', base).attr('stroke-width', REL[e.relation]?.[2] || 1.4));
     lbl.attr('fill', '#111111').attr('font-weight', 400);
   };
-  // trigger only on the experiment label (not the whole column)
+  // trigger only on the program label (not the whole column)
   let hovering = null;
   lbl.style('cursor', 'pointer')
     .on('mouseenter', (ev, d) => {
@@ -172,8 +172,8 @@ function render({ auto, prose, prov }) {
     ['exp003',         'Single FM call with RAG few-shot exemplars. First new best.'],
     ['exp011',         'Contrastive good-vs-bad few-shot. The inference base a dozen later probes built on.'],
     ['adapter_e1',     'First LoRA fine-tune on Sonnet gold — the decisive jump (+0.08).'],
-    ['adapter_v2a_e1', 'Doubled the training corpus (312→619 examples). The SFT champion that warm-started every RL run.'],
-    ['exp046',         'Over-generate 8 questions, then dedup to 7, on the champion adapter. Best inference topology.'],
+    ['adapter_v2a_e1', 'Doubled the training corpus (312→619 examples). The SFT elite that inspirationed every RL run.'],
+    ['exp046',         'Over-generate 8 questions, then dedup to 7, on the elite adapter. Best inference topology.'],
     ['exp056',         'Refined exp046’s redundancy drop — the best verified result.'],
   ];
   const nodeOf = {}; nodes.forEach(n => nodeOf[n.label] = n);
@@ -184,7 +184,7 @@ function render({ auto, prose, prov }) {
       return `<tr data-label="${l}"${l === 'exp056' ? ' class="best"' : ''}>` +
         `<td class="num">${n.index}</td>` +
         `<td class="lbl"><span class="dot" style="background:${KIND[n.kind] || '#9b998c'}"></span>${esc(l)}</td>` +
-        `<td class="num">${n.quality.toFixed(3)}</td>` +
+        `<td class="num">${n.fitness.toFixed(3)}</td>` +
         `<td>${esc(why)}</td></tr>`;
     }).join('');
     pivHost.innerHTML =
@@ -192,7 +192,7 @@ function render({ auto, prose, prov }) {
       '<p class="psub">Seven runs that carried the score from the raw model (0.307) to our best verified result (exp056, 0.44). ' +
       'Hover a row to light up that run’s lineage in the graph above. ' +
       '(exp032 scored higher at 0.498 but leaked gold answers into its eval, so it’s disqualified.)</p>' +
-      '<table class="piv-tbl"><thead><tr><th>#</th><th>Experiment</th><th>Quality</th><th>Why it mattered</th></tr></thead>' +
+      '<table class="piv-tbl"><thead><tr><th>#</th><th>Program</th><th>Fitness</th><th>Why it mattered</th></tr></thead>' +
       `<tbody>${rows}</tbody></table>`;
     const diagramEl = document.getElementById('diagram');
     const scrollToNode = label => {                          // reveal the node if it's scrolled out of view

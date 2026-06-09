@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generate a structured pipeline spec for one experiment, so the dashboard can
-draw a consistent process diagram. Maps the experiment's program.md entry + note
+"""Generate a structured pipeline spec for one program, so the dashboard can
+draw a consistent process diagram. Maps the program's program.md entry + note
 into a fixed stage vocabulary via the Anthropic API. Best-effort: prints a
 warning and exits 0 on any failure so it never breaks the autoresearch loop.
 
@@ -16,14 +16,14 @@ KINDS = ["input", "retrieve", "generate", "expand", "select", "critique", "ensem
 
 TOOL = {
     "name": "pipeline_spec",
-    "description": "Record the experiment's on-device pipeline as an ordered list of stages.",
+    "description": "Record the program's on-device pipeline as an ordered list of stages.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "summary": {"type": "string", "description": "<=10 words naming the core idea of this experiment."},
-            "hypothesis": {"type": "string", "description": "1-2 plain sentences for a human skimming the dashboard: the BELIEF this experiment tests — what we expected to improve and WHY. Frame as a testable bet, e.g. 'Forcing the model to decide hasActionableTasks before listing should stop it inventing tasks on venting.' Do NOT describe the mechanism here (that's 'technique')."},
+            "summary": {"type": "string", "description": "<=10 words naming the core idea of this program."},
+            "hypothesis": {"type": "string", "description": "1-2 plain sentences for a human skimming the dashboard: the BELIEF this program tests — what we expected to improve and WHY. Frame as a testable bet, e.g. 'Forcing the model to decide hasActionableTasks before listing should stop it inventing tasks on venting.' Do NOT describe the mechanism here (that's 'technique')."},
             "technique": {"type": "string", "description": "1-2 plain sentences: the concrete METHOD used to test the hypothesis — the actual change/mechanism in plain language, naming the lever (decoding, retrieval/RAG, multi-call pipeline, guided-schema design, deterministic post-processing, LoRA adapter, etc.). e.g. 'A single greedy on-device call with a reasoning-first @Generable schema that gates the task list on a boolean.'"},
-            "result": {"type": "string", "description": "1-2 plain sentences: what ACTUALLY happened when this ran. You MUST use the EXACT metrics given in the user message (quality score, win/tie/loss vs Sonnet, the rubric, kept-or-discarded) — do not invent numbers. State the headline quality and how it compared to the prior best/baseline, what the judge/rubric revealed, and the takeaway (hypothesis confirmed or falsified)."},
+            "result": {"type": "string", "description": "1-2 plain sentences: what ACTUALLY happened when this ran. You MUST use the EXACT metrics given in the user message (fitness score, win/tie/loss vs Sonnet, the rubric, kept-or-discarded) — do not invent numbers. State the headline fitness and how it compared to the prior best/baseline, what the judge/rubric revealed, and the takeaway (hypothesis confirmed or falsified)."},
             "stages": {
                 "type": "array",
                 "description": "Ordered left-to-right stages of the on-device pipeline (NOT the eval/judge).",
@@ -32,7 +32,7 @@ TOOL = {
                     "properties": {
                         "kind": {"type": "string", "enum": KINDS, "description":
                             "input=the user's free-form ramble; retrieve=RAG fetch of exemplars; generate=an on-device FM call that extracts tasks (or drafts/segments); expand=one FM call that over-produces N candidate tasks; select=deterministic Swift ranking/pick; critique=a second FM pass that audits/edits a draft (drop non-actionable/retracted/duplicate); ensemble=best-of-N variants then pick; post=deterministic Swift post-processing (dedup/filter); output=the final 0..N tasks."},
-                        "text": {"type": "string", "description": "<=8 words: what this stage does for THIS experiment."},
+                        "text": {"type": "string", "description": "<=8 words: what this stage does for THIS program."},
                         "knobs": {"type": "object", "description": "Optional knob values shown as chips, e.g. {\"temp\":\"0.7\",\"sampling\":\"greedy\",\"k\":\"2\",\"n\":\"4\"}. Omit if none."},
                         "call_labels": {"type": "array", "items": {"type": "string"}, "description": "REQUIRED when this stage makes more than one model call (n>1 for an ensemble, or calls>1 for a model-based select/tournament/loop): one concise description per call (<=7 words), in order, length equal to the call count. NEVER leave multiple calls as bare numbers."},
                         "prompt": {"type": "string", "description": "FM calls (generate/expand/critique/ensemble) ONLY: the VERBATIM prompt for this call — the system/instructions text AND the user-message template — copied EXACTLY from the provided Swift source (Prompts.swift + the topology function). Do NOT paraphrase, summarize, or invent. Omit entirely for deterministic stages (input/output/retrieve/select/post)."}
@@ -45,9 +45,9 @@ TOOL = {
     }
 }
 
-SYSTEM = """You convert a one-line description of an on-device LLM pipeline experiment into a structured stage list, using ONLY the fixed stage vocabulary in the tool. The task is RAMBLE-SPLITTING: turn a free-form user brain-dump into 0..N atomic, actionable tasks (an empty list when nothing is actionable). Goal: a consistent visual language — the SAME building block always gets the SAME kind, so similar experiments look similar.
+SYSTEM = """You convert a one-line description of an on-device LLM pipeline program into a structured stage list, using ONLY the fixed stage vocabulary in the tool. The task is RAMBLE-SPLITTING: turn a free-form user brain-dump into 0..N atomic, actionable tasks (an empty list when nothing is actionable). Goal: a consistent visual language — the SAME building block always gets the SAME kind, so similar programs look similar.
 
-You ALSO write three short human-readable fields for the dashboard: 'hypothesis' (the testable bet — what we expected to improve and why), 'technique' (the concrete method/lever used to test it), and 'result' (what actually happened). Ground hypothesis/technique in the log entry and note; if the description is sparse, infer the most reasonable bet and method from the technique named. Keep each to 1-2 plain sentences. The hypothesis is the WHY/what-we-believe; the technique is the HOW/what-we-did; the result is the WHAT-HAPPENED — keep them distinct. For 'result', you MUST use the exact metrics provided in the user message (quality, win/tie/loss, rubric, kept/discarded) and never invent numbers.
+You ALSO write three short human-readable fields for the dashboard: 'hypothesis' (the testable bet — what we expected to improve and why), 'technique' (the concrete method/lever used to test it), and 'result' (what actually happened). Ground hypothesis/technique in the log entry and note; if the description is sparse, infer the most reasonable bet and method from the technique named. Keep each to 1-2 plain sentences. The hypothesis is the WHY/what-we-believe; the technique is the HOW/what-we-did; the result is the WHAT-HAPPENED — keep them distinct. For 'result', you MUST use the exact metrics provided in the user message (fitness, win/tie/loss, rubric, kept/discarded) and never invent numbers.
 CRITICAL FACTUAL GUARD: 'dev', 'test', 'full' and their counts (e.g. dev-11) refer to the EVALUATION subset — the frozen HELD-OUT eval cases the run is scored on — NOT the training-set size. NEVER state or imply a training-set/corpus size unless an explicit number appears in the log entry.
 
 Rules:
@@ -101,7 +101,7 @@ def main():
                 break
     note = ""
     metrics = ""
-    runs = PKG / "results" / "runs.jsonl"
+    runs = PKG / "results" / "programs.jsonl"
     if runs.exists():
         for l in runs.read_text(encoding="utf-8").splitlines():
             try:
@@ -109,7 +109,7 @@ def main():
                 if r.get("label") == label:
                     note = r.get("note", "")
                     metrics = (
-                        f"quality={r.get('quality'):.3f} on {r.get('subset','full')}-{r.get('n','')} "
+                        f"fitness={r.get('fitness'):.3f} on {r.get('subset','full')}-{r.get('n','')} "
                         f"(W/T/L vs Sonnet = {r.get('wins')}/{r.get('ties')}/{r.get('losses')}), "
                         f"specPass={round(r.get('specPass',0)*100)}%, "
                         f"rubric faith={r.get('faithfulness')} atom={r.get('atomicity')} "
@@ -131,7 +131,7 @@ def main():
     mt = re.search(r'"' + re.escape(label) + r'":\s*SplitConfig\(\s*topology:\s*\.(\w+)', cfgtext)
     topo = mt.group(1) if mt else ""
 
-    user = (f"Experiment label: {label}\nShort note: {note}\nFull log entry: {entry}\n"
+    user = (f"Program label: {label}\nShort note: {note}\nFull log entry: {entry}\n"
             f"Measured metrics (use these EXACT numbers for 'result'): {metrics or 'none recorded'}\n"
             f"This config's topology is `.{topo}`.\n\n"
             f"For each FM stage (generate/expand/critique/ensemble), set its `prompt` to the EXACT "

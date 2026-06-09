@@ -109,7 +109,7 @@ case "evaluate":
         print("• \(s.id): \(s.verdict!.notes)")
     }
 
-    // Persist full results + append one line to the run log (with kept threshold).
+    // Persist full results + append one line to the program log (with kept threshold).
     try? FileManager.default.createDirectory(at: resultsDir, withIntermediateDirectories: true)
     let label = stringFlag("--label") ?? "latest"
     let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
@@ -118,31 +118,31 @@ case "evaluate":
         print("\nwrote results/\(label).json")
     }
 
-    // Held-out TEST runs go to a separate log so they never appear as experiments
-    // in the dashboard's run table; real experiments (dev/full) go to runs.jsonl.
-    let logName = subset == "test" ? "heldout.jsonl" : "runs.jsonl"
+    // Held-out TEST runs go to a separate log so they never appear as programs
+    // in the dashboard's program table; real programs (dev/full) go to programs.jsonl.
+    let logName = subset == "test" ? "heldout.jsonl" : "programs.jsonl"
     let runsURL = resultsDir.appendingPathComponent(logName)
     let prior = (try? String(contentsOf: runsURL, encoding: .utf8))?
         .split(separator: "\n")
         .compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? []
-    let bestBefore = prior.filter { ($0["subset"] as? String) == subset && ($0["invalid"] as? Bool != true) }
-        .compactMap { $0["quality"] as? Double }.max() ?? -1
+    let bestBefore = prior.filter { ($0["subset"] as? String) == subset && ($0["infeasible"] as? Bool != true) }
+        .compactMap { $0["fitness"] as? Double }.max() ?? -1
     let rm = metric.rubricMeans
     let record: [String: Any] = [
         "index": prior.count, "label": label, "agent": agent.name,
         "note": stringFlag("--note") ?? "", "subset": subset, "n": cases.count,
-        "quality": metric.quality, "precision": metric.precision, "recall": metric.recall,
+        "fitness": metric.fitness, "precision": metric.precision, "recall": metric.recall,
         "f1": metric.f1, "zeroTaskAccuracy": metric.zeroTaskAccuracy, "specPass": metric.specPassRate,
         "wins": metric.wins, "ties": metric.ties, "losses": metric.losses,
         "faithfulness": rm.faithfulness, "atomicity": rm.atomicity, "actionability": rm.actionability,
         "coverage": rm.coverage, "nonRedundancy": rm.nonRedundancy, "phrasing": rm.phrasing,
-        "kept": metric.quality > bestBefore,
+        "kept": metric.fitness > bestBefore,
     ]
     if let line = try? JSONSerialization.data(withJSONObject: record),
        let s = String(data: line, encoding: .utf8) {
         let existing = (try? String(contentsOf: runsURL, encoding: .utf8)) ?? ""
         try? (existing + s + "\n").write(to: runsURL, atomically: true, encoding: .utf8)
-        print("logged run #\(prior.count) to results/\(logName)  (kept: \(metric.quality > bestBefore))")
+        print("logged program #\(prior.count) to results/\(logName)  (kept: \(metric.fitness > bestBefore))")
     }
 
 default:

@@ -1,9 +1,9 @@
 import Foundation
 import Contract
 
-/// Deterministic, objective technical-spec checks. NOT quality — quality is the
+/// Deterministic, objective technical-spec checks. NOT fitness — fitness is the
 /// metric's job. The gate only enforces the hard contract the app depends on.
-/// A failed gate forces the case's quality score to 0. An EMPTY task list is
+/// A failed gate forces the case's fitness score to 0. An EMPTY task list is
 /// valid (the correct answer for non-actionable input).
 public struct SpecResult: Sendable, Equatable, Codable {
     public let passed: Bool

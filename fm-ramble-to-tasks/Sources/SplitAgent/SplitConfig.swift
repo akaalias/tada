@@ -2,7 +2,7 @@ import Foundation
 import FoundationModels
 
 /// The search space. Every field is a lever the autoresearch loop can change.
-/// One experiment = one SplitConfig (a delta from the running best).
+/// One program = one SplitConfig (a delta from the running best).
 public struct SplitConfig: Sendable {
     public enum Topology: String, Sendable {
         case singleShot          // 1 call: input -> 0..N tasks
@@ -18,7 +18,7 @@ public struct SplitConfig: Sendable {
         case extractAuditGated   // extractAudit, but audit ONLY fires when base found >=2 tasks
         case extractAuditSweep   // extractAuditGated, but audit enumerates-then-diffs (exp005)
         case overGenerateFilter  // 2 calls: exhaustive over-generate, then commitment+dedup filter (exp006)
-        // Future experiments add: segmentExtract,
+        // Future programs add: segmentExtract,
         // brainstormSelect, extractCritique, adapterDirect, ...
     }
 

@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=1280">
-<title>Autoresearch log — Ramble → Tasks</title>
-<meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<title>Evolutionary run — Ramble → Tasks</title>
+<meta name="description" content="Across 77 programs — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every fitness dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
-<meta property="og:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta property="og:description" content="Across 77 programs — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every fitness dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="&quot;Which city in Paris are you staying in?&quot; - A post-training study on small-model specialization with an autoresearch loop">
-<meta name="twitter:description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
+<meta name="twitter:description" content="Across 77 programs — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every fitness dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Experiment lineage — a field of node-and-arrow chains tracing 77 experiments.">
+<meta property="og:image:alt" content="Program lineage — a field of node-and-arrow chains tracing 77 programs.">
 <meta name="twitter:image" content="https://akaalias.github.io/tada/research/FMDiscovery/dashboard/og-image.png">
 <link rel="stylesheet" href="tufte.css">
 <link rel="stylesheet" href="dashboard.css">
@@ -28,15 +28,15 @@
 <div data-nav="dashboard"></div>
 <header class="page-head">
   <div class="eyebrow">Alexis Rondeau · live research log</div>
-  <h1>Autoresearch log</h1>
-  <p class="sub">Every experiment the autoresearch loop has run to teach the on-device model the <a href="samples.html">ramble&rarr;tasks</a> task — scored against Sonnet, newest first, with the running best charted over time.</p>
-  <p class="page-status" id="title">Loading the experiment record&hellip;</p>
+  <h1>Evolutionary run</h1>
+  <p class="sub">Every program in this evolutionary run, teaching the on-device model the <a href="samples.html">ramble&rarr;tasks</a> task — scored against Sonnet, newest first, with the running best (elite) charted over time.</p>
+  <p class="page-status" id="title">Loading the program record&hellip;</p>
   <div class="dash-meta">
     <div class="dash-legend">
       <span class="k"><span class="dot" style="background:var(--disc)"></span>Discarded</span>
       <span class="k"><span class="dot" style="background:var(--ink)"></span>Kept improvement</span>
       <span class="k"><span class="bar"></span>Running best</span>
-      <span class="k"><span class="x">&times;</span>Invalid</span>
+      <span class="k"><span class="x">&times;</span>Infeasible</span>
       <span class="k"><span class="pivot-ring"></span>Pivot</span>
     </div>
     <span id="updated"></span>
@@ -48,15 +48,15 @@
     <table id="tbl">
       <thead><tr>
         <th>#</th><th>Label</th>
-        <th title="Parent experiments this one built on — the champion (builds-on) and the previous run (warm-start). Click a name to open that row.">Lineage</th>
-        <th title="Who ran the experiment. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one experiment per iteration.">Operator</th>
-        <th title="Which lever the experiment uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>
+        <th title="Parent programs this one built on — the elite it mutated from, and the inspiration program it warm-started from. Click a name to open that row.">Lineage</th>
+        <th title="Who ran the program. Interactive = Claude in an interactive session (manual track, incl. adapter training). Autonomous = the headless Claude agent in run.sh, one program per sample.">Operator</th>
+        <th title="Which lever the program uses. Inference = inference-time only (prompt / decoding / RAG / topology, no weight change). SFT = runs on a LoRA adapter trained by imitation. ORPO = runs on an adapter trained on preference pairs.">Type</th>
         <th>Set</th>
-        <th title="Share of cases that pass the hard technical-spec gate: non-empty atomic tasks, no emojis, at most 12. Quality is forced to 0 for any case that fails.">Spec</th>
+        <th title="Share of cases that pass the hard technical-spec gate: non-empty atomic tasks, no emojis, at most 12. Fitness is forced to 0 for any case that fails.">Spec</th>
         <th title="Pairwise judge verdict vs Sonnet's gold answers: Wins / Ties / Losses. W = the on-device model's questions were judged better than Sonnet's; T = tie; L = Sonnet better.">W/T/L</th>
-        <th title="Cost of the code-writing agent for this experiment (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>
-        <th title="Wall-clock for the experiment — the coder iteration: writing the config, building, and running the eval.">Duration</th>
-        <th>Quality</th>
+        <th title="Cost of the code-writing agent for this program (excludes judge API calls). Dash = a manual run, not agent-written.">Cost</th>
+        <th title="Wall-clock for the program — the coder sample: writing the config, building, and running the eval.">Duration</th>
+        <th>Fitness</th>
         <th>Move</th>
       </tr></thead>
       <tbody></tbody>
@@ -65,7 +65,7 @@
       <summary>What do the columns &amp; rubric mean?</summary>
       <dl class="help-grid">
         <dt>Type</dt><dd>The lever group. <b>Inference</b> = inference-time only (prompt / decoding / RAG / topology, no weight change). <b>SFT</b> = runs on a LoRA adapter trained by imitation on Sonnet gold. <b>ORPO</b> = runs on an adapter trained on chosen/rejected preference pairs.</dd>
-        <dt>Quality</dt><dd>0–1, higher is better — <code>0.5 × F1 + 0.25 × rubric + 0.25 × pairwise</code> for judged cases (zero-task cases score 1 if correctly empty, else 0). F1 = right tasks; rubric = how well (incl. phrasing); pairwise = head-to-head vs Sonnet (loss / tie / win). Target 1.00 = matches Sonnet.</dd>
+        <dt>Fitness</dt><dd>0–1, higher is better — <code>0.5 × F1 + 0.25 × rubric + 0.25 × pairwise</code> for judged cases (zero-task cases score 1 if correctly empty, else 0). F1 = right tasks; rubric = how well (incl. phrasing); pairwise = head-to-head vs Sonnet (loss / tie / win). Target 1.00 = matches Sonnet.</dd>
         <dt>Spec</dt><dd>% of cases passing the hard technical gate: non-empty atomic tasks, no emojis, at most 12. A failed case scores 0.</dd>
         <dt>W/T/L</dt><dd>Head-to-head vs Sonnet's gold — <b>Wins / Ties / Losses</b>. A Win means the on-device task set was judged <i>better</i> than Sonnet's.</dd>
         <dt>The two sets</dt><dd><span class="gold">Set A = Gold (Sonnet)</span> &nbsp;vs&nbsp; <span class="fm">Set B = On-device</span>. The judge picks which is better and scores Set B 1–5 on five dimensions:</dd>
@@ -76,7 +76,7 @@
         <dt>nonRedundancy</dt><dd>no two tasks are the same intention</dd>
         <dt>phrasing</dt><dd>matches Sonnet's style — capitalized, conversational, complete (keeps detail), not a terse lowercase fragment</dd>
       </dl>
-      <div class="foot">Click any row to see what the experiment tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
+      <div class="foot">Click any row to see what the program tried, the gold-vs-on-device questions side by side, and the judge's per-case notes.</div>
     </details>
   </div>
 </div>

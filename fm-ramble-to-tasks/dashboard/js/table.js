@@ -1,13 +1,13 @@
-// The experiment table. Rows are click-to-expand (detail rendered lazily).
+// The program table. Rows are click-to-expand (detail rendered lazily).
 
 import { renderDetail } from './detail.js';
 import { esc } from './util.js';
 
-// Who ran the experiment. human = interactive Claude driving the manual
+// Who ran the program. human = interactive Claude driving the manual
 // adapter-training track; agent = the autonomous headless Claude in run.sh.
 const OPERATORS = {
   human: { label: 'Interactive', cls: 'op-human', title: 'Claude Opus, interactive session — manual track (adapter training: corpus, LoRA, export, eval)' },
-  agent: { label: 'Autonomous', cls: 'op-agent', title: 'Headless Claude via run.sh — one in-context experiment per autonomous iteration' },
+  agent: { label: 'Autonomous', cls: 'op-agent', title: 'Headless Claude via run.sh — one in-context program per autonomous sample' },
 };
 const opBadge = op => {
   const o = OPERATORS[op];
@@ -15,7 +15,7 @@ const opBadge = op => {
            : '<span class="disc">—</span>';
 };
 
-// Which lever the experiment uses. Inference-Time = no weight change (prompt /
+// Which lever the program uses. Inference-Time = no weight change (prompt /
 // decoding / RAG / topology); the others run on a LoRA adapter, distinguished by
 // how that adapter was trained (imitation vs preference). See gen_types.py.
 const TYPES = {
@@ -81,10 +81,10 @@ export function fillTable(runs, expanded, costs, operators = {}, types = {}, lin
       + `<td>${r.wins}/${r.ties}/${r.losses}</td>`
       + `<td class="q">${costs[r.label] != null ? '$' + costs[r.label].toFixed(2) : '<span class="disc">—</span>'}</td>`
       + `<td class="dur">${fmtDur(durations[r.label])}</td>`
-      + `<td class="q">${r.quality.toFixed(3)}</td>`
-      + `<td><div class="move-cell"><span class="move-note">${esc(r.note || '')}${r.invalid && r.invalidReason ? ` <span class="invalid-why" title="${esc(r.invalidReason)}">⚠ ${esc(r.invalidReason)}</span>` : ''}</span>`
-      + (r.pivot ? '<span class="status-badge sb-pivot" title="Patience-driven pivot — a fresh direction taken after a no-improvement streak (champion dropped).">Pivot</span>' : '')
-      + `<span class="status-badge ${r.invalid ? 'sb-invalid' : r.kept ? 'sb-kept' : 'sb-disc'}">${r.invalid ? 'Invalid' : r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
+      + `<td class="q">${r.fitness.toFixed(3)}</td>`
+      + `<td><div class="move-cell"><span class="move-note">${esc(r.note || '')}${r.infeasible && r.infeasibleReason ? ` <span class="invalid-why" title="${esc(r.infeasibleReason)}">⚠ ${esc(r.infeasibleReason)}</span>` : ''}</span>`
+      + (r.pivot ? '<span class="status-badge sb-pivot" title="Patience-driven pivot — a fresh direction taken after a no-improvement streak (elite dropped).">Pivot</span>' : '')
+      + `<span class="status-badge ${r.infeasible ? 'sb-invalid' : r.kept ? 'sb-kept' : 'sb-disc'}">${r.infeasible ? 'Infeasible' : r.kept ? 'Kept' : 'Discarded'}</span></div></td>`;
     const det = document.createElement('tr'); det.className = 'detail';
     const cell = document.createElement('td'); cell.colSpan = 12;
     det.appendChild(cell);

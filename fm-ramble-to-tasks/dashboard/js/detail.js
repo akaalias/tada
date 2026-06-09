@@ -1,4 +1,4 @@
-// The expanded per-experiment detail: pipeline diagram + write-up + per-case
+// The expanded per-program detail: pipeline diagram + write-up + per-case
 // gold-vs-on-device comparison with the judge's verdict and notes.
 
 import { fetchResults, fetchPipe, fetchGold, programLine, fetchProvenance } from './api.js';
@@ -34,7 +34,7 @@ function markQRefs(text, maxN) {
 export async function renderDetail(label, cell) {
   cell.innerHTML = '<div class="detail-inner">loading…</div>';
   const scores = await fetchResults(label);
-  if (!scores) { cell.innerHTML = '<div class="detail-inner disc">no per-case results file for this experiment</div>'; return; }
+  if (!scores) { cell.innerHTML = '<div class="detail-inner disc">no per-case results file for this program</div>'; return; }
 
   const tried = await programLine(label);
   const spec = await fetchPipe(label);
@@ -71,7 +71,7 @@ export async function renderDetail(label, cell) {
       : `<div class="judge-note disc">not judged</div>`;
     const fmQs = cand ? (cand.tasks.length ? `<ol class="qs">${cand.tasks.map((q, qi) =>
         `<li data-qn="${qi + 1}"${refd.has(qi + 1) ? ' class="q-flag"' : ''}>${esc(q)}</li>`).join('')}</ol>` : '<div class="disc">(none)</div>')
-      : refused ? `<div class="disc">${esc(s.error)} — no output; excluded from quality</div>`
+      : refused ? `<div class="disc">${esc(s.error)} — no output; excluded from fitness</div>`
       : `<div class="disc">spec failed: ${(s.spec.violations || []).join('; ')}</div>`;
     // Status header. A zero-task case (empty gold) is NOT judged — there is nothing to
     // compare — so it is scored deterministically; show that, not a bogus "spec failed".
@@ -80,7 +80,7 @@ export async function renderDetail(label, cell) {
     const f1s = f1 != null ? f1.toFixed(2) : '—';
     let head;
     if (refused) {
-      head = '<span class="badge b-tie">REFUSED</span> <span class="disc">FM content moderation — excluded from quality</span>';
+      head = '<span class="badge b-tie">REFUSED</span> <span class="disc">FM content moderation — excluded from fitness</span>';
     } else if (s.spec && !s.spec.passed) {
       head = `<span class="badge b-loss">SPEC FAIL</span> <span class="disc">${esc((s.spec.violations || []).join('; '))}</span>`;
     } else if (s.verdict) {

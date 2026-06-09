@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Derive each experiment's METHOD TYPE and write results/types.json — a side-car
+"""Derive each program's METHOD TYPE and write results/types.json — a side-car
 keyed by label, exactly like operators.json / costs.json (never edits the immutable
-runs.jsonl).
+programs.jsonl).
 
 Taxonomy (the lever groups):
   Inference-Time          — in-context / decoding / RAG / topology only; no weight change.
@@ -15,7 +15,7 @@ import json, re, pathlib
 
 PKG = pathlib.Path(__file__).resolve().parent.parent
 CONFIGS = PKG / "Sources" / "SplitAgent" / "Configs.swift"
-RUNS = PKG / "results" / "runs.jsonl"
+RUNS = PKG / "results" / "programs.jsonl"
 OUT = PKG / "results" / "types.json"
 
 INFER = "Inference-Time"

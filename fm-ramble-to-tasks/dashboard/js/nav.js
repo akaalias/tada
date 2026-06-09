@@ -4,9 +4,9 @@
 // active item (rendered as a non-link so it stays visible). Change a label, href,
 // or the page set HERE and every page updates — do not hand-write nav anywhere.
 const NAV = [
-  { key: 'dashboard', href: 'index.html',   label: 'Autoresearch log' },
+  { key: 'dashboard', href: 'index.html',   label: 'Run log' },
   { key: 'problem',   href: 'samples.html', label: 'The problem' },
-  { key: 'lineage',   href: 'lineage.html', label: 'Experiment lineage', sub: true },
+  { key: 'lineage',   href: 'lineage.html', label: 'Program lineage', sub: true },
 ];
 
 export function renderNav(current) {

@@ -187,7 +187,7 @@ export function renderPipeD3(spec, el) {
   // main nodes
   const g = svg.append('g').selectAll('g.node').data(nodes).join('g')
     .attr('transform', d => { const p = pos(d.id); return 'translate(' + p.x + ',' + p.y + ')'; });
-  // CONSISTENT colour by EXECUTION TYPE (same across every experiment): the node's
+  // CONSISTENT colour by EXECUTION TYPE (same across every program): the node's
   // border/label/badge colour says WHO runs it; the specific stage kind is the text.
   //   FM = on-device model call (pink) · Swift = deterministic code (orange) · User = input (slate)
   const execType = d => d.model ? ['FM', '#111111']
