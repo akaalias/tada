@@ -129,28 +129,31 @@ while [ "$(count)" -lt "$TARGET" ]; do
 
   AFTER=$(count)
   if [ "$AFTER" -gt "$N" ]; then
-    # A run was logged => the build was green (swift run requires it). Commit progress.
+    # A run was logged => the build was green (swift run requires it).
     NEWLABEL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.label // empty' 2>/dev/null)
     KEPT=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.kept // false' 2>/dev/null)
-    # Stamp the pivot flag onto the experiment's own record so the dashboard chart +
-    # table can mark it (the lineage graph reads it from lineage_meta.json via record_lineage).
+    QUAL=$(tail -1 "$PKG/results/runs.jsonl" | jq -r '.quality // 0' 2>/dev/null)
+
+    # FINALIZE in ONE step so the experiment appears COMPLETE the moment it shows up:
+    # the run row AND every dashboard sidecar (operator, type, cost, pipeline diagram,
+    # two-parent lineage, samples) are produced together, then committed once — instead
+    # of the old "row now, sidecars a couple seconds later" split that flashed "—" cells.
     if [ "$PIVOT" = "1" ] && [ -n "$NEWLABEL" ]; then
+      # stamp pivot onto the run's own record (amber ring + "Pivot" badge)
       tmp=$(jq -c --arg l "$NEWLABEL" 'if .label==$l and (.subset//"full")!="test" then .pivot=true else . end' "$PKG/results/runs.jsonl") \
         && printf '%s\n' "$tmp" > "$PKG/results/runs.jsonl"
     fi
-    git add -A "$PKG" 2>/dev/null
-    git commit -q -m "autoresearch: experiment logged (total=$AFTER, coder \$$cost)" 2>/dev/null || true
-    echo "[autoresearch] OK: new experiment logged (total=$AFTER, coder \$$cost)"
-    # Dashboard sidecars (auto): pipeline diagram, operator tag, cost / type / lineage.
-    python3 "$AR/gen_pipeline.py" "$NEWLABEL" 2>/dev/null || true
     OPF="$PKG/results/operators.json"; [ -f "$OPF" ] || echo '{}' > "$OPF"
     tmp=$(jq --arg l "$NEWLABEL" '.[$l]="agent"' "$OPF" 2>/dev/null) && printf '%s\n' "$tmp" > "$OPF"
+    python3 "$AR/gen_pipeline.py" "$NEWLABEL" 2>/dev/null || true
     python3 "$AR/record_lineage.py" "$NEWLABEL" "$CHAMP" "$PREV" "$PIVOT" 2>/dev/null || true
     python3 "$AR/gen_costs.py" 2>/dev/null || true
     python3 "$AR/gen_types.py" 2>/dev/null || true
     python3 "$AR/build_lineage_auto.py" 2>/dev/null || true
+    python3 "$AR/gen_samples.py" 2>/dev/null || true
     git add -A "$PKG" 2>/dev/null
-    git commit -q -m "autoresearch: dashboard sidecars for $NEWLABEL" 2>/dev/null || true
+    git commit -q -m "autoresearch: experiment $NEWLABEL (q=$QUAL, kept=$KEPT), finalized (coder \$$cost)" 2>/dev/null || true
+    echo "[autoresearch] OK: $NEWLABEL finalized (total=$AFTER, q=$QUAL, kept=$KEPT, coder \$$cost)"
     # Wrapper-run held-out TEST check on a new DEV best — REPORTING ONLY. The coder
     # agent never runs test, never sees these results, and must not tune toward them.
     # This keeps the honesty check automatic without contaminating the optimization.

@@ -31,18 +31,18 @@ list is the correct, expected answer when nothing in the input is actionable.
   ~0.09, so a delta ≤ ~0.09 is noise, not a win.
 
 ## Current best to BUILD ON
-`exp002` — coverage-first (over-generate candidate intentions, then a final list),
-greedy, stock FM — **DEV 0.892 / TEST 0.931** (metric: 0.5·F1 + 0.5·rubric). Build on it.
+None yet — this is a FRESH START (zero experiments logged). The registry has only the
+stock `baseline` (single-shot, greedy). Build the first experiment, `exp001`, from
+`baseline`. Once runs exist, the wrapper names the champion + previous each iteration.
 
-State of the gap:
-- ZERO-TASK is SOLVED (binary, 100%). Do not re-litigate it.
-- F1 / coverage are already strong (~0.96). The dominant, UNSATURATED gap is **PHRASING**
-  — every config scores phrasing 2-3/5: the on-device model emits terse, all-lowercase
-  fragments that drop meaningful detail ("book moving truck" vs gold "Book the moving
-  truck"; "to reschedule"; "with the post office"). The #1 lever is making the output
-  match Sonnet's capitalized, conversational, complete style WITHOUT losing F1 — try
-  prompt wording, the `@Generable` `@Guide` descriptions, or a light deterministic post-pass.
-- Old F1-only scores in program.md are NOT comparable to current ones (the metric changed).
+State of the gap (anticipated — confirm against your own per-case judge notes):
+- ZERO-TASK is the known #1 failure mode: do NOT invent tasks on non-actionable input
+  (venting / musing / retractions); an empty list is the correct answer. A reasoning/gate
+  field that first decides "is anything actionable?" is a strong opening lever.
+- PHRASING is expected to be the load-bearing gap once F1 is decent: match Sonnet's
+  capitalized, conversational, COMPLETE style (keep detail like "with the post office")
+  rather than terse all-lowercase fragments — and crucially WITHOUT losing F1. A decoupled
+  style-only rewrite pass (set membership frozen) is safer than bundling style into extraction.
 
 ## Two parents & pivots (the loop tells you these each iteration)
 Each iteration the wrapper names TWO parents to build on: the CHAMPION (best dev config)
@@ -116,7 +116,8 @@ implement judging or scoring.
 5. **Run** on the full gate (judges via Sonnet + logs automatically; key is in the env):
    `swift run --package-path fm-ramble-to-tasks fmramble evaluate --agent <expNNN> --label <expNNN> --note "<short move>"`
 6. **Compare.** Read the printed QUALITY and the per-case judge notes; compare to the
-   current best (0.727). A delta ≤ ~0.05 is noise.
+   current champion (none yet on the first run; the wrapper names it thereafter). With
+   ~27 dev cases a delta ≤ ~0.04 is noise.
 7. **Log.** Prepend ONE line to `program.md`:
    `- <expNNN> <move> — quality X.XXX (full), <new best | discarded>, <one-line insight>`.
    If it is the new best, say so explicitly.
