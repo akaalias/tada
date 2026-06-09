@@ -45,6 +45,19 @@ public enum Configs {
         // stays identical to the reasoned base by construction, so F1 is protected while
         // prog003's completeness/phrasing wins survive. Greedy.
         "prog004": SplitConfig(topology: .singleShotReasonedRestyleAligned, sampling: .greedy),
+        // prog005: combine the elite (prog004 = reasoned extract + evidence-first restyle +
+        // per-slot alignment guard) with what prog004's OWN log named as the next lever. Its two
+        // residuals — recall losses (interleaved_party f1 0.50, long_monday missed the insurance
+        // call, multi_errands missed the quarterly report, interleaved_report missed the figure
+        // check) AND phrasing-completeness losses (the restyle echoes terse fragments on SHORT
+        // tasks because the base handed it nothing fuller) — both trace to the TERSE,
+        // under-extracting singleShotReasoned base. prog005 swaps that base for the COVERAGE base
+        // (singleShotCoverage: same zero-task analysis gate, plus an EXHAUSTIVE candidate sweep
+        // that lists every distinct intention including buried/interleaved ones, then merges
+        // dups) and keeps prog004's aligned evidence-first restyle finisher EXACTLY. The fuller
+        // base should lift recall directly and give the restyle richer material to style; the
+        // 1:1 + token-subset + alignment guards still protect set membership/phrasing. Greedy.
+        "prog005": SplitConfig(topology: .singleShotCoverageRestyleAligned, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

@@ -19,6 +19,8 @@ public struct ConfiguredAgent: Sendable {
             return try await restyleFinishGrounded(input, base: singleShotReasoned(input))
         case .singleShotReasonedRestyleAligned:
             return try await restyleFinishAligned(input, base: singleShotReasoned(input))
+        case .singleShotCoverageRestyleAligned:
+            return try await restyleFinishAligned(input, base: singleShotCoverage(input))
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
