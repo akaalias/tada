@@ -13,6 +13,8 @@ public struct ConfiguredAgent: Sendable {
         switch config.topology {
         case .singleShot: return try await singleShot(input)
         case .singleShotReasoned: return try await singleShotReasoned(input)
+        case .singleShotReasonedRestyle:
+            return try await restyleFinish(input, base: singleShotReasoned(input), downcaseShouts: true, instructions: Prompts.restyleComplete)
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
@@ -214,7 +216,18 @@ public struct ConfiguredAgent: Sendable {
     /// proper-noun casing from the input. Set membership is UNTOUCHED (deterministic string
     /// normalization on the already-chosen task), so F1 cannot move — only phrasing can.
     private func singleShotCoverageRestyleVerbatim(_ input: String, downcaseShouts: Bool = false, instructions: String = Prompts.restyleVerbatim) async throws -> RambleResult {
-        let base = try await singleShotCoverage(input)
+        return try await restyleFinish(input, base: singleShotCoverage(input), downcaseShouts: downcaseShouts, instructions: instructions)
+    }
+
+    /// Shared decoupled style-only finisher (used by both the coverage- and the
+    /// reasoned-based restyle topologies). Takes an ALREADY-extracted base list and
+    /// rewrites each task in place into Sonnet's capitalized, complete, conversational
+    /// style — restoring detail VERBATIM from the input — under a strict 1:1 index map,
+    /// a token-subset anti-hallucination guard, optional SHOUTING down-case, and
+    /// deterministic proper-noun recasing. Set membership is identical to `base` by
+    /// construction (no add/drop/split/merge), so F1 cannot move — only phrasing can.
+    /// Empty base -> returned unchanged (protects the solved zero-task gate).
+    private func restyleFinish(_ input: String, base: RambleResult, downcaseShouts: Bool, instructions: String) async throws -> RambleResult {
         guard !base.tasks.isEmpty else { return base }
 
         let nouns = properNouns(in: input)

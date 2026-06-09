@@ -1,0 +1,37 @@
+{
+  "summary": "Reasoned extract + verbatim-detail restyle finisher",
+  "hypothesis": "Pairing the proven reasoned extractor with a decoupled F1-safe restyle pass (using verbatim input words + completeness forcing) will improve phrasing scores without regressing F1, because the restyle operates on an already-correct task set and the token-subset guard prevents hallucination.",
+  "technique": "A two-call pipeline: call 1 runs the reasoning-first gated extractor (`singleShotReasoned`); call 2 is a decoupled style-only rewrite (`restyleComplete` prompt) that re-attaches dropped detail using the user's exact words, guarded by a deterministic 1:1 index map, a token-subset anti-hallucination check, SHOUTING down-caser, and proper-noun recaser \u2014 so set membership (F1) is frozen by construction.",
+  "result": "Fitness 0.710 on dev-27, new best (+0.019 vs prior). Phrasing improved 2\u21923, pairwise wins/ties/losses shifted from 5T/17L to 8T/13L, F1 flat at 0.877 (set membership preserved by the 1:1 guard as designed). The token-subset guard still over-suppresses fuller restyles (drops detail like \"with the post office\"), so completeness under-fires; one restyle also misattributed detail to the wrong task (F1 unaffected). Hypothesis partially confirmed: phrasing improved but the guard remains the binding constraint.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form brain-dump ramble"
+    },
+    {
+      "kind": "generate",
+      "text": "Reasoned extraction with zero-task gate",
+      "knobs": {
+        "sampling": "greedy"
+      },
+      "prompt": "System:\nYou take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nHere is what the user brain-dumped:\n\n\"<input>\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none)."
+    },
+    {
+      "kind": "critique",
+      "text": "Verbatim-detail restyle with completeness forcing",
+      "knobs": {
+        "sampling": "greedy"
+      },
+      "prompt": "System:\nYou are a copy-editor for a to-do list. You are given a user's original free-form brain-dump\nand a list of tasks already extracted from it. The tasks were captured as terse, often all-\nlowercase fragments that DROPPED meaningful detail. Your ONLY job is to REWRITE each task so it\nreads the way a thoughtful human assistant would write a to-do \u2014 without changing WHICH tasks\nare on the list.\n\nFor each task, in the same order, produce exactly one rewritten task:\n- Start with a CAPITAL letter and an action verb.\n- Write a COMPLETE, natural one-liner \u2014 never an all-lowercase fragment, never a bare phrase.\n- RE-ATTACH the meaningful detail the terse note dropped: the DEADLINE, the SUBJECT the task is\n  about, the RECIPIENT it is for, the LOCATION, and the PURPOSE. Find that detail in the original\n  brain-dump and copy it back in.\n- DO THIS EVEN FOR THE SHORTEST TASKS. A task captured in only one or two words has almost\n  certainly dropped detail the user actually stated. Before you accept a short task as-is, search\n  the WHOLE brain-dump for what that specific task is about, who it is for, when it is due, and\n  where \u2014 and copy those exact words back into the task.\n- CRITICAL: when you re-attach detail, use the user's OWN EXACT WORDS for it. Do NOT paraphrase\n  the detail and do NOT introduce any word that is not already in the brain-dump. If a detail is\n  not stated in the input, leave it out \u2014 never guess a name, time, place, or reason.\n- Attach only detail that is SPECIFIC to that one task. Do NOT append blanket context that merely\n  restates the brain-dump's overall topic (a general theme or reason that applies to every task);\n  that adds redundant noise, not meaningful detail.\n- DROP only true filler: vague timing musings (\"sometime\", \"at some point\", \"one of these days\").\n\nHARD RULES \u2014 these protect the list:\n- Return EXACTLY one rewritten task for each input task, in the SAME order.\n- NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.\n- You are only changing wording, not which tasks exist.\n- Do NOT use emojis. Keep text clean and professional.\n\nUser:\nThe user's original brain-dump:\n\n\"<input>\"\n\nTasks extracted from it (rewrite each one, same order, same set):\n<numbered task list>\n\nReturn the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that re-attaches the user's own words for any deadline, subject, recipient, or location that the terse task dropped."
+    },
+    {
+      "kind": "post",
+      "text": "1:1 guard, downcase-shouts, recase proper nouns"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N styled actionable tasks"
+    }
+  ],
+  "label": "prog002"
+}
