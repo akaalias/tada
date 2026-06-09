@@ -1,0 +1,252 @@
+[
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "input" : "I've been thinking it would be nice to be the kind of person who journals more, you know, more reflective.",
+    "id" : "bait_journal",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 0,
+      "zeroTaskCorrect" : true
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "input" : "Wouldn't it be cool to live by the ocean someday and just surf every morning before work? A person can dream I guess.",
+    "id" : "bait_ocean",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 0,
+      "zeroTaskCorrect" : true
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "input" : "I keep daydreaming about maybe learning the piano one day, and being someone who reads way more novels. Would just be nice to feel a bit more cultured, you know?",
+    "id" : "bait_someday",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 0,
+      "zeroTaskCorrect" : true
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 5,
+      "notes" : "SET B includes watering the plants, which the user explicitly dismissed as \"not really a task,\" hurting faithfulness and actionability. More critically, every item is a terse all-lowercase fragment that drops meaningful detail (e.g., \"fill school form\" loses \"return by Wednesday\"; \"send photos\" loses \"to sister\"; \"book dishwasher repair\" loses the repair-booking framing), making the phrasing score very low compared to SET A's complete, properly capitalized sentences.",
+      "rubric" : {
+        "actionability" : 4,
+        "faithfulness" : 4,
+        "coverage" : 4,
+        "nonRedundancy" : 5,
+        "phrasing" : 1,
+        "atomicity" : 5
+      },
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "book dishwasher repair",
+        "fill school form",
+        "water plants",
+        "order dog food",
+        "send photos",
+        "pay electricity bill"
+      ]
+    },
+    "input" : "Okay, household stuff, let me get it out of my head. The dishwasher has been making that weird noise again so I need to book a repair. The kids' school sent a form I have to fill out and send back by Wednesday. The houseplants are looking sad, I should water them, although honestly that is kind of a daily thing not really a task. I keep meaning to finally sort through the garage but that is a someday project, not now. We are low on dog food so I need to order more. And I promised my sister I would send her those photos from the trip, I really have to do that. The living room could use a fresh coat of paint one day, would be nice. Let me also remember to pay the electricity bill, it is due at the end of the month. I think that covers the main things rattling around up there.",
+    "id" : "long_household",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 5,
+      "precision" : 0.8333333333333334,
+      "goldEmpty" : false,
+      "goldCount" : 5,
+      "f1" : 0.9090909090909091,
+      "recall" : 1,
+      "predCount" : 6,
+      "zeroTaskCorrect" : false
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 5,
+      "notes" : "SET B matches all five intentions but strips nearly all meaningful detail — \"book flights\" loses \"to Portugal,\" \"find accommodation\" loses \"Airbnb in Lisbon for the first few nights,\" and \"make travel list\" loses \"towns to visit in Portugal.\" Every item is a terse, all-lowercase fragment that drops the context the user explicitly provided, making them far less useful and actionable than SET A's properly capitalized, detail-rich phrasing.",
+      "rubric" : {
+        "actionability" : 4,
+        "faithfulness" : 5,
+        "coverage" : 4,
+        "nonRedundancy" : 5,
+        "phrasing" : 1,
+        "atomicity" : 5
+      },
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "book flights",
+        "find accommodation",
+        "make travel list",
+        "ask neighbor to water plants",
+        "set out of office"
+      ]
+    },
+    "input" : "So we're finally doing the Portugal trip in the fall and there's a bunch to sort out. First I need to book the flights, prices keep creeping up so the sooner the better. We also need to find a place to stay, probably an Airbnb in Lisbon for the first few nights. I'm so excited honestly, been wanting to go for years. Let me think, I need to renew my, oh wait no, my passport is actually fine, scratch that. I should make a list of the towns we want to visit, and I need to ask my neighbor if she can water the plants while we're away. Oh and I have to set an out of office for work before we leave. The food there is supposed to be incredible. I think that's the main stuff for now.",
+    "id" : "long_portugal",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 5,
+      "precision" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 5,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 5,
+      "zeroTaskCorrect" : false
+    }
+  },
+  {
+    "verdict" : {
+      "matched" : 3,
+      "notes" : "SET B drops meaningful detail — \"2024\" from the tax document and \"the\" before \"trash\" — making the phrasing slightly terse and less faithful to the user's exact wording compared to SET A's more complete, natural phrasing.",
+      "rubric" : {
+        "actionability" : 5,
+        "faithfulness" : 5,
+        "coverage" : 5,
+        "nonRedundancy" : 5,
+        "phrasing" : 3,
+        "atomicity" : 5
+      },
+      "pairwise" : "goldBetter"
+    },
+    "candidate" : {
+      "tasks" : [
+        "Review tax document with Franziska",
+        "Talk to Franziska about August",
+        "Bring out trash"
+      ]
+    },
+    "input" : "Okay so yeah let me think. I want to review the 2024 tax document with Franziska. I got to talk to her about August. And I should probably bring out the trash.",
+    "id" : "real_franziska",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 3,
+      "precision" : 1,
+      "goldEmpty" : false,
+      "goldCount" : 3,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 3,
+      "zeroTaskCorrect" : false
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "input" : "Honestly I'm just so frustrated with my coworker right now, he never replies to anything and it's driving me up the wall. Needed to get that off my chest.",
+    "id" : "zero_frustrated",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 0,
+      "zeroTaskCorrect" : true
+    }
+  },
+  {
+    "candidate" : {
+      "tasks" : [
+
+      ]
+    },
+    "input" : "I keep thinking about how fast this year has gone by. Feels like just yesterday it was spring. Time is strange, huh.",
+    "id" : "zero_reflect",
+    "spec" : {
+      "passed" : true,
+      "violations" : [
+
+      ]
+    },
+    "match" : {
+      "matched" : 0,
+      "precision" : 1,
+      "goldEmpty" : true,
+      "goldCount" : 0,
+      "f1" : 1,
+      "recall" : 1,
+      "predCount" : 0,
+      "zeroTaskCorrect" : true
+    }
+  }
+]
