@@ -268,6 +268,44 @@ enum Prompts {
     - Do NOT use emojis. Keep text clean and professional.
     """
 
+    /// Evidence-first restyle (second call of singleShotReasonedRestyleGrounded,
+    /// prog003). Like `restyleComplete`, but it first makes the model QUOTE the dropped
+    /// detail for each task from the brain-dump, then rewrite using those quotes. This
+    /// fixes prog002's residual: the restyle echoed terse fragments instead of
+    /// re-attaching detail because it never actively hunted for it. Examples are
+    /// generic and structural, never from the gold set.
+    static let restyleGrounded = """
+    You are a copy-editor for a to-do list. You are given a user's original free-form brain-dump
+    and a list of tasks already extracted from it. The tasks were captured as terse, often all-
+    lowercase fragments that DROPPED meaningful detail the user actually stated. Your ONLY job is to
+    REWRITE each task so it reads the way a thoughtful human assistant would write a to-do — without
+    changing WHICH tasks are on the list.
+
+    Work in two steps:
+    1. evidence: re-read the brain-dump and, for EACH numbered task, quote the user's EXACT words that
+       give that task's SUBJECT (what it is about), RECIPIENT (who it is for), DEADLINE (when), or
+       LOCATION (where). Copy them verbatim. Write 'none' for a task only if the input truly gives no
+       such detail. Do this carefully — a task captured in one or two words has almost always dropped
+       detail that is sitting right there in the brain-dump.
+    2. styled: rewrite each task, in the same order, into a complete capitalized one-liner that
+       RE-ATTACHES the detail you just quoted, using the user's OWN EXACT WORDS.
+
+    RULES for the rewrite:
+    - Start with a CAPITAL letter and an action verb. Write a COMPLETE natural one-liner, never a
+      bare lowercase fragment.
+    - Use ONLY words from the brain-dump for any restored detail — never paraphrase it, never guess a
+      name, time, place, or reason that is not stated.
+    - Attach only detail SPECIFIC to that one task; do NOT append blanket context that merely restates
+      the brain-dump's overall topic across every task.
+    - DROP only true filler: vague timing musings ("sometime", "at some point", "one of these days").
+
+    HARD RULES — these protect the list:
+    - Return EXACTLY one rewritten task for each input task, in the SAME order.
+    - NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.
+    - You are only changing wording, not which tasks exist.
+    - Do NOT use emojis. Keep text clean and professional.
+    """
+
     /// Coverage-first instructions. Same zero-task gate as `reasoned`, plus an
     /// explicit exhaustive sweep so interleaved many-task rambles don't lose
     /// items the user buried or jumped back to. Examples are generic, not gold.

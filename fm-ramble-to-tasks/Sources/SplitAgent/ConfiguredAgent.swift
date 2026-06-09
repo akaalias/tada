@@ -15,6 +15,8 @@ public struct ConfiguredAgent: Sendable {
         case .singleShotReasoned: return try await singleShotReasoned(input)
         case .singleShotReasonedRestyle:
             return try await restyleFinish(input, base: singleShotReasoned(input), downcaseShouts: true, instructions: Prompts.restyleComplete)
+        case .singleShotReasonedRestyleGrounded:
+            return try await restyleFinishGrounded(input, base: singleShotReasoned(input))
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
@@ -253,6 +255,55 @@ public struct ConfiguredAgent: Sendable {
         let r = try await session.respond(
             to: prompt,
             generating: FMRambleRestyleVerbatim.self,
+            options: config.options()
+        )
+        let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        // 1:1 mapping guard: any count mismatch -> keep the base set (recased/capitalized).
+        guard styled.count == base.tasks.count else {
+            return RambleResult(tasks: base.tasks.map(finish))
+        }
+        let inputVocab = vocab(input)
+        let merged = zip(base.tasks, styled).map { original, restyled -> String in
+            // Accept the restyle ONLY if it adds no new content word (anti-hallucination).
+            let allowed = inputVocab.union(vocab(original))
+            let chosen = (!restyled.isEmpty && contentTokensSubset(restyled, of: allowed)) ? restyled : original
+            return finish(chosen)
+        }
+        return RambleResult(tasks: merged)
+    }
+
+    /// prog003: prog002's restyle finisher, but driven by an EVIDENCE-FIRST schema/prompt.
+    /// Identical pipeline and guards to `restyleFinish(downcaseShouts: true)` — the ONLY
+    /// difference is the restyle call first QUOTES each task's dropped detail (subject /
+    /// recipient / deadline / location) from the input, then rewrites using those quotes.
+    /// This attacks prog002's residual: the restyle echoed terse fragments instead of
+    /// re-attaching detail because it never actively hunted for it. The 1:1 index map +
+    /// token-subset anti-hallucination guard are unchanged, so set membership is identical
+    /// to the reasoned base by construction — F1 cannot move, only phrasing/pairwise.
+    private func restyleFinishGrounded(_ input: String, base: RambleResult) async throws -> RambleResult {
+        guard !base.tasks.isEmpty else { return base }
+
+        let nouns = properNouns(in: input)
+        func finish(_ s: String) -> String {
+            recaseProperNouns(capitalizeFirst(downcaseShouting(s)), using: nouns)
+        }
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyleGrounded }
+        let prompt = """
+        The user's original brain-dump:
+
+        "\(input)"
+
+        Tasks extracted from it (rewrite each one, same order, same set):
+        \(listed)
+
+        First do the evidence step: for each numbered task, quote the user's exact words for its subject, recipient, deadline, or location (or 'none'). Then return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that re-attaches that quoted detail using the user's own words.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleRestyleGrounded.self,
             options: config.options()
         )
         let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

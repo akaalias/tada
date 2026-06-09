@@ -1,0 +1,37 @@
+{
+  "summary": "Evidence-first quote-then-restyle over reasoned base",
+  "hypothesis": "Forcing the restyle pass to first quote each task's dropped detail verbatim from the brain-dump before rewriting will stop it echoing terse fragments and instead consistently restore meaningful specifics (subject, recipient, deadline, location).",
+  "technique": "A two-call pipeline: call 1 runs the reasoned extractor (greedy, schema-gated on hasActionableTasks); call 2 runs a novel evidence-first restyle that requires the model to quote exact source words per task before rewriting, enforced by a 1:1 index map and a per-slot token-subset anti-hallucination guard with deterministic shout-downcase and proper-noun recasing.",
+  "result": "Fitness 0.702 on dev-27 (W/T/L vs Sonnet = 0/12/10), discarded (\u22120.008 vs prior best; F1 regressed 0.877\u21920.842). The evidence step did lift the phrasing gap (phrasing 3\u21924, pairwise 8T/13L\u219212T/10L) but made restyling bolder, and on multi-task lists it scrambled slot content \u2014 collapsing distinct tasks into one compound string and duplicating it across slots \u2014 because the token-subset guard blocks hallucinated words but not cross-slot merge/duplication.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "Free-form user brain-dump ramble"
+    },
+    {
+      "kind": "generate",
+      "text": "Reasoned extract: gate + sweep tasks",
+      "prompt": "You take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\n---\nUser message template:\nHere is what the user brain-dumped:\n\n\"{{input}}\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none).",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "critique",
+      "text": "Evidence-first quote-then-restyle each task",
+      "prompt": "You are a copy-editor for a to-do list. You are given a user's original free-form brain-dump\nand a list of tasks already extracted from it. The tasks were captured as terse, often all-\nlowercase fragments that DROPPED meaningful detail the user actually stated. Your ONLY job is to\nREWRITE each task so it reads the way a thoughtful human assistant would write a to-do \u2014 without\nchanging WHICH tasks are on the list.\n\nWork in two steps:\n1. evidence: re-read the brain-dump and, for EACH numbered task, quote the user's EXACT words that\n   give that task's SUBJECT (what it is about), RECIPIENT (who it is for), DEADLINE (when), or\n   LOCATION (where). Copy them verbatim. Write 'none' for a task only if the input truly gives no\n   such detail. Do this carefully \u2014 a task captured in one or two words has almost always dropped\n   detail that is sitting right there in the brain-dump.\n2. styled: rewrite each task, in the same order, into a complete capitalized one-liner that\n   RE-ATTACHES the detail you just quoted, using the user's OWN EXACT WORDS.\n\nRULES for the rewrite:\n- Start with a CAPITAL letter and an action verb. Write a COMPLETE natural one-liner, never a\n  bare lowercase fragment.\n- Use ONLY words from the brain-dump for any restored detail \u2014 never paraphrase it, never guess a\n  name, time, place, or reason that is not stated.\n- Attach only detail SPECIFIC to that one task; do NOT append blanket context that merely restates\n  the brain-dump's overall topic across every task.\n- DROP only true filler: vague timing musings (\"sometime\", \"at some point\", \"one of these days\").\n\nHARD RULES \u2014 these protect the list:\n- Return EXACTLY one rewritten task for each input task, in the SAME order.\n- NEVER add a new task, drop a task, split one task into two, or merge two tasks into one.\n- You are only changing wording, not which tasks exist.\n- Do NOT use emojis. Keep text clean and professional.\n\n---\nUser message template:\nThe user's original brain-dump:\n\n\"{{input}}\"\n\nTasks extracted from it (rewrite each one, same order, same set):\n{{listed}}\n\nFirst do the evidence step: for each numbered task, quote the user's exact words for its subject, recipient, deadline, or location (or 'none'). Then return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that re-attaches that quoted detail using the user's own words.",
+      "knobs": {
+        "sampling": "greedy"
+      }
+    },
+    {
+      "kind": "post",
+      "text": "1:1 guard, shout-downcase, proper-noun recase"
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N styled actionable tasks"
+    }
+  ],
+  "label": "prog003"
+}

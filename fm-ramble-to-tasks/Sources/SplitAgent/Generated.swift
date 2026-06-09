@@ -128,6 +128,24 @@ struct FMRambleRestyleVerbatim {
     var styled: [String]
 }
 
+/// Grounded restyle pass (prog003). Same 1:1 style-only contract as
+/// FMRambleRestyleVerbatim, but adds an EVIDENCE step BEFORE rewriting: the model
+/// re-reads the brain-dump and, for each task, quotes the user's exact words giving
+/// that task's subject / recipient / deadline / location. prog002's completeness
+/// under-fired because the on-device model, under conservative "don't invent"
+/// framing, timidly echoed the terse base fragment instead of hunting for the dropped
+/// detail. Forcing it to FIND and quote that detail first makes the rewrite actually
+/// re-attach it. The deterministic 1:1 + token-subset guard is unchanged, so set
+/// membership is identical to the base by construction — F1 cannot move, only phrasing.
+@Generable
+struct FMRambleRestyleGrounded {
+    @Guide(description: "Evidence scratchpad. Re-read the brain-dump. For EACH numbered task, on its own line write the task number then the user's EXACT words that give that task's SUBJECT (what it is about), RECIPIENT (who it is for), DEADLINE (when), or LOCATION (where) — copy them verbatim from the brain-dump. If the input gives no such detail for a task, write 'none'. This is only your working notes for the rewrite that follows.")
+    var evidence: String
+
+    @Guide(description: "Rewrite each task from the given list, IN THE SAME ORDER, returning EXACTLY one rewritten task per input task — never add, drop, split, merge, or reorder. For each task: start with a CAPITAL letter and an action verb, write a COMPLETE natural one-liner (never an all-lowercase fragment), and RE-ATTACH the detail you quoted in the evidence step using the user's OWN EXACT WORDS — never paraphrase it and never introduce a word that is not in the brain-dump. If the evidence for a task was 'none', simply capitalize and complete it. Drop only true filler ('sometime', 'at some point'). Around 4-9 words.")
+    var styled: [String]
+}
+
 /// Coverage-first + PHRASING variant (exp007). Identical pipeline to
 /// FMRambleSplitCoverage (analysis gate -> exhaustive candidate sweep -> merged
 /// final list), but the final `tasks` @Guide carries an explicit STYLE contract so
