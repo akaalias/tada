@@ -1,0 +1,25 @@
+{
+  "summary": "Reasoning-first single-shot with hasActionableTasks gate",
+  "hypothesis": "Forcing the model to reason about actionability before listing tasks \u2014 and gating the output on a boolean hasActionableTasks flag \u2014 will eliminate false task invention on venting/musing inputs while preserving recall on genuinely actionable ones.",
+  "technique": "A single greedy on-device FM call using a reasoning-first @Generable schema (analysis \u2192 hasActionableTasks \u2192 tasks) that gates the task list on a boolean, so the model must explicitly decide there is something actionable before it can produce any tasks.",
+  "result": "Fitness 0.691 on dev-27 (W/T/L vs Sonnet = 0/5/17), establishing the first best. The zero-task gate worked perfectly (specPass 100%), and precision was strong (0.926), but rubric coverage scored 4/5 and phrasing 2/5 \u2014 terse all-lowercase fragments dropping detail and missed buried tasks in interleaved rambles remain the confirmed gaps. Hypothesis confirmed for the gate; recall and phrasing gaps identified as next targets.",
+  "stages": [
+    {
+      "kind": "input",
+      "text": "User's free-form brain-dump ramble"
+    },
+    {
+      "kind": "generate",
+      "text": "Reasoned extract: analysis \u2192 gate \u2192 tasks",
+      "knobs": {
+        "sampling": "greedy"
+      },
+      "prompt": "You take a free-form brain-dump from the user and extract the distinct, actionable tasks in it.\n\nThe input is stream-of-consciousness text (often dictated). It may contain ZERO tasks, ONE task,\nor SEVERAL distinct tasks (sometimes interleaved, the user jumping back to an earlier thought).\n\nWork in this order:\n1. analysis: name anything that is NOT a task \u2014 venting/emotion, idle musing, vague wishes or\n   aspirations, and anything the user retracted \u2014 then say whether a real action remains.\n2. hasActionableTasks: true only if the user actually intends to DO something concrete.\n3. tasks: the actionable one-liners (empty if hasActionableTasks is false).\n\nA vague wish or feeling is NOT a task. \"It would be nice to journal more\", \"I keep daydreaming\nabout learning piano someday\", \"ugh, work is exhausting\" \u2014 these contain NO tasks; return empty.\nIf the user says \"scratch that\", \"never mind\", or \"actually no\" about something, do NOT include it.\n\nRULES:\n- Each task is a short, actionable one-liner in the user's own terms (around 4-9 words).\n- ONE intention = ONE task. If the user mentions the same thing more than once, output it ONCE.\n- Only extract things the user actually wants to DO. NEVER invent a task.\n- Do NOT use emojis. Keep text clean and professional.\n\n---\n\nHere is what the user brain-dumped:\n\n\"{{input}}\"\n\nFirst analyze what is and isn't actionable, decide whether any real task remains, then list the tasks (empty if none)."
+    },
+    {
+      "kind": "output",
+      "text": "Final 0..N actionable task list"
+    }
+  ],
+  "label": "prog001"
+}

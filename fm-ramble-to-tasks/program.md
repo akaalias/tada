@@ -17,3 +17,4 @@ The rubric includes PHRASING. Gold: 35 cases (27 dev / 8 test).
   complete style (keep detail) rather than terse all-lowercase fragments — without losing F1.
 
 ## Log
+- prog001 reasoning-first zero-task gate (singleShotReasoned, greedy) from baseline — fitness 0.691 (full), NEW BEST (first program), zero-task gate works (100% correct empties, precision 0.926); confirmed gaps now = PHRASING (2/5, terse all-lowercase fragments dropping detail like "with the post office"/"before Thursday") and recall on interleaved many-task rambles (missed buried prerequisites). Pairwise 0 win / 5 tie / 17 loss.
