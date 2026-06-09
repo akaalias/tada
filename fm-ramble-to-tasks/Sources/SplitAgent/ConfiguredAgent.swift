@@ -17,6 +17,8 @@ public struct ConfiguredAgent: Sendable {
             return try await restyleFinish(input, base: singleShotReasoned(input), downcaseShouts: true, instructions: Prompts.restyleComplete)
         case .singleShotReasonedRestyleGrounded:
             return try await restyleFinishGrounded(input, base: singleShotReasoned(input))
+        case .singleShotReasonedRestyleAligned:
+            return try await restyleFinishAligned(input, base: singleShotReasoned(input))
         case .singleShotCoverage: return try await singleShotCoverage(input)
         case .singleShotCoveragePhrased: return try await singleShotCoveragePhrased(input)
         case .singleShotCoverageRestyle: return try await singleShotCoverageRestyle(input)
@@ -319,6 +321,94 @@ public struct ConfiguredAgent: Sendable {
             return finish(chosen)
         }
         return RambleResult(tasks: merged)
+    }
+
+    /// prog004: prog003's EVIDENCE-FIRST restyle (same grounded prompt/schema that boldly
+    /// re-attaches detail and lifted phrasing 3->4 / pairwise 8T/13L -> 12T/10L), but its
+    /// only failure — on MULTI-task lists the bolder restyle SCRAMBLED slots, collapsing
+    /// distinct tasks into one compound string and duplicating it across slots (multi_car,
+    /// multi_errands, interleaved_*), which the token-subset guard could NOT catch because
+    /// every word in a compounded slot is still input-present — is closed by a per-slot
+    /// ALIGNMENT guard added on top of the unchanged token-subset guard:
+    ///   (a) ANCHOR: a styled slot must still carry its OWN base task's content (>= half of
+    ///       base_i's content stems), so it cannot drift onto a different task.
+    ///   (b) NO CROSS-SLOT LEAKAGE: a styled slot is rejected if it contains a content stem
+    ///       that is UNIQUE to a DIFFERENT base task (present in some base_j, j!=i, absent
+    ///       from base_i) — this is exactly what a compound/merged or duplicated slot does.
+    /// A rejected slot falls back to its own (finished) base task, so set membership stays
+    /// identical to the reasoned base by construction — F1 cannot regress; only phrasing
+    /// can move, now WITHOUT the multi-task scramble. Single-task lists (othersUnique empty,
+    /// own anchor trivially kept) are unaffected, preserving prog003's completeness wins.
+    private func restyleFinishAligned(_ input: String, base: RambleResult) async throws -> RambleResult {
+        guard !base.tasks.isEmpty else { return base }
+
+        let nouns = properNouns(in: input)
+        func finish(_ s: String) -> String {
+            recaseProperNouns(capitalizeFirst(downcaseShouting(s)), using: nouns)
+        }
+        let listed = base.tasks.enumerated()
+            .map { "\($0.offset + 1). \($0.element)" }
+            .joined(separator: "\n")
+        let session = LanguageModelSession(model: try resolveModel()) { Prompts.restyleGrounded }
+        let prompt = """
+        The user's original brain-dump:
+
+        "\(input)"
+
+        Tasks extracted from it (rewrite each one, same order, same set):
+        \(listed)
+
+        First do the evidence step: for each numbered task, quote the user's exact words for its subject, recipient, deadline, or location (or 'none'). Then return the styled list: exactly one rewritten task per task above, in the same order, each a complete capitalized one-liner that re-attaches that quoted detail using the user's own words.
+        """
+        let r = try await session.respond(
+            to: prompt,
+            generating: FMRambleRestyleGrounded.self,
+            options: config.options()
+        )
+        let styled = r.content.styled.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        // 1:1 mapping guard: any count mismatch -> keep the base set (recased/capitalized).
+        guard styled.count == base.tasks.count else {
+            return RambleResult(tasks: base.tasks.map(finish))
+        }
+        let inputVocab = vocab(input)
+        // Per-slot content stems of every base task (for the alignment guard).
+        let baseStems = base.tasks.map(contentStems)
+        let merged = base.tasks.indices.map { i -> String in
+            let original = base.tasks[i]
+            let restyled = styled[i]
+            // Existing anti-hallucination guard: no NEW content word vs (input ∪ this task).
+            let allowed = inputVocab.union(vocab(original))
+            let noHallucination = !restyled.isEmpty && contentTokensSubset(restyled, of: allowed)
+            // NEW alignment guard: stays anchored to its own task, no cross-slot leakage.
+            let stays = noHallucination && slotAligned(restyled, ownIndex: i, baseStems: baseStems)
+            return finish(stays ? restyled : original)
+        }
+        return RambleResult(tasks: merged)
+    }
+
+    /// Content stems of a phrase: tokens that are not function/glue words, stemmed.
+    private func contentStems(_ s: String) -> Set<String> {
+        Set(tokenize(s).filter { !Self.freeWords.contains($0) }.map(stem))
+    }
+
+    /// prog004 per-slot ALIGNMENT guard. A styled slot is accepted only if it (a) still
+    /// carries its own base task's content (>= half of that task's content stems, min 1),
+    /// and (b) introduces NO content stem that is unique to a DIFFERENT base task. (b) is
+    /// what catches a compound/merged slot or a slot duplicated from another task: those
+    /// pull in content stems that belong to base_j, j!=i, and are absent from base_i.
+    private func slotAligned(_ styled: String, ownIndex i: Int, baseStems: [Set<String>]) -> Bool {
+        let own = baseStems[i]
+        let styledStems = contentStems(styled)
+        // (a) anchor: keep enough of this task's own content.
+        if !own.isEmpty {
+            let kept = own.intersection(styledStems).count
+            if kept < max(1, own.count / 2) { return false }
+        }
+        // (b) no cross-slot leakage: no content stem unique to another base task.
+        var othersUnique = Set<String>()
+        for (j, stems) in baseStems.enumerated() where j != i { othersUnique.formUnion(stems) }
+        othersUnique.subtract(own)
+        return styledStems.isDisjoint(with: othersUnique)
     }
 
     /// Lowercase any all-caps alphabetic run of length >= 2 ("FINISH", "THE", "DRAFT")

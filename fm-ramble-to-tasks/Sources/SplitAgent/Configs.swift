@@ -32,6 +32,19 @@ public enum Configs {
         // 1:1 + token-subset guard is unchanged -> set membership identical to prog002,
         // F1 cannot regress; only phrasing/pairwise can move. Greedy.
         "prog003": SplitConfig(topology: .singleShotReasonedRestyleGrounded, sampling: .greedy),
+        // prog004: combine the elite (prog002 = reasoned extract + F1-safe restyle) with what
+        // the inspiration (prog003) learned. prog003's EVIDENCE-FIRST restyle lifted the target
+        // phrasing gap (phrasing 3->4, pairwise 8T/13L -> 12T/10L) but its only failure was a
+        // MULTI-task scramble: the bolder restyle collapsed distinct tasks into one compound
+        // string and duplicated it across slots (multi_car/errands, interleaved_*), which the
+        // token-subset guard can't catch (every word is still input-present), so F1 fell
+        // 0.877->0.842. prog004 keeps prog003's grounded restyle EXACTLY and adds a per-slot
+        // ALIGNMENT guard: each styled slot must stay anchored to its OWN base task (>= half its
+        // content stems) and introduce no content stem unique to a DIFFERENT base task —
+        // rejecting cross-slot merge/dup and falling back to that slot's base. Set membership
+        // stays identical to the reasoned base by construction, so F1 is protected while
+        // prog003's completeness/phrasing wins survive. Greedy.
+        "prog004": SplitConfig(topology: .singleShotReasonedRestyleAligned, sampling: .greedy),
     ]
 
     public static func named(_ name: String) -> SplitConfig? { registry[name] }

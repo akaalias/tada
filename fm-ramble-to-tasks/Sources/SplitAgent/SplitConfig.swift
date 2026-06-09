@@ -9,6 +9,7 @@ public struct SplitConfig: Sendable {
         case singleShotReasoned  // 1 call: reasoning-first gated schema -> 0..N tasks
         case singleShotReasonedRestyle // prog002: elite reasoned extract + decoupled F1-safe verbatim restyle finisher
         case singleShotReasonedRestyleGrounded // prog003: prog002 + an evidence-first restyle (quote detail before rewriting)
+        case singleShotReasonedRestyleAligned // prog004: prog003's evidence-first restyle + per-slot ALIGNMENT guard (anchor to own base task, reject cross-slot leakage/dup)
         case singleShotCoverage  // 1 call: reasoned gate + exhaustive candidate sweep -> 0..N tasks
         case singleShotCoveragePhrased // singleShotCoverage + explicit phrasing/style contract (exp007)
         case singleShotCoverageRestyle // exp002 base + a DECOUPLED 1:1 style-only rewrite pass (exp008)
