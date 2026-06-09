@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The solution — Ramble → Tasks</title>
+<meta name="description" content="Our approach: an LLM-guided reflective evolutionary search (the FunSearch / AlphaEvolve / GEPA lineage) that tunes a small on-device model to match Sonnet on ramble→tasks — the vocabulary and the loop itself, in plain terms.">
+<link rel="stylesheet" href="tufte.css">
+<link rel="stylesheet" href="dashboard.css">
+<script type="module" src="js/nav.js"></script>
+</head>
+<body class="solution-page">
+<div data-nav="solution"></div>
+<header class="page-head">
+  <div class="eyebrow">Alexis Rondeau · live research log</div>
+  <h1>The solution</h1>
+  <p class="page-status">How we close the gap: a reflective evolutionary search.</p>
+</header>
+<div class="dash-wrap">
+  <section class="s-intro">
+    <p class="lead">If <a href="samples.html">the problem</a> is "match Sonnet on ramble&rarr;tasks with the small model that ships on-device," the solution is not a single clever prompt — it's a <em>search</em>. We let an LLM propose many small variants of the on-device agent, measure each against Sonnet's gold, keep what wins, and iterate.</p>
+    <p>This is the family of methods behind <a href="https://arxiv.org/abs/2507.19457">GEPA</a>, <a href="https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf">AlphaEvolve</a>, and FunSearch: <strong>LLM-guided reflective evolutionary search</strong>.</p>
+  </section>
+
+  <h2 class="s-section">The approach</h2>
+  <section class="s-intro">
+    <p>A 3-billion-parameter on-device model won't be coaxed into frontier quality by one well-worded instruction. So instead of hand-tuning a prompt, we <strong>evolve</strong> the agent: an LLM acts as a <em>mutation operator</em>, writing one new variant at a time; an automatic <em>evaluator</em> scores it against the frozen Sonnet gold; the best variants survive and become the parents of the next ones. Crucially the proposals are <em>reflective</em> — the LLM reads the judge's per-case notes on what the last variants got wrong and targets those failures, rather than mutating blindly.</p>
+    <p>Why this family fits us: it turns "make a small model better" into a measurable, resumable search with a hard ruler, so progress is real (it generalizes to a held-out test set) rather than vibes. It's cheaper and safer to run unattended than full reinforcement learning, yet — per GEPA — reflective evolution can rival RL on exactly this kind of text task.</p>
+    <p>The search space spans <strong>two regimes</strong>. Most programs are <em>inference-time</em> — changes to the prompt, the guided output schema, the multi-call topology, or the decoding (the GEPA/AlphaEvolve part, no weight change). Later, a program can be <em>weight-update</em> — a trained LoRA adapter (supervised fine-tuning, preference optimization, rubric-reward RL, or distillation). Same loop; the program just carries a <em>kind</em>.</p>
+  </section>
+
+  <h2 class="s-section">The vocabulary</h2>
+  <section class="s-intro">
+    <p>One shared language across the code, the logs, and this dashboard (the full landscape and sources live in <code>docs/vocabulary.md</code>):</p>
+    <dl class="gloss">
+      <dt>evolutionary run</dt><dd>one campaign — a single <code>run.sh</code> invocation that keeps producing programs until it hits its target count. Resumable.</dd>
+      <dt>program</dt><dd>the unit of progress: one agent variant that was built and evaluated. One row in the run log; labelled <code>progNNN</code>.</dd>
+      <dt>sample</dt><dd>one turn of the loop — one call to the mutation operator. A sample may fail to produce a program (a <em>failed sample</em>).</dd>
+      <dt>mutation operator</dt><dd>the coder LLM (a headless Claude) that writes the next program.</dd>
+      <dt>mutation / crossover</dt><dd>deriving a program from one parent (mutation) or combining two (crossover).</dd>
+      <dt>elite</dt><dd>the best-fitness program so far — always kept as a parent (elitism).</dd>
+      <dt>inspiration</dt><dd>the second parent fed in: the most recent program, so each new one folds in what the last attempt learned.</dd>
+      <dt>program database</dt><dd>the store of evaluated programs and their lineage (our <code>results/</code> + registry).</dd>
+      <dt>evaluator</dt><dd>the scoring stack: a hard <em>verifier</em> (the spec gate) followed by the Sonnet <em>rubric judge</em>.</dd>
+      <dt>fitness</dt><dd>the score we maximize, 0–1: <code>0.5·F1 + 0.25·rubric + 0.25·pairwise</code> (zero-task cases scored binary).</dd>
+      <dt>infeasible</dt><dd>a program that fails the verifier (e.g. emits emojis or non-atomic tasks) — its case scores 0.</dd>
+      <dt>pivot</dt><dd>a patience-driven restart: after several programs with no new elite, drop the elite and strike out in a fundamentally different direction.</dd>
+      <dt>rollout</dt><dd>one generation of the model on one input case.</dd>
+    </dl>
+  </section>
+
+  <h2 class="s-section">The loop</h2>
+  <section class="s-intro">
+    <p>The whole mechanism, start to finish:</p>
+    <ol class="sol-steps">
+      <li><strong>Pick parents.</strong> Each sample, the wrapper computes the <em>elite</em> (highest-fitness program on the dev split) and an <em>inspiration</em> (the most recent program). On the very first sample there are none, so it builds from the stock <code>baseline</code>.</li>
+      <li><strong>Propose a program.</strong> The mutation operator is asked to write exactly one new variant — mutating from the elite and folding in the inspiration — while <em>reflecting</em> on the judge's per-case notes (recorded in <code>program.md</code>) about prior failures. It may edit only the agent code (<code>Sources/SplitAgent</code>), then it builds and runs the evaluator.</li>
+      <li><strong>Evaluate.</strong> For every gold case: the <em>verifier</em> (spec gate — non-empty atomic tasks, no emojis, at most 12) runs first; an infeasible case scores 0. Then the Sonnet <em>rubric judge</em> scores faithfulness, atomicity, actionability, coverage, non-redundancy, and phrasing, plus a head-to-head <em>pairwise</em> verdict vs the gold. These combine into <em>fitness</em>.</li>
+      <li><strong>Keep or discard.</strong> If the new program beats the elite on the dev split it's <em>kept</em> (a new elite). The wrapper records its two parents in the program database and runs the held-out <em>test</em> split — reporting only, never optimized against, so a dev gain has to generalize to count.</li>
+      <li><strong>Pivot on plateau.</strong> After a set number of programs with no new elite (the <em>patience</em>), the run pivots: it drops the elite and continues only from the inspiration, forcing a different approach to escape the local optimum.</li>
+      <li><strong>Finalize.</strong> The program and all its dashboard sidecars (operator, type, cost, duration, pipeline, lineage) are written and committed in one step, so a new row shows up complete.</li>
+    </ol>
+    <p>Two invariants make the numbers trustworthy: the <strong>ruler is immutable</strong> — the gold, judge, fitness metric, and spec gate can't be edited by the loop, so it can't make the test easier; and gains must <strong>generalize</strong> from the dev split to the held-out test split.</p>
+    <p>When a program needs trained weights, it becomes a <em>weight-update</em> program — a LoRA adapter (SFT / preference / rubric-reward RL / distillation), with the same Sonnet rubric serving as the reward signal. Inference-time programs come first; adapter training is the next phase.</p>
+  </section>
+</div>
+</body>
+</html>

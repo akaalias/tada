@@ -6,6 +6,7 @@
 const NAV = [
   { key: 'dashboard', href: 'index.html',   label: 'Run log' },
   { key: 'problem',   href: 'samples.html', label: 'The problem' },
+  { key: 'solution',  href: 'solution.html', label: 'The solution' },
   { key: 'lineage',   href: 'lineage.html', label: 'Program lineage', sub: true },
 ];
 
