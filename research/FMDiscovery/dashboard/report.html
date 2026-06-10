@@ -40,10 +40,16 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
+/* §3 rubric grid: the five judged dimensions, one small card each */
+.rubric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 8px;}
+.rg-cell{border:1px solid var(--rule);border-top:2px solid var(--ink);padding:11px 13px 12px;background:#fffef7;}
+.rg-name{display:block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;letter-spacing:.04em;color:var(--ink);margin-bottom:6px;}
+.rg-desc{display:block;font-size:13px;line-height:1.38;color:var(--muted);}
+@media(max-width:680px){.rubric-grid{grid-template-columns:repeat(2,1fr);}}
 /* let the wide lever table break out to 2/3 viewport so columns don't scrunch */
 @media(min-width:1120px){ .rpt-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
 .rpt-wide th,.rpt-wide td:not(:first-child){white-space:nowrap;}
-/* §3 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
+/* §4 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
 .tap-wide{margin-top:18px;}
 @media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
 .tapestry{columns:104px;column-gap:20px;}
@@ -57,7 +63,7 @@ a.tap-cell:hover{background:#ece4d4;}
 .tap-legend span{display:inline-flex;align-items:center;gap:7px;}
 .tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
-/* §8 references: grouped, with paper summary + how-we-used-it */
+/* §9 references: grouped, with paper summary + how-we-used-it */
 .ref-group{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
            text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
            margin:30px 0 0;padding-bottom:7px;border-bottom:1px solid var(--rule);}
@@ -118,8 +124,66 @@ a.tap-cell:hover{background:#ece4d4;}
     </div>
   </div>
   <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
+</section>
 
-  <p>To answer it honestly I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>): a frozen <em>ruler</em> — 30 held-out tasks, each with a Sonnet <strong>gold</strong> answer and a Sonnet <strong>judge</strong> that scores the on-device answer head-to-head — and a mutable <em>agent</em> that every experiment changes. The judge scores each question set 1–5 on five dimensions; <strong>quality</strong> (0–1) blends the rubric with pairwise win rate. The ruler never changes, so scores are comparable across months of work.</p>
+<section id="climb">
+  <h2><span class="num">2</span>The climb</h2>
+  <p class="sub">Real progress — quality roughly doubled. Then it stalled.</p>
+  <div class="prog">
+    <div class="step"><div class="tag">Stock baseline</div><div class="q">0.28</div><div class="lbl">3B, single shot</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">In-context ceiling</div><div class="q">0.32</div><div class="lbl">best of 29 prompting / RAG tries</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step"><div class="tag">Fine-tuned adapter</div><div class="q">0.41</div><div class="lbl">LoRA on the model's weights</div></div>
+    <span class="arrow">&rarr;</span>
+    <div class="step best"><div class="tag">Best so far</div><div class="q">0.44</div><div class="lbl">adapter + over-generate &amp; prune</div></div>
+  </div>
+  <figure style="margin:20px 0 6px">
+    <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
+         font-family="Palatino,Georgia,serif" role="img"
+         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 96 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
+      <!-- 0.50 = parity: tying Sonnet's gold on every one of the 30 cases -->
+      <line x1="56" y1="30" x2="548" y2="30" stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 4"/>
+      <text x="548" y="24" text-anchor="end" font-size="11.5" font-style="italic" fill="var(--accent)">0.50 — parity: a tie on every case</text>
+      <line x1="56" y1="85"  x2="548" y2="85"  stroke="var(--rule-soft)" stroke-width="1"/>
+      <line x1="56" y1="139" x2="548" y2="139" stroke="var(--rule-soft)" stroke-width="1"/>
+      <line x1="56" y1="166" x2="548" y2="166" stroke="var(--rule)" stroke-width="1"/>
+      <text x="48" y="34"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.50</text>
+      <text x="48" y="89"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.40</text>
+      <text x="48" y="143" text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.30</text>
+      <path d="M56 150 L260 128 L288 79 L365 63 L548 63" fill="none" stroke="var(--ink)"
+            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="56"  cy="150" r="3.6" fill="var(--ink)"/>
+      <circle cx="260" cy="128" r="3.6" fill="var(--ink)"/>
+      <circle cx="288" cy="79"  r="3.6" fill="var(--ink)"/>
+      <circle cx="365" cy="63"  r="3.6" fill="var(--accent)"/>
+      <text x="58"  y="164" text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.28</text>
+      <text x="248" y="124" text-anchor="end"    font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.32</text>
+      <text x="288" y="71"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
+      <text x="365" y="55"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
+      <text x="460" y="78"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
+      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">96 experiments, in run order &rarr;</text>
+    </svg>
+    <figcaption class="ex-caption">Running best quality across the 96 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then fifty-plus further experiments — judge-reward RL, adversarial distillation, and an exhaustive inference-topology×best-adapter cross among them — add nothing (one cross cell, exp078, flashed 0.47 but a confirmation re-judge of its identical output fell to 0.40: judge noise, not a gain). Roughly doubled, then flat.</figcaption>
+  </figure>
+  <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
+</section>
+
+<section id="approach">
+  <h2><span class="num">3</span>Our approach</h2>
+  <p class="sub">A fixed test set scored by a Sonnet judge — and the autoresearch loop that drives the experiments.</p>
+
+  <h3 class="ref-group">How we measure quality</h3>
+  <p>The evaluation is <strong>fixed up front and never changes</strong>: 30 <strong>held-out</strong> one-liners, each with a <strong>gold answer</strong> from Claude Sonnet — the cloud model we're matching. For any on-device candidate, a <strong>judge</strong> (also Sonnet) reads its seven questions beside the gold, picks the better set, and scores it <strong>1–5 on five dimensions</strong>. One <strong>quality score</strong> (0–1) blends that rubric with the head-to-head win rate. Because the tasks, the gold, and the judge stay <em>frozen</em>, a score from week one is directly comparable to one from months later.</p>
+
+  <p>The five dimensions the judge scores:</p>
+  <div class="rubric-grid">
+    <div class="rg-cell"><span class="rg-name">Atomicity</span><span class="rg-desc">asks exactly one thing &mdash; no "and / or"</span></div>
+    <div class="rg-cell"><span class="rg-name">Specificity</span><span class="rg-desc">concrete to this task, not generic filler</span></div>
+    <div class="rg-cell"><span class="rg-name">Coverage</span><span class="rg-desc">the seven cover the most decision-critical unknowns</span></div>
+    <div class="rg-cell"><span class="rg-name">Naturalness</span><span class="rg-desc">reads like a thoughtful human coach</span></div>
+    <div class="rg-cell"><span class="rg-name">Non-redundancy</span><span class="rg-desc">no overlapping or repeated questions</span></div>
+  </div>
 
   <p class="ex-intro"><span class="ex-tag">One real evaluation</span>Here is a single case from our test set, scored exactly the way every experiment is — the user's one-liner, the cloud model's gold answer, the on-device answer, and the judge's verdict.</p>
   <div class="fullbleed">
@@ -173,58 +237,16 @@ a.tap-cell:hover{background:#ece4d4;}
   </div>
   <p class="ex-caption">The on-device model phrases questions naturally and even adds a sensible one about mobility &mdash; but it misses the few decision-critical unknowns (where you're flying from, how many people). That gap, which we call <strong>coverage</strong>, is the central challenge of this project. On other tasks the on-device model ties or even beats the cloud model; this is one honest, representative case.</p>
 
-  <p>The loop itself is run by <strong>Claude Code</strong>, Anthropic's coding agent. Each iteration it reads the running log of what's already been tried, proposes the next experiment, writes and runs the code against the ruler, and records the result — one experiment at a time. I worked alongside it as <strong>supervisor</strong>: steering which levers to pursue next, giving continuous feedback on its hypotheses, and triggering the manual fine-tuning runs. So throughout this report, <em>"we"</em> means that pairing — an AI agent generating and running the experiments under human direction.</p>
+  <h3 class="ref-group">The autoresearch loop</h3>
+  <p>To answer our research question, I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>): a bash script that each iteration spawns a headless <strong>Claude Code</strong> to make one change, lets the <strong>Sonnet judge</strong> score it against the frozen ruler, then commits the result and loops. It runs unattended, and pauses to hand me the manual fine-tuning track when the agent asks for it.</p>
   <figure style="margin:28px 0 6px">
     <div class="autoresearch-loop"></div>
     <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and score it against the frozen ruler — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring against the ruler; rust marks human input.</figcaption>
   </figure>
 </section>
 
-<section id="climb">
-  <h2><span class="num">2</span>The climb</h2>
-  <p class="sub">Real progress — quality roughly doubled. Then it stalled.</p>
-  <div class="prog">
-    <div class="step"><div class="tag">Stock baseline</div><div class="q">0.28</div><div class="lbl">3B, single shot</div></div>
-    <span class="arrow">&rarr;</span>
-    <div class="step"><div class="tag">In-context ceiling</div><div class="q">0.32</div><div class="lbl">best of 29 prompting / RAG tries</div></div>
-    <span class="arrow">&rarr;</span>
-    <div class="step"><div class="tag">Fine-tuned adapter</div><div class="q">0.41</div><div class="lbl">LoRA on the model's weights</div></div>
-    <span class="arrow">&rarr;</span>
-    <div class="step best"><div class="tag">Best so far</div><div class="q">0.44</div><div class="lbl">adapter + over-generate &amp; prune</div></div>
-  </div>
-  <figure style="margin:20px 0 6px">
-    <svg viewBox="0 0 560 200" style="width:100%;height:auto;max-width:560px;display:block"
-         font-family="Palatino,Georgia,serif" role="img"
-         aria-label="Running best quality climbs from 0.28 to 0.44 over the first ~45 experiments, then plateaus through experiment 96 — staying just below the 0.50 parity line, which marks tying the cloud model on every case.">
-      <!-- 0.50 = parity: tying Sonnet's gold on every one of the 30 cases -->
-      <line x1="56" y1="30" x2="548" y2="30" stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 4"/>
-      <text x="548" y="24" text-anchor="end" font-size="11.5" font-style="italic" fill="var(--accent)">0.50 — parity: a tie on every case</text>
-      <line x1="56" y1="85"  x2="548" y2="85"  stroke="var(--rule-soft)" stroke-width="1"/>
-      <line x1="56" y1="139" x2="548" y2="139" stroke="var(--rule-soft)" stroke-width="1"/>
-      <line x1="56" y1="166" x2="548" y2="166" stroke="var(--rule)" stroke-width="1"/>
-      <text x="48" y="34"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.50</text>
-      <text x="48" y="89"  text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.40</text>
-      <text x="48" y="143" text-anchor="end" font-size="11.5" fill="var(--faint)" font-feature-settings="'lnum' 1">0.30</text>
-      <path d="M56 150 L260 128 L288 79 L365 63 L548 63" fill="none" stroke="var(--ink)"
-            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="56"  cy="150" r="3.6" fill="var(--ink)"/>
-      <circle cx="260" cy="128" r="3.6" fill="var(--ink)"/>
-      <circle cx="288" cy="79"  r="3.6" fill="var(--ink)"/>
-      <circle cx="365" cy="63"  r="3.6" fill="var(--accent)"/>
-      <text x="58"  y="164" text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.28</text>
-      <text x="248" y="124" text-anchor="end"    font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.32</text>
-      <text x="288" y="71"  text-anchor="middle" font-size="12" fill="var(--muted)"  font-feature-settings="'lnum' 1">0.41</text>
-      <text x="365" y="55"  text-anchor="middle" font-size="12" fill="var(--accent)" font-feature-settings="'lnum' 1" font-weight="600">0.44</text>
-      <text x="460" y="78"  text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">stalled — no further gains</text>
-      <text x="302" y="190" text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--faint)">96 experiments, in run order &rarr;</text>
-    </svg>
-    <figcaption class="ex-caption">Running best quality across the 96 experiments. The 29 in-context tries inch from 0.28 to 0.32; the first fine-tuned adapter jumps to 0.41; over-generate-and-prune reaches the 0.44 best — then fifty-plus further experiments — judge-reward RL, adversarial distillation, and an exhaustive inference-topology×best-adapter cross among them — add nothing (one cross cell, exp078, flashed 0.47 but a confirmation re-judge of its identical output fell to 0.40: judge noise, not a gain). Roughly doubled, then flat.</figcaption>
-  </figure>
-  <p class="muted" style="font-size:15px">A fine-tuned <span class="pill p-sft">SFT</span> adapter was the only lever that broke past the prompting ceiling; everything above ~0.32 runs on one. Four of the five rubric dimensions reached 4–5. One did not.</p>
-</section>
-
 <section id="levers">
-  <h2><span class="num">3</span>Everything we tried</h2>
+  <h2><span class="num">4</span>Everything we tried</h2>
   <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
   <table class="rpt-tbl rpt-wide" id="tried-tbl">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Coverage</th><th>Gate</th></tr></thead>
@@ -256,7 +278,7 @@ a.tap-cell:hover{background:#ece4d4;}
 </section>
 
 <section id="confirmation">
-  <h2><span class="num">4</span>The confirmation experiment</h2>
+  <h2><span class="num">5</span>The confirmation experiment</h2>
   <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
   <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So we ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
   <table class="rpt-tbl">
@@ -270,12 +292,12 @@ a.tap-cell:hover{background:#ece4d4;}
   <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
   <ul>
     <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
-    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §5).</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §6).</li>
   </ul>
 </section>
 
 <section id="coverage-blind">
-  <h2><span class="num">5</span>Is it really coverage?</h2>
+  <h2><span class="num">6</span>Is it really coverage?</h2>
   <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
   <p>Here the story turns. Everything to this point — the climb, the 96 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
   <table class="rpt-tbl">
@@ -300,7 +322,7 @@ a.tap-cell:hover{background:#ece4d4;}
 </section>
 
 <section id="verdict">
-  <h2><span class="num">6</span>The verdict</h2>
+  <h2><span class="num">7</span>The verdict</h2>
   <div class="verdict">
     <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method we failed to find.</h3>
     <p style="margin:0">Imitation, preference learning, reinforcement learning against the rubric reward, adversarial distillation from the teacher, and every inference-time technique we could find leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
@@ -334,12 +356,12 @@ a.tap-cell:hover{background:#ece4d4;}
 </section>
 
 <section id="repro">
-  <h2><span class="num">7</span>Reproducibility</h2>
-  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§5), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §4 and the mechanistic analyses in §5–§6 are reference only, deliberately kept out of the on-device run log.</p>
+  <h2><span class="num">8</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The frozen ruler (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§6), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §5 and the mechanistic analyses in §6–§7 are reference only, deliberately kept out of the on-device run log.</p>
 </section>
 
 <section id="references">
-  <h2><span class="num">8</span>References</h2>
+  <h2><span class="num">9</span>References</h2>
   <p class="sub">Not built from scratch — the levers we tried, and the papers each one came from. For each: what the paper introduced, and how we used it here.</p>
 
   <h3 class="ref-group">In-context phase — prompting, retrieval, decoding</h3>
@@ -458,7 +480,7 @@ a.tap-cell:hover{background:#ece4d4;}
     </li>
   </ol>
 
-  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §1). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
+  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §3). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
 </section>
 
 <footer>
