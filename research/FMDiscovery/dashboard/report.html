@@ -301,43 +301,20 @@ a.tap-cell:hover{background:#ece4d4;}
   <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
   <ul>
     <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
-    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it on nearly every dimension, not just coverage (see §6).</li>
+    <li><strong>0.65 is the practical quality ceiling, not 1.0.</strong> Sonnet judged against its own gold scores 0.65 (it ties itself 18 times, loses 8). The gold and the candidate are drawn the same way — so this is the task's own <em>answer-variance</em>, two excellent question sets disagreeing on the single most critical unknown, not a decoding artifact to be tuned away. (Force both to greedy and the self-score would climb toward 1.0, but that measures determinism, not quality.) On that scale the on-device 0.44 reaches roughly two-thirds of the frontier's own self-consistency — close, but a consistent notch below it.</li>
   </ul>
 </section>
 
-<section id="coverage-blind">
-  <h2><span class="num">6</span>Is it really coverage?</h2>
-  <p class="sub">The obvious follow-up: if we stopped caring about coverage, would the model reach parity? No.</p>
-  <p>Here the story turns. Everything to this point — the climb, the 96 experiments, the cloud confirmation — frames coverage as <em>the</em> wall: the one dimension stuck at 3, the one the judge keeps naming. But "stuck at the lowest score" and "the reason it loses" are not the same claim, and this section is where we stopped assuming they were. Coverage was the lowest dimension and by far the most-cited in the judge's notes, so it was tempting to call it <em>the</em> gap. To test that, we re-judged the stored candidates with the exact official judge in two modes: the normal five dimensions, and a <strong>coverage-blind</strong> mode that drops coverage from the rubric <em>and</em> from the "which set is better" verdict. Same candidate outputs; only the judge's instructions change. The five-dimension control reproduces the logged quality, so the comparison is sound.</p>
-  <table class="rpt-tbl">
-    <thead><tr><th>Candidate</th><th>quality, 5-dim</th><th>quality, coverage-blind</th><th>Δ</th><th>loses to gold (of 30)</th></tr></thead>
-    <tbody>
-      <tr><td>SFT baseline</td><td class="num">0.398</td><td class="num">0.399</td><td class="num">+0.00</td><td class="num">23 → 23</td></tr>
-      <tr><td>Best adapter (exp056)</td><td class="num">0.415</td><td class="num">0.412</td><td class="num">−0.00</td><td class="num">22 → 22</td></tr>
-      <tr><td>On-policy ORPO</td><td class="num">0.369</td><td class="num">0.370</td><td class="num">+0.00</td><td class="num">25 → 24</td></tr>
-    </tbody>
-  </table>
-  <p>Removing coverage changes quality by essentially zero — and, the telling part, the head-to-head barely moves: told to ignore coverage entirely, the judge <em>still</em> prefers the gold set ~22–24 times out of 30. The losses were never mostly about coverage.</p>
-  <p>The reason is visible in the rubric the same judge assigns each model <em>as a candidate</em>:</p>
-  <table class="rpt-tbl">
-    <thead><tr><th>Scored as candidate</th><th>atomicity</th><th>specificity</th><th>coverage</th><th>naturalness</th><th>non-redundancy</th></tr></thead>
-    <tbody>
-      <tr><td>On-device best (exp056)</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr>
-      <tr class="anchor"><td>Sonnet (cloud anchor)</td><td class="num">5</td><td class="num">4</td><td class="num">4</td><td class="num">5</td><td class="num">5</td></tr>
-    </tbody>
-  </table>
-  <p>The on-device model matches the frontier on <strong>specificity alone</strong> and trails by about a point on everything else. Coverage is the joint-lowest, but it is not special — the gap is <strong>broad</strong>. That is why re-weighting it away does nothing: the model is a uniform notch below the frontier, and coverage is simply the symptom the judge can name in a sentence.</p>
-  <p>A correlation audit puts numbers on <em>broad</em>. Across all <strong>1,552</strong> judged question-sets the five rubric dimensions are not independent: a single latent quality factor explains <strong>58%</strong> of their variance, and coverage correlates 0.69 with specificity and 0.61 with naturalness. So coverage was never a separable axis you could target in isolation — it co-moves with the rest, which is precisely why any coverage-specific fix was structurally unlikely to land.</p>
-</section>
-
 <section id="verdict">
-  <h2><span class="num">7</span>The verdict</h2>
+  <h2><span class="num">6</span>The verdict</h2>
   <div class="verdict">
-    <h3>The gap is a broad capability limit of the 3B base — not a coverage-specific wall, and not a method we failed to find.</h3>
-    <p style="margin:0">Imitation, preference learning, reinforcement learning against the rubric reward, adversarial distillation from the teacher, and every inference-time technique we could find leave the on-device model a consistent notch below the frontier on <em>every</em> dimension. A more capable model clears that notch on the identical harness (coverage 3→4, and 4→5 elsewhere), and removing coverage from the judging recovers none of the gap. So the shortfall is bound to model capacity, broadly — no amount of further training or scaffolding on <em>this</em> base is likely to close it.</p>
+    <h3>The gap is a capability limit of the 3B base — measured against what's achievable, not a perfect score, and not a method we failed to find.</h3>
+    <p style="margin:0 0 12px">Every lever — imitation, preference learning, RL against the rubric reward, adversarial distillation, every inference-time trick — leaves the on-device model a notch below the frontier. The confirmation experiment (§5) shows why, and it's <strong>two gaps, not one</strong>:</p>
+    <p style="margin:0 0 12px"><strong>Gap A — the 3B vs. the frontier.</strong> Swap in only a more capable model and the wall lifts: coverage 3→4, quality 0.44→0.65, head-to-head against gold from 2/5/22 to 4/18/8. This notch <em>is</em> the capability limit — it closes the moment capacity rises.</p>
+    <p style="margin:0 0 12px"><strong>Gap B — the frontier vs. a perfect score.</strong> Even Sonnet, judged against its own gold, tops out at coverage 4 / quality 0.65 (ties itself 18, loses 8). That residual is the task's own answer-variance — two excellent question sets disagreeing on the single most critical unknown — which <em>no</em> model crosses. It's the task's ceiling, not the 3B's.</p>
+    <p style="margin:0">So the bar is 0.65 / coverage 4, not 1.0. The 3B's shortfall is its distance below that bar, and that distance is bound to model capacity — no further training or scaffolding on <em>this</em> base is likely to close it.</p>
   </div>
-  <p><strong>Four angles on coverage, one wall — and the mechanism for each.</strong> The final stretch attacked coverage directly from every side, and each route failed for a reason we could measure. <em>Generation</em> (fine-tuning) imitates the gold's phrasing but not the judgment that chose it. <em>On-policy reward</em> (GRPO) has nothing to optimise — the model's own drafts almost never vary on coverage, so the group-relative signal is flat; left unregularised it drifts off the natural-language manifold, and a KL anchor pulls it straight back to the 0.41 baseline. <em>Adversarial distillation</em> (GAD) grounds the reward in the teacher, but a probe shows a discriminator separates the model from Sonnet on <em>style</em> (AUC 0.76), not content (0.62) — so it re-learns the register, not the coverage. <em>Discrimination</em> — a dedicated critic that only has to <em>recognise</em> the better set — fails too: trained to predict the judge's coverage score it reaches 0.999 on seen tasks but generalises to nothing on new ones, because recognising the pivotal unknown takes the same value-of-information judgment as producing it. Every channel for importing that judgment from outside the 3B narrows the gap or recovers the baseline; none crosses it.</p>
-  <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality, about a point below on nearly every dimension, and strong in absolute terms (4 of 5 on most). The shortfall is broad and capacity-bound, so there is no single dimension to fix. Three honest paths:</p>
+  <p><strong>What this means for the product.</strong> The on-device model is uniformly close — roughly two-thirds of the frontier's practical quality (0.44 against a 0.65 practical ceiling), and strong in absolute terms (4 of 5 on most). The shortfall is capacity-bound, so more work on this base is unlikely to move it. Three honest paths:</p>
   <div class="cols">
     <div class="col yes">
       <h3>Ship &amp; document</h3>
@@ -361,16 +338,16 @@ a.tap-cell:hover{background:#ece4d4;}
       </ul>
     </div>
   </div>
-  <p class="muted" style="font-size:15px">My recommendation: <strong>ship and document, and reframe the bar to absolute usefulness.</strong> The model is a uniform notch below the frontier, not broken anywhere; at ~two-thirds of the practical ceiling and strong in absolute terms it is plausibly good enough — and the broad, capacity-bound gap won't yield to more work on this base. Re-test when a larger on-device model ships.</p>
+  <p class="muted" style="font-size:15px">My recommendation: <strong>ship and document, and reframe the bar to absolute usefulness.</strong> The model is a uniform notch below the frontier, not broken anywhere; at ~two-thirds of the practical ceiling and strong in absolute terms it is plausibly good enough — and the capacity-bound gap won't yield to more work on this base. Re-test when a larger on-device model ships.</p>
 </section>
 
 <section id="repro">
-  <h2><span class="num">8</span>Reproducibility</h2>
-  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The fixed evaluation (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, the coverage-blind re-judge (§6), the rubric correlation audit, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §5 and the mechanistic analyses in §6–§7 are reference only, deliberately kept out of the on-device run log.</p>
+  <h2><span class="num">7</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The fixed evaluation (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §5 and the mechanistic analysis in §6 are reference only, deliberately kept out of the on-device run log.</p>
 </section>
 
 <section id="references">
-  <h2><span class="num">9</span>References</h2>
+  <h2><span class="num">8</span>References</h2>
   <p class="sub">Not built from scratch — the levers we tried, and the papers each one came from. For each: what the paper introduced, and how we used it here.</p>
 
   <h3 class="ref-group">In-context phase — prompting, retrieval, decoding</h3>
