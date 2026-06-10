@@ -115,7 +115,10 @@ async function render() {
     const adapterStage = spec && (spec.stages || []).find(s => s.knobs && s.knobs.model);
     const steps = adapterStage ? provenanceSteps(prov, adapterStage.knobs.model) : null;
     const svg = spec ? diagramSVG(spec, fill, steps, i) : '';
-    return `<a class="tap-cell" href="index.html#${r.label}" target="_blank" rel="noopener" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage} — open this experiment on the dashboard">${svg}</a>`;
+    const champ = r.label === 'exp056';
+    const cls = champ ? 'tap-cell tap-cell-champion' : 'tap-cell';
+    const badge = champ ? '<span class="tap-badge">on-device best</span>' : '';
+    return `<a class="${cls}" href="index.html#${r.label}" target="_blank" rel="noopener" title="${r.label} · ${types[r.label] || ''} · quality ${(r.quality).toFixed(2)}, coverage ${r.coverage} — open this experiment on the dashboard">${badge}${svg}</a>`;
   }));
   el.innerHTML = cells.join('');
 }
