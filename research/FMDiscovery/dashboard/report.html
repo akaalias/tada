@@ -23,7 +23,7 @@
 .hl{background:#faf2db;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 .hl-soft{background:#f9f1d9;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 /* hero quote: centered, +20% size, full viewport width */
-.hero-quote{text-align:center;font-size:50.4px;width:100vw;margin-left:calc(50% - 50vw);padding:0 28px;box-sizing:border-box;margin-top:28px;margin-bottom:28px;}
+.hero-quote{text-align:center;font-size:50.4px;width:100vw;margin-left:calc(50% - 50vw);padding:0 28px;box-sizing:border-box;margin-top:28px;margin-bottom:28px;font-weight:300;}
 /* highlight a whole list item including its "4." marker (marker must be inside) */
 .ex-list li.hl-li{list-style-position:inside;margin-left:-18px;padding:1px 8px 1px 4px;background:#faf2db;border-radius:3px;}
 /* highlight the Coverage column (4th) of the "Everything we tried" table, lighter still */
@@ -279,14 +279,15 @@ a.tap-cell:hover{background:#ece4d4;}
       <tr><td><span class="pill p-gad">GAD</span> &nbsp;adversarial distillation — reward is a discriminator trained to tell Sonnet gold sets from the model's drafts</td><td class="num">2</td><td class="num">0.36</td><td class="num">5</td><td class="num">3</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td>full-30</td></tr>
     </tbody>
   </table>
-  <p>One pattern holds across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself. But <strong>coverage</strong> — whether the seven include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 96 runs</em> (only 2s and 3s ever appeared), unmoved by prompting, retrieval, multi-call reasoning, fine-tuning, reshaped training data, preference learning, RL against the rubric, or adversarial distillation.</p>
+  <p>One pattern holds across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself.</p>
+  <p class="verdict">But <strong>coverage</strong> — whether the seven include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 96 runs</em> (only 2s and 3s ever appeared), unmoved by prompting, retrieval, multi-call reasoning, fine-tuning, reshaped training data, preference learning, RL against the rubric, or adversarial distillation.</p>
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33): the pairs contrasted two Sonnet styles, not good-vs-bad judgment, so the model learned the wrong correlate. Rebuilding them <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis — yet coverage still did not move off 3. Even a clean preference signal could not teach <em>which</em> unknown matters.
   </div>
 </section>
 
 <section id="confirmation">
-  <h2><span class="num">5</span>The confirmation experiment</h2>
+  <h2><span class="num">5</span><em>"But wait! What if..."</em> The confirmation experiment</h2>
   <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
   <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So we ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
   <table class="rpt-tbl">
