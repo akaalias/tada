@@ -77,23 +77,23 @@
 
 <section id="autoresearch">
   <h2><span class="num">2</span>Autoresearch: a self-improving research loop</h2>
-  <p class="sub">A frozen "ruler" to measure against, and a mutable "agent" we keep improving.</p>
+  <p class="sub">A fixed "judge" to measure against, and a mutable "agent" we keep improving.</p>
   <p>Rather than hand-tune the on-device model by trial and error, I built an <strong>autoresearch loop</strong> (inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a>). It has two halves that must never blur together:</p>
   <div class="versus">
-    <div class="vs-card vs-ruler">
-      <div class="vs-head">Frozen RULER</div>
-      <p>A fixed set of <strong>30 held-out tasks</strong>, each with a <strong>gold</strong> answer written by Sonnet, plus a Sonnet <strong>judge</strong> that compares the on-device answer to the gold head-to-head and scores it on a five-point rubric. This never changes — it is the honest measuring stick. Making the ruler easier is forbidden.</p>
+    <div class="vs-card vs-judge">
+      <div class="vs-head">Fixed JUDGE</div>
+      <p>A fixed set of <strong>30 held-out tasks</strong>, each with a <strong>gold</strong> answer written by Sonnet, plus a Sonnet <strong>judge</strong> that compares the on-device answer to the gold head-to-head and scores it on a five-point rubric. This never changes — it is the honest measuring stick. Making the judge easier is forbidden.</p>
     </div>
     <div class="vs-sep">vs.</div>
     <div class="vs-card vs-agent">
       <div class="vs-head">Mutable AGENT</div>
-      <p>The on-device question-generator itself — its prompts, its multi-step pipelines, and (the big lever) a fine-tuned adapter. This is what every experiment changes, trying to score higher against the unchanging ruler.</p>
+      <p>The on-device question-generator itself — its prompts, its multi-step pipelines, and (the big lever) a fine-tuned adapter. This is what every experiment changes, trying to score higher against the unchanging judge.</p>
     </div>
   </div>
-  <p>Each experiment produces one number — a <strong>quality score from 0 to 1</strong> — plus the judge's written reasoning for every case. Because the ruler is fixed, scores are comparable across months of experiments. The <a href="index.html">live dashboard</a> plots every experiment as a point and tracks the running best.</p>
+  <p>Each experiment produces one number — a <strong>quality score from 0 to 1</strong> — plus the judge's written reasoning for every case. Because the judge is fixed, scores are comparable across months of experiments. The <a href="index.html">live dashboard</a> plots every experiment as a point and tracks the running best.</p>
   <figure style="margin:28px 0 6px">
     <div class="autoresearch-loop"></div>
-    <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and score it against the frozen ruler — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring against the ruler; rust marks human input.</figcaption>
+    <figcaption class="ex-caption">How one experiment runs. Claude Code drives the cycle autonomously: read the log, form one hypothesis, edit the agent, and have the judge score it — keeping the result only if it beats the running best. The human supervisor sets direction and runs the fine-tuning track the agent can't. Solid arrows are the automated loop; the dashed link is the scoring by the judge; rust marks human input.</figcaption>
   </figure>
 </section>
 
@@ -105,7 +105,7 @@
   <div class="card">
     <h3>What keeps it safe and honest</h3>
     <ul style="margin:0;padding-left:18px">
-      <li>It may only edit the <strong>agent</strong>'s code — the ruler (gold tasks, judge, metric) is off-limits and any tampering is auto-reverted.</li>
+      <li>It may only edit the <strong>agent</strong>'s code — the judge (gold tasks, rubric, metric) is off-limits and any tampering is auto-reverted.</li>
       <li>It has <strong>no web access</strong> and a scoped toolset; it cannot reach outside the project.</li>
       <li>Every experiment must end in a working build and exactly one logged result. Each is committed automatically, so progress is fully traceable.</li>
       <li>Strict <strong>anti-cheating rules</strong>: it can use example answers as inspiration but never copy them into its output (more on why below).</li>
