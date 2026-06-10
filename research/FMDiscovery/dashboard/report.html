@@ -21,6 +21,9 @@
 <style>
 /* report-only table styling — kept here so onboarding.css stays untouched */
 .hl{background:#faf2db;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.hl-soft{background:#f9f1d9;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+/* hero quote: centered, +20% size, full viewport width */
+.hero-quote{text-align:center;font-size:50.4px;width:100vw;margin-left:calc(50% - 50vw);padding:0 28px;box-sizing:border-box;margin-top:28px;margin-bottom:28px;}
 /* highlight a whole list item including its "4." marker (marker must be inside) */
 .ex-list li.hl-li{list-style-position:inside;margin-left:-18px;padding:1px 8px 1px 4px;background:#faf2db;border-radius:3px;}
 /* highlight the Coverage column (4th) of the "Everything we tried" table, lighter still */
@@ -76,9 +79,10 @@ a.tap-cell:hover{background:#ece4d4;}
 
 <header class="hero">
   <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
-  <h1><em>"Which city in Paris are you staying in?"</em> - Can a phone-sized model learn to ask frontier-quality questions? Can they? Do they? Let's find out!</h1>
+  <h1 class="hero-quote"><em>"Which city in Paris are you staying in?"</em></h1>
+  <h1>Can a phone-sized small language model (SLM) learn to ask frontier-quality questions? Can they? Do they? Let's find out!</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — an on-device 3B model came within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below, across the board.</p>
+  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — <span class="hl-soft">Apple's 3B Foundation Model from 2025 came within about one rubric point of a frontier cloud model (Sonnet 4.6, 2026) on every quality dimension: close, but consistently a notch below, across the board.</span></p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
