@@ -248,6 +248,19 @@ a.tap-cell:hover{background:#ece4d4;}
 <section id="levers">
   <h2><span class="num">4</span>Everything we tried</h2>
   <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
+
+  <p><strong>Every experiment, at a glance.</strong> One tile per run, in the order each was run — its on-device pipeline stripped to bare structure, coded by the legend below. Read the <em>shapes</em>: thin single-shot baselines, ensembles fanning wide, the tall multi-call reasoning pipelines of the inference era, then the two-column adapter runs that fill the back half.</p>
+  <p class="tap-legend">
+    <span><i style="background:#9b998c"></i>Inference call</span>
+    <span><i style="background:#8a6a1e"></i>SFT adapter call</span>
+    <span><i style="background:#8c2f1f"></i>ORPO adapter call</span>
+    <span><i class="hollow"></i>Swift / user step</span>
+    <span><i style="background:#8a6a1e"></i><i class="hollow" style="margin-left:-3px"></i>Adapter training (dev-time)</span>
+  </p>
+  <div class="tap-wide"><div id="tapestry" class="tapestry"></div></div>
+  <p class="muted" style="font-size:14px;margin-top:16px">You can view each experiment's details — its hypothesis, method, result and process diagram — on the <a href="index.html">live dashboard</a>.</p>
+
+  <h3 class="ref-group">Best result by lever class</h3>
   <table class="rpt-tbl rpt-wide" id="tried-tbl">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Atomicity</th><th>Specificity</th><th>Naturalness</th><th>Non-redundancy</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
@@ -264,17 +277,6 @@ a.tap-cell:hover{background:#ece4d4;}
   <div class="callout">
     <strong>The cleanest negative.</strong> Preference learning (ORPO) first <em>regressed</em> (0.33): the pairs contrasted two Sonnet styles, not good-vs-bad judgment, so the model learned the wrong correlate. Rebuilding them <em>on-policy</em> (chosen = gold, rejected = the model's own weaker draft) recovered the loss (0.40, back to the SFT baseline) — confirming the diagnosis — yet coverage still did not move off 3. Even a clean preference signal could not teach <em>which</em> unknown matters.
   </div>
-
-  <p style="margin-top:22px"><strong>Every experiment, at a glance.</strong> One tile per run, in the order each was run — its on-device pipeline stripped to bare structure, coded by the legend below. Read the <em>shapes</em>: thin single-shot baselines, ensembles fanning wide, the tall multi-call reasoning pipelines of the inference era, then the two-column adapter runs that fill the back half.</p>
-  <p class="tap-legend">
-    <span><i style="background:#9b998c"></i>Inference call</span>
-    <span><i style="background:#8a6a1e"></i>SFT adapter call</span>
-    <span><i style="background:#8c2f1f"></i>ORPO adapter call</span>
-    <span><i class="hollow"></i>Swift / user step</span>
-    <span><i style="background:#8a6a1e"></i><i class="hollow" style="margin-left:-3px"></i>Adapter training (dev-time)</span>
-  </p>
-  <div class="tap-wide"><div id="tapestry" class="tapestry"></div></div>
-  <p class="muted" style="font-size:14px;margin-top:16px">You can view each experiment's details — its hypothesis, method, result and process diagram — on the <a href="index.html">live dashboard</a>.</p>
 </section>
 
 <section id="confirmation">
