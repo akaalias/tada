@@ -88,7 +88,7 @@ a.tap-cell:hover{background:#ece4d4;}
   <h1 class="hero-quote"><em>"Which city in Paris are you staying in?"</em></h1>
   <h1>Can an LLM autoresearch loop teach a phone-sized small language model (SLM) to ask frontier-quality questions? Can it? Does it? Let's find out!</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — <span class="hl-soft">Apple's 3B Foundation Model from 2025 came within about one rubric point of a frontier cloud model (Sonnet 4.6, 2026) on every quality dimension: close, but consistently a notch below, across the board.</span></p>
+  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — Apple's native 2025 3B Foundation Model came within about one rubric point of a frontier cloud model (Claude Sonnet 4.6) on every quality dimension: close, but consistently a notch below, across the board.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -102,7 +102,7 @@ a.tap-cell:hover{background:#ece4d4;}
 <section id="question">
   <h2><span class="num">1</span>The question</h2>
   <p class="sub">Move one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
-  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
+  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet 4.6 in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
 
   <div class="flowdemo">
     <div class="fd-node fd-input">
@@ -174,7 +174,7 @@ a.tap-cell:hover{background:#ece4d4;}
   <p class="sub">A fixed test set scored by a Sonnet judge — and the autoresearch loop that drives the experiments.</p>
 
   <h3 class="ref-group">How we measure quality</h3>
-  <p>The evaluation is <strong>fixed up front and never changes</strong>: 30 <strong>held-out</strong> one-liners, each with a <strong>gold answer</strong> from Claude Sonnet — the cloud model we're matching. For any on-device candidate, a <strong>judge</strong> (also Sonnet) reads its seven questions beside the gold, picks the better set, and scores it <strong>1–5 on five dimensions</strong>. One <strong>quality score</strong> (0–1) blends that rubric with the head-to-head win rate. Because the tasks, the gold, and the judge stay <em>frozen</em>, a score from week one is directly comparable to one from months later.</p>
+  <p>The evaluation is <strong>fixed up front and never changes</strong>: 30 <strong>held-out</strong> one-liners, each with a <strong>gold answer</strong> from Claude Sonnet 4.6 — the cloud model we're matching. For any on-device candidate, a <strong>judge</strong> (also Sonnet) reads its seven questions beside the gold, picks the better set, and scores it <strong>1–5 on five dimensions</strong>. One <strong>quality score</strong> (0–1) blends that rubric with the head-to-head win rate. Because the tasks, the gold, and the judge stay <em>frozen</em>, a score from week one is directly comparable to one from months later.</p>
 
   <p>The five dimensions the judge scores:</p>
   <div class="rubric-grid">
