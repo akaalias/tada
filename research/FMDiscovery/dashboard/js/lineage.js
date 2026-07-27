@@ -18,7 +18,7 @@ const REL = {                                  // relation → [colour, dash, wi
 };
 const bust = () => '?t=' + (window.__t || (window.__t = String(performance.now() | 0)));
 
-async function load() {
+export async function load() {
   const [auto, prose, prov] = await Promise.all([
     fetch('../results/lineage_auto.json' + bust()).then(r => r.json()),   // node facts only
     fetch('../results/lineage_prose.json' + bust()).then(r => r.json()),
@@ -27,7 +27,9 @@ async function load() {
   return { auto, prose, prov };
 }
 
-function render({ auto, prose, prov }) {
+// opts.focus: a run label to pre-isolate (trace its ancestry) and centre-scroll
+// to on load — used to land on the champion without requiring a hover.
+export function render({ auto, prose, prov }, opts = {}) {
   const nodes = auto.nodes.slice().sort((a, b) => a.index - b.index);
   const yOf = {}; nodes.forEach((n, i) => yOf[n.label] = i);
   const edges = prose.edges.filter(e => e.from in yOf && e.to in yOf);
@@ -172,6 +174,11 @@ function render({ auto, prose, prov }) {
     ['exp056',         'Refined exp046’s redundancy drop — the best verified result.'],
   ];
   const nodeOf = {}; nodes.forEach(n => nodeOf[n.label] = n);
+  const diagramEl = document.getElementById('diagram');
+  const scrollToNode = label => {                          // reveal the node if it's scrolled out of view
+    if (!(label in yOf)) return;
+    diagramEl.scrollTo({ left: x(yOf[label]) - diagramEl.clientWidth / 2, behavior: 'smooth' });
+  };
   const pivHost = document.getElementById('pivotal');
   if (pivHost) {
     const rows = PIVOTAL.filter(([l]) => l in nodeOf).map(([l, why]) => {
@@ -189,11 +196,6 @@ function render({ auto, prose, prov }) {
       '(exp032 scored higher at 0.498 but leaked gold answers into its eval, so it’s disqualified.)</p>' +
       '<table class="piv-tbl"><thead><tr><th>#</th><th>Experiment</th><th>Quality</th><th>Why it mattered</th></tr></thead>' +
       `<tbody>${rows}</tbody></table>`;
-    const diagramEl = document.getElementById('diagram');
-    const scrollToNode = label => {                          // reveal the node if it's scrolled out of view
-      if (!(label in yOf)) return;
-      diagramEl.scrollTo({ left: x(yOf[label]) - diagramEl.clientWidth / 2, behavior: 'smooth' });
-    };
     pivHost.querySelectorAll('tbody tr').forEach(tr => {
       const label = tr.getAttribute('data-label');
       tr.addEventListener('mouseenter', () => { isolate(label); scrollToNode(label); });
@@ -201,6 +203,10 @@ function render({ auto, prose, prov }) {
     });
   }
 
+  // pre-focus a run (e.g. the champion) on load, without waiting for a hover —
+  // used for deep-linking (lineage.html?focus=). opts.scrollTo centres the view
+  // on a run WITHOUT isolating its ancestry — used when the report embeds this
+  // diagram unfocused, just scrolled to the champion.
+  if (opts.focus && opts.focus in yOf) { isolate(opts.focus); scrollToNode(opts.focus); }
+  else if (opts.scrollTo && opts.scrollTo in yOf) { scrollToNode(opts.scrollTo); }
 }
-
-load().then(render).catch(e => { document.getElementById('notes').innerHTML = '<span class="warn">failed to load lineage data: ' + e + '</span>'; });
