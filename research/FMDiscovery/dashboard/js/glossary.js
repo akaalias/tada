@@ -198,6 +198,15 @@ function buildSidebar() {
 
   document.body.append(fab, backdrop, drawer);
 
+  // Stay hidden while the top-nav is on screen; only appear (top-right) once
+  // it's scrolled past.
+  const topnav = document.querySelector('.topnav');
+  if (topnav && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      fab.classList.toggle('gloss-fab--visible', !entry.isIntersecting);
+    }, { threshold: 0 }).observe(topnav);
+  }
+
   const search = drawer.querySelector('.gloss-search');
   const empty = drawer.querySelector('.gloss-empty');
   const groups = [...body.querySelectorAll('.gloss-group')];

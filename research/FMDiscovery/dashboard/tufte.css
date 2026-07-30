@@ -49,6 +49,18 @@ h1{font-weight:400;font-size:42px;line-height:1.12;letter-spacing:-.01em;margin:
 .nav a:not(:last-child)::after{content:" · ";color:var(--faint);border:0;}
 .nav a:hover{border-bottom-color:var(--accent);}
 
+/* ---- shared top-nav: one bar reused verbatim across every page ----------- */
+.topnav{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:center;
+        align-items:baseline;border-bottom:1px solid var(--rule);padding:16px 28px 12px;
+        margin:0 0 8px;}
+@media(max-width:600px){.topnav{gap:8px 16px;padding:14px 20px 10px;}}
+.topnav .brand{font:italic 14px/1 var(--serif);color:var(--faint);}
+.topnav a{font:600 12px/1 var(--serif);font-feature-settings:"smcp" 1;
+          text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+          text-decoration:none;border-bottom:2px solid transparent;padding-bottom:3px;}
+.topnav a:hover{color:var(--ink);}
+.topnav a.on{color:var(--ink);border-bottom-color:var(--ink);}
+
 section{margin-top:60px;}
 h2{font-weight:400;font-size:28px;line-height:1.2;margin:0 0 4px;scroll-margin-top:20px;}
 h2 .num{color:var(--faint);font-style:italic;margin-right:.5em;font-size:24px;}
@@ -157,3 +169,16 @@ footer{margin-top:72px;padding-top:24px;border-top:1.5px solid var(--ink);color:
      text-transform:uppercase;letter-spacing:.06em;}
 .kpi b{display:block;font-size:26px;font-weight:400;font-feature-settings:"lnum" 1;
        font-variant-numeric:lining-nums tabular-nums;letter-spacing:0;color:var(--ink);margin-top:3px;}
+
+/* ---- GitHub ribbon --------------------------------------------------------
+   Points at the working branch, not main -- this research isn't merged yet. */
+#gh-ribbon{position:fixed;right:-56px;bottom:36px;z-index:80;transform:rotate(-45deg);
+  background:var(--ink);color:var(--paper);font:600 11px/1 var(--serif);
+  font-feature-settings:"smcp" 1;text-transform:uppercase;letter-spacing:.12em;
+  white-space:nowrap;padding:7px 64px;text-decoration:none;border:none;
+  outline:1px solid rgba(255,255,248,.4);outline-offset:-4px;
+  box-shadow:0 1px 8px rgba(0,0,0,.3);}
+#gh-ribbon:hover{background:var(--accent);color:var(--paper);}
+@media(max-width:520px){
+  #gh-ribbon{right:-46px;bottom:26px;padding:5px 46px;font-size:9.5px;letter-spacing:.09em;}
+}

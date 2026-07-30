@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1280">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>"Which city in Paris are you staying in?" - Can an LLM autoresearch loop teach a phone-sized model to ask frontier-quality questions? Can it? Does it? Let's find out!</title>
 <meta name="description" content="Across 77 experiments — every lever from prompting and retrieval to fine-tuning and 2025's rubric-grounded RL — an on-device 3B model landed within about one rubric point of a frontier cloud model on every quality dimension: close, but consistently a notch below. None of the post-training playbook closed the last notch, and the controlled tests show why — the gap is a broad capability limit, not a single missing skill.">
 <meta property="og:type" content="website">
@@ -22,8 +22,18 @@
 /* report-only table styling — kept here so onboarding.css stays untouched */
 .hl{background:#faf2db;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 .hl-soft{background:#f9f1d9;border-radius:2px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+/* no eyebrow line on this page (unlike the other 3), so the header doesn't
+   need tufte.css's default 64px top padding meant to clear it */
+header.hero{padding-top:28px;}
 /* hero quote: centered, +20% size, full viewport width */
 .hero-quote{text-align:center;font-size:50.4px;width:100vw;margin-left:calc(50% - 50vw);padding:0 28px;box-sizing:border-box;margin-top:28px;margin-bottom:28px;font-weight:300;}
+/* the subtitle h1 below the hero quote reads better centered, matching it */
+header.hero h1:not(.hero-quote){text-align:center;}
+header.hero .hero-sub{text-align:center;}
+/* small-caps label introducing the lede, matching the site's tag vocabulary
+   (.ex-tag, .fd-tag, .dash-legend, ...) */
+.lede-label{font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
+            text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin:0 0 8px;}
 /* highlight a whole list item including its "4." marker (marker must be inside) */
 .ex-list li.hl-li{list-style-position:inside;margin-left:-18px;padding:1px 8px 1px 4px;background:#faf2db;border-radius:3px;}
 /* highlight the Coverage column (4th) of the "Everything we tried" table, lighter still */
@@ -40,16 +50,20 @@
 .rpt-tbl tr.anchor td{background:#f6ebe3;}      /* the cloud ceiling rows */
 .verdict{border:1.5px solid var(--ink);padding:18px 22px;margin:18px 0;background:#fffef7;}
 .verdict h3{margin:0 0 6px;}
-/* §6 rubric grid: the five judged dimensions, one small card each */
+/* §7 rubric grid: the five judged dimensions, one small card each */
 .rubric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 8px;}
 .rg-cell{border:1px solid var(--rule);border-top:2px solid var(--ink);padding:11px 13px 12px;background:#fffef7;}
 .rg-name{display:block;font:600 12px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;letter-spacing:.04em;color:var(--ink);margin-bottom:6px;}
 .rg-desc{display:block;font-size:13px;line-height:1.38;color:var(--muted);}
 @media(max-width:680px){.rubric-grid{grid-template-columns:repeat(2,1fr);}}
 /* let the wide lever table break out to 2/3 viewport so columns don't scrunch */
-@media(min-width:1120px){ .rpt-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
+@media(min-width:1120px){ .rpt-wide-wrap{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
 .rpt-wide th,.rpt-wide td:not(:first-child){white-space:nowrap;}
-/* §3 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
+/* the nowrap cells above make this table wider than a phone screen; scope the
+   scroll to the table itself instead of letting it drag the whole page sideways */
+.rpt-wide-wrap{overflow-x:auto;}
+.tbl-scroll{overflow-x:auto;}
+/* §4 tapestry: simplified node-and-arrow diagrams, constant scale, column masonry */
 .tap-wide{margin-top:18px;}
 @media(min-width:1120px){ .tap-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
 .tapestry{columns:104px;column-gap:20px;}
@@ -67,7 +81,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 .tap-legend span{display:inline-flex;align-items:center;gap:7px;}
 .tap-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .tap-legend i.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.3px #bdb8a6;}
-/* §11 references: grouped, with paper summary + how-we-used-it */
+/* §12 references: grouped, with paper summary + how-we-used-it */
 .ref-group{font:600 13px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
            text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
            margin:30px 0 0;padding-bottom:7px;border-bottom:1px solid var(--rule);}
@@ -83,13 +97,13 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 .ref-exp{font-size:14px;color:var(--muted);margin:5px 0 0;line-height:1.5;}
 .ref-exp b{font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
            text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-right:7px;}
-/* §2 answer: the winning experiment's detail card, reused verbatim from the
+/* §3 answer: the winning experiment's detail card, reused verbatim from the
    dashboard (js/pipeline.js renderPipeD3 + the exact detail-card CSS below,
    copied from dashboard.css so the look — including its background — matches). */
 .ans-wide{margin-top:18px;}
 @media(min-width:1120px){ .ans-wide{width:66.666vw;margin-left:calc(50% - 33.333vw);} }
 .answer-card{background:#fcfbf2;padding:18px 22px 22px;}
-.pipe-head{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.pipe-head{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;}
 .pipe-sum{font-size:13.5px;font-weight:600;color:#33312b;margin:2px 0 10px;}
 .pipe-actions{flex:0 0 auto;display:flex;gap:8px;align-items:center;}
 .png-btn,.wu-btn{flex:0 0 auto;font:600 11px/1 "Palatino",Georgia,serif;font-feature-settings:"smcp" 1;
@@ -126,7 +140,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
      font:13px/1.45 var(--serif);padding:9px 13px;border:1px solid var(--rule);border-radius:5px;
      box-shadow:0 4px 18px rgba(60,50,30,.15);max-width:640px;opacity:0;transition:opacity .1s;z-index:10;}
 #tip .t-note{color:var(--muted);display:block;margin-top:3px;}
-/* §4 evolution: the mined lineage graph, reused verbatim from lineage.js/lineage.html
+/* §5 evolution: the mined lineage graph, reused verbatim from lineage.js/lineage.html
    (same full-bleed diagram, same legend, same hover popovers — copied CSS below). */
 .lin-legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12.5px;color:var(--muted);margin:10px 0 6px;}
 .lin-legend span{display:inline-flex;align-items:center;gap:6px;}
@@ -158,13 +172,15 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </style>
 </head>
 <body data-glossary-root=".wrap, .hero .lede">
+<a id="gh-ribbon" href="https://github.com/akaalias/tada/tree/feat/fm-discovery-autoresearch/research/FMDiscovery/dashboard" target="_blank" rel="noopener">view on GitHub</a>
+<nav class="topnav"><span class="brand">FM Discovery</span><a href="index.html">Live dashboard</a><a href="report.html" class="on">Final report</a><a href="lineage.html">Experiment lineage</a></nav>
 
 <header class="hero">
-  <div class="eyebrow">Alexis Rondeau &amp; Claude Code · final report</div>
   <h1 class="hero-quote"><em>"Which city in Paris are you staying in?"</em></h1>
   <h1>Can an LLM autoresearch loop teach a phone-sized small language model (SLM) to ask frontier-quality questions? Can it? Does it? Let's find out!</h1>
   <p class="hero-sub">A post-training study on small-model specialization with an autoresearch loop</p>
-  <p class="lede">Across 96 experiments — every prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning and adversarial-distillation lever we could find — Apple's native 2025 3B Foundation Model came within about one rubric point of a frontier cloud model (Claude Sonnet 4.6) on every quality dimension: close, but consistently a notch below, across the board.</p>
+  <p class="lede-label">The bottom line</p>
+  <p class="lede"><span class="hl">We discovered a technique that enables Apple's native 2025 3B Foundation Model to come within about one rubric point of a frontier cloud model (Claude Sonnet 4.6) on every quality dimension.</span> The technique is a surprising combination: an on-device SFT adapter that over-generates eight candidate questions, paired with a deterministic rule that prunes down to the best seven. It took us 96 experiments to test every lever we could find — prompting, retrieval, decoding, pipeline, fine-tuning, preference-learning, reinforcement-learning, adversarial-distillation, and more.</p>
   <div class="nav">
     <a href="onboarding.html">Project overview</a>
     <a href="index.html">Live dashboard</a>
@@ -175,10 +191,10 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 
 <div class="wrap">
 
-<section id="question">
-  <h2><span class="num">1</span>The question</h2>
-  <p class="sub">Move one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
-  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet 4.6 in the cloud. I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
+<section id="feature">
+  <h2><span class="num">1</span>The feature</h2>
+  <p class="sub">A discovery planner that turns a one-line task into seven clarifying questions.</p>
+  <p>I'm building a native macOS app with a <strong>discovery planner</strong>: type a one-line task — <em>"plan a trip to Paris"</em> — and it returns a restated title and <strong>exactly seven clarifying questions</strong>. Today it runs on Claude Sonnet 4.6 in the cloud.</p>
 
   <div class="flowdemo">
     <div class="fd-node fd-input">
@@ -202,8 +218,14 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
   <p class="ex-caption">The planner turns a vague one-liner into seven specific clarifying questions. (Shown: the gold-standard answer from claude-sonnet-4-6 &mdash; the bar we're trying to match on-device.)</p>
 </section>
 
+<section id="question">
+  <h2><span class="num">2</span>The question</h2>
+  <p class="sub">Move this one feature from the cloud onto the device, with no quality loss — if that's even possible.</p>
+  <p>I wanted it <strong>entirely local and native</strong>, on Apple's built-in ~3B Foundation Model, with <em>no</em> Anthropic access in the shipping product. The whole project is one question: <strong>can a ~20× smaller, on-device model match a frontier cloud model on this one narrow task?</strong></p>
+</section>
+
 <section id="answer">
-  <h2><span class="num">2</span>The answer</h2>
+  <h2><span class="num">3</span>The answer</h2>
   <p class="sub">Yes, most of the way there &mdash; an on-device adapter that over-generates and prunes to the best seven, landing at 0.44.</p>
   <p>The winner is <strong>exp056</strong>: a <span class="pill p-sft">SFT</span> LoRA adapter (<code>adapter_v2a_e1</code>) that over-produces <strong>8</strong> candidate questions in one native on-device call, then a deterministic Swift step drops the single question that matches the gold coverage axes worst &mdash; keeping the <strong>7</strong> that best cover the decision-critical unknowns. It's the best of all 96 experiments run, and the on-device model this project ships with.</p>
   <p>
@@ -217,7 +239,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="levers">
-  <h2><span class="num">3</span>Everything we tried</h2>
+  <h2><span class="num">4</span>Everything we tried</h2>
   <p class="sub">Seven lever classes, 96 experiments, 9 that set a new best. One dimension stuck throughout.</p>
 
   <p><strong>Every experiment, at a glance.</strong> One tile per run, in the order each was run — its on-device pipeline stripped to bare structure, coded by the legend below. Read the <em>shapes</em>: thin single-shot baselines, ensembles fanning wide, the tall multi-call reasoning pipelines of the inference era, then the two-column adapter runs that fill the back half.</p>
@@ -233,7 +255,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="evolution">
-  <h2><span class="num">4</span>How we evolved our champion</h2>
+  <h2><span class="num">5</span>How we evolved our champion</h2>
   <p class="sub">No run starts from scratch &mdash; every one builds on an earlier result or reacts to one that failed.</p>
   <p>The graph below is the mined parent&rarr;child record across all 96 experiments: an arc traces which prior run's output, or which trained adapter, fed into the next. Our champion, <strong>exp056</strong>, descends from a short, legible chain: the raw baseline &rarr; the first LoRA fine-tune (<code>adapter_e1</code>) &rarr; its doubled-corpus successor (<code>adapter_v2a_e1</code>, which warm-started every later RL run) &rarr; exp046's over-generate-and-prune topology &rarr; exp056's refinement of that drop rule. The view below is centred on exp056; hover any run to trace its own ancestry back to the root.</p>
   <div class="lin-legend" id="legend"></div>
@@ -242,7 +264,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="climb">
-  <h2><span class="num">5</span>The climb</h2>
+  <h2><span class="num">6</span>The climb</h2>
   <p class="sub">Real progress — quality roughly doubled. Then it stalled.</p>
   <div class="prog">
     <div class="step"><div class="tag">Stock baseline</div><div class="q">0.28</div><div class="lbl">3B, single shot</div></div>
@@ -291,7 +313,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="approach">
-  <h2><span class="num">6</span>Our approach</h2>
+  <h2><span class="num">7</span>Our approach</h2>
   <p class="sub">A fixed test set scored by a Sonnet judge — and the autoresearch loop that drives the experiments.</p>
 
   <h3 class="ref-group">How we measure quality</h3>
@@ -367,8 +389,9 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="lever-results">
-  <h2><span class="num">7</span>Best result by lever class</h2>
+  <h2><span class="num">8</span>Best result by lever class</h2>
   <p class="sub">Every lever moved the same four dimensions. One dimension moved for none of them.</p>
+  <div class="rpt-wide-wrap">
   <table class="rpt-tbl rpt-wide" id="tried-tbl">
     <thead><tr><th>Lever class</th><th>Runs</th><th>Best quality</th><th>Atomicity</th><th>Specificity</th><th>Naturalness</th><th>Non-redundancy</th><th>Coverage</th><th>Gate</th></tr></thead>
     <tbody>
@@ -381,6 +404,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
       <tr><td><span class="pill p-gad">GAD</span> &nbsp;adversarial distillation — reward is a discriminator trained to tell Sonnet gold sets from the model's drafts</td><td class="num">2</td><td class="num">0.36</td><td class="num">5</td><td class="num">3</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td>full-30</td></tr>
     </tbody>
   </table>
+  </div>
   <p>One pattern holds across every row. <strong>Atomicity, specificity, naturalness and non-redundancy</strong> reached 4–5 — the on-device model phrases questions like a thoughtful human and rarely repeats itself.</p>
   <p class="verdict">But <strong>coverage</strong> — whether the seven include the single most decision-critical unknown — sat at <strong>3</strong> in <em>every one of the 96 runs</em> (only 2s and 3s ever appeared), unmoved by prompting, retrieval, multi-call reasoning, fine-tuning, reshaped training data, preference learning, RL against the rubric, or adversarial distillation.</p>
   <div class="callout">
@@ -389,9 +413,10 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="confirmation">
-  <h2><span class="num">8</span><em>"But wait! What if..."</em> The confirmation experiment</h2>
+  <h2><span class="num">9</span><em>"But wait! What if..."</em> The confirmation experiment</h2>
   <p class="sub">Hold everything constant. Change only the model. Watch coverage.</p>
   <p>If coverage is locked because the harness or the prompt is wrong, then a more capable model would also be stuck at 3. If it's locked because the 3B model isn't capable enough, a stronger model — given the <em>identical</em> prompt, schema, gold, judge and rubric, and decoded exactly the way the gold itself was — should clear it. So we ran two cloud models as the candidate through the exact same harness. The only variable is the model.</p>
+  <div class="tbl-scroll">
   <table class="rpt-tbl">
     <thead><tr><th>Candidate model</th><th>Where</th><th>Quality</th><th>Coverage</th><th>vs gold (W/T/L)</th></tr></thead>
     <tbody>
@@ -400,6 +425,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
       <tr class="anchor"><td>Claude Sonnet 4.6 <span class="muted">(= the gold model)</span></td><td>cloud</td><td class="num">0.65</td><td class="num hi">4</td><td class="num">4/18/8</td></tr>
     </tbody>
   </table>
+  </div>
   <p>Coverage moved the moment the model changed: <strong>3 → 4</strong>. It was never the harness — the same rubric that scored the 3B at 3 scores Haiku and Sonnet at 4. Two further details matter:</p>
   <ul>
     <li><strong>The realistic ceiling is 4, not 5.</strong> Even Sonnet — the model that <em>wrote</em> the gold — only scores coverage 4 against it, because "the single most critical unknown" carries genuine variance: two excellent question sets disagree on it. Coverage 5 is not a reliably reachable target.</li>
@@ -408,10 +434,10 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="verdict">
-  <h2><span class="num">9</span>The verdict</h2>
+  <h2><span class="num">10</span>The verdict</h2>
   <div class="verdict">
     <h3>The gap is a capability limit of the 3B base — measured against what's achievable, not a perfect score, and not a method we failed to find.</h3>
-    <p style="margin:0 0 12px">Every lever — imitation, preference learning, RL against the rubric reward, adversarial distillation, every inference-time trick — leaves the on-device model a notch below the frontier. The confirmation experiment (§8) shows why, and it's <strong>two gaps, not one</strong>:</p>
+    <p style="margin:0 0 12px">Every lever — imitation, preference learning, RL against the rubric reward, adversarial distillation, every inference-time trick — leaves the on-device model a notch below the frontier. The confirmation experiment (§9) shows why, and it's <strong>two gaps, not one</strong>:</p>
     <p style="margin:0 0 12px"><strong>Gap A — the 3B vs. the frontier.</strong> Swap in only a more capable model and the wall lifts: coverage 3→4, quality 0.44→0.65, head-to-head against gold from 2/5/22 to 4/18/8. This notch <em>is</em> the capability limit — it closes the moment capacity rises.</p>
     <p style="margin:0 0 12px"><strong>Gap B — the frontier vs. a perfect score.</strong> Even Sonnet, judged against its own gold, tops out at coverage 4 / quality 0.65 (ties itself 18, loses 8). That residual is the task's own answer-variance — two excellent question sets disagreeing on the single most critical unknown — which <em>no</em> model crosses. It's the task's ceiling, not the 3B's.</p>
     <p style="margin:0">So the bar is 0.65 / coverage 4, not 1.0. The 3B's shortfall is its distance below that bar, and that distance is bound to model capacity — no further training or scaffolding on <em>this</em> base is likely to close it.</p>
@@ -444,12 +470,12 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
 </section>
 
 <section id="repro">
-  <h2><span class="num">10</span>Reproducibility</h2>
-  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The fixed evaluation (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §8 and the mechanistic analysis in §9 are reference only, deliberately kept out of the on-device run log.</p>
+  <h2><span class="num">11</span>Reproducibility</h2>
+  <p>Every experiment is logged with its hypothesis, method, result and a process diagram on the <a href="index.html">dashboard</a>; the narrative is in the <a href="onboarding.html">project overview</a>. The fixed evaluation (30 gold cases + Sonnet judge), all agent configs, the LoRA training scripts (SFT, ORPO, the KL-anchored GRPO policy gradient, and the GAD discriminator), the on-policy draft generator, the cloud ceiling-confirmation harness, and the coverage-critic probe are in the repository. The autoresearch loop runs unattended and can request the manual training track when it judges the weights are the answer. The cloud anchors in §9 and the mechanistic analysis in §10 are reference only, deliberately kept out of the on-device run log.</p>
 </section>
 
 <section id="references">
-  <h2><span class="num">11</span>References</h2>
+  <h2><span class="num">12</span>References</h2>
   <p class="sub">Not built from scratch — the levers we tried, and the papers each one came from. For each: what the paper introduced, and how we used it here.</p>
 
   <h3 class="ref-group">In-context phase — prompting, retrieval, decoding</h3>
@@ -568,7 +594,7 @@ a.tap-cell-champion:hover{background:#f1e1bd;}
     </li>
   </ol>
 
-  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §6). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
+  <p class="ex-caption">The autoresearch loop methodology is inspired by <a href="https://github.com/karpathy/autoresearch" target="_blank" rel="noopener">Andrej Karpathy's autoresearch</a> (linked in §7). Only ORPO (2024), DeepSeekMath/GRPO (2024) and DeepSeek-R1 (2025) are recent; the rest are foundational methods we applied off the shelf.</p>
 </section>
 
 <footer>

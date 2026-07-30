@@ -85,16 +85,19 @@
 
 /* ---- glossary drawer ----------------------------------------------------- */
 
-/* the always-present launcher, bottom-right */
+/* Hidden until the top-nav has scrolled out of view, then fades in top-right --
+   never shown while the nav (or the GitHub ribbon's bottom-right corner) is in play. */
 .gloss-fab{
-  position:fixed; right:22px; bottom:22px; z-index:9998;
+  position:fixed; top:22px; right:22px; z-index:9998;
   font:600 12px/1 var(--serif); font-feature-settings:"smcp" 1;
   text-transform:uppercase; letter-spacing:.08em;
   color:var(--paper); background:var(--accent);
   border:none; border-radius:3px; padding:11px 17px; cursor:pointer;
   box-shadow:0 3px 14px rgba(17,17,17,.22);
-  transition:background .15s;
+  opacity:0; pointer-events:none; transform:translateY(-6px);
+  transition:background .15s, opacity .15s ease, transform .15s ease;
 }
+.gloss-fab.gloss-fab--visible{opacity:1; pointer-events:auto; transform:none;}
 .gloss-fab:hover{background:#73271a;}
 .gloss-fab:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
 
